@@ -76,6 +76,9 @@ export interface PatternStep {
   dur: number | 'chord';
   /** Voice indexes into the voicing; negative counts from the top (-1 = highest). */
   voices: number[];
+  /** Accented step: played at the mix's left-hand accent velocity. */
+  accent?: boolean;
+  /** Explicit velocity, overriding the mix. Prefer `accent` so levels stay tunable in one place. */
   velocity?: number;
 }
 

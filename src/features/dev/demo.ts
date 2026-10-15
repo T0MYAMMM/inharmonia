@@ -1,3 +1,4 @@
+import { MIX } from '@config/mix';
 import type { TimelineEvent } from '@/core/audio';
 import { voiceChord, voiceLeadProgression, spelled } from '@/core/theory';
 
@@ -57,7 +58,7 @@ export function buildDemo(): TimelineEvent[] {
         beat: barStart + at,
         dur: DEMO_BEATS_PER_BAR - at, // sustain to the end of the chord (pedal feel)
         midi: note.midi,
-        velocity: idx === 0 ? 0.62 : 0.42,
+        velocity: i === 0 ? MIX.leftHand.accentVelocity : MIX.leftHand.velocity,
         channel: 'lh',
       });
     });
@@ -68,7 +69,7 @@ export function buildDemo(): TimelineEvent[] {
         beat: barStart + t,
         dur: beats,
         midi: spelled(name).midi,
-        velocity: 0.72,
+        velocity: MIX.melody.velocity,
         channel: 'rh',
       });
       t += beats;

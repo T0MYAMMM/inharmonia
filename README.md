@@ -168,7 +168,25 @@ tested with a fake clock):
   note counts a miss and flashes red. Clicking a bar moves the target there; "Start over" resets.
   Finished attempts are saved locally (`src/state/progress.ts`) for the progress view.
 
+## Tuning the mix
+
+Every playback level is in `config/mix.ts`, in the `MIX` object:
+
+- `melody`: velocity, legato (how much of its length a note sounds), channel gain in dB.
+- `leftHand`: accent velocity (first note of each chord), other velocity, channel gain.
+- `live`: gain for what you play yourself.
+- `practice`: the chord roll and "Hear it" levels and timing.
+- `metronome`: click levels and gain.
+
+Content never hard-codes levels: patterns mark accented steps, and the compiler and audio
+engine read the numbers from `MIX`. Gains multiply velocities (the sampler treats velocity as
+linear gain) and are capped at full scale.
+
 ## Audio notes
+
+- Notes sustain while held. Every way a release can be lost ends them: `pointercancel` and
+  lost pointer capture on the keyboard, window blur and a hidden page for computer keys, and a
+  MIDI device disconnecting (its notes and its sustain pedal are released).
 
 - Audio starts only from a user gesture. The AudioContext is created synchronously inside the
   first `pointerdown` or `keydown`, which is what iOS Safari requires. Notes pressed while Tone.js
