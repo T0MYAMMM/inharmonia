@@ -52,6 +52,7 @@ export class WebMidiInput {
   private snap: MidiSnapshot;
   private bound = new Map<string, MIDIInput>();
   private heldByDevice = new Map<string, Set<number>>();
+  private sustainByDevice = new Set<string>();
 
   constructor(private readonly stream: NoteStream) {
     this.snap = {
@@ -80,10 +81,7 @@ export class WebMidiInput {
     if (this.snap.status === 'unsupported' || this.access) return;
     this.set({ status: 'requesting' });
     try {
-      this.access = await navigator.requestMIDIAccess({ sysex: false });
-      this.access.onstatechange = () => this.refresh();
-      this.set({ status: 'ready' });
-      this.refresh();
+      this.useAccess(await navigator.requestMIDIAccess({ sysex: false }));
     } catch {
       this.set({ status: 'denied' });
     }
@@ -117,9 +115,11 @@ export class WebMidiInput {
     }
   }
 
+  /** A device went away (unplugged, deselected): its note-offs and pedal-up will never arrive. */
   private releaseDevice(id: string) {
     for (const n of this.heldByDevice.get(id) ?? []) this.stream.noteOff(n, 'midi');
     this.heldByDevice.delete(id);
+    if (this.sustainByDevice.delete(id)) this.set({ sustain: this.sustainByDevice.size > 0 });
   }
 
   /** Exposed for tests. */
@@ -136,8 +136,18 @@ export class WebMidiInput {
       if (!held.delete(msg.note)) return;
       this.stream.noteOff(msg.note, 'midi');
     } else {
-      this.set({ sustain: msg.down });
+      if (msg.down) this.sustainByDevice.add(deviceId);
+      else this.sustainByDevice.delete(deviceId);
+      this.set({ sustain: this.sustainByDevice.size > 0 });
     }
+  }
+
+  /** Exposed for tests: install a MIDIAccess without the permission prompt. */
+  useAccess(access: MIDIAccess): void {
+    this.access = access;
+    access.onstatechange = () => this.refresh();
+    this.set({ status: 'ready' });
+    this.refresh();
   }
 
   dispose(): void {
