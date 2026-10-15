@@ -20,6 +20,7 @@ const NOTATIONS = [
 const NAV = [
   { to: '/', label: 'Practice room', end: true },
   { to: '/songs', label: 'Songs', end: false },
+  { to: '/chords', label: 'Chords', end: false },
   { to: '/keyboard', label: 'Keyboard', end: false },
   { to: '/about', label: 'About', end: false },
 ];

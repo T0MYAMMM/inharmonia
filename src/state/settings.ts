@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { AccidentalStyle, NotationSystem } from '@/core/notation';
+import type { Strictness } from '@/core/content/types';
+import { CHORD_QUALITIES } from '@/core/theory/qualities';
 import { storage } from '@/core/persistence/storage';
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
@@ -16,6 +18,16 @@ export interface SettingsState {
   metronome: boolean;
   countInBars: number;
   midiInput: string;
+  /** Reconnect MIDI on load once the player has connected it. */
+  midiEnabled: boolean;
+  drill: DrillSettings;
+}
+
+export interface DrillSettings {
+  qualityIds: string[];
+  naturalsOnly: boolean;
+  inversions: boolean;
+  strictness: Strictness;
 }
 
 interface SettingsActions {
@@ -32,6 +44,13 @@ export const DEFAULT_SETTINGS: SettingsState = {
   metronome: false,
   countInBars: 0,
   midiInput: 'all',
+  midiEnabled: false,
+  drill: {
+    qualityIds: ['major', 'minor'],
+    naturalsOnly: true,
+    inversions: false,
+    strictness: 'pitch-class',
+  },
 };
 
 export const SETTINGS_VERSION = 1;
@@ -78,5 +97,22 @@ function sanitize(x: unknown): Partial<SettingsState> {
   if (typeof p.countInBars === 'number' && p.countInBars >= 0 && p.countInBars <= 2)
     out.countInBars = p.countInBars;
   if (typeof p.midiInput === 'string') out.midiInput = p.midiInput;
+  if (typeof p.midiEnabled === 'boolean') out.midiEnabled = p.midiEnabled;
+  const d = p.drill as Partial<DrillSettings> | undefined;
+  if (d && typeof d === 'object') {
+    const known = new Set(CHORD_QUALITIES.map((q) => q.id));
+    const ids = Array.isArray(d.qualityIds) ? d.qualityIds.filter((x) => known.has(x)) : [];
+    out.drill = {
+      qualityIds: ids.length ? ids : DEFAULT_SETTINGS.drill.qualityIds,
+      naturalsOnly:
+        typeof d.naturalsOnly === 'boolean' ? d.naturalsOnly : DEFAULT_SETTINGS.drill.naturalsOnly,
+      inversions:
+        typeof d.inversions === 'boolean' ? d.inversions : DEFAULT_SETTINGS.drill.inversions,
+      strictness:
+        d.strictness === 'pitch-class' || d.strictness === 'inversion' || d.strictness === 'exact'
+          ? d.strictness
+          : DEFAULT_SETTINGS.drill.strictness,
+    };
+  }
   return out;
 }
