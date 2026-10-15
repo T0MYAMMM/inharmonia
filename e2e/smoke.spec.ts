@@ -75,6 +75,7 @@ test.describe('keyboard sandbox', () => {
     await expect(key).toHaveAttribute('data-layers', /held/);
     await page.mouse.up();
     await expect(page.getByTestId('last-note')).toHaveText('E4');
+    await expect(key).not.toHaveAttribute('data-layers', /held/); // released, not stuck
   });
 
   test('the timing check plays and lights keys', async ({ page }) => {

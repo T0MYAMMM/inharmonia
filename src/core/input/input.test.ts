@@ -154,3 +154,87 @@ describe('Web MIDI', () => {
     expect(midi.state.status).toBe('unsupported'); // jsdom has no Web MIDI
   });
 });
+
+describe('stuck-note safety', () => {
+  function keyboard() {
+    const s = new NoteStream();
+    const root = document.createElement('div');
+    root.innerHTML = '<div data-midi="60"></div><div data-midi="62"></div>';
+    document.body.append(root);
+    const detach = bindPointerInput(root, s);
+    const press = (midi: number, pointerId: number) =>
+      root
+        .querySelector(`[data-midi="${midi}"]`)!
+        .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId }));
+    return { s, root, press, cleanup: () => (detach(), root.remove()) };
+  }
+
+  it('pointercancel releases the note (browser took the gesture to scroll)', () => {
+    const k = keyboard();
+    k.press(60, 1);
+    k.root.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }));
+    expect(k.s.held()).toEqual([]);
+    k.cleanup();
+  });
+
+  it('lostpointercapture releases only that pointer', () => {
+    const k = keyboard();
+    k.press(60, 1);
+    k.press(62, 2);
+    k.root.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, pointerId: 1 }));
+    expect(k.s.held()).toEqual([62]);
+    k.cleanup();
+  });
+
+  it('window blur releases every held pointer note', () => {
+    const k = keyboard();
+    k.press(60, 1);
+    k.press(62, 2);
+    window.dispatchEvent(new Event('blur'));
+    expect(k.s.held()).toEqual([]);
+    k.cleanup();
+  });
+
+  it('unbinding (leaving the page) releases held notes', () => {
+    const k = keyboard();
+    k.press(60, 1);
+    k.cleanup();
+    expect(k.s.held()).toEqual([]);
+  });
+
+  it('computer keys release when the page is hidden', () => {
+    const s = new NoteStream();
+    const k = new ComputerKeys(s);
+    const detach = k.attach(window);
+    window.dispatchEvent(key('keydown', 'KeyA'));
+    const vis = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(s.held()).toEqual([]);
+    vis.mockRestore();
+    // The key-up that arrives later is ignored, not double-released.
+    window.dispatchEvent(key('keyup', 'KeyA'));
+    expect(s.held()).toEqual([]);
+    detach();
+  });
+
+  it('a MIDI device disconnecting releases its notes and its sustain pedal', () => {
+    const s = new NoteStream();
+    const midi = new WebMidiInput(s);
+    const input = { id: 'kbd', name: 'Keys', state: 'connected', onmidimessage: null as unknown };
+    const inputs = new Map([['kbd', input]]);
+    const access = { inputs, onstatechange: null as null | (() => void) };
+    midi.useAccess(access as unknown as MIDIAccess);
+    const send = (data: number[]) =>
+      (input.onmidimessage as (e: { data: Uint8Array }) => void)({ data: new Uint8Array(data) });
+    send([0x90, 60, 100]);
+    send([0x90, 64, 100]);
+    send([0xb0, 64, 127]);
+    expect(s.held()).toEqual([60, 64]);
+    expect(midi.state.sustain).toBe(true);
+    input.state = 'disconnected';
+    access.onstatechange!();
+    expect(s.held()).toEqual([]);
+    expect(midi.state.sustain).toBe(false);
+    expect(midi.state.devices).toEqual([]);
+  });
+});
