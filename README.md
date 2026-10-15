@@ -151,8 +151,13 @@ phase 2.
   silent. If you hear nothing on iOS, check the switch.
 - A simple synth plays until the piano samples finish loading (about 1.6 MB), then the piano
   takes over.
-- Samples are Ogg Vorbis where supported (no encoder delay, so attacks are exactly on time) and
-  MP3 elsewhere.
+- The sample format is chosen with `canPlayType`: Ogg Vorbis when the browser reports support,
+  MP3 otherwise (for example older Safari and iOS).
+- MP3 files start with encoder padding (1105 samples, about 25 ms at 44.1 kHz). Chromium reads
+  the gapless info in the file's Info header and trims it; other decoders may not. The loader
+  (`core/audio/sampleLoader.ts`) reads that header itself and trims the decoded buffer only when
+  its length shows the padding is still there, so MP3 and Ogg attacks land on the same frame in
+  every browser.
 
 ## Credits
 

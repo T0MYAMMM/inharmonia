@@ -44,6 +44,24 @@ test.describe('keyboard sandbox', () => {
     await expect(page.getByTestId('keys-range')).toContainText('C3 to F4');
   });
 
+  test('falls back to MP3 samples when Ogg is unsupported', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'same code path on both projects');
+    await page.addInitScript(() => {
+      const orig = HTMLMediaElement.prototype.canPlayType;
+      HTMLMediaElement.prototype.canPlayType = function (t: string) {
+        return t.includes('ogg') ? '' : orig.call(this, t);
+      };
+    });
+    const formats = new Set<string>();
+    page.on('request', (r) => {
+      if (r.url().includes('/samples/')) formats.add(r.url().split('.').pop()!);
+    });
+    await page.goto('keyboard');
+    await page.keyboard.press('a');
+    await expect(page.getByText('Piano ready')).toBeVisible({ timeout: 20_000 });
+    expect([...formats]).toEqual(['mp3']);
+  });
+
   test('tapping a key plays it', async ({ page }) => {
     await page.goto('keyboard');
     const key = page.locator('[data-midi="64"]');

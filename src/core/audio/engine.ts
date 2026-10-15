@@ -1,4 +1,5 @@
 import type * as ToneNS from 'tone';
+import { loadSample } from './sampleLoader';
 import { pickSampleFormat, sampleUrls } from './samples';
 import type { TransportSink } from './transport';
 import type { TimelineEvent } from './timeline';
@@ -129,7 +130,7 @@ export class AudioEngine {
       let loaded = 0;
       const buffers = await Promise.all(
         entries.map(async ([note, url]) => {
-          const buf = await Tone.ToneAudioBuffer.fromUrl(url);
+          const buf = new Tone.ToneAudioBuffer(await loadSample(this.raw!, url, format));
           loaded++;
           this.set({ samplesLoaded: loaded });
           return [note, buf] as const;
