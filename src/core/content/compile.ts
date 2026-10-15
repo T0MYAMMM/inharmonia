@@ -45,8 +45,10 @@ export interface CompiledLesson {
   events: TimelineEvent[];
 }
 
-export const DEFAULT_RH_VELOCITY = 0.72;
-export const DEFAULT_LH_VELOCITY = 0.42;
+export const DEFAULT_RH_VELOCITY = 0.4;
+export const DEFAULT_LH_VELOCITY = 0.13;
+/** Melody notes sound for this fraction of their written length, so repeated notes re-strike cleanly. */
+export const DEFAULT_RH_LEGATO = 0.95;
 const EPS = 1e-9;
 
 export function resolveVoicing(symbol: string, spec: VoicingSpec | undefined): SpelledNote[] {
@@ -130,7 +132,9 @@ function compileNotes(
 export function compileLesson(
   lesson: Lesson,
   patterns: Readonly<Record<string, PatternSpec>> = {},
+  opts: { rhLegato?: number } = {},
 ): CompiledLesson {
+  const rhLegato = opts.rhLegato ?? DEFAULT_RH_LEGATO;
   const beatsPerBar = lesson.meter.beats;
   const pattern = lesson.lhPattern ? patterns[lesson.lhPattern] : undefined;
   if (lesson.lhPattern && !pattern)
@@ -177,7 +181,7 @@ export function compileLesson(
             {
               id: n.id,
               beat: n.startBeat,
-              dur: n.beats,
+              dur: n.hand === 'rh' ? n.beats * rhLegato : n.beats,
               midi: n.note.midi,
               velocity: n.velocity,
               channel: n.hand,

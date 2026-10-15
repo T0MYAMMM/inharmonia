@@ -8,22 +8,29 @@ import {
 
 /**
  * Senja di Teras, an original piece written for Inharmonia.
- * D major, 4/4, 16 bars. Left hand: 8th-note arpeggio of each chord's 4-note voicing.
+ * D major, 4/4, 16 bars: verse (1–8) and chorus (9–16).
+ * Left hand: 8th-note arpeggio of each chord's 4-note voicing.
  */
 
-/**
- * Left-hand voicings, lowest first.
- * A and D come from the prototype's VOICINGS table. The others are provisional
- * until reference/senja-di-teras.html is in the repo; that table is the source of truth.
- */
-const VOICINGS: Record<string, VoicingSpec> = {
-  A: { notes: ['A1', 'E2', 'A2', 'C#3'] },
-  D: { notes: ['D2', 'A2', 'D3', 'F#3'] },
+/** Left-hand voicings, lowest first (index 0–3), from the prototype. */
+const VOICINGS: Record<string, string[]> = {
+  Dmaj7: ['D2', 'A2', 'C#3', 'F#3'],
+  Bm7: ['B1', 'F#2', 'A2', 'D3'],
+  Em7: ['E2', 'B2', 'D3', 'G3'],
+  A7sus4: ['A1', 'E2', 'G2', 'D3'],
+  A7: ['A1', 'E2', 'G2', 'C#3'],
+  Gmaj7: ['G1', 'D2', 'F#2', 'B2'],
+  A: ['A1', 'E2', 'A2', 'C#3'],
+  'F#m7': ['F#1', 'C#2', 'E2', 'A2'],
+  'A/C#': ['C#2', 'A2', 'C#3', 'E3'],
+  D: ['D2', 'A2', 'D3', 'F#3'],
 };
 
-const PROVISIONAL: VoicingSpec = { style: 'close', floor: 'D2' };
-
-const voicing = (symbol: string): VoicingSpec => VOICINGS[symbol] ?? PROVISIONAL;
+const voicing = (symbol: string): VoicingSpec => {
+  const notes = VOICINGS[symbol];
+  if (!notes) throw new Error(`Senja di Teras: no voicing for ${symbol}`);
+  return { notes };
+};
 
 /** Chords per bar; two chords in a bar split it 2 + 2. */
 const CHORDS: string[][] = [
@@ -78,7 +85,7 @@ const bars: Bar[] = CHORDS.map((symbols, i) => ({
     voicing: voicing(symbol),
   })),
   rh: parseMelody(MELODY[i]!),
-  ...(i === 0 ? { section: 'A' } : i === 8 ? { section: 'B' } : {}),
+  ...(i === 0 ? { section: 'Verse' } : i === 8 ? { section: 'Chorus' } : {}),
 }));
 
 export const SENJA_DI_TERAS: Lesson = {
