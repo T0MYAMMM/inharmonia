@@ -135,12 +135,38 @@ export const myLesson: Lesson = {
 - `rh` beats in each bar should add up to the bar length. Use `"r"` for a rest.
 - A chord's `voicing` is either explicit notes or a style (`close`, `open`, `drop2`, `shell`,
   `rootless`) with an optional inversion.
-- `lhPattern` names a left-hand pattern; a bar with its own `lh` overrides it.
+- `lhPattern` names a left-hand pattern from `src/content/patterns.ts`; a bar with its own `lh`
+  overrides it. Patterns pick voices from the chord's voicing by index, restart on each chord
+  and stop at the chord change.
+- `section` on a bar starts a titled section in the score ("Verse", "Chorus").
 - Content must be original, generic theory material, or public domain (published before 1929,
   marked with `source: { kind: 'public-domain', ... }`). Do not transcribe copyrighted songs.
 
-The compiler that turns lessons into a transport timeline, and the lesson registry, arrive in
-phase 2.
+Then:
+
+1. Put the file in `src/content/songs/` and add it to `SONGS` in `src/content/lessons.ts`. It
+   appears on the Songs page and plays at `/songs/<id>`.
+2. Add a test that `validateLesson(myLesson)` returns `[]` (see
+   `src/core/content/compile.test.ts`). It checks bar lengths, chord symbols and note names.
+
+`compileLesson` (`src/core/content/compile.ts`) turns a lesson into bars, chords with resolved
+voicings, and one timeline for the transport. Melody notes sound for 95% of their written length
+so repeated notes re-strike cleanly.
+
+## Song player
+
+`/songs/:id` has two modes, driven by `src/features/song/SongController.ts` (plain TypeScript,
+tested with a fake clock):
+
+- **Listen:** Play/Pause resumes where it stopped; Restart goes to bar 1. Loop is on by default;
+  with it off, playback stops after the last beat. Tempo, loop and the melody and left-hand
+  toggles all work mid-playback. The sounding melody note lights amber and the current chord's
+  voicing dusk. Click a bar, or press Enter or Space on it, to play from there. Space toggles
+  play when nothing else has focus.
+- **Practice:** waits for each melody note (`src/core/practice/waitSession.ts`). A right note
+  counts a hit and moves on; when it starts a new chord, the left-hand voicing rolls in. A wrong
+  note counts a miss and flashes red. Clicking a bar moves the target there; "Start over" resets.
+  Finished attempts are saved locally (`src/state/progress.ts`) for the progress view.
 
 ## Audio notes
 
