@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client"],
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
@@ -26,5 +26,6 @@
       "@config/*": ["./config/*"]
     }
   },
-  "include": ["src", "config"]
+  "include": ["src", "config"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
 }

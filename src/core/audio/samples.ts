@@ -29,9 +29,13 @@ export function sampleUrls(baseUrl: string, format: SampleFormat): Record<string
 }
 
 /**
- * Prefer Ogg Vorbis: it has no encoder delay, so attacks start exactly on time.
- * MP3 is the fallback for browsers without Vorbis (older Safari).
+ * Pick the format the browser says it can decode, asked through `canPlayType`
+ * (pass `(t) => new Audio().canPlayType(t)`). Ogg Vorbis first, MP3 otherwise:
+ * Safari and iOS report Vorbis support per version, so this follows what each
+ * device actually supports. MP3 encoder padding is compensated at load time
+ * (see mp3Gapless.ts), so both formats line up exactly.
  */
 export function pickSampleFormat(canPlayType: (type: string) => string): SampleFormat {
-  return canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3';
+  if (canPlayType('audio/ogg; codecs="vorbis"')) return 'ogg';
+  return 'mp3';
 }
