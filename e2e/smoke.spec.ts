@@ -1,0 +1,68 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('smoke', () => {
+  test('home page loads and links to the keyboard', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('./');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.getByRole('link', { name: 'Keyboard', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Keyboard sandbox' })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('deep links load directly', async ({ page }) => {
+    await page.goto('about');
+    await expect(page.getByRole('heading', { name: 'About Inharmonia' })).toBeVisible();
+    await expect(page.getByText('Salamander Grand Piano')).toBeVisible();
+  });
+
+  test('theme toggle sets data-theme and persists', async ({ page }) => {
+    await page.goto('./');
+    await page.getByRole('radio', { name: 'Dark' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('radio', { name: 'Auto' }).click();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+  });
+});
+
+test.describe('keyboard sandbox', () => {
+  test('computer keys light the on-screen key and start the piano', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'computer keyboard input is a desktop feature');
+    await page.goto('keyboard');
+    const c4 = page.locator('[data-midi="60"]');
+    await page.keyboard.down('a');
+    await expect(c4).toHaveAttribute('data-layers', /held/);
+    await page.keyboard.up('a');
+    await expect(c4).not.toHaveAttribute('data-layers', /held/);
+    await expect(page.getByTestId('last-note')).toHaveText('C4');
+    await expect(page.getByText('Piano ready')).toBeVisible({ timeout: 20_000 });
+
+    await page.keyboard.press('z');
+    await expect(page.getByTestId('keys-range')).toContainText('C3 to F4');
+  });
+
+  test('tapping a key plays it', async ({ page }) => {
+    await page.goto('keyboard');
+    const key = page.locator('[data-midi="64"]');
+    await key.scrollIntoViewIfNeeded();
+    const box = (await key.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height - 20);
+    await page.mouse.down();
+    await expect(key).toHaveAttribute('data-layers', /held/);
+    await page.mouse.up();
+    await expect(page.getByTestId('last-note')).toHaveText('E4');
+  });
+
+  test('the timing check plays and lights keys', async ({ page }) => {
+    await page.goto('keyboard');
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+    await expect(page.locator('[data-layers~="lh"]').first()).toBeAttached({ timeout: 5000 });
+    await expect(page.getByTestId('status-line')).toContainText('Bar 2 of 4', { timeout: 8000 });
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Resume');
+  });
+});
