@@ -18,6 +18,12 @@ import { Score } from './Score';
 import { SongController, type SongMode } from './SongController';
 import styles from './SongPage.module.css';
 
+const PRACTICE_HANDS = [
+  { value: 'rh', label: 'Right hand' },
+  { value: 'lh', label: 'Left hand', disabled: true },
+  { value: 'both', label: 'Both hands', disabled: true },
+] as const;
+
 const MODES = [
   { value: 'listen', label: 'Listen' },
   { value: 'practice', label: 'Practice' },
@@ -137,6 +143,20 @@ function SongPlayer({ lessonId }: { lessonId: string }) {
             </>
           )}
         </div>
+        {practice ? (
+          <div className={styles.row}>
+            <Segmented
+              label="Practice hand"
+              value="rh"
+              options={PRACTICE_HANDS}
+              onChange={() => {}}
+              describedBy="practice-hand-note"
+            />
+            <span id="practice-hand-note" className={styles.note}>
+              Left hand and both hands arrive with chord practice.
+            </span>
+          </div>
+        ) : null}
         {!practice ? (
           <div className={styles.tempo}>
             <Slider
