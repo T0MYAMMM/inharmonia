@@ -121,6 +121,16 @@
   border-color: var(--amber);
 }
 
+.white[data-layers~='chordTarget'],
+.black[data-layers~='chordTarget'] {
+  background: var(--dusk);
+  color: var(--on-dusk);
+  border-color: var(--dusk);
+  box-shadow:
+    inset 0 0 0 3px var(--surface),
+    inset 0 0 0 5px var(--on-dusk);
+}
+
 .white[data-layers~='target'],
 .black[data-layers~='target'] {
   background: var(--amber);

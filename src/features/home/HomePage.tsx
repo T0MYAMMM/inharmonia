@@ -4,8 +4,8 @@ import styles from '../page.module.css';
 
 const COMING = [
   {
-    title: 'Chord library',
-    body: 'Every common quality, its inversions and voicings, and drills.',
+    title: 'Progress',
+    body: 'Best scores, streaks, and what to review today.',
   },
   {
     title: 'Progressions',
@@ -28,8 +28,8 @@ export function HomePage() {
           nothing here is timed unless you ask it to be.
         </p>
         <p>
-          <Link to="/songs/senja-di-teras">Play Senja di Teras</Link> or{' '}
-          <Link to="/keyboard">try the keyboard</Link>
+          <Link to="/songs/senja-di-teras">Play Senja di Teras</Link>,{' '}
+          <Link to="/chords">explore chords</Link> or <Link to="/chords/drill">drill them</Link>
         </p>
       </div>
       <h2 style={{ marginBottom: 'var(--space-4)' }}>Coming soon</h2>

@@ -63,16 +63,11 @@ test.describe('song player', () => {
     await expect(page.getByTestId('play')).toBeDisabled();
     const hands = page.getByRole('radiogroup', { name: 'Practice hand' });
     await expect(hands.getByRole('radio', { name: 'Right hand' })).toBeChecked();
-    await expect(hands.getByRole('radio', { name: 'Left hand' })).toHaveAttribute(
+    await expect(hands.getByRole('radio', { name: 'Left hand' })).not.toHaveAttribute(
       'aria-disabled',
-      'true',
-    );
-    await expect(hands.getByRole('radio', { name: 'Both hands' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
     );
     await expect(
-      page.getByText('Left hand and both hands arrive with chord practice.'),
+      page.getByText('Play the melody. The left hand rolls in on each new chord.'),
     ).toBeVisible();
     await expect.poll(() => lit(page, 'target')).toEqual([69]); // A4
     const counts = page.getByTestId('counts');
