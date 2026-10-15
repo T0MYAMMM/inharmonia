@@ -163,10 +163,39 @@ tested with a fake clock):
   toggles all work mid-playback. The sounding melody note lights amber and the current chord's
   voicing dusk. Click a bar, or press Enter or Space on it, to play from there. Space toggles
   play when nothing else has focus.
-- **Practice:** waits for each melody note (`src/core/practice/waitSession.ts`). A right note
-  counts a hit and moves on; when it starts a new chord, the left-hand voicing rolls in. A wrong
-  note counts a miss and flashes red. Clicking a bar moves the target there; "Start over" resets.
-  Finished attempts are saved locally (`src/state/progress.ts`) for the progress view.
+- **Practice:** waits for each target (`src/core/practice/waitSession.ts`), with a hand selector:
+  - _Right hand:_ each melody note. When a note starts a new chord, the left-hand voicing rolls
+    in.
+  - _Left hand:_ each chord, recognised from the notes you hold, in any octave or inversion. The
+    melody of that chord plays along.
+  - _Both hands:_ each melody note, and on a note that starts a new chord, that chord held too.
+
+  A right note counts a hit and moves on. A note in neither hand's part counts a miss and
+  flashes red. Clicking a bar moves the target there; "Start over" resets. Finished attempts are
+  saved locally (`src/state/progress.ts`) for the progress view.
+
+## Chords and drills
+
+- `/chords` is the chord library: pick a root and one of 18 qualities to see the formula, the
+  interval names and the spelled notes. Switch voicing style (close, open, drop 2, shell,
+  rootless) and inversion, hear it block or broken, and play it back: the page says when the
+  notes you hold make the chord. The selection lives in the URL, so a chord can be linked.
+- `/chords/drill` runs rounds of ten prompts ("E♭ major 7th, second inversion"). Choose the
+  qualities, naturals or all 12 roots, inversions on or off, and how strict to be:
+  - _Any voicing:_ all the chord tones, any octave, doublings allowed.
+  - _Right bass:_ as above, with the asked-for note at the bottom.
+  - _Exact notes:_ exactly the written voicing, starting from the given lowest note.
+
+  Wrong notes flash red and spoil the "clean" score for that chord. "Show me" lights the chord,
+  "Hear it" plays it, "Skip" moves on. Each round's result is saved locally.
+
+Chord recognition (`src/core/practice/chordMatch.ts`) compares the held notes with the target at
+the chosen strictness. A match must hold steady briefly before it counts, so rolling a chord or
+brushing a wrong key is judged on the final shape. Timed modes can also require all tones within
+a press window (used from phase 4).
+
+**MIDI:** the keyboard dock has a "Connect MIDI" button on every page. Once connected, MIDI
+reconnects on the next visit, and the dock shows the device and the sustain pedal.
 
 ## Tuning the mix
 
