@@ -16,13 +16,20 @@ import { KeyboardDock } from '@/ui/keyboard';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { Score } from './Score';
 import { SongController, type SongMode } from './SongController';
+import type { PracticeHands } from '@/core/practice';
 import styles from './SongPage.module.css';
 
 const PRACTICE_HANDS = [
   { value: 'rh', label: 'Right hand' },
-  { value: 'lh', label: 'Left hand', disabled: true },
-  { value: 'both', label: 'Both hands', disabled: true },
-] as const;
+  { value: 'lh', label: 'Left hand' },
+  { value: 'both', label: 'Both hands' },
+] as const satisfies readonly { value: PracticeHands; label: string }[];
+
+const HAND_NOTES: Record<PracticeHands, string> = {
+  rh: 'Play the melody. The left hand rolls in on each new chord.',
+  lh: 'Play each chord, in any octave or inversion. The melody plays along.',
+  both: 'Play the melody, and hold each new chord with it.',
+};
 
 const MODES = [
   { value: 'listen', label: 'Listen' },
@@ -81,9 +88,11 @@ function SongPlayer({ lessonId }: { lessonId: string }) {
   const practice = snap.mode === 'practice';
   const playing = snap.transport === 'playing';
   const target = practice ? ctrl.target : null;
-  const focus: [number, number] | undefined = target?.note
-    ? [target.note.midi - 7, target.note.midi + 7]
-    : [62, 76];
+  const focus: [number, number] = !target
+    ? [62, 76]
+    : target.kind === 'note'
+      ? [target.note.note!.midi - 7, target.note.note!.midi + 7]
+      : [target.chord.voicing[0]!.midi, target.chord.voicing.at(-1)!.midi];
 
   return (
     <>
@@ -147,13 +156,13 @@ function SongPlayer({ lessonId }: { lessonId: string }) {
           <div className={styles.row}>
             <Segmented
               label="Practice hand"
-              value="rh"
+              value={snap.hands}
               options={PRACTICE_HANDS}
-              onChange={() => {}}
+              onChange={(h) => ctrl.setHands(h)}
               describedBy="practice-hand-note"
             />
             <span id="practice-hand-note" className={styles.note}>
-              Left hand and both hands arrive with chord practice.
+              {HAND_NOTES[snap.hands]}
             </span>
           </div>
         ) : null}
@@ -209,8 +218,8 @@ function SongPlayer({ lessonId }: { lessonId: string }) {
         currentBar={snap.bar}
         activeChipId={snap.activeChipId}
         targetChipId={snap.targetChipId}
-        targetBar={target?.barIndex ?? -1}
-        targetIndexInBar={target?.indexInBar ?? 0}
+        targetChordId={snap.targetChordId}
+        targetBeat={snap.targetBeat}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
       <KeyboardDock focus={focus} showTarget={practice} />

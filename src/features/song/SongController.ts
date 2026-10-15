@@ -1,9 +1,16 @@
 import { MIX, mixVelocity } from '@config/mix';
 import type { Transport, TransportState } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
-import type { CompiledLesson, CompiledNote } from '@/core/content/compile';
+import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
 import type { NoteStream } from '@/core/input';
-import { barAt, chordAt, rhNoteAt, WaitSession } from '@/core/practice';
+import {
+  barAt,
+  chordAt,
+  rhNoteAt,
+  WaitSession,
+  type PracticeHands,
+  type PracticeTarget,
+} from '@/core/practice';
 import type { KeyLights } from '@/state/keyLights';
 import { WRONG_FLASH_MS } from '@/state/keyLights';
 
@@ -22,7 +29,14 @@ export interface SongSnapshot {
   activeChipId: string | null;
   /** Practice: index of the target among the melody notes. */
   targetIndex: number;
+  /** Practice: which hands are practised. */
+  hands: PracticeHands;
+  /** Practice: the target melody chip (right hand, both hands). */
   targetChipId: string | null;
+  /** Practice: the target chord (left hand). */
+  targetChordId: string | null;
+  /** Practice: beat of the target; chips before it show as done. */
+  targetBeat: number;
   hits: number;
   misses: number;
   /** Set after the last note in Practice, until the next press or reset. */
@@ -71,7 +85,10 @@ export class SongController {
       bar: 0,
       activeChipId: null,
       targetIndex: 0,
+      hands: 'rh',
       targetChipId: null,
+      targetChordId: null,
+      targetBeat: 0,
       hits: 0,
       misses: 0,
       finished: null,
@@ -87,9 +104,19 @@ export class SongController {
     return this.snap;
   }
 
-  /** The current practice target (melody note). */
-  get target(): CompiledNote | null {
+  /** The current practice target. */
+  get target(): PracticeTarget | null {
     return this.session.target;
+  }
+
+  /** Practice the right hand, the left hand (chords) or both. Keeps the place in the song. */
+  setHands(hands: PracticeHands): void {
+    if (hands === this.session.hands) return;
+    const beat = this.session.target?.startBeat ?? 0;
+    this.session = new WaitSession(this.compiled, hands, this.compiled.lesson.rules.strictness);
+    this.session.goToBeat(beat);
+    this.set({ hands, finished: null, hits: 0, misses: 0 });
+    if (this.snap.mode === 'practice') this.renderPractice();
   }
 
   subscribe = (l: () => void): (() => void) => {
@@ -212,7 +239,7 @@ export class SongController {
     } else {
       const target = this.session.target;
       this.clearLights();
-      this.set({ mode, targetChipId: null, finished: null, announcement: '' });
+      this.set({ mode, targetChipId: null, targetChordId: null, finished: null, announcement: '' });
       if (target) t.seek(this.compiled.bars[target.barIndex]!.startBeat);
       else t.stop();
     }
@@ -222,16 +249,53 @@ export class SongController {
 
   hearIt(): void {
     const target = this.session.target;
-    if (this.snap.mode !== 'practice' || !target?.note) return;
+    if (this.snap.mode !== 'practice' || !target) return;
     void this.s.audio.unlock();
+    if (target.kind === 'chord') {
+      this.rollChord(target.chord);
+      for (const n of target.chord.voicing) this.s.lights.flash(n.midi, 'press', 400);
+      return;
+    }
+    const midi = target.note.note!.midi;
     const { hearItLengthSec, hearItVelocity } = MIX.practice;
     this.s.audio.playAt(
-      target.note.midi,
+      midi,
       this.s.audio.now() + 0.01,
       hearItLengthSec,
       mixVelocity('rh', hearItVelocity),
     );
-    this.s.lights.flash(target.note.midi, 'press', 400);
+    this.s.lights.flash(midi, 'press', 400);
+  }
+
+  private rollChord(chord: CompiledChord): void {
+    const t0 = this.s.audio.now() + 0.01;
+    const p = MIX.practice;
+    chord.voicing.forEach((n, i) =>
+      this.s.audio.playAt(
+        n.midi,
+        t0 + i * p.rollGapSec,
+        p.rollLengthSec,
+        mixVelocity('lh', i === 0 ? p.rollRootVelocity : p.rollVelocity),
+      ),
+    );
+  }
+
+  /** Left-hand practice: play the melody of a chord segment you just played, at the current tempo. */
+  private playSegmentMelody(chord: CompiledChord): void {
+    const bar = this.compiled.bars[chord.barIndex];
+    if (!bar) return;
+    const t0 = this.s.audio.now() + 0.02;
+    const spb = 60 / this.snap.tempo;
+    const end = chord.startBeat + chord.beats;
+    for (const n of bar.rh) {
+      if (!n.note || n.startBeat < chord.startBeat - 1e-9 || n.startBeat >= end - 1e-9) continue;
+      this.s.audio.playAt(
+        n.note.midi,
+        t0 + (n.startBeat - chord.startBeat) * spb,
+        n.beats * MIX.melody.legato * spb,
+        mixVelocity('rh', n.velocity),
+      );
+    }
   }
 
   startOver(): void {
@@ -243,7 +307,7 @@ export class SongController {
 
   private onPress(midi: number): void {
     if (this.snap.mode !== 'practice') return;
-    const r = this.session.press(midi);
+    const r = this.session.press(midi, this.s.notes.held());
     if (r.kind === 'miss') {
       this.s.lights.flash(midi, 'wrong', WRONG_FLASH_MS);
       this.set({
@@ -253,18 +317,8 @@ export class SongController {
       return;
     }
     if (r.kind !== 'hit') return;
-    if (r.roll && this.snap.lhOn) {
-      const t0 = this.s.audio.now() + 0.01;
-      const p = MIX.practice;
-      r.roll.voicing.forEach((n, i) =>
-        this.s.audio.playAt(
-          n.midi,
-          t0 + i * p.rollGapSec,
-          p.rollLengthSec,
-          mixVelocity('lh', i === 0 ? p.rollRootVelocity : p.rollVelocity),
-        ),
-      );
-    }
+    if (r.roll && this.snap.lhOn) this.rollChord(r.roll);
+    if (r.segment && this.snap.rhOn) this.playSegmentMelody(r.segment);
     if (r.finished) {
       this.s.onFinished?.(r.finished);
       this.set({
@@ -284,13 +338,24 @@ export class SongController {
   private renderPractice(): void {
     const target = this.session.target;
     const chord = this.session.targetChord;
+    const voicing = chord ? chord.voicing.map((n) => n.midi) : [];
     const { lights } = this.s;
     lights.clear('rh');
-    lights.setExactly('target', target?.note ? [target.note.midi] : []);
-    lights.setExactly('lh', this.snap.lhOn && chord ? chord.voicing.map((n) => n.midi) : []);
+    if (target?.kind === 'chord') {
+      lights.setExactly('target', []);
+      lights.setExactly('lh', []);
+      lights.setExactly('chordTarget', voicing);
+    } else {
+      const showChord = this.session.hands === 'both' || this.snap.lhOn;
+      lights.setExactly('chordTarget', []);
+      lights.setExactly('target', target ? [target.note.note!.midi] : []);
+      lights.setExactly('lh', showChord ? voicing : []);
+    }
     this.set({
       targetIndex: this.session.index,
-      targetChipId: target?.id ?? null,
+      targetChipId: target?.kind === 'note' ? target.id : null,
+      targetChordId: target?.kind === 'chord' ? target.id : null,
+      targetBeat: target?.startBeat ?? 0,
       hits: this.session.hits,
       misses: this.session.misses,
       bar: target?.barIndex ?? 0,
@@ -340,6 +405,6 @@ export class SongController {
   }
 
   private clearLights(): void {
-    for (const l of ['rh', 'lh', 'target'] as const) this.s.lights.clear(l);
+    for (const l of ['rh', 'lh', 'target', 'chordTarget'] as const) this.s.lights.clear(l);
   }
 }

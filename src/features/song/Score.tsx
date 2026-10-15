@@ -19,10 +19,10 @@ export interface ScoreProps {
   currentBar: number;
   /** Listen: chip under the playhead. */
   activeChipId: string | null;
-  /** Practice: the target chip and its position. */
+  /** Practice: the target chip (melody) or chord (left hand), and its beat. */
   targetChipId: string | null;
-  targetBar: number;
-  targetIndexInBar: number;
+  targetChordId: string | null;
+  targetBeat: number;
   onSelectBar: (index: number) => void;
 }
 
@@ -48,19 +48,15 @@ export function Score(props: ScoreProps) {
           <div className={styles.grid}>
             {sec.bars.map((bar) => {
               const isCurrent = bar.index === currentBar;
-              const doneCount =
-                mode !== 'practice'
-                  ? 0
-                  : bar.index < props.targetBar
-                    ? bar.rh.length
-                    : bar.index === props.targetBar
-                      ? props.targetIndexInBar
-                      : 0;
+              const doneBefore = mode === 'practice' ? props.targetBeat : -Infinity;
               const activeId = props.activeChipId?.startsWith(`rh-${bar.index}-`)
                 ? props.activeChipId
                 : null;
               const targetId = props.targetChipId?.startsWith(`rh-${bar.index}-`)
                 ? props.targetChipId
+                : null;
+              const targetChordId = props.targetChordId?.startsWith(`chord-${bar.index}-`)
+                ? props.targetChordId
                 : null;
               return (
                 <BarCard
@@ -75,7 +71,8 @@ export function Score(props: ScoreProps) {
                   current={isCurrent}
                   activeId={activeId}
                   targetId={targetId}
-                  doneCount={doneCount}
+                  doneBefore={doneBefore}
+                  targetChordId={targetChordId}
                   onSelect={props.onSelectBar}
                 />
               );
@@ -97,7 +94,9 @@ interface BarCardProps {
   current: boolean;
   activeId: string | null;
   targetId: string | null;
-  doneCount: number;
+  targetChordId: string | null;
+  /** Chips that start before this beat show as done. */
+  doneBefore: number;
   onSelect: (index: number) => void;
 }
 
@@ -113,7 +112,8 @@ const BarCard = memo(
       current,
       activeId,
       targetId,
-      doneCount,
+      targetChordId,
+      doneBefore,
       onSelect,
     }: BarCardProps,
     ref,
@@ -146,20 +146,23 @@ const BarCard = memo(
             <span
               key={c.id}
               className={styles.chord}
+              data-state={c.id === targetChordId ? 'target' : undefined}
               style={{ flexGrow: c.beats, flexBasis: 0, fontSize: `${0.82 + c.beats * 0.1}rem` }}
             >
-              {formatChord(c.symbol, keyContext, notation)}
+              <span className={styles.chordText}>
+                {formatChord(c.symbol, keyContext, notation)}
+              </span>
             </span>
           ))}
         </div>
         <div className={styles.chips} aria-hidden="true">
-          {bar.rh.map((n, i) => {
+          {bar.rh.map((n) => {
             const state =
               n.id === activeId
                 ? 'active'
                 : n.id === targetId
                   ? 'target'
-                  : i < doneCount
+                  : n.startBeat < doneBefore - 1e-9
                     ? 'done'
                     : undefined;
             return (
