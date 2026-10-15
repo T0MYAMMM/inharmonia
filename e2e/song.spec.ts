@@ -1,0 +1,104 @@
+import { expect, test, type Page } from '@playwright/test';
+import { openDisplaySettings } from './helpers';
+
+const SONG = 'songs/senja-di-teras';
+
+async function open(page: Page) {
+  await page.goto(SONG);
+  await expect(page.getByRole('heading', { name: 'Senja di Teras' })).toBeVisible();
+}
+
+const lit = (page: Page, layer: string) =>
+  page.$$eval(`[data-layers~="${layer}"]`, (els) =>
+    els.map((e) => Number((e as HTMLElement).dataset.midi)),
+  );
+
+test.describe('song player', () => {
+  test('lists the song and opens it', async ({ page }) => {
+    await page.goto('songs');
+    await page.getByRole('link', { name: /Senja di Teras/ }).click();
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 1 of 16, Dmaj7');
+    await expect(page.getByRole('heading', { name: 'Verse' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chorus' })).toBeVisible();
+  });
+
+  test('listen: plays, lights melody amber and the chord dusk, pauses', async ({ page }) => {
+    await open(page);
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+    await expect.poll(() => lit(page, 'lh')).toEqual([38, 45, 49, 54]); // Dmaj7 voicing
+    await expect.poll(async () => (await lit(page, 'rh')).length).toBe(1);
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Play');
+    await expect(page.locator('[data-state="active"]')).toHaveCount(1); // stays marked when paused
+    await expect.poll(() => lit(page, 'lh')).toEqual([]); // nothing lit when not playing
+  });
+
+  test('listen: Space toggles play only when the page itself has focus', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'keyboard shortcut');
+    await open(page);
+    await page.locator('body').click({ position: { x: 2, y: 300 } });
+    await page.keyboard.press('Space');
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+    await page.getByRole('radio', { name: 'Listen' }).focus();
+    await page.keyboard.press('Space'); // on a control: the control handles it, playback keeps going
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+  });
+
+  test('listen: a bar starts playback from that bar, by click or keyboard', async ({ page }) => {
+    await open(page);
+    await page.locator('[data-bar="4"]').click();
+    await expect(page.getByTestId('status-line')).toContainText('Bar 5 of 16');
+    await page.locator('[data-bar="12"]').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 13 of 16');
+  });
+
+  test('practice: waits for the right note, counts hits and misses', async ({ page, isMobile }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await expect(page.getByTestId('play')).toBeDisabled();
+    await expect.poll(() => lit(page, 'target')).toEqual([69]); // A4
+    const counts = page.getByTestId('counts');
+    const pressKey = async (midi: number) => {
+      const key = page.locator(`[data-midi="${midi}"]`);
+      await key.scrollIntoViewIfNeeded();
+      const box = (await key.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height - 12);
+      await page.mouse.down();
+      await page.mouse.up();
+    };
+    await pressKey(60); // wrong
+    await expect(counts).toHaveText('0 hits, 1 miss');
+    await expect.poll(() => lit(page, 'target')).toEqual([69]);
+    await pressKey(69); // A4, right
+    await expect(counts).toHaveText('1 hit, 1 miss');
+    await expect.poll(() => lit(page, 'target')).toEqual([66]); // F#4
+    await expect(page.locator('[data-state="done"]')).toHaveCount(1);
+    if (!isMobile) {
+      await page.keyboard.press('t'); // F#4 on the computer keyboard
+      await expect(counts).toHaveText('2 hits, 1 miss');
+    }
+    await page.getByRole('button', { name: 'Start over' }).click();
+    await expect(counts).toHaveText('0 hits, 0 misses');
+  });
+
+  test('practice: clicking a bar moves the target there', async ({ page }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await page.locator('[data-bar="8"]').click();
+    await expect(page.locator('[data-state="target"]')).toHaveAttribute('data-chip', 'rh-8-0');
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 9 of 16, Gmaj7');
+  });
+
+  test('not angka shows the do header and digits', async ({ page }) => {
+    await open(page);
+    await openDisplaySettings(page);
+    await page.getByRole('radio', { name: 'Not angka' }).click();
+    await expect(page.getByText('do = D')).toBeVisible();
+    await expect(page.locator('[data-chip="rh-0-0"]')).toHaveText('5'); // A4 in D
+  });
+});
