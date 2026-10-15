@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Segmented } from '@/ui/Segmented';
 import { useSettings, type ThemeChoice } from '@/state/settings';
 import type { NotationSystem } from '@/core/notation';
@@ -19,6 +19,7 @@ const NOTATIONS = [
 
 const NAV = [
   { to: '/', label: 'Practice room', end: true },
+  { to: '/songs', label: 'Songs', end: false },
   { to: '/keyboard', label: 'Keyboard', end: false },
   { to: '/about', label: 'About', end: false },
 ];
@@ -30,6 +31,8 @@ export function Layout() {
   const mainRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   const first = useRef(true);
+  const [displayOpen, setDisplayOpen] = useState(false);
+  const controlsId = useId();
 
   // Move focus to the page on navigation so screen readers announce the new page.
   useEffect(() => {
@@ -58,7 +61,16 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className={styles.controls}>
+          <button
+            type="button"
+            className={styles.displayToggle}
+            aria-expanded={displayOpen}
+            aria-controls={controlsId}
+            onClick={() => setDisplayOpen((o) => !o)}
+          >
+            Display
+          </button>
+          <div id={controlsId} className={styles.controls} data-open={displayOpen || undefined}>
             <Segmented
               label="Note names"
               value={notation}
