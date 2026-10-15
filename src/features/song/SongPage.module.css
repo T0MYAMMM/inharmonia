@@ -50,6 +50,11 @@
   color: var(--dusk);
 }
 
+.note {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .counts {
   color: var(--muted);
 }

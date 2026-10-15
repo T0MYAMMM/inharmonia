@@ -37,3 +37,12 @@
   color: var(--ink);
   box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
 }
+
+.option[aria-disabled='true'] {
+  color: color-mix(in srgb, var(--muted) 55%, transparent);
+  cursor: not-allowed;
+}
+
+.option[aria-disabled='true']:hover {
+  color: color-mix(in srgb, var(--muted) 55%, transparent);
+}

@@ -94,6 +94,43 @@ describe('Segmented', () => {
   });
 });
 
+describe('Segmented with disabled options', () => {
+  it('shows them as disabled, ignores clicks and skips them with arrow keys', async () => {
+    const user = userEvent.setup();
+    function Demo() {
+      const [v, setV] = useState<'rh' | 'lh' | 'both' | 'x'>('rh');
+      return (
+        <>
+          <Segmented
+            label="Hand"
+            value={v}
+            onChange={setV}
+            describedBy="why"
+            options={[
+              { value: 'rh', label: 'Right' },
+              { value: 'lh', label: 'Left', disabled: true },
+              { value: 'both', label: 'Both', disabled: true },
+              { value: 'x', label: 'Other' },
+            ]}
+          />
+          <p id="why">Coming later</p>
+        </>
+      );
+    }
+    render(<Demo />);
+    expect(screen.getByRole('radiogroup', { name: 'Hand' })).toHaveAccessibleDescription(
+      'Coming later',
+    );
+    const left = screen.getByRole('radio', { name: 'Left' });
+    expect(left).toHaveAttribute('aria-disabled', 'true');
+    await user.click(left);
+    expect(screen.getByRole('radio', { name: 'Right' })).toBeChecked();
+    screen.getByRole('radio', { name: 'Right' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('radio', { name: 'Other' })).toBeChecked();
+  });
+});
+
 describe('Toggle', () => {
   it('reports pressed state', async () => {
     const user = userEvent.setup();
