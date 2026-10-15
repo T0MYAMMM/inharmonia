@@ -27,7 +27,7 @@ export function KeyboardDock({
   const showHints = useSettings((s) => s.showKeyHints);
   const base = BASE_MIDI + 12 * shift;
   return (
-    <aside className={styles.dock} aria-label="Keyboard">
+    <aside className={styles.dock} aria-label="Keyboard" data-dock>
       <div className={styles.inner}>
         <div className={styles.legend}>
           <span className={styles.swatch} style={{ '--c': 'var(--amber)' } as CSSProperties}>

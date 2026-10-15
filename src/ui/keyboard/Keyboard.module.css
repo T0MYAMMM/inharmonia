@@ -21,6 +21,7 @@
 @media (max-width: 600px) {
   .keyboard {
     --w: 30px;
+    --key-h: 108px;
   }
 }
 
@@ -120,9 +121,14 @@
   border-color: var(--amber);
 }
 
-.key[data-layers~='target'] {
-  box-shadow: inset 0 0 0 3px var(--amber);
-  animation: pulse var(--pulse-ms) ease-in-out infinite;
+.white[data-layers~='target'],
+.black[data-layers~='target'] {
+  background: var(--amber);
+  color: var(--on-amber);
+  border-color: var(--amber);
+  box-shadow:
+    inset 0 0 0 3px var(--surface),
+    inset 0 0 0 5px var(--on-amber);
 }
 
 .key[data-layers~='wrong'] {
@@ -130,22 +136,4 @@
   border-color: var(--wrong) !important;
   color: #fff !important;
   animation: none;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    box-shadow: inset 0 0 0 3px var(--amber);
-  }
-  50% {
-    box-shadow:
-      inset 0 0 0 3px var(--amber),
-      0 0 0 4px color-mix(in srgb, var(--amber) 35%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .key[data-layers~='target'] {
-    animation: none;
-  }
 }

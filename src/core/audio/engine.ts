@@ -1,4 +1,5 @@
 import type * as ToneNS from 'tone';
+import { MIX, mixVelocity } from '@config/mix';
 import { loadSample } from './sampleLoader';
 import { pickSampleFormat, sampleUrls } from './samples';
 import type { TransportSink } from './transport';
@@ -184,6 +185,7 @@ export class AudioEngine {
       return;
     }
     if (this.held.has(midi)) this.noteOff(midi);
+    velocity = mixVelocity('live', velocity);
     const t = Tone.immediate();
     const freq = midiToFreq(midi);
     if (this.sampler) {
@@ -217,7 +219,13 @@ export class AudioEngine {
   }
 
   click(time: number, accent: boolean): void {
-    this.clickSynth?.triggerAttackRelease(accent ? 1760 : 1320, 0.03, time, accent ? 0.9 : 0.55);
+    const v = accent ? MIX.metronome.accentVelocity : MIX.metronome.velocity;
+    this.clickSynth?.triggerAttackRelease(
+      accent ? 1760 : 1320,
+      0.03,
+      time,
+      mixVelocity('metronome', v),
+    );
   }
 
   releaseAll(): void {
@@ -235,7 +243,7 @@ export class AudioEngine {
   sink(): TransportSink {
     return {
       note: (ev: TimelineEvent, time: number, dur: number) =>
-        this.playAt(ev.midi, time, dur, ev.velocity),
+        this.playAt(ev.midi, time, dur, mixVelocity(ev.channel, ev.velocity)),
       click: (time, accent) => this.click(time, accent),
       silence: () => this.releaseAll(),
     };

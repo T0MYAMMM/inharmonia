@@ -52,11 +52,11 @@
 }
 
 .dotsAbove {
-  bottom: calc(100% - 0.28em);
+  bottom: calc(100% - 0.22em);
 }
 
 .dotsBelow {
-  top: calc(100% - 0.28em);
+  top: calc(100% - 0.22em);
 }
 
 .dot {

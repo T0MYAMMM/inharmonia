@@ -6,6 +6,10 @@ import type { NoteStream } from './noteStream';
  * glissando: dragging a pressed pointer across keys moves the note with it.
  * Velocity comes from how far down the key you press (lower = louder), the
  * way a real key responds more the closer you strike to its front edge.
+ *
+ * Notes sustain while held, so every way a release can be lost ends the note:
+ * pointerup, pointercancel (the browser took the gesture, e.g. to scroll),
+ * lostpointercapture (capture was taken away), window blur, and unbinding.
  */
 export function bindPointerInput(
   container: HTMLElement,
@@ -47,10 +51,15 @@ export function bindPointerInput(
     if (!key || !container.contains(key)) return;
     opts.onGesture?.();
     e.preventDefault();
-    // Touch pointers are implicitly captured by the pressed key; release it so
-    // a sliding finger hit-tests the key underneath (glissando).
-    const t = e.target as Element;
-    if (t.hasPointerCapture?.(e.pointerId)) t.releasePointerCapture(e.pointerId);
+    // Capture on the keyboard itself (touch would otherwise capture to the
+    // pressed key). Moves keep arriving here and are hit-tested against the key
+    // under the finger, which is what makes glissando work; losing this capture
+    // means the release will not arrive, so it ends the note.
+    try {
+      container.setPointerCapture?.(e.pointerId);
+    } catch {
+      /* pointer already gone */
+    }
     start(key, e);
   };
 
@@ -64,22 +73,26 @@ export function bindPointerInput(
     if (key) start(key, e);
   };
 
-  const onUp = (e: PointerEvent) => end(e.pointerId);
-  const onLeaveWindow = () => {
+  const onEnd = (e: PointerEvent) => end(e.pointerId);
+  const releaseAll = () => {
     for (const id of [...active.keys()]) end(id);
   };
 
   container.addEventListener('pointerdown', onDown);
+  container.addEventListener('lostpointercapture', onEnd);
+  container.addEventListener('pointercancel', onEnd);
   window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
-  window.addEventListener('pointercancel', onUp);
-  window.addEventListener('blur', onLeaveWindow);
+  window.addEventListener('pointerup', onEnd);
+  window.addEventListener('pointercancel', onEnd);
+  window.addEventListener('blur', releaseAll);
   return () => {
-    onLeaveWindow();
+    releaseAll();
     container.removeEventListener('pointerdown', onDown);
+    container.removeEventListener('lostpointercapture', onEnd);
+    container.removeEventListener('pointercancel', onEnd);
     window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    window.removeEventListener('pointercancel', onUp);
-    window.removeEventListener('blur', onLeaveWindow);
+    window.removeEventListener('pointerup', onEnd);
+    window.removeEventListener('pointercancel', onEnd);
+    window.removeEventListener('blur', releaseAll);
   };
 }

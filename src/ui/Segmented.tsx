@@ -4,6 +4,8 @@ import styles from './Segmented.module.css';
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
+  /** Shown but not selectable; arrow keys skip it. */
+  disabled?: boolean;
 }
 
 export interface SegmentedProps<T extends string> {
@@ -12,6 +14,8 @@ export interface SegmentedProps<T extends string> {
   options: readonly SegmentedOption<T>[];
   onChange: (value: T) => void;
   className?: string;
+  /** id of an element that explains the group, e.g. why options are disabled. */
+  describedBy?: string;
 }
 
 /** Pill-shaped radio group. Arrow keys move between options, like native radios. */
@@ -21,6 +25,7 @@ export function Segmented<T extends string>({
   options,
   onChange,
   className,
+  describedBy,
 }: SegmentedProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const onKeyDown = (e: KeyboardEvent, i: number) => {
@@ -32,7 +37,12 @@ export function Segmented<T extends string>({
           : 0;
     if (!delta) return;
     e.preventDefault();
-    const next = (i + delta + options.length) % options.length;
+    let next = i;
+    for (let step = 0; step < options.length; step++) {
+      next = (next + delta + options.length) % options.length;
+      if (!options[next]!.disabled) break;
+    }
+    if (next === i) return;
     onChange(options[next]!.value);
     refs.current[next]?.focus();
   };
@@ -40,6 +50,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
+      aria-describedby={describedBy}
       className={[styles.group, className].filter(Boolean).join(' ')}
     >
       {options.map((o, i) => {
@@ -53,9 +64,10 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            aria-disabled={o.disabled || undefined}
             tabIndex={checked ? 0 : -1}
             className={styles.option}
-            onClick={() => onChange(o.value)}
+            onClick={() => !o.disabled && onChange(o.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
           >
             {o.label}
