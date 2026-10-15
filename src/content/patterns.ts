@@ -9,12 +9,13 @@ export const ARPEGGIO_8THS: PatternSpec = {
   name: 'Broken chord in 8ths',
   cycleBeats: 4,
   // 1-2-3-4-3-2-3-4, each note held until the chord changes (pedal feel).
+  // The first note of each chord segment is louder.
   steps: [0, 1, 2, 3, 2, 1, 2, 3].map((v, i) => ({
     at: i * 0.5,
     dur: 'chord' as const,
     voices: [v],
+    velocity: i === 0 ? 0.26 : 0.13,
   })),
-  rootAccent: 1.45,
 };
 
 export const PATTERNS: Readonly<Record<string, PatternSpec>> = {

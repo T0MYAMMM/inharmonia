@@ -109,7 +109,7 @@ describe('Senja di Teras', () => {
     expect(SENJA_DI_TERAS.bars).toHaveLength(16);
   });
 
-  it('compiles with the brief’s A and D voicings and an 8th-note arpeggio', () => {
+  it('compiles with the prototype voicings and an 8th-note arpeggio', () => {
     const c = compileLesson(SENJA_DI_TERAS, PATTERNS);
     expect(c.lengthBeats).toBe(64);
     const a = c.chords.find((x) => x.symbol === 'A')!;
@@ -122,5 +122,24 @@ describe('Senja di Teras', () => {
     ]);
     expect(c.bars[0]!.rh.map((n) => n.note!.name)).toEqual(['A4', 'F#4', 'E4', 'F#4', 'A4']);
     expect(c.bars[15]!.rh.at(-1)).toMatchObject({ startBeat: 62, beats: 2 });
+    expect(c.chords[0]!.voicing.map((n) => n.name)).toEqual(['D2', 'A2', 'C#3', 'F#3']);
+    expect(c.chords.find((x) => x.symbol === 'A/C#')!.voicing.map((n) => n.name)).toEqual([
+      'C#2',
+      'A2',
+      'C#3',
+      'E3',
+    ]);
+  });
+
+  it('uses the prototype playback levels', () => {
+    const c = compileLesson(SENJA_DI_TERAS, PATTERNS);
+    const rh = c.events.filter((e) => e.channel === 'rh');
+    expect(rh[0]).toMatchObject({ velocity: 0.4, dur: 0.95 });
+    const lh = c.events.filter((e) => e.channel === 'lh' && e.beat < 4);
+    expect(lh.map((e) => e.velocity)).toEqual([0.26, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13]);
+    expect(c.bars.filter((b) => b.section).map((b) => [b.index, b.section])).toEqual([
+      [0, 'Verse'],
+      [8, 'Chorus'],
+    ]);
   });
 });
