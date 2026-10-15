@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openDisplaySettings } from './helpers';
 
 test.describe('smoke', () => {
   test('home page loads and links to the keyboard', async ({ page }) => {
@@ -19,10 +20,12 @@ test.describe('smoke', () => {
 
   test('theme toggle sets data-theme and persists', async ({ page }) => {
     await page.goto('./');
+    await openDisplaySettings(page);
     await page.getByRole('radio', { name: 'Dark' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await openDisplaySettings(page);
     await page.getByRole('radio', { name: 'Auto' }).click();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
   });
