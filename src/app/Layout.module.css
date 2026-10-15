@@ -74,10 +74,52 @@
   gap: 8px;
 }
 
+.displayToggle {
+  display: none;
+}
+
 @media (max-width: 720px) {
+  .header {
+    padding-bottom: 6px;
+  }
+
+  .headerInner {
+    gap: 8px 12px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    margin-left: -12px;
+  }
+
+  .displayToggle {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .displayToggle[aria-expanded='true'] {
+    border-color: var(--ink);
+  }
+
   .controls {
+    display: none;
+    order: 4;
     margin-left: 0;
     width: 100%;
+  }
+
+  .controls[data-open] {
+    display: flex;
   }
 }
 
