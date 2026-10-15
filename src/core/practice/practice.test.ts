@@ -20,11 +20,19 @@ describe('song view lookups', () => {
 });
 
 describe('WaitSession on Senja di Teras', () => {
-  const midiOf = (s: WaitSession) => s.target!.note!.midi;
+  const midiOf = (s: WaitSession) => {
+    const t = s.target!;
+    if (t.kind !== 'note') throw new Error('expected a note target');
+    return t.note.note!.midi;
+  };
+  const noteName = (s: WaitSession) => {
+    const t = s.target!;
+    return t.kind === 'note' ? t.note.note!.name : null;
+  };
 
   it('starts on the first melody note and counts hits and misses', () => {
     const s = new WaitSession(senja);
-    expect(s.target!.note!.name).toBe('A4');
+    expect(noteName(s)).toBe('A4');
     const miss = s.press(60);
     expect(miss.kind).toBe('miss');
     expect(s.index).toBe(0);
@@ -32,7 +40,7 @@ describe('WaitSession on Senja di Teras', () => {
     const hit = s.press(midiOf(s));
     expect(hit).toMatchObject({ kind: 'hit' });
     expect(s.hits).toBe(1);
-    expect(s.target!.note!.name).toBe('F#4');
+    expect(noteName(s)).toBe('F#4');
   });
 
   it('rolls a chord only when the target starts a new chord segment', () => {
@@ -68,10 +76,58 @@ describe('WaitSession on Senja di Teras', () => {
     s.press(1);
     s.goToBar(8);
     expect(s.target!.barIndex).toBe(8);
-    expect(s.target!.note!.name).toBe('D5');
+    expect(noteName(s)).toBe('D5');
     expect(s.misses).toBe(1);
     s.goToBeat(13.5);
     expect(s.target!.barIndex).toBe(3);
-    expect(s.target!.indexInBar).toBe(0);
+    expect(s.target!.startBeat).toBe(12);
+  });
+});
+
+describe('WaitSession, left hand', () => {
+  it('targets each chord segment and recognises it from held notes', () => {
+    const s = new WaitSession(senja, 'lh');
+    expect(s.targets.map((t) => t.kind)).toEqual(Array(senja.chords.length).fill('chord'));
+    // Dmaj7 (D F# A C#): build it one note at a time, in any octave.
+    expect(s.press(50, [50])).toMatchObject({ kind: 'progress', missing: 3 });
+    expect(s.press(54, [50, 54])).toMatchObject({ kind: 'progress', missing: 2 });
+    expect(s.press(57, [50, 54, 57])).toMatchObject({ kind: 'progress', missing: 1 });
+    const hit = s.press(73, [50, 54, 57, 73]);
+    expect(hit).toMatchObject({ kind: 'hit', segment: { symbol: 'Dmaj7' }, roll: null });
+    expect(s.target).toMatchObject({ kind: 'chord', chord: { symbol: 'Bm7' } });
+  });
+
+  it('counts a non-chord tone as a miss', () => {
+    const s = new WaitSession(senja, 'lh');
+    expect(s.press(51, [51]).kind).toBe('miss'); // D# is not in Dmaj7
+    expect(s.misses).toBe(1);
+  });
+
+  it('respects inversion strictness (A/C# needs C# in the bass)', () => {
+    const s = new WaitSession(senja, 'lh', 'inversion');
+    s.goToBar(13);
+    expect(s.target).toMatchObject({ chord: { symbol: 'A/C#' } });
+    expect(s.press(64, [57, 61, 64]).kind).toBe('progress'); // A in the bass
+    expect(s.press(64, [49, 57, 64]).kind).toBe('hit');
+  });
+});
+
+describe('WaitSession, both hands', () => {
+  it('needs the chord held with the melody note when a new chord starts', () => {
+    const s = new WaitSession(senja, 'both');
+    // A4 over Dmaj7: the melody note alone is not enough.
+    expect(s.press(69, [69])).toMatchObject({ kind: 'progress' });
+    expect(s.misses).toBe(0);
+    // Chord tones are fine to add (left hand).
+    expect(s.press(50, [50, 69]).kind).toBe('progress');
+    expect(s.press(54, [50, 54, 69]).kind).toBe('progress');
+    expect(s.press(61, [50, 54, 61, 69]).kind).toBe('hit');
+    // F#4 on the same chord: the melody note alone is enough.
+    expect(s.press(66, [50, 54, 61, 66]).kind).toBe('hit');
+  });
+
+  it('a note in neither hand is a miss', () => {
+    const s = new WaitSession(senja, 'both');
+    expect(s.press(63, [63]).kind).toBe('miss');
   });
 });
