@@ -88,6 +88,34 @@
   display: inline-block;
 }
 
+.numeral {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.result {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.result[data-result='missed'] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.result[data-result='early'],
+.result[data-result='late'] {
+  color: var(--muted);
+}
+
 /* Let the target ring show outside the chord's text box. */
 .chord[data-state='target'] {
   overflow: visible;
