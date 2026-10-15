@@ -3,9 +3,6 @@
   bottom: 0;
   z-index: 20;
   margin-top: var(--space-6);
-  /* Bleed through the page's side padding so the keyboard gets the full width. */
-  margin-left: calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
-  margin-right: calc(-1 * max(var(--gutter), env(safe-area-inset-right)));
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -95,6 +92,9 @@
 
 @media (max-width: 600px) {
   .dock {
+    /* Bleed through the page's side padding so the keys get the full screen width. */
+    margin-left: calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
+    margin-right: calc(-1 * max(var(--gutter), env(safe-area-inset-right)));
     margin-top: var(--space-5);
     padding-top: 6px;
   }
