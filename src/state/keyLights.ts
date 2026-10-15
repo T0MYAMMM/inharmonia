@@ -6,9 +6,10 @@
  * whole keyboard.
  *
  * Colour meaning: `rh` and `target` are amber (right hand / what to play),
- * `lh` is dusk blue (left hand / chord tones), `wrong` flashes red.
+ * `lh` is dusk blue (left hand / chord tones), `chordTarget` is a chord to play
+ * (dusk with a ring), `wrong` flashes red.
  */
-export type KeyLayer = 'held' | 'press' | 'rh' | 'lh' | 'target' | 'wrong';
+export type KeyLayer = 'held' | 'press' | 'rh' | 'lh' | 'target' | 'chordTarget' | 'wrong';
 
 type KeyListener = (layers: ReadonlySet<KeyLayer>) => void;
 

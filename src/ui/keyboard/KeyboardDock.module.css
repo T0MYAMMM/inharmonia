@@ -3,6 +3,9 @@
   bottom: 0;
   z-index: 20;
   margin-top: var(--space-6);
+  /* Bleed through the page's side padding so the keyboard gets the full width. */
+  margin-left: calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(var(--gutter), env(safe-area-inset-right)));
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -44,6 +47,40 @@
 
 .spacer {
   flex: 1;
+}
+
+.midi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.midiDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+}
+
+.midiDot[data-on] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.midiButton {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.midiButton:hover:not(:disabled) {
+  border-color: var(--muted);
 }
 
 .keysHint {

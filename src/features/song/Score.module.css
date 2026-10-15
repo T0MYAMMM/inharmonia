@@ -84,6 +84,35 @@
   white-space: nowrap;
 }
 
+.chordText {
+  display: inline-block;
+}
+
+/* Let the target ring show outside the chord's text box. */
+.chord[data-state='target'] {
+  overflow: visible;
+}
+
+.chord[data-state='target'] .chordText {
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--dusk);
+  padding: 0 4px;
+  margin-left: -4px;
+  animation: chord-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chord-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--dusk);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--dusk),
+      0 0 0 5px color-mix(in srgb, var(--dusk) 30%, transparent);
+  }
+}
+
 .chips {
   display: flex;
   gap: 3px;
@@ -142,7 +171,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chip[data-state='target'] {
+  .chip[data-state='target'],
+  .chord[data-state='target'] .chordText {
     animation: none;
   }
 }

@@ -2,6 +2,7 @@ import { AudioEngine } from '@/core/audio/engine';
 import { Transport, WorkerTicker } from '@/core/audio';
 import { ComputerKeys, NoteStream, WebMidiInput } from '@/core/input';
 import { KeyLights, PRESS_FLASH_MS } from '@/state/keyLights';
+import { useSettings } from '@/state/settings';
 
 /**
  * App-wide singletons. Everything here is plain TypeScript; React components
@@ -52,6 +53,21 @@ midi.subscribe((s) => {
     sustained.clear();
   }
 });
+
+/** Connect MIDI from a user action and remember it, so it reconnects on the next visit. */
+export async function connectMidi(): Promise<void> {
+  await midi.enable();
+  if (midi.state.status === 'ready') {
+    const { midiInput, set } = useSettings.getState();
+    set({ midiEnabled: true });
+    if (midiInput !== 'all') midi.select(midiInput);
+  }
+}
+
+/** Reconnect MIDI on load if the player connected it before (no prompt once permission is granted). */
+export function installMidiAutoConnect(): void {
+  if (useSettings.getState().midiEnabled) void connectMidi();
+}
 
 /** Start audio on the first gesture anywhere, so the first note is not lost to loading. */
 export function installAudioUnlock(target: Window = window): () => void {

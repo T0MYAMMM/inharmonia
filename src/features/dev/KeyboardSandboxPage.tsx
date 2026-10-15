@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chord } from 'tonal';
-import { audio, getTransport, lights, midi, notes } from '@/app/services';
+import { audio, connectMidi, getTransport, lights, midi, notes } from '@/app/services';
 import { useAudioState, useHeldNotes, useMidiState } from '@/app/hooks';
 import { startVisualLoop } from '@/app/transportVisuals';
 import { formatChord, formatNote, spellInKey } from '@/core/notation';
@@ -182,7 +182,7 @@ function MidiCard() {
           Plug in a MIDI keyboard, then connect it here. Everything also works without one.
         </p>
         <div>
-          <Button onClick={() => void midi.enable()} disabled={m.status === 'requesting'}>
+          <Button onClick={() => void connectMidi()} disabled={m.status === 'requesting'}>
             Connect MIDI keyboard
           </Button>
         </div>
