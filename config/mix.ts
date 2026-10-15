@@ -39,6 +39,8 @@ export interface Mix {
     hearItVelocity: number;
     hearItLengthSec: number;
   };
+  /** Chord library and drills: "Hear it" on a chord (uses leftHand.gainDb). */
+  chords: { velocity: number; lengthSec: number; brokenGapSec: number };
   metronome: { gainDb: number; accentVelocity: number; velocity: number };
 }
 
@@ -54,6 +56,7 @@ export const MIX: Mix = {
     hearItVelocity: 0.5,
     hearItLengthSec: 0.55,
   },
+  chords: { velocity: 0.32, lengthSec: 1.8, brokenGapSec: 0.22 },
   metronome: { gainDb: 0, accentVelocity: 0.9, velocity: 0.55 },
 };
 
