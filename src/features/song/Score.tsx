@@ -1,6 +1,7 @@
 import { forwardRef, memo, useEffect, useRef, type KeyboardEvent } from 'react';
 import type { CompiledBar, CompiledLesson } from '@/core/content/compile';
 import {
+  prettyNumeral,
   doHeader,
   formatChord,
   formatNote,
@@ -9,14 +10,20 @@ import {
   type NotationSystem,
 } from '@/core/notation';
 import { NoteLabel } from '@/ui/NoteLabel';
+import type { Timing } from '@/core/practice';
+import type { SongMode } from './SongController';
 import styles from './Score.module.css';
 
 export interface ScoreProps {
   compiled: CompiledLesson;
   notation: NotationSystem;
   accidentalStyle: AccidentalStyle;
-  mode: 'listen' | 'practice';
+  mode: SongMode;
   currentBar: number;
+  /** Show each chord's Roman numeral under its symbol (progressions). */
+  showNumerals?: boolean;
+  /** Play-along results by chord id. */
+  chordScores?: Readonly<Record<string, Timing>>;
   /** Listen: chip under the playhead. */
   activeChipId: string | null;
   /** Practice: the target chip (melody) or chord (left hand), and its beat. */
@@ -73,6 +80,8 @@ export function Score(props: ScoreProps) {
                   targetId={targetId}
                   doneBefore={doneBefore}
                   targetChordId={targetChordId}
+                  showNumerals={props.showNumerals ?? false}
+                  chordScores={props.chordScores ?? NO_SCORES}
                   onSelect={props.onSelectBar}
                 />
               );
@@ -90,8 +99,10 @@ interface BarCardProps {
   keyContext: KeyContext;
   notation: NotationSystem;
   accidentalStyle: AccidentalStyle;
-  mode: 'listen' | 'practice';
+  mode: SongMode;
   current: boolean;
+  showNumerals: boolean;
+  chordScores: Readonly<Record<string, Timing>>;
   activeId: string | null;
   targetId: string | null;
   targetChordId: string | null;
@@ -114,6 +125,8 @@ const BarCard = memo(
       targetId,
       targetChordId,
       doneBefore,
+      showNumerals,
+      chordScores,
       onSelect,
     }: BarCardProps,
     ref,
@@ -133,7 +146,7 @@ const BarCard = memo(
         tabIndex={0}
         className={styles.bar}
         aria-current={current ? 'true' : undefined}
-        aria-label={`Bar ${bar.index + 1} of ${barCount}, ${chordText}. ${mode === 'listen' ? 'Play from here' : 'Practice from here'}`}
+        aria-label={`Bar ${bar.index + 1} of ${barCount}, ${chordText}.${ACTION[mode]}`}
         data-bar={bar.index}
         onClick={() => onSelect(bar.index)}
         onKeyDown={onKeyDown}
@@ -152,45 +165,70 @@ const BarCard = memo(
               <span className={styles.chordText}>
                 {formatChord(c.symbol, keyContext, notation)}
               </span>
+              {showNumerals && c.numeral && notation !== 'roman' ? (
+                <span className={styles.numeral}>{prettyNumeral(c.numeral)}</span>
+              ) : null}
+              {chordScores[c.id] ? (
+                <span className={styles.result} data-result={chordScores[c.id]}>
+                  {RESULT_WORDS[chordScores[c.id]!]}
+                </span>
+              ) : null}
             </span>
           ))}
         </div>
-        <div className={styles.chips} aria-hidden="true">
-          {bar.rh.map((n) => {
-            const state =
-              n.id === activeId
-                ? 'active'
-                : n.id === targetId
-                  ? 'target'
-                  : n.startBeat < doneBefore - 1e-9
-                    ? 'done'
-                    : undefined;
-            return (
-              <span
-                key={n.id}
-                className={styles.chip}
-                data-state={state}
-                data-chip={n.id}
-                data-angka={angka || undefined}
-                style={{ flexGrow: n.beats, flexBasis: 0 }}
-              >
-                {n.note ? (
-                  <NoteLabel
-                    label={formatNote(n.note, keyContext, { system: notation, accidentalStyle })}
-                    angka={angka}
-                    accidentalStyle={accidentalStyle}
-                  />
-                ) : (
-                  '·'
-                )}
-              </span>
-            );
-          })}
-        </div>
+        {bar.rh.length > 0 ? (
+          <div className={styles.chips} aria-hidden="true">
+            {bar.rh.map((n) => {
+              const state =
+                n.id === activeId
+                  ? 'active'
+                  : n.id === targetId
+                    ? 'target'
+                    : n.startBeat < doneBefore - 1e-9
+                      ? 'done'
+                      : undefined;
+              return (
+                <span
+                  key={n.id}
+                  className={styles.chip}
+                  data-state={state}
+                  data-chip={n.id}
+                  data-angka={angka || undefined}
+                  style={{ flexGrow: n.beats, flexBasis: 0 }}
+                >
+                  {n.note ? (
+                    <NoteLabel
+                      label={formatNote(n.note, keyContext, { system: notation, accidentalStyle })}
+                      angka={angka}
+                      accidentalStyle={accidentalStyle}
+                    />
+                  ) : (
+                    '·'
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     );
   }),
 );
+
+const NO_SCORES: Readonly<Record<string, Timing>> = {};
+
+const ACTION: Record<SongMode, string> = {
+  listen: ' Play from here',
+  practice: ' Practice from here',
+  playalong: '',
+};
+
+const RESULT_WORDS: Record<Timing, string> = {
+  'on-time': 'On time',
+  early: 'Early',
+  late: 'Late',
+  missed: 'Missed',
+};
 
 function groupSections(bars: CompiledBar[]) {
   const out: { title: string | null; startIndex: number; bars: CompiledBar[] }[] = [];
