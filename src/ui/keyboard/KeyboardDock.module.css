@@ -1,0 +1,57 @@
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin-top: var(--space-6);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+  box-shadow: var(--shadow-dock);
+  padding: 10px max(var(--gutter), env(safe-area-inset-right))
+    calc(10px + env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+}
+
+.inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: grid;
+  gap: 8px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--c);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.keysHint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .keysHint {
+    display: inline;
+  }
+}

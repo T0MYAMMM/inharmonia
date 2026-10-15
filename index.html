@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="A calm practice room for piano harmony: chords, voicings, progressions, comping and fills."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#E7ECEE" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121924" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <title>Inharmonia</title>
+    <script>
+      // Restore a deep link redirected here by 404.html (GitHub Pages SPA fallback).
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) {
+              return s.replace(/~and~/g, '&');
+            })
+            .join('?');
+          window.history.replaceState(null, '', l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+      // Apply the saved theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var raw = localStorage.getItem('inharmonia:settings');
+          var theme = raw && JSON.parse(raw).state && JSON.parse(raw).state.theme;
+          if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

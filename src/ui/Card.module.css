@@ -1,0 +1,12 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.title {
+  margin-bottom: var(--space-3);
+}
