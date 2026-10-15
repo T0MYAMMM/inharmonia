@@ -1,0 +1,11 @@
+Salamander Grand Piano V3
+Author: Alexander Holm
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+https://creativecommons.org/licenses/by/3.0/
+
+Source recordings: https://archive.org/details/SalamanderGrandPianoV3
+Subset taken from the Tone.js audio repository (https://github.com/Tonejs/audio),
+one sample every minor third from A0 to C8.
+
+Modifications for Inharmonia: leading silence trimmed, truncated to 8 seconds
+with a 1.5 second fade-out, re-encoded as Ogg Vorbis (q1) and MP3 (64 kbps).
