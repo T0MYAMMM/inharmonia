@@ -1,3 +1,4 @@
+import { MIX, mixVelocity } from '@config/mix';
 import type { Transport, TransportState } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
 import type { CompiledLesson, CompiledNote } from '@/core/content/compile';
@@ -41,10 +42,6 @@ export interface SongServices {
   notes: NoteStream;
   onFinished?: (result: { hits: number; misses: number }) => void;
 }
-
-const ROLL_GAP = 0.035;
-const ROLL_LENGTH = 1.8;
-const HEAR_IT_LENGTH = 0.55;
 
 /**
  * Drives one song page: Listen (transport playback with lit keys and chips)
@@ -227,7 +224,13 @@ export class SongController {
     const target = this.session.target;
     if (this.snap.mode !== 'practice' || !target?.note) return;
     void this.s.audio.unlock();
-    this.s.audio.playAt(target.note.midi, this.s.audio.now() + 0.01, HEAR_IT_LENGTH, 0.5);
+    const { hearItLengthSec, hearItVelocity } = MIX.practice;
+    this.s.audio.playAt(
+      target.note.midi,
+      this.s.audio.now() + 0.01,
+      hearItLengthSec,
+      mixVelocity('rh', hearItVelocity),
+    );
     this.s.lights.flash(target.note.midi, 'press', 400);
   }
 
@@ -252,8 +255,14 @@ export class SongController {
     if (r.kind !== 'hit') return;
     if (r.roll && this.snap.lhOn) {
       const t0 = this.s.audio.now() + 0.01;
+      const p = MIX.practice;
       r.roll.voicing.forEach((n, i) =>
-        this.s.audio.playAt(n.midi, t0 + i * ROLL_GAP, ROLL_LENGTH, i === 0 ? 0.3 : 0.17),
+        this.s.audio.playAt(
+          n.midi,
+          t0 + i * p.rollGapSec,
+          p.rollLengthSec,
+          mixVelocity('lh', i === 0 ? p.rollRootVelocity : p.rollVelocity),
+        ),
       );
     }
     if (r.finished) {

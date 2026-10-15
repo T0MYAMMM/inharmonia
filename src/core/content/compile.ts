@@ -1,3 +1,4 @@
+import { MIX, type Mix } from '@config/mix';
 import type { TimelineEvent } from '../audio/timeline';
 import { explicitVoicing, isValidChord, spelled, voiceChord, type SpelledNote } from '../theory';
 import type { ChordSpec, Hand, Lesson, NoteSpec, PatternSpec, VoicingSpec } from './types';
@@ -45,10 +46,6 @@ export interface CompiledLesson {
   events: TimelineEvent[];
 }
 
-export const DEFAULT_RH_VELOCITY = 0.4;
-export const DEFAULT_LH_VELOCITY = 0.13;
-/** Melody notes sound for this fraction of their written length, so repeated notes re-strike cleanly. */
-export const DEFAULT_RH_LEGATO = 0.95;
 const EPS = 1e-9;
 
 export function resolveVoicing(symbol: string, spec: VoicingSpec | undefined): SpelledNote[] {
@@ -69,6 +66,7 @@ export function applyPattern(
   pattern: PatternSpec,
   chord: CompiledChord,
   idPrefix: string,
+  mix: Mix = MIX,
 ): CompiledNote[] {
   const out: CompiledNote[] = [];
   const end = chord.startBeat + chord.beats;
@@ -83,7 +81,8 @@ export function applyPattern(
       for (const raw of step.voices) {
         const idx = raw < 0 ? v.length + raw : Math.min(raw, v.length - 1);
         const note = v[Math.max(0, idx)]!;
-        const base = step.velocity ?? DEFAULT_LH_VELOCITY;
+        const base =
+          step.velocity ?? (step.accent ? mix.leftHand.accentVelocity : mix.leftHand.velocity);
         out.push({
           id: `${idPrefix}-${n++}`,
           hand: 'lh',
@@ -132,9 +131,10 @@ function compileNotes(
 export function compileLesson(
   lesson: Lesson,
   patterns: Readonly<Record<string, PatternSpec>> = {},
-  opts: { rhLegato?: number } = {},
+  opts: { mix?: Mix } = {},
 ): CompiledLesson {
-  const rhLegato = opts.rhLegato ?? DEFAULT_RH_LEGATO;
+  const mix = opts.mix ?? MIX;
+  const rhLegato = mix.melody.legato;
   const beatsPerBar = lesson.meter.beats;
   const pattern = lesson.lhPattern ? patterns[lesson.lhPattern] : undefined;
   if (lesson.lhPattern && !pattern)
@@ -158,9 +158,9 @@ export function compileLesson(
       return compiled;
     });
     const lh = bar.lh
-      ? compileNotes(bar.lh, 'lh', barIndex, startBeat, DEFAULT_LH_VELOCITY)
+      ? compileNotes(bar.lh, 'lh', barIndex, startBeat, mix.leftHand.velocity)
       : pattern
-        ? barChords.flatMap((c) => applyPattern(pattern, c, `lh-${c.id}`))
+        ? barChords.flatMap((c) => applyPattern(pattern, c, `lh-${c.id}`, mix))
         : [];
     bars.push({
       index: barIndex,
@@ -168,7 +168,7 @@ export function compileLesson(
       beats: beatsPerBar,
       ...(bar.section ? { section: bar.section } : {}),
       chords: barChords,
-      rh: compileNotes(bar.rh, 'rh', barIndex, startBeat, DEFAULT_RH_VELOCITY),
+      rh: compileNotes(bar.rh, 'rh', barIndex, startBeat, mix.melody.velocity),
       lh,
     });
     chords.push(...barChords);
