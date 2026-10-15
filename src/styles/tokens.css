@@ -1,0 +1,103 @@
+/*
+ * Design tokens. Colour carries meaning everywhere:
+ *   amber = right hand / the target note
+ *   dusk  = left hand / chord tones
+ *   wrong = a wrong press
+ * Never use amber or dusk decoratively.
+ */
+:root {
+  color-scheme: light;
+  --bg: #e7ecee;
+  --surface: #f6f8f9;
+  --ink: #1c2838;
+  --muted: #5e6c82;
+  --line: #c9d2da;
+  --amber: #e39b2d;
+  --dusk: #4e73a0;
+  --dusk-soft: #c7d6e8;
+  --wrong: #c2413a;
+
+  --on-amber: #1c2838;
+  --on-dusk: #ffffff;
+  --amber-soft: color-mix(in srgb, var(--amber) 22%, var(--surface));
+  --wrong-soft: color-mix(in srgb, var(--wrong) 18%, var(--surface));
+  --surface-sunk: color-mix(in srgb, var(--line) 35%, var(--surface));
+  --focus: var(--dusk);
+
+  --key-white: #fbfcfd;
+  --key-white-edge: #b9c3cc;
+  --key-black: #1c2838;
+  --key-black-top: #2c3a4f;
+  --key-pressed: #dfe5ea;
+
+  --font-sans:
+    'Bricolage Grotesque Variable', 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --radius-pill: 999px;
+  --radius-card: 18px;
+  --radius-sm: 10px;
+  --shadow-card: 0 1px 0 rgb(28 40 56 / 4%), 0 8px 24px -16px rgb(28 40 56 / 25%);
+  --shadow-dock: 0 -10px 30px -18px rgb(28 40 56 / 35%);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --gutter: clamp(16px, 4vw, 32px);
+  --content-max: 1120px;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --press-ms: 160ms;
+  --wrong-ms: 260ms;
+  --pulse-ms: 1.2s;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #121924;
+    --surface: #1a2331;
+    --ink: #e4e9f0;
+    --muted: #97a4b6;
+    --line: #2b3748;
+    --amber: #f2b04a;
+    --dusk: #7fa6d6;
+    --dusk-soft: #2c4566;
+    --wrong: #e0645c;
+    --on-amber: #121924;
+    --on-dusk: #121924;
+    --key-white: #d9e0e8;
+    --key-white-edge: #8e9bab;
+    --key-black: #0b1018;
+    --key-black-top: #1f2a3a;
+    --key-pressed: #b9c3cf;
+    --shadow-card: 0 1px 0 rgb(0 0 0 / 20%), 0 10px 28px -18px rgb(0 0 0 / 60%);
+    --shadow-dock: 0 -12px 30px -18px rgb(0 0 0 / 70%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #121924;
+  --surface: #1a2331;
+  --ink: #e4e9f0;
+  --muted: #97a4b6;
+  --line: #2b3748;
+  --amber: #f2b04a;
+  --dusk: #7fa6d6;
+  --dusk-soft: #2c4566;
+  --wrong: #e0645c;
+  --on-amber: #121924;
+  --on-dusk: #121924;
+  --key-white: #d9e0e8;
+  --key-white-edge: #8e9bab;
+  --key-black: #0b1018;
+  --key-black-top: #1f2a3a;
+  --key-pressed: #b9c3cf;
+  --shadow-card: 0 1px 0 rgb(0 0 0 / 20%), 0 10px 28px -18px rgb(0 0 0 / 60%);
+  --shadow-dock: 0 -12px 30px -18px rgb(0 0 0 / 70%);
+}

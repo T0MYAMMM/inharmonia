@@ -1,0 +1,69 @@
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.angka {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  padding: 0.28em 0.05em;
+}
+
+.digit {
+  position: relative;
+  display: inline-block;
+}
+
+/* Traditional chromatic marks: a slash through the digit. Raised = forward slash, lowered = backslash. */
+.raised::after,
+.lowered::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.09em;
+  min-width: 1.5px;
+  height: 1.15em;
+  background: currentcolor;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(32deg);
+}
+
+.lowered::after {
+  transform: translate(-50%, -50%) rotate(-32deg);
+}
+
+.suffix {
+  font-size: 0.7em;
+  margin-left: 0.04em;
+}
+
+.dots {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08em;
+  transform: translateX(-50%);
+}
+
+.dotsAbove {
+  bottom: calc(100% - 0.28em);
+}
+
+.dotsBelow {
+  top: calc(100% - 0.28em);
+}
+
+.dot {
+  width: 0.17em;
+  height: 0.17em;
+  min-width: 3px;
+  min-height: 3px;
+  border-radius: 50%;
+  background: currentcolor;
+}
