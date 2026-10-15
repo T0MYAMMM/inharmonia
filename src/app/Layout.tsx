@@ -18,9 +18,9 @@ const NOTATIONS = [
 ] as const satisfies readonly { value: NotationSystem; label: string }[];
 
 const NAV = [
-  { to: '/', label: 'Practice room', end: true },
   { to: '/songs', label: 'Songs', end: false },
   { to: '/chords', label: 'Chords', end: false },
+  { to: '/progressions', label: 'Progressions', end: false },
   { to: '/keyboard', label: 'Keyboard', end: false },
   { to: '/about', label: 'About', end: false },
 ];
