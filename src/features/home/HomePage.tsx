@@ -8,10 +8,6 @@ const COMING = [
     body: 'Best scores, streaks, and what to review today.',
   },
   {
-    title: 'Your own progressions',
-    body: 'Write a progression in Roman numerals, save it, and practice it like the rest.',
-  },
-  {
     title: 'Fills and runs',
     body: 'Short fills that slot between chords, speeding up as you get them clean.',
   },
@@ -29,12 +25,13 @@ export function HomePage() {
         </p>
         <p>
           <Link to="/songs/senja-di-teras">Play Senja di Teras</Link>,{' '}
-          <Link to="/chords">explore chords</Link>, <Link to="/chords/drill">drill them</Link> or{' '}
-          <Link to="/progressions">comp through a progression</Link>
+          <Link to="/chords">explore chords</Link>, <Link to="/chords/drill">drill them</Link>,{' '}
+          <Link to="/progressions">comp through a progression</Link> or{' '}
+          <Link to="/progressions/new">write your own</Link>
         </p>
       </div>
       <h2 style={{ marginBottom: 'var(--space-4)' }}>Coming soon</h2>
-      <div className={styles.grid4}>
+      <div className={styles.grid}>
         {COMING.map((c) => (
           <Card key={c.title} title={c.title}>
             <p className={styles.muted}>{c.body}</p>
