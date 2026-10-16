@@ -63,7 +63,9 @@ src/
     notation/           letter names, Roman numerals, not angka formatting
     content/            the lesson content format, compiler, progression realizer, text parser, fills
     transcription/      voice to notes: pitch frames, segmentation, key, quantization, fixtures, eval
-    songs/              your songs: the editable draft, edits and undo, export format, kept recordings
+    songs/              your songs: the editable draft, edits and undo, kept recordings
+    charts/             chord charts: symbols, section names, bar syntax, paste parser, key, compile
+    format/             the readable JSON file format for export, import and transfer
     persistence/        safe localStorage and versioned documents with migrations
   state/                Zustand stores (settings, progress, your progressions), review, key highlights,
                         and My songs in IndexedDB
@@ -72,6 +74,7 @@ src/
   features/             one folder per page
   styles/               tokens.css (palette, light and dark) and global.css
 e2e/                    Playwright tests
+docs/format/            the file format: JSON Schema, notes and one example per kind
 docs/screenshots/       screenshots attached to each phase's pull request
 ```
 
@@ -266,9 +269,9 @@ built-ins. Entries are validated again on load (`progressionIssues` in
 `src/core/content/progressionText.ts`); anything that fails is dropped rather than breaking the
 page. Limits: 32 bars, 100 progressions, 60-character names.
 
-**Export** downloads `inharmonia-progressions.json`; **Import** merges a file like it, giving
-imported entries fresh ids, skipping ones already saved, and listing anything it rejected with
-the reason.
+**Export**, **Import file** and **Paste JSON** use the shared file format described in
+[Export and import](#export-and-import). Each progression page also has **Download .json** and
+**Copy as JSON**.
 
 ## Fills and runs
 
@@ -453,14 +456,13 @@ the song player, with **Edit** (`/studio/edit/:id`) and **Delete**.
 - **Recordings are optional.** **Keep the recording of my take** is off by default and shows its
   size. A kept recording is stored as 16-bit audio with its pitch line, so A/B and the pitch line
   work again when you edit later. The song page shows its size and has **Delete the recording**.
-- **Backup.** **Export** saves every song (not the recordings) to
-  `inharmonia-my-songs-<date>.json`, and **Import** reads one back on any device. Nothing in an
-  imported file is trusted as is:
-  - each draft is checked (key, tempo, meter, up to 32 bars, note ranges, chord symbols)
-  - the lesson is rebuilt from the draft and must validate
-  - every song is marked as yours
-  - a song already here is replaced only by a newer copy, so importing the same backup twice
-    changes nothing
+- **Ids.** New songs get `mine-song-…` ids and charts `mine-chart-…`. Songs saved before
+  phase 8 keep their `user-…` ids. The database is at version 2 (a `charts` store was added);
+  each version has its own upgrade step, so an older database opens without losing anything.
+- **Backup.** See [Export and import](#export-and-import). Recordings go into a file only when
+  you tick **Include recordings**.
+- **One list.** Studio songs and chord charts share the list, newest first, tagged **Studio** or
+  **Chart**. Once you have both kinds, **All / Studio / Charts** filters it.
 - The browser is asked to keep the data (`navigator.storage.persist`). Where storage is blocked
   (some private windows), the page says so.
 
@@ -475,6 +477,74 @@ Currently every fixture scores 100% on onsets, pitch and grid, with a mean onset
 same fixtures with thresholds, so a regression fails `npm run check`.
 
 No fixture, test, doc or screenshot uses audio or notes from existing songs.
+
+## Chord charts
+
+A chord chart is a song you already know, written as its chords so you can learn to accompany
+yourself. **New chord chart** on the Songs page opens `/songs/charts/new`. A chart has a title,
+key, meter (4/4 or 3/4), tempo, free-text notes for yourself, sections (Intro, Verse, Chorus and
+so on, each with up to 32 bars) and a form: the order the sections are played in, so a chorus is
+entered once and played as often as it comes back.
+
+- **Grid editor.** Click a bar to set its chords (up to four, with their beats), mark it `N.C.`,
+  copy it after itself or delete it. **Edit as text** takes a whole section in bar syntax.
+  Unreadable chords are outlined with a dashed line and block saving until fixed.
+- **Bar syntax** (`src/core/charts/syntax.ts`):
+
+  ```
+  | C | G/B | Am7 F | C . . G | N.C. | % | x2
+  ```
+
+  `|` separates bars; chords in a bar split it evenly (`Am7 F` is two beats each); a dot adds a
+  beat to the chord before it (`C . . G` is three beats then one); `%` repeats the previous bar;
+  `N.C.` is no chord; a trailing `xN` repeats its line; `||`, `|:` and `:|` are read as bar lines.
+  Common spellings are accepted and normalized: `CΔ7` and `CMA7` become `Cmaj7`, `Cø` becomes
+  `Cm7b5`, `C7(b9)` becomes `C7b9`, `C6/9` becomes `C69`.
+
+- **Paste a chord sheet** (`src/core/charts/paste.ts`). Chords over lyrics, inline `[C]` chords,
+  bar lines and section names all work. Section names are matched case-insensitively, with or
+  without a colon, numbered or repeated (`Verse 2`, `Reff 2x`, `[Chorus]`), in English and
+  Indonesian: Intro/Int., Verse/Bait, Pre-chorus/Pre-Reff, Chorus/Reff/Ref, Post-chorus, Bridge,
+  Interlude/Musik, Solo, Hook, Breakdown, Tag, Outro/Ending/Coda. The label is kept as you
+  wrote it and mapped to a section kind. A line counts as chords when at least 60% of its words
+  are chords (bar marks, `%`, `x2`, `N.C.`, brackets and dashes are not counted) and it has two
+  chords or chord-like spacing, so a one-word lyric such as "A" stays a lyric. A review table
+  shows how every line was read before anything is used.
+- **No lyrics are ever stored.** Lyric lines are dropped as soon as the sheet is read; only their
+  count is kept, for the notice "Lyrics removed from N lines". The notes field is never filled
+  from a pasted sheet. There is no URL import and nothing is fetched: charts are typed or pasted
+  by you.
+- **Key suggestion** (`key.ts`) scores all 24 keys by how many chords fit, weighting the first
+  and last chord of each section, and offers the best two as one-click choices.
+- **Playing it.** A chart compiles to an ordinary lesson (`compile.ts`): voice-led triads in the
+  right hand (G3 to E5), root or slash bass in the left. Its page (`/songs/charts/:id`) has
+  Listen, left-hand Practice and Play-along, a **Show function** toggle for Roman numerals (kept
+  with the chart), **Edit**, export and **Delete**. Charts are private like Studio songs:
+  stored in IndexedDB, `source: { kind: 'user' }`, no share links, no upload.
+- **Limits.** 24 sections, 32 bars per section, 40 form entries, 400 bars once the form is
+  played out.
+
+## Export and import
+
+Songs, chord charts and progressions share one readable JSON format
+([docs/format](docs/format/README.md), with a JSON Schema at
+`docs/format/inharmonia.schema.json` and one invented example per kind). It holds note names,
+chord symbols, numerals, beats and keys as `{ "tonic", "mode" }`: nothing derived, no MIDI
+numbers. Files are pretty-printed with a fixed key order, so exporting, importing and exporting
+again gives the same bytes. A chart is stored as written, with its view settings beside it.
+
+- **Export** one item from its page (**Download .json**, **Copy as JSON**), or everything or a
+  selection from a list. One item is saved as `inharmonia-<kind>-<slug>.json`, several as
+  `inharmonia-export-<date>.json`. Built-in songs and progressions can be exported too, with
+  their original source.
+- **Import** by **Import file**, by dropping a file on the list, or by **Paste JSON**. A preview
+  lists what is new and what is already here (**Skip**, **Replace** or **Keep both**, which gives
+  a fresh id) and any problem by item and field. A file with problems saves nothing. Files from
+  before phase 8 (the old progressions and My songs exports) are upgraded on the way in.
+- **Nothing is trusted as is.** Only known fields are read and the rest are dropped, so no stray
+  text (such as lyrics) can come in; chart notes come only from the notes field. Every item is
+  checked and rebuilt; a Studio song's lesson is rebuilt from its draft. Imported items are
+  private and stored under `mine-…` ids, and their source is kept as written.
 
 ## Accessibility and Lighthouse
 
