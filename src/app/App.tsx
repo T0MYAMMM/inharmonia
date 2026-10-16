@@ -8,6 +8,7 @@ import { ChordLibraryPage } from '@/features/chords/ChordLibraryPage';
 import { ChordDrillPage } from '@/features/chords/ChordDrillPage';
 import { ProgressionsPage } from '@/features/progressions/ProgressionsPage';
 import { ProgressionPage } from '@/features/progressions/ProgressionPage';
+import { ProgressionBuilderPage } from '@/features/progressions/ProgressionBuilderPage';
 import { SongsPage } from '@/features/song/SongsPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
@@ -23,7 +24,9 @@ export function AppRoutes() {
         <Route path="chords" element={<ChordLibraryPage />} />
         <Route path="chords/drill" element={<ChordDrillPage />} />
         <Route path="progressions" element={<ProgressionsPage />} />
+        <Route path="progressions/new" element={<ProgressionBuilderPage />} />
         <Route path="progressions/:progressionId" element={<ProgressionPage />} />
+        <Route path="progressions/:progressionId/edit" element={<ProgressionBuilderPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
