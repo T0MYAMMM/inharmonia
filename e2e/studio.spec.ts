@@ -1,61 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-
-/** Studio settings for short, fast takes: 4 bars at 120 bpm, no extra latency. */
-async function fastTakes(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'inharmonia:settings',
-      JSON.stringify({
-        version: 1,
-        state: { studio: { tempo: 120, beatsPerBar: 4, bars: 4 }, inputLatencyMs: 0 },
-      }),
-    );
-  });
-}
-
-/**
- * A fake microphone on the app's own AudioContext: an oscillator that sings
- * `window.__melody` (beat, beats, midi) on the beat once a take starts. The
- * melody is a plain arpeggio written for this test.
- */
-async function fakeMic(page: Page) {
-  await page.addInitScript(() => {
-    type Note = [startBeat: number, beats: number, midi: number];
-    const w = window as unknown as { __contexts: AudioContext[]; __melody?: Note[] };
-    w.__contexts = [];
-    const Original = window.AudioContext;
-    window.AudioContext = class extends Original {
-      constructor(opts?: AudioContextOptions) {
-        super(opts);
-        w.__contexts.push(this);
-      }
-    };
-    let sing: ((beat0: number, spb: number) => void) | null = null;
-    navigator.mediaDevices.getUserMedia = async () => {
-      const ctx = w.__contexts[w.__contexts.length - 1]!;
-      const dest = ctx.createMediaStreamDestination();
-      const osc = ctx.createOscillator();
-      osc.type = 'triangle';
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-      osc.connect(gain).connect(dest);
-      osc.start();
-      sing = (beat0, spb) => {
-        for (const [start, beats, midi] of w.__melody ?? []) {
-          const t = beat0 + start * spb;
-          osc.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), t);
-          gain.gain.setTargetAtTime(0.4, t, 0.005);
-          gain.gain.setTargetAtTime(0, t + beats * spb * 0.92, 0.01);
-        }
-      };
-      return dest.stream;
-    };
-    window.addEventListener('inharmonia:take-start', (e) => {
-      const { beat0, tempo } = (e as CustomEvent<{ beat0: number; tempo: number }>).detail;
-      sing?.(beat0, 60 / tempo);
-    });
-  });
-}
+import { fakeMic, fastTakes } from './studioHelpers';
 
 async function refuseMic(page: Page, name: string) {
   await page.addInitScript((errorName) => {
@@ -185,7 +129,7 @@ test.describe('studio', () => {
     await expect.poll(target).toEqual([69]);
     await expect(page.getByTestId('counts')).toHaveText('3 hits, 0 misses');
 
-    await page.getByTestId('back-to-take').click();
+    await page.getByTestId('back-from-try').click();
     await expect(page.getByTestId('take-summary')).toContainText('11 notes in C major');
     await expect(page.getByTestId('suggestion-simple-chords')).toHaveText('C | F | G | C');
   });
