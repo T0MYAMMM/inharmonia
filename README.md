@@ -136,8 +136,9 @@ export const myLesson: Lesson = {
 - A chord's `voicing` is either explicit notes or a style (`close`, `open`, `drop2`, `shell`,
   `rootless`) with an optional inversion.
 - `lhPattern` names a left-hand pattern from `src/content/patterns.ts`; a bar with its own `lh`
-  overrides it. Patterns pick voices from the chord's voicing by index, restart on each chord
-  and stop at the chord change.
+  overrides it. Pattern steps pick voices from the chord's voicing by index (negative counts
+  from the top), `'all'` for the whole voicing, or `'root'` / `'fifth'` for a bass note below it.
+  Patterns restart on each chord and stop at the chord change.
 - `section` on a bar starts a titled section in the score ("Verse", "Chorus").
 - Content must be original, generic theory material, or public domain (published before 1929,
   marked with `source: { kind: 'public-domain', ... }`). Do not transcribe copyrighted songs.
@@ -196,6 +197,30 @@ a press window (used from phase 4).
 
 **MIDI:** the keyboard dock has a "Connect MIDI" button on every page. Once connected, MIDI
 reconnects on the next visit, and the dock shows the device and the sustain pedal.
+
+## Progressions and comping
+
+`/progressions` lists common progressions written as Roman numerals (`src/content/progressions.ts`):
+I–V–vi–IV, ii–V–I, I–vi–ii–V, vi–IV–I–V, the 12-bar blues, i–♭VII–♭VI–V, IV–V–iii–vi, the circle
+of fifths, and three ballad progressions common in Indonesian pop, all generic theory material.
+
+Each one opens in the progression trainer, with its key, pattern, voicing style and voice
+leading kept in the URL (`/progressions/ii-v-i?key=Bb&pattern=stride&voicing=drop2&smooth=1`):
+
+- `realizeProgression` (`src/core/content/realize.ts`) turns numerals into chords in the key and
+  gives each a voicing: root position every time, or with smooth voice leading the inversion
+  nearest the last chord. The pattern sets the meter, so the waltz turns each bar into 3/4.
+- Comping patterns (`src/content/patterns.ts`): held chords, block chords, broken chord, Alberti
+  bass, root and fifth, stride basics, ballad 8ths, pop 16ths, bossa and waltz. Any pattern fits
+  any progression.
+- **Listen** plays the pattern. **Practice** waits for each chord, in any octave or inversion.
+  **Play-along** keeps time with a one-bar count-in (on by default) and scores each chord change
+  as on time (within 150 ms), early, late or missed (`src/core/practice/playAlong.ts`). It shows
+  the coming chord on the keyboard, with the pattern as optional backing. Each run's result and
+  tempo are saved locally.
+
+The song player and the progression trainer share one player (`src/features/song/LessonPlayer.tsx`
+over `SongController`), so changing the key or pattern keeps the mode and tempo.
 
 ## Tuning the mix
 

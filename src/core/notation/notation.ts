@@ -183,3 +183,13 @@ export function doHeader(key: KeyContext): string {
 export function keyName(key: KeyContext): string {
   return `${prettyAccidentals(normalizeAccidentals(key.tonic))} ${key.mode}`;
 }
+
+/** Roman numeral for display: "bVII" → "♭VII", "#iv°7" → "♯iv°7". */
+export function prettyNumeral(numeral: string): string {
+  return numeral.replace(/^bb/, '𝄫').replace(/^b/, '♭').replace(/^##/, '𝄪').replace(/^#/, '♯');
+}
+
+/** "I V vi IV" as "I – V – vi – IV". */
+export function prettyNumerals(steps: readonly { numeral: string }[]): string {
+  return steps.map((s) => prettyNumeral(s.numeral)).join(' – ');
+}

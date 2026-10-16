@@ -43,6 +43,8 @@ export interface ChordSpec {
   symbol: string;
   beats: number;
   voicing?: VoicingSpec;
+  /** The Roman numeral it came from, for display (progressions). */
+  numeral?: string;
 }
 
 export interface Bar {
@@ -62,6 +64,10 @@ export interface Bar {
 export interface PatternSpec {
   id: string;
   name: string;
+  /** One line on how it sounds or when to use it. */
+  description?: string;
+  /** Beats per bar this pattern is written for (4 for 4/4, 3 for a waltz). Default 4. */
+  beatsPerBar?: number;
   /** Length of one cycle in beats. */
   cycleBeats: number;
   steps: PatternStep[];
@@ -74,13 +80,18 @@ export interface PatternStep {
   at: number;
   /** Duration in beats, or 'chord' to sustain until the chord changes (pedal feel). */
   dur: number | 'chord';
-  /** Voice indexes into the voicing; negative counts from the top (-1 = highest). */
-  voices: number[];
+  /**
+   * What to play: indexes into the voicing (0 = lowest, negative counts from the top),
+   * 'all' for the whole voicing, or 'root' / 'fifth' for a bass note in the octave below it.
+   */
+  voices: PatternVoice[];
   /** Accented step: played at the mix's left-hand accent velocity. */
   accent?: boolean;
   /** Explicit velocity, overriding the mix. Prefer `accent` so levels stay tunable in one place. */
   velocity?: number;
 }
+
+export type PatternVoice = number | 'all' | 'root' | 'fifth';
 
 export type Strictness =
   | 'pitch-class' // right notes, any octave or inversion
@@ -133,7 +144,10 @@ export interface Progression {
   name: string;
   mode: Mode;
   meter: Meter;
+  /** Beats are in the progression's meter; a step of `meter.beats` lasts one bar. */
   steps: { numeral: string; beats: number }[];
+  /** One line on where you hear it or what it teaches. */
+  description?: string;
   source: ContentSource;
   tags?: string[];
 }

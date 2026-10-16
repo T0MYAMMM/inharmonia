@@ -6,15 +6,18 @@ import type { NoteStream } from '@/core/input';
 import {
   barAt,
   chordAt,
+  PlayAlongScorer,
   rhNoteAt,
   WaitSession,
+  type PlayAlongSummary,
+  type Timing,
   type PracticeHands,
   type PracticeTarget,
 } from '@/core/practice';
 import type { KeyLights } from '@/state/keyLights';
 import { WRONG_FLASH_MS } from '@/state/keyLights';
 
-export type SongMode = 'listen' | 'practice';
+export type SongMode = 'listen' | 'practice' | 'playalong';
 
 export interface SongSnapshot {
   mode: SongMode;
@@ -45,6 +48,14 @@ export interface SongSnapshot {
   chordSymbol: string | null;
   /** Count-in beats left, or null. */
   countIn: number | null;
+  /** Play-along: how each chord change was played so far, by chord id. */
+  chordScores: Readonly<Record<string, Timing>>;
+  /** Play-along: the result of the last complete run. */
+  playSummary: PlayAlongSummary | null;
+  /** Play-along: count in one bar before starting. */
+  countInOn: boolean;
+  /** Play-along: play the comping pattern while you play. */
+  backing: boolean;
   /** Polite live-region text for practice feedback. */
   announcement: string;
 }
@@ -55,7 +66,18 @@ export interface SongServices {
   lights: KeyLights;
   notes: NoteStream;
   onFinished?: (result: { hits: number; misses: number }) => void;
+  /** Play-along run completed: the summary and the tempo it was played at. */
+  onPlayAlongDone?: (summary: PlayAlongSummary, tempo: number) => void;
+  /** Practice hands to start with (the progression trainer practises chords). */
+  initialHands?: PracticeHands;
 }
+
+const TIMING_WORDS: Record<Timing, string> = {
+  'on-time': 'On time',
+  early: 'Early',
+  late: 'Late',
+  missed: 'Missed',
+};
 
 /**
  * Drives one song page: Listen (transport playback with lit keys and chips)
@@ -69,12 +91,16 @@ export class SongController {
   private raf = 0;
   private offs: (() => void)[] = [];
   private progressEl: HTMLElement | null = null;
+  private scorer: PlayAlongScorer | null = null;
+  private _compiled: CompiledLesson;
 
   constructor(
-    readonly compiled: CompiledLesson,
+    compiled: CompiledLesson,
     private readonly s: SongServices,
   ) {
-    this.session = new WaitSession(compiled);
+    this._compiled = compiled;
+    const hands = s.initialHands ?? 'rh';
+    this.session = new WaitSession(compiled, hands, compiled.lesson.rules.strictness);
     this.snap = {
       mode: 'listen',
       transport: 'stopped',
@@ -85,7 +111,7 @@ export class SongController {
       bar: 0,
       activeChipId: null,
       targetIndex: 0,
-      hands: 'rh',
+      hands,
       targetChipId: null,
       targetChordId: null,
       targetBeat: 0,
@@ -95,7 +121,45 @@ export class SongController {
       chordSymbol: compiled.chords[0]?.symbol ?? null,
       countIn: null,
       announcement: '',
+      chordScores: {},
+      playSummary: null,
+      countInOn: true,
+      backing: false,
     };
+  }
+
+  get compiled(): CompiledLesson {
+    return this._compiled;
+  }
+
+  /**
+   * Swap in a different lesson (another key, pattern or voicing) without
+   * losing the mode, tempo, hands or toggles.
+   */
+  load(compiled: CompiledLesson): void {
+    const t = this.s.transport;
+    t.stop();
+    this._compiled = compiled;
+    this.session = new WaitSession(compiled, this.session.hands, compiled.lesson.rules.strictness);
+    this.scorer = null;
+    t.setTimeline(compiled.events, compiled.lengthBeats);
+    t.setBeatsPerBar(compiled.beatsPerBar);
+    if (this.snap.mode === 'playalong') t.setLoop(null);
+    else this.applyLoop();
+    this.clearLights();
+    this.set({
+      bar: 0,
+      activeChipId: null,
+      finished: null,
+      hits: 0,
+      misses: 0,
+      chordScores: {},
+      playSummary: null,
+      countIn: null,
+      chordSymbol: compiled.chords[0]?.symbol ?? null,
+    });
+    if (this.snap.mode === 'practice') this.renderPractice();
+    else this.renderProgress(0);
   }
 
   // ---- store -----------------------------------------------------------------
@@ -154,6 +218,7 @@ export class SongController {
     t.setMuted('lh', !this.snap.lhOn);
     this.offs.push(t.subscribe(() => this.set({ transport: t.state })));
     this.offs.push(this.s.notes.subscribe((e) => e.type === 'on' && this.onPress(e.midi)));
+    this.offs.push(t.onEnd(() => this.onTransportEnd()));
     const frame = () => {
       this.renderFrame();
       this.raf = requestAnimationFrame(frame);
@@ -187,7 +252,7 @@ export class SongController {
   }
 
   setHand(hand: 'rh' | 'lh', on: boolean): void {
-    this.s.transport.setMuted(hand, !on);
+    if (!(this.snap.mode === 'playalong' && hand === 'lh')) this.s.transport.setMuted(hand, !on);
     this.set(hand === 'rh' ? { rhOn: on } : { lhOn: on });
     if (this.snap.mode === 'practice') this.renderPractice();
   }
@@ -195,15 +260,25 @@ export class SongController {
   // ---- listen --------------------------------------------------------------------
 
   playPause(): void {
-    if (this.snap.mode !== 'listen') return;
+    if (this.snap.mode === 'practice') return;
     void this.s.audio.unlock();
     const t = this.s.transport;
+    if (this.snap.mode === 'playalong') {
+      if (t.state === 'playing') this.stopPlayAlong();
+      else this.startPlayAlong();
+      return;
+    }
     if (t.state === 'playing') t.pause();
     else if (t.state === 'paused') t.resume({ countInBars: 0 });
     else t.play(0);
   }
 
   restart(): void {
+    if (this.snap.mode === 'playalong') {
+      void this.s.audio.unlock();
+      this.startPlayAlong();
+      return;
+    }
     if (this.snap.mode !== 'listen') return;
     const t = this.s.transport;
     if (t.state === 'playing') t.play(0);
@@ -213,7 +288,7 @@ export class SongController {
   /** Bar click (or Enter/Space on a bar). */
   selectBar(index: number): void {
     const bar = this.compiled.bars[index];
-    if (!bar) return;
+    if (!bar || this.snap.mode === 'playalong') return;
     if (this.snap.mode === 'listen') {
       void this.s.audio.unlock();
       this.s.transport.play(bar.startBeat, { countInBars: 0 });
@@ -229,6 +304,33 @@ export class SongController {
   setMode(mode: SongMode): void {
     if (mode === this.snap.mode) return;
     const t = this.s.transport;
+    const leavingPlayAlong = this.snap.mode === 'playalong';
+    if (leavingPlayAlong) {
+      this.scorer = null;
+      this.applyLoop();
+      t.setMuted('lh', !this.snap.lhOn);
+      this.set({ chordScores: {}, playSummary: null });
+    }
+    if (mode === 'playalong') {
+      t.stop();
+      this.clearLights();
+      t.setLoop(null);
+      t.setMuted('lh', !this.snap.backing);
+      this.set({
+        mode,
+        activeChipId: null,
+        targetChipId: null,
+        targetChordId: null,
+        finished: null,
+        countIn: null,
+        bar: 0,
+        chordScores: {},
+        playSummary: null,
+        announcement: '',
+      });
+      this.renderProgress(0);
+      return;
+    }
     if (mode === 'practice') {
       const beat = Math.max(0, t.beatAt());
       t.stop();
@@ -243,6 +345,93 @@ export class SongController {
       if (target) t.seek(this.compiled.bars[target.barIndex]!.startBeat);
       else t.stop();
     }
+  }
+
+  // ---- play-along ----------------------------------------------------------------
+
+  setCountIn(on: boolean): void {
+    this.set({ countInOn: on });
+  }
+
+  setBacking(on: boolean): void {
+    this.set({ backing: on });
+    if (this.snap.mode === 'playalong') this.s.transport.setMuted('lh', !on);
+  }
+
+  private startPlayAlong(): void {
+    const rules = this.compiled.lesson.rules;
+    this.scorer = new PlayAlongScorer(this.compiled.chords, {
+      strictness: rules.strictness,
+      hitWindowMs: rules.hitWindowMs,
+    });
+    this.clearLights();
+    this.set({ chordScores: {}, playSummary: null, announcement: '' });
+    const t = this.s.transport;
+    t.setLoop(null);
+    t.setMuted('lh', !this.snap.backing);
+    t.play(0, { countInBars: this.snap.countInOn ? 1 : 0 });
+  }
+
+  private stopPlayAlong(): void {
+    this.s.transport.stop();
+    this.scorer = null;
+    this.clearLights();
+    this.set({ countIn: null, bar: 0 });
+    this.renderProgress(0);
+  }
+
+  private onTransportEnd(): void {
+    if (this.snap.mode !== 'playalong' || !this.scorer) return;
+    this.applyScores(this.scorer.update([], this.compiled.lengthBeats, this.snap.tempo));
+    const summary = this.scorer.summary();
+    this.scorer = null;
+    this.clearLights();
+    this.s.onPlayAlongDone?.(summary, this.snap.tempo);
+    this.set({
+      playSummary: summary,
+      countIn: null,
+      announcement: `Done: ${summary.onTime} of ${summary.total} on time, ${summary.missed} missed.`,
+    });
+  }
+
+  /** Transport beat that is being heard now (what the player is playing along to). */
+  private heardBeat(): number {
+    return this.s.transport.beatAt(this.s.audio.now() - this.s.audio.outputLatency());
+  }
+
+  private applyScores(results: readonly { chordId: string; timing: Timing }[]): void {
+    if (!results.length) return;
+    const next = { ...this.snap.chordScores };
+    for (const r of results) next[r.chordId] = r.timing;
+    const last = results[results.length - 1]!;
+    this.set({ chordScores: next, announcement: TIMING_WORDS[last.timing] });
+  }
+
+  private renderPlayAlong(): void {
+    const t = this.s.transport;
+    if (t.state !== 'playing' || !this.scorer) {
+      this.s.lights.clear('chordTarget');
+      if (this.snap.countIn !== null) this.set({ countIn: null });
+      return;
+    }
+    const time = this.s.audio.now() - this.s.audio.outputLatency();
+    const beat = t.beatAt(time);
+    this.applyScores(this.scorer.update(this.s.notes.held(), beat, this.snap.tempo));
+    // Show the chord to play: the current one, or the next one just before the change.
+    const look = beat + 0.35;
+    const chord =
+      beat < 0
+        ? this.compiled.chords[0]
+        : chordAt(this.compiled, Math.min(look, this.compiled.lengthBeats - 1e-6));
+    this.s.lights.setExactly('chordTarget', chord ? chord.voicing.map((n) => n.midi) : []);
+    const countIn = t.countInRemaining(time);
+    const now = beat < 0 ? this.compiled.chords[0] : chordAt(this.compiled, beat);
+    this.set({
+      bar: beat < 0 ? 0 : barAt(this.compiled, beat),
+      chordSymbol: now?.symbol ?? null,
+      countIn: countIn === null ? null : Math.ceil(countIn),
+    });
+    this.renderProgress(Math.max(0, beat));
   }
 
   // ---- practice ----------------------------------------------------------------
@@ -306,6 +495,13 @@ export class SongController {
   }
 
   private onPress(midi: number): void {
+    if (this.snap.mode === 'playalong') {
+      if (!this.scorer || this.s.transport.state !== 'playing') return;
+      const beat = this.heardBeat();
+      if (this.scorer.noteOn(midi, beat)) this.s.lights.flash(midi, 'wrong', WRONG_FLASH_MS);
+      this.applyScores(this.scorer.update(this.s.notes.held(), beat, this.snap.tempo));
+      return;
+    }
     if (this.snap.mode !== 'practice') return;
     const r = this.session.press(midi, this.s.notes.held());
     if (r.kind === 'miss') {
@@ -368,6 +564,7 @@ export class SongController {
 
   /** One visual frame in Listen mode. The page calls it via requestAnimationFrame. */
   renderFrame(): void {
+    if (this.snap.mode === 'playalong') return this.renderPlayAlong();
     if (this.snap.mode !== 'listen') return;
     const t = this.s.transport;
     const time = this.s.audio.now() - this.s.audio.outputLatency();
