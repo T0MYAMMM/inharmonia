@@ -1,0 +1,159 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "song",
+      "id": "example-song",
+      "title": "Example song",
+      "source": {
+        "kind": "original",
+        "author": "Inharmonia"
+      },
+      "song": {
+        "key": {
+          "tonic": "G",
+          "mode": "major"
+        },
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 80,
+          "min": 50,
+          "max": 110
+        },
+        "lhPattern": "arpeggio-8ths",
+        "summary": "Four bars to show the song format.",
+        "bars": [
+          {
+            "section": "A",
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 4,
+                "voicing": [
+                  "G2",
+                  "D3",
+                  "G3",
+                  "B3"
+                ]
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "G4",
+                "beats": 2,
+                "tie": true
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Em7",
+                "beats": 4,
+                "voicing": [
+                  "E2",
+                  "B2",
+                  "D3",
+                  "G3"
+                ]
+              }
+            ],
+            "melody": [
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 2
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Cmaj7",
+                "beats": 2,
+                "voicing": [
+                  "C3",
+                  "G3",
+                  "B3",
+                  "E4"
+                ]
+              },
+              {
+                "symbol": "D",
+                "beats": 2,
+                "voicing": [
+                  "D3",
+                  "A3",
+                  "D4",
+                  "F#4"
+                ]
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 4,
+                "voicing": [
+                  "G2",
+                  "D3",
+                  "G3",
+                  "B3"
+                ]
+              }
+            ],
+            "melody": [
+              {
+                "note": "G4",
+                "beats": 3
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

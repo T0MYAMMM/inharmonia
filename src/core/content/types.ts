@@ -10,6 +10,9 @@ import type { Mode, VoicingStyle } from '../theory';
 
 export const LESSON_SCHEMA_VERSION = 1;
 
+/** A chord slot where nothing is played ("N.C." in a chart). */
+export const NO_CHORD = 'N.C.';
+
 export type Hand = 'rh' | 'lh';
 
 /** Where a piece of content comes from. Only original, generic or public-domain material ships. */
@@ -130,7 +133,7 @@ export interface Lesson {
   title: string;
   /** One sentence shown in lists. */
   summary?: string;
-  kind: 'song' | 'chord-drill' | 'progression' | 'pattern' | 'fill';
+  kind: 'song' | 'chord-drill' | 'progression' | 'pattern' | 'fill' | 'chart';
   source: ContentSource;
   key: { tonic: string; mode: Mode };
   meter: Meter;
