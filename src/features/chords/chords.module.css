@@ -94,7 +94,7 @@
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 0.95;
-  color: var(--dusk);
+  color: var(--dusk-text);
 }
 
 .name {
@@ -132,7 +132,7 @@
 
 .toneDegree {
   font-weight: 600;
-  color: var(--dusk);
+  color: var(--dusk-text);
 }
 
 .toneInterval {
