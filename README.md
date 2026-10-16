@@ -51,9 +51,9 @@ src/
     audio/              tempo map, swing, lookahead transport, Tone.js engine, sample list
     input/              unified note stream: pointer, computer keys, Web MIDI
     notation/           letter names, Roman numerals, not angka formatting
-    content/            the lesson content format (types)
+    content/            the lesson content format, compiler, progression realizer and text parser
     persistence/        safe localStorage and versioned documents with migrations
-  state/                Zustand stores (settings) and fine-grained key highlights
+  state/                Zustand stores (settings, progress, your progressions) and key highlights
   app/                  router, layout, theme, singletons (services.ts) and hooks
   ui/                   design-system components and the keyboard dock
   features/             one folder per page
@@ -221,6 +221,30 @@ leading kept in the URL (`/progressions/ii-v-i?key=Bb&pattern=stride&voicing=dro
 
 The song player and the progression trainer share one player (`src/features/song/LessonPlayer.tsx`
 over `SongController`), so changing the key or pattern keeps the mode and tempo.
+
+### Your own progressions
+
+`/progressions/new` writes a progression in Roman numerals, one bar per word. Bars are separated
+by spaces, new lines or `|`, and a comma splits a bar into two or four equal parts:
+
+```
+Imaj7 vi7 | ii7,V7 | V7/V | V7sus4,V7
+```
+
+Accidentals can be typed as `b` and `#` or `♭` and `♯`; `°`/`o`, `ø`, `maj7`, `sus4` and secondary
+dominants (`V7/V`) all work. Every numeral is checked as you type, in every key of the mode and
+every voicing style, and the preview plays each chord in any key. Any built-in progression has a
+"Make a copy to edit" link.
+
+Saved progressions live in this browser under `inharmonia:user-progressions`, as a versioned
+list (`src/state/userProgressions.ts`). Ids start with `mine-`, so they never collide with
+built-ins. Entries are validated again on load (`progressionIssues` in
+`src/core/content/progressionText.ts`); anything that fails is dropped rather than breaking the
+page. Limits: 32 bars, 100 progressions, 60-character names.
+
+**Export** downloads `inharmonia-progressions.json`; **Import** merges a file like it, giving
+imported entries fresh ids, skipping ones already saved, and listing anything it rejected with
+the reason.
 
 ## Tuning the mix
 
