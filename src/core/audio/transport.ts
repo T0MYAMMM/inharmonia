@@ -226,6 +226,11 @@ export class Transport {
     return this.map.beatAt(time);
   }
 
+  /** Audio-clock time a beat is (or was) scheduled at in the current playback. */
+  timeAtBeat(beat: number): number {
+    return this.map.timeAt(beat);
+  }
+
   /** Map a straight timeline beat to the performance beat it sounds on. */
   performanceBeat(beat: number): number {
     return swingBeat(beat, this.swing);

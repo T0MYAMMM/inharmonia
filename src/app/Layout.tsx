@@ -24,6 +24,7 @@ const NAV = [
   { to: '/progressions', label: 'Progressions', end: false },
   { to: '/fills', label: 'Fills', end: false },
   { to: '/ear', label: 'Ear training', end: false },
+  { to: '/studio', label: 'Studio', end: false },
   { to: '/progress', label: 'Progress', end: false },
 ];
 
@@ -37,6 +38,31 @@ export function Layout() {
   const [displayOpen, setDisplayOpen] = useState(false);
   const controlsId = useId();
   const offline = useOfflineReady();
+  const displayRef = useRef<HTMLDivElement>(null);
+
+  // The display menu closes on Escape, on a click elsewhere, and on navigation.
+  useEffect(() => {
+    if (!displayOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setDisplayOpen(false);
+      displayRef.current?.querySelector('button')?.focus();
+    };
+    const onDown = (e: PointerEvent) => {
+      if (!displayRef.current?.contains(e.target as Node)) setDisplayOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onDown);
+    };
+  }, [displayOpen]);
+  const [openedAt, setOpenedAt] = useState(pathname);
+  if (openedAt !== pathname) {
+    setOpenedAt(pathname);
+    if (displayOpen) setDisplayOpen(false);
+  }
 
   // Move focus to the page on navigation so screen readers announce the new page.
   useEffect(() => {
@@ -65,28 +91,42 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <button
-            type="button"
-            className={styles.displayToggle}
-            aria-expanded={displayOpen}
-            aria-controls={controlsId}
-            onClick={() => setDisplayOpen((o) => !o)}
-          >
-            Display
-          </button>
-          <div id={controlsId} className={styles.controls} data-open={displayOpen || undefined}>
-            <Segmented
-              label="Note names"
-              value={notation}
-              options={NOTATIONS}
-              onChange={(v) => set({ notation: v })}
-            />
-            <Segmented
-              label="Theme"
-              value={theme}
-              options={THEMES}
-              onChange={(v) => set({ theme: v })}
-            />
+          <div className={styles.display} ref={displayRef}>
+            <button
+              type="button"
+              className={styles.displayToggle}
+              aria-expanded={displayOpen}
+              aria-controls={controlsId}
+              onClick={() => setDisplayOpen((o) => !o)}
+            >
+              Display
+            </button>
+            <div
+              id={controlsId}
+              className={styles.controls}
+              data-open={displayOpen || undefined}
+              role="group"
+              aria-label="Display settings"
+            >
+              <div className={styles.controlGroup}>
+                <span className={styles.controlLabel}>Note names</span>
+                <Segmented
+                  label="Note names"
+                  value={notation}
+                  options={NOTATIONS}
+                  onChange={(v) => set({ notation: v })}
+                />
+              </div>
+              <div className={styles.controlGroup}>
+                <span className={styles.controlLabel}>Theme</span>
+                <Segmented
+                  label="Theme"
+                  value={theme}
+                  options={THEMES}
+                  onChange={(v) => set({ theme: v })}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </header>

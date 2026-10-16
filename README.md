@@ -62,6 +62,7 @@ src/
     input/              unified note stream: pointer, computer keys, Web MIDI
     notation/           letter names, Roman numerals, not angka formatting
     content/            the lesson content format, compiler, progression realizer, text parser, fills
+    transcription/      voice to notes: pitch frames, segmentation, key, quantization, fixtures, eval
     persistence/        safe localStorage and versioned documents with migrations
   state/                Zustand stores (settings, progress, your progressions), review, key highlights
   app/                  router, layout, theme, singletons (services.ts) and hooks
@@ -97,7 +98,8 @@ wrong press. These colours are never decorative.
 
 ### Notation
 
-The global note-name setting has three systems:
+The note-name setting and the Light/Dark/Auto theme both live in the **Display** menu at the
+right of the header, at every width. The note-name setting has three systems:
 
 - **Letters**: notes as letters, spelled for the key (F♯ in D major, B♭ in F), chords as symbols.
 - **Roman**: notes as letters, chords as Roman numerals (iii7, V⁶, ♭VII).
@@ -324,6 +326,64 @@ suggests what to look at today (`src/state/review.ts`):
 The home page shows a first-visit welcome until it is dismissed or something is practised, and
 then a "Today" card with the top suggestion.
 
+## Studio
+
+`/studio` turns a sung or hummed melody into notes on the beat grid. This first part (7a)
+covers capture through quantization; harmonizing and editing the result into a lesson follow.
+
+**Recording.** Pick a tempo (50–140 bpm), a meter (4/4, 3/4 or 2/4) and up to 32 bars, turn
+on the microphone, and record. One bar of count-in plays first, and the click keeps going
+through the take. The microphone opens with echo cancellation, noise suppression and automatic
+gain control all off, because each of them bends pitch or timing. An AudioWorklet
+(`capture/capture.worklet.js`) passes raw blocks to a Web Worker that tracks pitch live for the
+level meter and trace. The full take is analysed in that worker when you stop.
+
+**Pipeline** (`src/core/transcription`, plain TypeScript with no DOM, so it runs in Node too):
+
+1. **Pitch frames**: every 10 ms, a window of about 43 ms through the McLeod pitch method
+   ([pitchy](https://github.com/ianprime0509/pitchy)), behind a `PitchTracker` interface. Each
+   frame keeps its pitch, clarity and level.
+2. **Notes** (`segment.ts`, tuned in `SEGMENT_CONFIG`): voiced frames by clarity and level,
+   octave jumps folded, a median filter, short gaps bridged. Notes split first on energy dips
+   (re-attacks on the same pitch), then on pitch changes judged on a vibrato-smoothed curve, with
+   onsets walked back over glides. Anything shorter than 0.1 s is merged into its neighbour.
+3. **Key**: Krumhansl–Schmuckler correlation of the duration-weighted pitch-class profile. The
+   top two are offered, and any of the 24 keys can be picked instead.
+4. **Grid** (`quantize.ts`): snap to 1/4, 1/8 or 1/16, with optional triplets, following slow
+   tempo drift. A monophonic line is kept and small gaps are closed. Notes further off the grid
+   than the tolerance are marked uncertain (dashed). The melody is moved by whole octaves to
+   fit the piano range, and every note is spelled in the chosen key.
+
+Slow 6/8 and 12/8 feels can be recorded in 4/4 with the triplet grid for now. `TakeTiming.meter`
+is a `{ beats, unit }` object, so real compound meters can be added without migrating saved
+songs. `Transcriber` and `ChordEstimator` interfaces (`interfaces.ts`) leave room for other
+engines later.
+
+**Timing.** Notes are placed relative to the first beat, corrected for the delay between the
+click leaving the speakers and the microphone hearing it. **Calibrate** plays ten clicks; clap
+on each one. The median offset is saved when at least five claps line up within 40 ms of each
+other. Until then, an estimate from the browser's reported output and input latency is used.
+
+**When it goes wrong**, the page says what happened and what to do: microphone blocked (with
+the steps for your browser), missing, busy, or on an insecure page; a take that is too quiet,
+too noisy (measured during the count-in), or has no steady pitch; and claps that could not be
+lined up.
+
+**Privacy.** Audio never leaves the device. Takes live in memory and are gone when you leave the
+page. Nothing is uploaded, and nothing is committed to the repository.
+
+### Evaluating transcription
+
+`npm run eval:transcription` runs the pipeline over 16 synthesized fixtures
+(`fixtures.ts`): original melodies rendered in code with vibrato, glides, noise, tempo drift, a
+low voice, triplets, sixteenths, legato repeats and loose timing. It prints onset F1 (50 ms),
+pitch accuracy, mean onset error, key (top one and top two) and grid accuracy per fixture.
+Currently every fixture scores 100% on onsets, pitch and grid, with a mean onset error of
+15 ms. The key is right on 15 of 16 and in the top two on all of them. The unit tests assert the
+same fixtures with thresholds, so a regression fails `npm run check`.
+
+No fixture, test, doc or screenshot uses audio or notes from existing songs.
+
 ## Accessibility and Lighthouse
 
 Every control is reachable by keyboard, practice feedback is announced through polite live
@@ -382,3 +442,4 @@ linear gain) and are capped at full scale.
   Font License, self-hosted through Fontsource.
 - [Tone.js](https://tonejs.github.io/) and [Tonal](https://github.com/tonaljs/tonal), MIT.
 - [Vite PWA](https://vite-pwa-org.netlify.app/) and Workbox, MIT.
+- [pitchy](https://github.com/ianprime0509/pitchy) and fft.js, MIT.
