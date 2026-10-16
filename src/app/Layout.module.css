@@ -32,7 +32,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 16px;
+  gap: 12px 12px;
 }
 
 .brand {
@@ -50,7 +50,7 @@
 }
 
 .navLink {
-  padding: 8px 12px;
+  padding: 8px 9px;
   border-radius: var(--radius-pill);
   font-weight: 600;
   font-size: 0.95rem;
@@ -134,4 +134,32 @@
 
 .main:focus {
   outline: none;
+}
+
+.footer {
+  padding: var(--space-6) max(var(--gutter), env(safe-area-inset-right))
+    max(var(--space-6), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footerInner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.footerInner p {
+  margin: 0;
+}
+
+.footerNav {
+  display: flex;
+  gap: var(--space-4);
+  font-weight: 600;
 }

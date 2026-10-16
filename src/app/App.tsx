@@ -12,6 +12,8 @@ import { ProgressionBuilderPage } from '@/features/progressions/ProgressionBuild
 import { SongsPage } from '@/features/song/SongsPage';
 import { FillsPage } from '@/features/fills/FillsPage';
 import { FillPage } from '@/features/fills/FillPage';
+import { EarPage } from '@/features/ear/EarPage';
+import { ProgressPage } from '@/features/progress/ProgressPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
 import { ROUTER_BASENAME } from './config';
@@ -31,6 +33,8 @@ export function AppRoutes() {
         <Route path="progressions/:progressionId/edit" element={<ProgressionBuilderPage />} />
         <Route path="fills" element={<FillsPage />} />
         <Route path="fills/:fillId" element={<FillPage />} />
+        <Route path="ear" element={<EarPage />} />
+        <Route path="progress" element={<ProgressPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />

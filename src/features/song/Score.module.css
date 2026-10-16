@@ -75,7 +75,7 @@
 
 .chord {
   min-width: 0;
-  color: var(--dusk);
+  color: var(--dusk-text);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.05;

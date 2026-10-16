@@ -9,7 +9,7 @@ export function Card({
 }: HTMLAttributes<HTMLElement> & { title?: ReactNode }) {
   return (
     <section className={[styles.card, className].filter(Boolean).join(' ')} {...rest}>
-      {title ? <h3 className={styles.title}>{title}</h3> : null}
+      {title ? <h2 className={styles.title}>{title}</h2> : null}
       {children}
     </section>
   );

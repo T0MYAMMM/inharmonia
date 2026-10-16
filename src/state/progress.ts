@@ -81,3 +81,8 @@ export function streak(state: ProgressState, now: Date = new Date()): number {
   }
   return n;
 }
+
+/** Forget all progress (attempts, bests and practice days). */
+export function clearProgress(store: KeyValueStore = storage): void {
+  writeVersioned(store, KEY, VERSION, EMPTY);
+}

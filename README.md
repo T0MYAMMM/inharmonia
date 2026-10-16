@@ -40,6 +40,16 @@ GitHub Pages has no SPA rewrites, so the build emits a `404.html` that turns the
 into a query string and redirects to the app, and `index.html` restores the URL before the router
 reads it. Deep links like `/inharmonia/about` work.
 
+### Offline and install
+
+The production build is a PWA (`vite-plugin-pwa`, configured in `vite.config.ts`). The service
+worker precaches the app, the self-hosted fonts and every piano sample in both formats, about
+4 MB in all. After the first visit, everything works offline, including deep links, which fall
+back to `index.html`. It updates itself in the background (`registerType: 'autoUpdate'`). The
+manifest and icons in `public/icons/` make it installable, and its scope and start URL follow
+`BASE_PATH`. `src/app/pwa.ts` registers the worker in production only, and the footer says
+"Ready to use offline" once it is.
+
 ## Folder overview
 
 ```
@@ -53,7 +63,7 @@ src/
     notation/           letter names, Roman numerals, not angka formatting
     content/            the lesson content format, compiler, progression realizer, text parser, fills
     persistence/        safe localStorage and versioned documents with migrations
-  state/                Zustand stores (settings, progress, your progressions) and key highlights
+  state/                Zustand stores (settings, progress, your progressions), review, key highlights
   app/                  router, layout, theme, singletons (services.ts) and hooks
   ui/                   design-system components and the keyboard dock
   features/             one folder per page
@@ -281,6 +291,49 @@ the fill, then the chord after it, held in the other hand.
 The progression trainer has a **Fill** picker. It puts a right-hand fill on every chord change
 that has room for it (`withFills`), over the comping, and lights it in Listen.
 
+## Ear training
+
+`/ear` has two exercises, each with levels (`src/core/practice/ear.ts`).
+
+- **Chord quality**: a random root, voiced around middle C, in one of the level's qualities:
+  major or minor; the four triads; five sevenths; or a mixed set. Answer with a click or a
+  number key. A wrong answer lets you hear both qualities on the same root.
+- **Progressions**: four chords in a random major key, smoothly voiced. The first is always I;
+  name the other three from I, IV and V, then add vi, then all six diatonic chords. Neighbouring
+  chords always differ. After checking, **Hear yours** plays what you answered.
+
+Each finished round of ten is saved to progress as `ear:chords:<level>` or
+`ear:progressions:<level>`.
+
+## Progress
+
+Finished practice is saved locally (`src/state/progress.ts`): attempts, best accuracy, best tempo
+for timed modes, last practised, and the days you practised.
+
+`/progress` shows your streak, the last seven days and everything you've practised. It also
+suggests what to look at today (`src/state/review.ts`):
+
+- An exercise comes back after a gap that depends on how it went: the next day under 70%, after
+  two days under 90%, and otherwise after a week, growing to three weeks with repeats.
+- Overdue exercises come first, weakest first on ties.
+- Each suggestion links straight to the exercise, and one "new" suggestion comes from a starter
+  list (`src/features/progress/catalog.ts`).
+- Ids that no longer resolve, such as a deleted progression, are left out.
+- **Clear progress** forgets everything after a confirmation.
+
+The home page shows a first-visit welcome until it is dismissed or something is practised, and
+then a "Today" card with the top suggestion.
+
+## Accessibility and Lighthouse
+
+Every control is reachable by keyboard, practice feedback is announced through polite live
+regions, and motion respects `prefers-reduced-motion`. Muted text and small dusk text meet
+4.5:1 contrast in both themes. Dusk keeps its prototype value for keys and large text, with a
+slightly darker `--dusk-text` for small text in light mode.
+
+Lighthouse 12 against the production build, every main page, mobile and desktop presets:
+accessibility, best practices and SEO all 100; performance 96–99 on mobile and 100 on desktop.
+
 ## Tuning the mix
 
 Every playback level is in `config/mix.ts`, in the `MIX` object:
@@ -328,3 +381,4 @@ linear gain) and are capped at full scale.
 - Font: [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque), SIL Open
   Font License, self-hosted through Fontsource.
 - [Tone.js](https://tonejs.github.io/) and [Tonal](https://github.com/tonaljs/tonal), MIT.
+- [Vite PWA](https://vite-pwa-org.netlify.app/) and Workbox, MIT.

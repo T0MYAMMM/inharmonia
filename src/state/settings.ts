@@ -21,6 +21,8 @@ export interface SettingsState {
   /** Reconnect MIDI on load once the player has connected it. */
   midiEnabled: boolean;
   drill: DrillSettings;
+  /** The home page's first-visit welcome has been dismissed. */
+  welcomeDismissed: boolean;
 }
 
 export interface DrillSettings {
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   countInBars: 0,
   midiInput: 'all',
   midiEnabled: false,
+  welcomeDismissed: false,
   drill: {
     qualityIds: ['major', 'minor'],
     naturalsOnly: true,
@@ -98,6 +101,7 @@ function sanitize(x: unknown): Partial<SettingsState> {
     out.countInBars = p.countInBars;
   if (typeof p.midiInput === 'string') out.midiInput = p.midiInput;
   if (typeof p.midiEnabled === 'boolean') out.midiEnabled = p.midiEnabled;
+  if (typeof p.welcomeDismissed === 'boolean') out.welcomeDismissed = p.welcomeDismissed;
   const d = p.drill as Partial<DrillSettings> | undefined;
   if (d && typeof d === 'object') {
     const known = new Set(CHORD_QUALITIES.map((q) => q.id));
