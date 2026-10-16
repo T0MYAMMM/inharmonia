@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Segmented } from '@/ui/Segmented';
 import { useSettings, type ThemeChoice } from '@/state/settings';
+import { useOfflineReady } from './pwa';
 import type { NotationSystem } from '@/core/notation';
 import styles from './Layout.module.css';
 
@@ -22,8 +23,8 @@ const NAV = [
   { to: '/chords', label: 'Chords', end: false },
   { to: '/progressions', label: 'Progressions', end: false },
   { to: '/fills', label: 'Fills', end: false },
-  { to: '/keyboard', label: 'Keyboard', end: false },
-  { to: '/about', label: 'About', end: false },
+  { to: '/ear', label: 'Ear training', end: false },
+  { to: '/progress', label: 'Progress', end: false },
 ];
 
 export function Layout() {
@@ -35,6 +36,7 @@ export function Layout() {
   const first = useRef(true);
   const [displayOpen, setDisplayOpen] = useState(false);
   const controlsId = useId();
+  const offline = useOfflineReady();
 
   // Move focus to the page on navigation so screen readers announce the new page.
   useEffect(() => {
@@ -91,6 +93,18 @@ export function Layout() {
       <main id="main" ref={mainRef} tabIndex={-1} className={styles.main}>
         <Outlet />
       </main>
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <nav className={styles.footerNav} aria-label="More">
+            <Link to="/keyboard">Keyboard</Link>
+            <Link to="/about">About</Link>
+          </nav>
+          <p>
+            Everything you do here stays in this browser.
+            {offline ? ' Ready to use offline.' : ''}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -146,11 +146,14 @@ const BarCard = memo(
         tabIndex={0}
         className={styles.bar}
         aria-current={current ? 'true' : undefined}
-        aria-label={`Bar ${bar.index + 1} of ${barCount}, ${chordText}.${ACTION[mode]}`}
         data-bar={bar.index}
         onClick={() => onSelect(bar.index)}
         onKeyDown={onKeyDown}
       >
+        {/* The name comes from this text, so voice control can say the bar number shown. */}
+        <span className="visually-hidden">
+          Bar {bar.index + 1} of {barCount}, {chordText}.{ACTION[mode]}
+        </span>
         <span className={styles.barNumber} aria-hidden="true">
           {bar.index + 1}
         </span>

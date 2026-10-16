@@ -67,7 +67,8 @@
 }
 
 .cLabel {
-  color: var(--muted);
+  /* Muted on a plain white key, and the key's own text colour once it lights up. */
+  color: inherit;
 }
 
 .hint {

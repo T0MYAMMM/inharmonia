@@ -26,7 +26,7 @@ test.describe('fills', () => {
   test('listen plays the fill over the chords and lights it', async ({ page }) => {
     await page.goto('fills/step-up?key=C&change=V7>I');
     await page.getByTestId('play').click();
-    await expect.poll(() => lit(page, 'rh'), { timeout: 8000 }).toEqual([57]); // A3
+    await expect.poll(() => lit(page, 'rh'), { timeout: 8000, intervals: [50] }).toEqual([57]); // A3
     await expect.poll(() => lit(page, 'lh')).toEqual([55, 59, 62, 65]); // G7
     await page.getByTestId('play').click();
   });
@@ -68,7 +68,7 @@ test.describe('fills', () => {
     await page.goto('progressions/ii-v-i?key=C&smooth=0&pattern=held&fill=step-up');
     await expect(page.getByTestId('fill')).toHaveValue('step-up');
     await page.getByTestId('play').click();
-    await expect.poll(() => lit(page, 'rh'), { timeout: 8000 }).toEqual([64]); // E4, into G7
+    await expect.poll(() => lit(page, 'rh'), { timeout: 8000, intervals: [50] }).toEqual([64]); // E4, into G7
     await page.getByTestId('play').click();
   });
 });
