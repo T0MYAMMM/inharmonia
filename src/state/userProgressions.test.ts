@@ -65,37 +65,24 @@ describe('user progressions', () => {
     expect(() => s.getState().save(draft)).toThrow(/up to 100/);
   });
 
-  it('exports and imports, skipping duplicates and reporting rejects', () => {
-    const a = createUserProgressionsStore(memoryStore(), random);
-    a.getState().save(draft);
-    const file = JSON.parse(a.getState().exportFile());
-    expect(file).toMatchObject({ app: 'inharmonia', kind: 'progressions', version: 1 });
-    file.progressions.push(
-      {
-        ...draft,
-        name: 'Minor one',
-        mode: 'minor',
-        meter: { beats: 4, unit: 4 },
-        steps: [{ numeral: 'i', beats: 4 }],
-      },
-      {
-        ...draft,
-        name: 'Broken',
-        meter: { beats: 4, unit: 4 },
-        steps: [{ numeral: 'Z', beats: 4 }],
-      },
-    );
-
-    const b = createUserProgressionsStore(memoryStore(), random);
-    b.getState().save(draft); // already there
-    const result = b.getState().importFile(JSON.stringify(file));
-    expect(result.added).toBe(1);
-    expect(result.duplicates).toBe(1);
-    expect(result.rejected).toEqual([expect.stringMatching(/^"Broken": Bar 1/)]);
-    expect(b.getState().items.map((p) => p.name)).toEqual(['Sunday loop', 'Minor one']);
-    expect(b.getState().items[1]!.id).toMatch(/^mine-minor-one-/);
-
-    expect(b.getState().importFile('{').rejected[0]).toMatch(/isn't JSON/);
-    expect(b.getState().importFile('{"progressions": 3}').rejected[0]).toMatch(/export/);
+  it('puts a whole progression under its own id, keeping its source', () => {
+    const s = createUserProgressionsStore(memoryStore(), random);
+    const p = {
+      id: 'mine-progression-pop-loop',
+      schemaVersion: 1,
+      name: 'Pop loop',
+      mode: 'major' as const,
+      meter: { beats: 4, unit: 4 },
+      steps: [
+        { numeral: 'I', beats: 4 },
+        { numeral: 'V', beats: 4 },
+      ],
+      source: { kind: 'generic' as const },
+    };
+    expect(s.getState().put(p)).toBe(true);
+    expect(s.getState().put({ ...p, name: 'Pop loop again' })).toBe(true);
+    expect(s.getState().items).toEqual([{ ...p, name: 'Pop loop again' }]);
+    expect(s.getState().put({ ...p, id: 'pop-loop' })).toBe(false);
+    expect(s.getState().put({ ...p, steps: [{ numeral: 'Z', beats: 4 }] })).toBe(false);
   });
 });
