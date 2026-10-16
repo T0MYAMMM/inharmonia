@@ -51,7 +51,7 @@ src/
     audio/              tempo map, swing, lookahead transport, Tone.js engine, sample list
     input/              unified note stream: pointer, computer keys, Web MIDI
     notation/           letter names, Roman numerals, not angka formatting
-    content/            the lesson content format, compiler, progression realizer and text parser
+    content/            the lesson content format, compiler, progression realizer, text parser, fills
     persistence/        safe localStorage and versioned documents with migrations
   state/                Zustand stores (settings, progress, your progressions) and key highlights
   app/                  router, layout, theme, singletons (services.ts) and hooks
@@ -246,6 +246,41 @@ page. Limits: 32 bars, 100 progressions, 60-character names.
 imported entries fresh ids, skipping ones already saved, and listing anything it rejected with
 the reason.
 
+## Fills and runs
+
+`/fills` lists 17 original fills in eight groups: passing tones, chromatic approach, scale runs,
+grace notes, octaves, pentatonic, gospel sixths and turnarounds (`src/content/fills.ts`).
+
+Each fill is written against the chord change, not in a key. A note names where it starts and
+how it moves:
+
+- `ref`: the root of the chord before the change (`from`), after it (`to`), or the key's tonic
+  (`key`).
+- `tone`: start on that chord's third or fifth instead of its root.
+- `step`: walk that many notes along the key's scale, or its pentatonic (`scale: 'pentatonic'`).
+- `semis` and `octave`: then shift chromatically, or by octaves.
+
+So `{ ref: 'to', semis: -1 }` is "a half step under the next root" in every key and between
+any two chords. `into-next` fills end on the change, landing on it if they have a hit at
+`at === beats`; `over-current` fills sit inside the bar before it. Right-hand roots are placed in
+C4–B4 and left-hand roots in C2–B2. Half steps below are spelled as sharps and half steps above
+as flats (G♯ into A, B♭ above A). `realizeFill` and `compileFillExercise` are in
+`src/core/content/fills.ts`, and a test plays every fill in every key on every change.
+
+The trainer (`/fills/:id?key=Eb&change=IV>I`) loops two bars: the chord before the change, with
+the fill, then the chord after it, held in the other hand.
+
+- **Listen** plays it at any tempo.
+- **Practice** waits for each note, in any octave unless you turn on **Exact octave**. A double
+  stop can be played together or one note at a time. The chords come in as you reach them.
+- **Speed-up** counts in one bar, then scores every time round. A repetition is clean when every
+  note lands within 150 ms and nothing extra is played. After a set number of clean ones in a
+  row (2–5, default 3) the tempo rises by a step (+2, +5 or +10, default +5), from the start
+  tempo up to the goal. The best tempo reached is saved with your progress.
+
+The progression trainer has a **Fill** picker. It puts a right-hand fill on every chord change
+that has room for it (`withFills`), over the comping, and lights it in Listen.
+
 ## Tuning the mix
 
 Every playback level is in `config/mix.ts`, in the `MIX` object:
@@ -254,6 +289,8 @@ Every playback level is in `config/mix.ts`, in the `MIX` object:
 - `leftHand`: accent velocity (first note of each chord), other velocity, channel gain.
 - `live`: gain for what you play yourself.
 - `practice`: the chord roll and "Hear it" levels and timing.
+- `chords`: "Hear it" in the chord library and drills.
+- `fills`: fill notes and the slightly louder landing note (on the playing hand's gain).
 - `metronome`: click levels and gain.
 
 Content never hard-codes levels: patterns mark accented steps, and the compiler and audio
