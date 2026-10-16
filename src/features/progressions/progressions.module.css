@@ -32,7 +32,7 @@
 }
 
 .numerals {
-  color: var(--dusk);
+  color: var(--dusk-text);
   font-weight: 600;
 }
 
@@ -312,7 +312,7 @@ button.previewChord:hover {
 .previewNumeral {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--dusk);
+  color: var(--dusk-text);
   overflow-wrap: anywhere;
 }
 

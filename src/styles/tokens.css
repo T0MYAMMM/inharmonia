@@ -10,10 +10,12 @@
   --bg: #e7ecee;
   --surface: #f6f8f9;
   --ink: #1c2838;
-  --muted: #5e6c82;
+  --muted: #57657a;
   --line: #c9d2da;
   --amber: #e39b2d;
   --dusk: #4e73a0;
+  /* Dusk for small text: a shade darker so it reads at 4.5:1 on the background. */
+  --dusk-text: #466895;
   --dusk-soft: #c7d6e8;
   --wrong: #c2413a;
 
@@ -66,6 +68,7 @@
     --line: #2b3748;
     --amber: #f2b04a;
     --dusk: #7fa6d6;
+    --dusk-text: var(--dusk);
     --dusk-soft: #2c4566;
     --wrong: #e0645c;
     --on-amber: #121924;
@@ -89,6 +92,7 @@
   --line: #2b3748;
   --amber: #f2b04a;
   --dusk: #7fa6d6;
+  --dusk-text: var(--dusk);
   --dusk-soft: #2c4566;
   --wrong: #e0645c;
   --on-amber: #121924;

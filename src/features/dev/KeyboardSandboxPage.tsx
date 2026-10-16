@@ -130,7 +130,7 @@ function NowPlayingCard() {
           </span>
           {chord ? <span className={styles.chordName}>{chord}</span> : null}
         </div>
-        <div className={styles.held} aria-label="Held notes">
+        <div className={styles.held} role="group" aria-label="Held notes">
           {held.map((m) => (
             <span key={m} className={styles.chip}>
               <NoteLabel label={fmt(m)} angka={angka} accidentalStyle={accidentalStyle} />

@@ -96,7 +96,7 @@
 }
 
 .statusLine .chord {
-  color: var(--dusk);
+  color: var(--dusk-text);
 }
 
 .select {
