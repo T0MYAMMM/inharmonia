@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
 import { compileLesson } from '../content/compile';
+import { TIES_LESSON } from '../content/tieFixture';
 import { barAt, chordAt, rhNoteAt } from './songView';
 import { WaitSession } from './waitSession';
 
@@ -129,5 +130,48 @@ describe('WaitSession, both hands', () => {
   it('a note in neither hand is a miss', () => {
     const s = new WaitSession(senja, 'both');
     expect(s.press(63, [63]).kind).toBe('miss');
+  });
+});
+
+describe('WaitSession with ties', () => {
+  const ties = compileLesson(TIES_LESSON);
+  const names = (s: WaitSession) =>
+    s.targets.map((t) => (t.kind === 'note' ? t.note.note!.name : t.chord.symbol));
+
+  it('skips the held half of a tie, across the barline and into a chord change', () => {
+    expect(names(new WaitSession(ties))).toEqual(['C4', 'E4', 'G4', 'A4', 'B4', 'C5']);
+  });
+
+  it('rolls the chord that starts under a tied note with the next note played', () => {
+    const s = new WaitSession(ties);
+    const rolls: (string | null)[] = [];
+    while (s.target) {
+      const t = s.target;
+      if (t.kind !== 'note') break;
+      const r = s.press(t.note.note!.midi);
+      if (r.kind !== 'hit') break;
+      rolls.push(r.roll?.symbol ?? null);
+      if (r.finished) break;
+    }
+    // G4 is held over the change to F; A4 is held over the change to G.
+    expect(rolls).toEqual(['C', null, null, 'F', 'G', 'C']);
+  });
+
+  it('asks for the new chord with the next note in both hands', () => {
+    const s = new WaitSession(ties, 'both');
+    expect(
+      s.targets.map((t) => (t.kind === 'note' ? [t.note.note!.name, t.needsChord] : null)),
+    ).toEqual([
+      ['C4', true],
+      ['E4', false],
+      ['G4', false],
+      ['A4', true],
+      ['B4', true],
+      ['C5', true],
+    ]);
+  });
+
+  it('still asks for every chord in left-hand practice', () => {
+    expect(names(new WaitSession(ties, 'lh'))).toEqual(['C', 'F', 'G', 'C']);
   });
 });
