@@ -33,6 +33,13 @@ const midiToFreq = (m: number) => 440 * 2 ** ((m - 69) / 12);
  * lookahead scheduling. Live input uses Tone.immediate() so a key press is heard
  * as soon as the audio hardware allows.
  */
+/** A recording that is playing. */
+export interface RecordingPlayback {
+  stop(): void;
+  /** Fade to a new gain over a few milliseconds. */
+  setGain(gain: number): void;
+}
+
 export class AudioEngine {
   private raw: AudioContext | null = null;
   private tone: Tone | null = null;
@@ -163,11 +170,18 @@ export class AudioEngine {
 
   /**
    * Play recorded mono audio (a Studio take) at an audio-clock time, straight to
-   * the output. Returns a function that stops it.
+   * the output, from `offset` seconds into it. The gain can change while it
+   * plays (A/B listening); `stop` ends it.
    */
-  playRecording(samples: Float32Array, sampleRate: number, when: number, gain = 0.9): () => void {
+  playRecording(
+    samples: Float32Array,
+    sampleRate: number,
+    when: number,
+    gain = 0.9,
+    offset = 0,
+  ): RecordingPlayback {
     const ctx = this.raw;
-    if (!ctx) return () => undefined;
+    if (!ctx || samples.length === 0) return { stop: () => undefined, setGain: () => undefined };
     const buffer = ctx.createBuffer(1, samples.length, sampleRate);
     buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
     const src = ctx.createBufferSource();
@@ -175,14 +189,17 @@ export class AudioEngine {
     const g = ctx.createGain();
     g.gain.value = gain;
     src.connect(g).connect(ctx.destination);
-    src.start(Math.max(when, ctx.currentTime));
-    return () => {
-      try {
-        src.stop();
-      } catch {
-        /* already stopped */
-      }
-      src.disconnect();
+    src.start(Math.max(when, ctx.currentTime), Math.max(0, Math.min(offset, buffer.duration)));
+    return {
+      stop: () => {
+        try {
+          src.stop();
+        } catch {
+          /* already stopped */
+        }
+        src.disconnect();
+      },
+      setGain: (v) => g.gain.setTargetAtTime(v, ctx.currentTime, 0.01),
     };
   }
 
