@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { SONGS } from '@/content/lessons';
 import { keyName } from '@/core/notation';
 import { loadProgress } from '@/state/progress';
+import { MySongsSection } from '../mysongs/MySongsSection';
 import page from '../page.module.css';
 import styles from './SongsPage.module.css';
 
@@ -40,6 +41,7 @@ export function SongsPage() {
           );
         })}
       </ul>
+      <MySongsSection />
     </>
   );
 }

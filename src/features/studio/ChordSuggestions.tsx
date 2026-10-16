@@ -11,33 +11,35 @@ import {
 } from '@/core/transcription';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { patternIdsFor } from './patternChoices';
 import styles from './studio.module.css';
 
 /** Drafts made this session; each gets a fresh id so the player starts over. */
 let drafts = 0;
-
-/** Left-hand patterns that suit each meter, first is the default. */
-const PATTERN_IDS: Record<number, string[]> = {
-  4: ['arpeggio-8ths', 'ballad-8ths', 'block', 'root-fifth', 'held'],
-  3: ['waltz', 'held'],
-  2: ['arpeggio-8ths', 'block', 'root-fifth', 'held'],
-};
 
 export interface ChordSuggestionsProps {
   notes: readonly GridNote[];
   timing: TakeTiming;
   keyContext: { tonic: string; mode: 'major' | 'minor' };
   onTry: (lesson: Lesson) => void;
+  /** Open the take with these chords in the editor. */
+  onEdit: (h: Harmonization, lhPattern: string) => void;
 }
 
 /**
  * Three harmonizations of the take, each with why it works, a left-hand
  * pattern, and a way to try the result in the player.
  */
-export function ChordSuggestions({ notes, timing, keyContext, onTry }: ChordSuggestionsProps) {
+export function ChordSuggestions({
+  notes,
+  timing,
+  keyContext,
+  onTry,
+  onEdit,
+}: ChordSuggestionsProps) {
   const notation = useSettings((s) => s.notation);
   const [choice, setChoice] = useState(0);
-  const patternIds = PATTERN_IDS[timing.meter.beats] ?? PATTERN_IDS[4]!;
+  const patternIds = patternIdsFor(timing.meter.beats);
   const [pattern, setPattern] = useState(patternIds[0]!);
   const suggestions = notes.length
     ? harmonize({ notes, timing, key: keyContext })
@@ -65,7 +67,9 @@ export function ChordSuggestions({ notes, timing, keyContext, onTry }: ChordSugg
       <h2 id="chords-title" className={styles.cardTitle}>
         Chords
       </h2>
-      <p className={styles.note}>Three ways to harmonize your melody. Pick one to try it.</p>
+      <p className={styles.note}>
+        Three ways to harmonize your melody. Pick one, then edit and save it, or just try it.
+      </p>
       <div className={styles.suggestions} role="radiogroup" aria-labelledby="chords-title">
         {suggestions.map((h, i) => {
           const id = `suggestion-${h.style}`;
@@ -132,7 +136,14 @@ export function ChordSuggestions({ notes, timing, keyContext, onTry }: ChordSugg
             ))}
           </select>
         </label>
-        <Button variant="primary" onClick={tryIt} data-testid="try-draft">
+        <Button
+          variant="primary"
+          onClick={() => onEdit(picked, lhPattern)}
+          data-testid="edit-draft"
+        >
+          Edit and save
+        </Button>
+        <Button onClick={tryIt} data-testid="try-draft">
           Try it with the chords
         </Button>
       </div>
