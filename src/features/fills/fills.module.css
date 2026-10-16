@@ -1,0 +1,214 @@
+.category {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.category h2 {
+  margin: 0;
+}
+
+.meta {
+  color: var(--dusk);
+  font-weight: 600;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.controls {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.strip {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.chordPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.chordCard {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.chordCard[aria-current='true'] {
+  border-color: var(--dusk);
+  box-shadow: 0 0 0 1px var(--dusk);
+}
+
+.barNumber {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.chordSymbol {
+  color: var(--dusk);
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.chordNumeral {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hit {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 52px;
+  padding: 8px 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition:
+    background-color 90ms linear,
+    opacity 200ms var(--ease-out);
+}
+
+.hit[data-landing] {
+  border-color: var(--dusk);
+}
+
+.hitNotes {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-weight: 700;
+}
+
+.count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hit[data-state='active'] {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--on-amber);
+}
+
+.hit[data-state='active'] .count {
+  color: inherit;
+}
+
+.hit[data-state='done'] {
+  opacity: 0.35;
+}
+
+.hit[data-state='target'] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 2px var(--amber);
+  animation: target-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes target-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2px var(--amber);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px var(--amber),
+      0 0 0 4px color-mix(in srgb, var(--amber) 35%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hit[data-state='target'] {
+    animation: none;
+  }
+}
+
+.speedSettings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-3) var(--space-4);
+  align-items: end;
+}
+
+.speedField {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.speedStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.speedTempo {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.streak {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+
+.dot[data-on] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.repResult {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.repResult[data-clean] {
+  color: var(--ink);
+}
+
+@media (max-width: 600px) {
+  .chordCard {
+    padding: 8px 12px;
+  }
+
+  .chordSymbol {
+    font-size: 1.3rem;
+  }
+}
