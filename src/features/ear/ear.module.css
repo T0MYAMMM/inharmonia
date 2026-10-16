@@ -1,0 +1,146 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 46rem;
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-out);
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.option:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.option[data-state='right'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.option[data-state='wrong'] {
+  border-color: var(--wrong);
+  background: var(--wrong-soft);
+}
+
+.optionKey {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.feedback {
+  display: grid;
+  gap: var(--space-3);
+  min-height: 44px;
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+}
+
+.round {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.round strong {
+  color: var(--ink);
+}
+
+.slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.slot[data-state='right'] {
+  border-color: var(--line);
+}
+
+.slot[data-state='wrong'] {
+  border-color: var(--wrong);
+  background: var(--wrong-soft);
+}
+
+.slotLabel {
+  width: 4.5rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.given {
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 0 12px;
+}
+
+.correction {
+  font-weight: 700;
+}
