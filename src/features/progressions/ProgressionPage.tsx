@@ -13,6 +13,8 @@ import { useUserProgressions } from '@/state/userProgressions';
 import { Segmented } from '@/ui/Segmented';
 import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
+import { ExportButtons } from '../transfer/Export';
+import { exportItems } from '@/state/transfer';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import songStyles from '../song/SongPage.module.css';
 import styles from './progressions.module.css';
@@ -161,7 +163,8 @@ export function ProgressionPage() {
             <Link to={`/progressions/${progression.id}/edit`}>Edit</Link>
           ) : (
             <Link to={`/progressions/new?from=${progression.id}`}>Make a copy to edit</Link>
-          )}
+          )}{' '}
+          <ExportButtons build={() => exportItems({ progressions: [progression] })} />
         </p>
         <h1>{progression.name}</h1>
         <p className={songStyles.meta}>

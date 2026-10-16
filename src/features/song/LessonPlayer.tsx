@@ -49,6 +49,8 @@ export interface LessonPlayerProps {
   variant: 'song' | 'progression';
   /** Settings that shape the lesson (key, pattern, voicing), shown in the sticky panel. */
   settings?: ReactNode;
+  /** Roman numerals under the chord symbols (default: on for progressions). */
+  showNumerals?: boolean;
 }
 
 /**
@@ -56,7 +58,13 @@ export interface LessonPlayerProps {
  * practice and play-along state, the bar-card score and the keyboard dock.
  * Swapping `compiled` (a new key or pattern) keeps the mode and tempo.
  */
-export function LessonPlayer({ compiled, recordId, variant, settings }: LessonPlayerProps) {
+export function LessonPlayer({
+  compiled,
+  recordId,
+  variant,
+  settings,
+  showNumerals,
+}: LessonPlayerProps) {
   const progression = variant === 'progression';
   const [ctrl] = useState(
     () =>
@@ -293,7 +301,7 @@ export function LessonPlayer({ compiled, recordId, variant, settings }: LessonPl
         targetChipId={snap.targetChipId}
         targetChordId={snap.targetChordId}
         targetBeat={snap.targetBeat}
-        showNumerals={progression}
+        showNumerals={showNumerals ?? progression}
         chordScores={snap.chordScores}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />

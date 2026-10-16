@@ -7,7 +7,9 @@ import { formatBytes, type UserSong } from '@/core/songs';
 import { deleteRecording, deleteSong, getSong, useMySongs } from '@/state/mySongs';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
+import { exportItems } from '@/state/transfer';
 import { LessonPlayer } from '../song/LessonPlayer';
+import { ExportButtons } from '../transfer/Export';
 import songStyles from '../song/SongPage.module.css';
 import { PrivateBadge } from './PrivateBadge';
 import styles from './mysongs.module.css';
@@ -20,6 +22,7 @@ export function MySongPage() {
   const [loaded, setLoaded] = useState<{ id: string; song: UserSong | null } | null>(null);
   const navigate = useNavigate();
   const [confirm, setConfirm] = useState(false);
+  const [withRecording, setWithRecording] = useState(false);
 
   // Fall back to reading the song directly (the list may still be loading).
   useEffect(() => {
@@ -84,6 +87,23 @@ export function MySongPage() {
           ) : (
             <span className={styles.note}>No recording kept.</span>
           )}
+        </div>
+        <div className={styles.actions}>
+          <ExportButtons
+            build={() =>
+              exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })
+            }
+          />
+          {bytes ? (
+            <label className={styles.note}>
+              <input
+                type="checkbox"
+                checked={withRecording}
+                onChange={(e) => setWithRecording(e.target.checked)}
+              />{' '}
+              Include the recording
+            </label>
+          ) : null}
         </div>
       </div>
       <LessonPlayer key={song.id + song.updatedAt} compiled={compiled} variant="song" />

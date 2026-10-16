@@ -5,6 +5,8 @@ import { getSong } from '@/content/lessons';
 import { compileLesson } from '@/core/content/compile';
 import { keyName } from '@/core/notation';
 import { NotFoundPage } from '../not-found/NotFoundPage';
+import { exportItems } from '@/state/transfer';
+import { ExportButtons } from '../transfer/Export';
 import { LessonPlayer } from './LessonPlayer';
 import styles from './SongPage.module.css';
 
@@ -23,6 +25,7 @@ export function SongPage() {
         <p className={styles.meta}>
           {keyName(lesson.key)}, {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
         </p>
+        <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
       </div>
       <LessonPlayer key={lesson.id} compiled={compiled} recordId={lesson.id} variant="song" />
     </>

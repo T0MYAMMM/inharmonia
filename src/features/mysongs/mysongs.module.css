@@ -72,3 +72,9 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

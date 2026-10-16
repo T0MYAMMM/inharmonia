@@ -1,122 +1,144 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { PATTERNS } from '@/content/patterns';
-import { keyName } from '@/core/notation';
+import { keyName, prettyAccidentals } from '@/core/notation';
 import { formatBytes } from '@/core/songs';
-import { exportSongs, importSongs, useMySongs } from '@/state/mySongs';
-import { Button } from '@/ui/Button';
+import { expandForm } from '@/core/charts';
+import { useMySongs } from '@/state/mySongs';
+import { exportItems } from '@/state/transfer';
+import { Segmented } from '@/ui/Segmented';
 import { buttonClass } from '@/ui/buttonClass';
 import list from '../song/SongsPage.module.css';
+import { ExportDialog } from '../transfer/Export';
+import { ImportControls } from '../transfer/Import';
 import { PrivateBadge } from './PrivateBadge';
 import styles from './mysongs.module.css';
 
-const PATTERN_IDS = new Set(Object.keys(PATTERNS));
+type Filter = 'all' | 'studio' | 'charts';
 
-/** Today's date as 2026-10-16, for the export file name. */
-const today = () => new Date().toISOString().slice(0, 10);
-
-/** Songs you made in Studio, with backup to a file and restore from one. */
+/** Songs from Studio and chord charts, newest first, with export, import and filters. */
 export function MySongsSection() {
-  const { status, songs, recordings } = useMySongs();
-  const [message, setMessage] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const { status, songs, charts, recordings } = useMySongs();
+  const [filter, setFilter] = useState<Filter>('all');
+  const both = songs.length > 0 && charts.length > 0;
+  const shown = both ? filter : 'all';
+  const entries = [
+    ...(shown !== 'charts'
+      ? songs.map((s) => ({ kind: 'song' as const, updatedAt: s.updatedAt, song: s }))
+      : []),
+    ...(shown !== 'studio'
+      ? charts.map((c) => ({ kind: 'chart' as const, updatedAt: c.updatedAt, chart: c }))
+      : []),
+  ].sort((a, b) => b.updatedAt - a.updatedAt);
 
-  const download = async () => {
-    const text = await exportSongs();
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inharmonia-my-songs-${today()}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setMessage(
-      `Exported ${songs.length} song${songs.length === 1 ? '' : 's'}. Recordings stay on this device.`,
-    );
-  };
-
-  const load = async (file: File) => {
-    const result = await importSongs(await file.text(), PATTERN_IDS, 'arpeggio-8ths');
-    if ('error' in result) return setMessage(result.error);
-    const parts = [
-      result.added && `${result.added} added`,
-      result.updated && `${result.updated} updated`,
-      result.kept && `${result.kept} already here`,
-      result.skipped.length &&
-        `${result.skipped.length} skipped (${result.skipped.map((s) => `${s.title}: ${s.reason}`).join('; ')})`,
-    ].filter(Boolean);
-    setMessage(`Imported: ${parts.join(', ') || 'nothing new'}.`);
-  };
+  const candidates = [
+    ...songs.map((s) => ({
+      key: s.id,
+      kind: 'song' as const,
+      title: s.lesson.title,
+      ...(recordings[s.id] ? { recordingBytes: recordings[s.id] } : {}),
+    })),
+    ...charts.map((c) => ({ key: c.id, kind: 'chart' as const, title: c.chart.title })),
+  ];
 
   return (
-    <section className={styles.section} aria-labelledby="my-songs-title">
-      <div className={styles.sectionHead}>
-        <h2 id="my-songs-title" className={styles.sectionTitle}>
-          My songs
-        </h2>
-        <div className={styles.actions}>
-          <Button
-            size="small"
-            onClick={() => void download()}
-            disabled={songs.length === 0}
-            data-testid="export-songs"
-          >
-            Export
-          </Button>
-          <label className={buttonClass('secondary', 'small')}>
-            Import
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              className={styles.file}
-              data-testid="import-songs"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void load(f);
-                e.target.value = '';
-              }}
-            />
-          </label>
-        </div>
-      </div>
-      <p className={styles.note}>
-        Songs you make in Studio stay in this browser on this device. They are never uploaded or
-        shared. Export them to a file to back them up or move them to another device.
-      </p>
-      {message ? (
-        <p className={styles.result} role="status" data-testid="my-songs-status">
-          {message}
-        </p>
-      ) : null}
-      {status === 'unavailable' ? (
-        <p className={styles.note}>
-          This browser is not letting Inharmonia store songs (site data may be blocked, or this is a
-          private window).
-        </p>
-      ) : status === 'ready' && songs.length === 0 ? (
-        <p className={styles.note}>
-          Nothing yet. <Link to="/studio">Sing one in Studio</Link>.
-        </p>
-      ) : (
-        <ul className={list.list} data-testid="my-songs">
-          {songs.map((s) => (
-            <li key={s.id}>
-              <Link to={`/songs/mine/${s.id}`} className={list.card}>
-                <span className={list.title}>{s.lesson.title}</span>
-                <PrivateBadge />
-                <span className={list.meta}>
-                  {keyName(s.lesson.key)}, {s.lesson.bars.length} bars
-                </span>
-                {recordings[s.id] ? (
-                  <span className={list.meta}>
-                    Recording kept, {formatBytes(recordings[s.id]!)}
-                  </span>
-                ) : null}
+    <ImportControls>
+      {(importButtons) => (
+        <section className={styles.section} aria-labelledby="my-songs-title">
+          <div className={styles.sectionHead}>
+            <h2 id="my-songs-title" className={styles.sectionTitle}>
+              My songs
+            </h2>
+            <div className={styles.actions}>
+              <Link
+                to="/songs/charts/new"
+                className={buttonClass('primary', 'small')}
+                data-testid="new-chart"
+              >
+                New chord chart
               </Link>
-            </li>
-          ))}
-        </ul>
+              <ExportDialog
+                candidates={candidates}
+                build={(keys, includeRecordings) =>
+                  exportItems({
+                    songs: songs.filter((s) => keys.has(s.id)),
+                    charts: charts.filter((c) => keys.has(c.id)),
+                    includeRecordings,
+                  })
+                }
+              />
+              {importButtons}
+            </div>
+          </div>
+          <p className={styles.note}>
+            Songs from Studio and your chord charts stay in this browser on this device. They are
+            never uploaded or shared. Export them to a file to back them up or move them; drop an
+            export here to bring it in.
+          </p>
+          {both ? (
+            <Segmented
+              label="Show"
+              value={filter}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'studio', label: 'Studio' },
+                { value: 'charts', label: 'Charts' },
+              ]}
+              onChange={setFilter}
+            />
+          ) : null}
+          {status === 'unavailable' ? (
+            <p className={styles.note}>
+              This browser is not letting Inharmonia store songs (site data may be blocked, or this
+              is a private window).
+            </p>
+          ) : status === 'ready' && entries.length === 0 ? (
+            <p className={styles.note}>
+              Nothing yet. <Link to="/studio">Sing one in Studio</Link> or{' '}
+              <Link to="/songs/charts/new">write a chord chart</Link>.
+            </p>
+          ) : (
+            <ul className={list.list} data-testid="my-songs">
+              {entries.map((e) =>
+                e.kind === 'song' ? (
+                  <li key={e.song.id}>
+                    <Link to={`/songs/mine/${e.song.id}`} className={list.card}>
+                      <span className={list.title}>{e.song.lesson.title}</span>
+                      <span className={styles.tags}>
+                        <PrivateBadge />
+                        <span className={styles.badge}>Studio</span>
+                      </span>
+                      <span className={list.meta}>
+                        {prettyAccidentals(keyName(e.song.lesson.key))}, {e.song.lesson.bars.length}{' '}
+                        bars
+                      </span>
+                      {recordings[e.song.id] ? (
+                        <span className={list.meta}>
+                          Recording kept, {formatBytes(recordings[e.song.id]!)}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ) : (
+                  <li key={e.chart.id}>
+                    <Link to={`/songs/charts/${e.chart.id}`} className={list.card}>
+                      <span className={list.title}>{e.chart.chart.title}</span>
+                      <span className={styles.tags}>
+                        <PrivateBadge />
+                        <span className={styles.badge}>Chart</span>
+                      </span>
+                      <span className={list.meta}>
+                        {prettyAccidentals(keyName(e.chart.chart.key))},{' '}
+                        {expandForm(e.chart.chart).length} bars,{' '}
+                        {e.chart.chart.sections.map((s) => s.label).join(' · ')}
+                      </span>
+                    </Link>
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+        </section>
       )}
-    </section>
+    </ImportControls>
   );
 }
