@@ -67,15 +67,60 @@
   background: var(--surface);
 }
 
-.controls {
+.display {
+  position: relative;
   margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .displayToggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.displayToggle[aria-expanded='true'] {
+  border-color: var(--ink);
+}
+
+/* The display menu: note names and theme, in one place at every width. */
+.controls {
   display: none;
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--gutter));
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.controls[data-open] {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.controlGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.controlLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 @media (max-width: 720px) {
@@ -91,35 +136,6 @@
     order: 3;
     width: 100%;
     margin-left: -12px;
-  }
-
-  .displayToggle {
-    display: inline-flex;
-    align-items: center;
-    margin-left: auto;
-    min-height: 36px;
-    padding: 0 14px;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--line);
-    background: var(--surface);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .displayToggle[aria-expanded='true'] {
-    border-color: var(--ink);
-  }
-
-  .controls {
-    display: none;
-    order: 4;
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .controls[data-open] {
-    display: flex;
   }
 }
 
