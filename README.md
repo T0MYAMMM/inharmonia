@@ -63,8 +63,10 @@ src/
     notation/           letter names, Roman numerals, not angka formatting
     content/            the lesson content format, compiler, progression realizer, text parser, fills
     transcription/      voice to notes: pitch frames, segmentation, key, quantization, fixtures, eval
+    songs/              your songs: the editable draft, edits and undo, export format, kept recordings
     persistence/        safe localStorage and versioned documents with migrations
-  state/                Zustand stores (settings, progress, your progressions), review, key highlights
+  state/                Zustand stores (settings, progress, your progressions), review, key highlights,
+                        and My songs in IndexedDB
   app/                  router, layout, theme, singletons (services.ts) and hooks
   ui/                   design-system components and the keyboard dock
   features/             one folder per page
@@ -339,7 +341,7 @@ then a "Today" card with the top suggestion.
 ## Studio
 
 `/studio` turns a sung or hummed melody into notes on the beat grid, suggests chords for it,
-and lets you try the result as a song. Editing and saving drafts come next.
+lets you fix anything in an editor, and saves the result to My songs on this device.
 
 **Recording.** Pick a tempo (50–140 bpm), a meter (4/4, 3/4 or 2/4) and up to 32 bars, turn
 on the microphone, and record. One bar of count-in plays first, and the click keeps going
@@ -405,18 +407,62 @@ ends. Each chord has a reason in plain words, and every segment keeps ranked alt
 (max-marginals), ready for the editor. The weights are in `HARMONY_WEIGHTS`. The same model is
 available behind the `ChordEstimator` interface (`MelodyHarmonizer`).
 
-**Try it.** Pick a suggestion and a left-hand pattern, then **Try it with the chords**. The
-draft (`draftLesson`) is an ordinary song with `source: { kind: 'user' }`:
+**Try it.** Pick a suggestion and a left-hand pattern, then **Edit and save**, or just **Try it
+with the chords**. The draft (`draftLesson`) is an ordinary song with `source: { kind: 'user' }`:
 
 - rests fill the gaps
 - notes held over a barline are split there and tied
 - left-hand voicings are voice-led between E2 and B3, clear of the melody
 
-It opens in the song player, with Listen and Practice, and **Back to the take** returns with
-every setting as you left it. Practising a draft is not recorded in your progress.
+It opens in the song player, with Listen and Practice, and the back button returns with every
+setting as you left it. Practising your songs is not recorded in your progress.
 
-**Privacy.** Audio never leaves the device. Takes and drafts live in memory and are gone when
-you leave the page. Nothing is uploaded, and nothing is committed to the repository.
+### The editor
+
+The editor (`src/features/studio/SongEditor.tsx`) works on a `SongDraft`
+(`src/core/songs/draft.ts`): notes on the beat grid, the chords, the key, tempo, meter and
+left-hand pattern. Every edit is a pure function and goes on an undo history (Ctrl+Z, and
+Shift+Ctrl+Z to redo).
+
+- **Piano roll.** Drag a note to move it (in time and pitch), or drag its right edge to change
+  its length. Tap an empty spot to add a note. The melody stays one note at a time: an edited
+  note takes the place of what it covers and trims what it overlaps. The grid is 1/4, 1/8 or
+  1/16.
+- **Keyboard.** Notes are focusable, one tab stop for the whole roll. The arrows move the
+  selected note by a grid step or a semitone; Shift with the arrows changes its length or moves
+  it an octave. [ and ] pick the previous or next note, and Delete removes it. Every change is
+  announced.
+- **Chord lane.** Each chord is a menu: the harmonizer's ranked alternatives for that spot
+  first, then every other chord of the key. **Suggest chords again** re-harmonizes the edited
+  melody in any style.
+- **Pitch line.** Your sung pitch is drawn over the notes, moved by the same octaves as the
+  melody, so you can see where they differ.
+- **A/B.** **Play** runs the edited song with your take in sync from the same beat. **A: your
+  take** and **B: the notes** switch between them mid-playback, and **Play chords** adds or
+  removes the left hand (`EditorPlayback.ts`).
+
+## My songs
+
+**Save to My songs** stores the song in IndexedDB (`src/state/mySongs.ts`, using `idb`). The
+Songs page lists your songs with a **Private** badge, and each opens at `/songs/mine/:id` in
+the song player, with **Edit** (`/studio/edit/:id`) and **Delete**.
+
+- **Private by design.** Your songs and recordings stay in this browser on this device. They
+  are never uploaded and never committed to the repository, and there are no share links.
+  Every song is marked `source: { kind: 'user' }`.
+- **Recordings are optional.** **Keep the recording of my take** is off by default and shows its
+  size. A kept recording is stored as 16-bit audio with its pitch line, so A/B and the pitch line
+  work again when you edit later. The song page shows its size and has **Delete the recording**.
+- **Backup.** **Export** saves every song (not the recordings) to
+  `inharmonia-my-songs-<date>.json`, and **Import** reads one back on any device. Nothing in an
+  imported file is trusted as is:
+  - each draft is checked (key, tempo, meter, up to 32 bars, note ranges, chord symbols)
+  - the lesson is rebuilt from the draft and must validate
+  - every song is marked as yours
+  - a song already here is replaced only by a newer copy, so importing the same backup twice
+    changes nothing
+- The browser is asked to keep the data (`navigator.storage.persist`). Where storage is blocked
+  (some private windows), the page says so.
 
 ### Evaluating transcription
 
@@ -489,3 +535,5 @@ linear gain) and are capped at full scale.
 - [Tone.js](https://tonejs.github.io/) and [Tonal](https://github.com/tonaljs/tonal), MIT.
 - [Vite PWA](https://vite-pwa-org.netlify.app/) and Workbox, MIT.
 - [pitchy](https://github.com/ianprime0509/pitchy) and fft.js, MIT.
+- [idb](https://github.com/jakearchibald/idb), ISC. Tests use
+  [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB), Apache-2.0.
