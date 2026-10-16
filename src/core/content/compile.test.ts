@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERNS, ARPEGGIO_8THS } from '@/content/patterns';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
-import { applyPattern, compileLesson, validateLesson, type CompiledChord } from './compile';
+import { MIX } from '@config/mix';
+import {
+  applyPattern,
+  compileLesson,
+  soundingSpans,
+  validateLesson,
+  type CompiledChord,
+} from './compile';
+import { TIES_LESSON } from './tieFixture';
 import { DEFAULT_RULES, LESSON_SCHEMA_VERSION, type Lesson } from './types';
 import { explicitVoicing } from '../theory';
 
@@ -141,5 +149,76 @@ describe('Senja di Teras', () => {
       [0, 'Verse'],
       [8, 'Chorus'],
     ]);
+  });
+});
+
+describe('ties', () => {
+  const legato = MIX.melody.legato;
+  const c = compileLesson(TIES_LESSON);
+  const rh = c.events.filter((e) => e.channel === 'rh');
+
+  it('links a note tied across the barline and one tied into a chord change', () => {
+    expect(c.bars[0]!.rh[2]).toMatchObject({ tiedTo: 'rh-1-0' });
+    expect(c.bars[1]!.rh[0]).toMatchObject({ tiedFrom: 'rh-0-2' });
+    expect(c.bars[1]!.rh[1]).toMatchObject({ tiedTo: 'rh-1-2' });
+    expect(c.bars[1]!.rh[2]).toMatchObject({ tiedFrom: 'rh-1-1' });
+    expect(c.bars[1]!.rh[3]!.tiedFrom).toBeUndefined();
+  });
+
+  it('plays each tied pair as one held note, released like its last note', () => {
+    expect(rh.map((e) => [e.midi, e.beat])).toEqual([
+      [60, 0],
+      [64, 1],
+      [67, 2],
+      [69, 5],
+      [71, 7],
+      [72, 8],
+    ]);
+    // G4: 2 beats + 1 beat across the barline; A4: 1 + 1 across the change to G.
+    expect(rh[2]!.dur).toBeCloseTo(3 - (1 - legato));
+    expect(rh[3]!.dur).toBeCloseTo(2 - (1 - legato));
+    expect(rh[0]!.dur).toBeCloseTo(legato);
+  });
+
+  it('keeps both chips of a tie for the score', () => {
+    expect(c.bars[1]!.rh.map((n) => n.note!.name)).toEqual(['G4', 'A4', 'A4', 'B4']);
+  });
+
+  it('restrikes a note tied in from outside a slice', () => {
+    const g = c.chords.find((ch) => ch.symbol === 'G')!;
+    const slice = c.bars[1]!.rh.filter((n) => n.startBeat >= g.startBeat);
+    expect(soundingSpans(slice).map((s) => [s.first.note!.name, s.beats])).toEqual([
+      ['A4', 1],
+      ['B4', 1],
+    ]);
+    expect(soundingSpans(c.bars[1]!.rh).map((s) => s.beats)).toEqual([1, 2, 1]);
+  });
+
+  it('is a valid lesson', () => {
+    expect(validateLesson(TIES_LESSON)).toEqual([]);
+  });
+
+  it('reports ties to a rest, to another pitch or past the end', () => {
+    const lesson = tiny({
+      bars: [
+        {
+          chords: [{ symbol: 'C', beats: 4 }],
+          rh: [
+            { note: 'E4', beats: 1, tie: true },
+            { note: 'r', beats: 1, tie: true },
+            { note: 'D4', beats: 1, tie: true },
+            { note: 'E4', beats: 1, tie: true },
+          ],
+        },
+      ],
+    });
+    expect(validateLesson(lesson)).toEqual([
+      'Bar 1: right hand tie from "E4" needs the same note next, not "r"',
+      'Bar 1: right hand has a tie on a rest',
+      'Bar 1: right hand tie from "D4" needs the same note next, not "E4"',
+      'Bar 1: right hand tie from "E4" has no note to join',
+    ]);
+    // Bad ties are ignored when compiling: every note is struck.
+    expect(compileLesson(lesson).events).toHaveLength(3);
   });
 });

@@ -44,6 +44,20 @@ export interface CompiledNote {
   /** null for a rest. */
   note: SpelledNote | null;
   velocity: number;
+  /** Id of the note this one is tied to (it holds on into that note). */
+  tiedTo?: string;
+  /** Id of the note tied into this one: it is not struck again. */
+  tiedFrom?: string;
+}
+
+/** A tied chain of written notes as it sounds: one strike, held for the whole chain. */
+export interface SoundingSpan {
+  first: CompiledNote;
+  startBeat: number;
+  /** Written length of the whole chain. */
+  beats: number;
+  /** Written length of its last note, which decides the release (legato). */
+  lastBeats: number;
 }
 
 export interface CompiledBar {
@@ -153,12 +167,15 @@ function compileNotes(
   barIndex: number,
   barStart: number,
   defaultVelocity: number,
+  ties: Set<string>,
 ): CompiledNote[] {
   const out: CompiledNote[] = [];
   let t = barStart;
   (notes ?? []).forEach((n, i) => {
+    const id = `${hand}-${barIndex}-${i}`;
+    if (n.tie && n.note !== 'r') ties.add(id);
     out.push({
-      id: `${hand}-${barIndex}-${i}`,
+      id,
       hand,
       barIndex,
       indexInBar: i,
@@ -170,6 +187,52 @@ function compileNotes(
     t += n.beats;
   });
   return out;
+}
+
+/**
+ * Link tied notes, in order through the bars: a tie joins a note to the next
+ * written note of the same hand when that is the same pitch. Ties to a rest or
+ * to another pitch are dropped (`validateLesson` reports them).
+ */
+function linkTies(notes: CompiledNote[], ties: ReadonlySet<string>): void {
+  for (let i = 0; i < notes.length - 1; i++) {
+    const a = notes[i]!;
+    const b = notes[i + 1]!;
+    if (!ties.has(a.id) || !a.note || !b.note || a.note.midi !== b.note.midi) continue;
+    a.tiedTo = b.id;
+    b.tiedFrom = a.id;
+  }
+}
+
+/**
+ * Notes as they sound: each tied chain becomes one span from its first note.
+ * Only ties between notes that are both in `notes` are followed, so a slice of
+ * a song (one chord's melody) restrikes a note tied in from before it.
+ */
+export function soundingSpans(notes: readonly CompiledNote[]): SoundingSpan[] {
+  const out: SoundingSpan[] = [];
+  let open: SoundingSpan | null = null;
+  let lastId = '';
+  for (const n of notes) {
+    if (!n.note) {
+      open = null;
+      continue;
+    }
+    if (open && n.tiedFrom === lastId) {
+      open.beats = n.startBeat + n.beats - open.startBeat;
+      open.lastBeats = n.beats;
+    } else {
+      open = { first: n, startBeat: n.startBeat, beats: n.beats, lastBeats: n.beats };
+      out.push(open);
+    }
+    lastId = n.id;
+  }
+  return out;
+}
+
+/** How long a span sounds, in beats, with the melody's legato applied to its last note. */
+export function spanDuration(span: SoundingSpan, legato: number): number {
+  return span.beats - span.lastBeats * (1 - legato);
 }
 
 /**
@@ -190,6 +253,7 @@ export function compileLesson(
 
   const bars: CompiledBar[] = [];
   const chords: CompiledChord[] = [];
+  const ties = new Set<string>();
   lesson.bars.forEach((bar, barIndex) => {
     const startBeat = barIndex * beatsPerBar;
     let t = startBeat;
@@ -207,7 +271,7 @@ export function compileLesson(
       return compiled;
     });
     const lh = bar.lh
-      ? compileNotes(bar.lh, 'lh', barIndex, startBeat, mix.leftHand.velocity)
+      ? compileNotes(bar.lh, 'lh', barIndex, startBeat, mix.leftHand.velocity, ties)
       : pattern
         ? barChords.flatMap((c) => applyPattern(pattern, c, `lh-${c.id}`, mix))
         : [];
@@ -217,27 +281,30 @@ export function compileLesson(
       beats: beatsPerBar,
       ...(bar.section ? { section: bar.section } : {}),
       chords: barChords,
-      rh: compileNotes(bar.rh, 'rh', barIndex, startBeat, mix.melody.velocity),
+      rh: compileNotes(bar.rh, 'rh', barIndex, startBeat, mix.melody.velocity, ties),
       lh,
     });
     chords.push(...barChords);
   });
 
-  const events: TimelineEvent[] = bars.flatMap((b) =>
-    [...b.rh, ...b.lh].flatMap((n) =>
-      n.note
-        ? [
-            {
-              id: n.id,
-              beat: n.startBeat,
-              dur: n.hand === 'rh' ? n.beats * rhLegato : n.beats,
-              midi: n.note.midi,
-              velocity: n.velocity,
-              channel: n.hand,
-            },
-          ]
-        : [],
-    ),
+  const events: TimelineEvent[] = [];
+  for (const hand of ['rh', 'lh'] as const) {
+    const notes = bars.flatMap((b) => b[hand]);
+    linkTies(notes, ties);
+    for (const span of soundingSpans(notes)) {
+      const n = span.first;
+      events.push({
+        id: n.id,
+        beat: span.startBeat,
+        dur: hand === 'rh' ? spanDuration(span, rhLegato) : span.beats,
+        midi: n.note!.midi,
+        velocity: n.velocity,
+        channel: hand,
+      });
+    }
+  }
+  events.sort(
+    (a, b) => a.beat - b.beat || (a.channel === b.channel ? 0 : a.channel === 'rh' ? -1 : 1),
   );
 
   return { lesson, beatsPerBar, lengthBeats: bars.length * beatsPerBar, bars, chords, events };
@@ -271,5 +338,30 @@ export function validateLesson(lesson: Lesson): string[] {
       }
     }
   });
+  for (const [hand, key] of [
+    ['right hand', 'rh'],
+    ['left hand', 'lh'],
+  ] as const) {
+    const notes = lesson.bars.flatMap((bar, i) => (bar[key] ?? []).map((n) => ({ n, bar: i })));
+    notes.forEach(({ n, bar }, i) => {
+      if (!n.tie) return;
+      const where = `Bar ${bar + 1}`;
+      const next = notes[i + 1]?.n;
+      if (n.note === 'r') issues.push(`${where}: ${hand} has a tie on a rest`);
+      else if (!next) issues.push(`${where}: ${hand} tie from "${n.note}" has no note to join`);
+      else if (next.note === 'r' || !samePitch(n.note, next.note))
+        issues.push(
+          `${where}: ${hand} tie from "${n.note}" needs the same note next, not "${next.note}"`,
+        );
+    });
+  }
   return issues;
+}
+
+function samePitch(a: string, b: string): boolean {
+  try {
+    return spelled(a).midi === spelled(b).midi;
+  } catch {
+    return false;
+  }
 }

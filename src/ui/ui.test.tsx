@@ -7,7 +7,7 @@ import { formatNote } from '@/core/notation';
 import { spelled } from '@/core/theory';
 import { KeyLights } from '@/state/keyLights';
 import { Keyboard } from './keyboard/Keyboard';
-import { layoutKeys } from './keyboard/layout';
+import { DOCK_RANGE, dockRangeFor, isBlack, layoutKeys } from './keyboard/layout';
 import { NoteLabel } from './NoteLabel';
 import { Segmented } from './Segmented';
 import { Toggle } from './Toggle';
@@ -19,6 +19,28 @@ describe('keyboard layout', () => {
     expect(keys.filter((k) => !k.black)).toHaveLength(29);
     expect(keys[0]).toMatchObject({ midi: 30, black: true, x: 0 });
     expect(width).toBeCloseTo(29.3);
+  });
+});
+
+describe('dock range', () => {
+  it('keeps the default range when the notes fit', () => {
+    expect(dockRangeFor([35, 76])).toEqual(DOCK_RANGE);
+    expect(dockRangeFor([])).toEqual(DOCK_RANGE);
+  });
+
+  it('grows to fit a high melody, at least as wide as the default, on white keys', () => {
+    const [lo, hi] = dockRangeFor([43, 59, 64, 84]);
+    expect(lo).toBeLessThanOrEqual(41);
+    expect(hi).toBeGreaterThanOrEqual(86);
+    expect(hi - lo).toBeGreaterThanOrEqual(DOCK_RANGE[1] - DOCK_RANGE[0]);
+    expect(isBlack(lo) || isBlack(hi)).toBe(false);
+  });
+
+  it('widens past the default for a wide piece and stays on the piano', () => {
+    expect(dockRangeFor([22, 106])).toEqual([21, 108]);
+    const [lo, hi] = dockRangeFor([100, 104]);
+    expect(hi).toBeLessThanOrEqual(108);
+    expect(hi - lo).toBeGreaterThanOrEqual(49);
   });
 });
 
