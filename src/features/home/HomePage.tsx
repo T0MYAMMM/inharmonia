@@ -7,10 +7,6 @@ const COMING = [
     title: 'Progress',
     body: 'Best scores, streaks, and what to review today.',
   },
-  {
-    title: 'Fills and runs',
-    body: 'Short fills that slot between chords, speeding up as you get them clean.',
-  },
   { title: 'Ear training', body: 'Hear a chord or a progression, then name it.' },
 ];
 
@@ -26,8 +22,9 @@ export function HomePage() {
         <p>
           <Link to="/songs/senja-di-teras">Play Senja di Teras</Link>,{' '}
           <Link to="/chords">explore chords</Link>, <Link to="/chords/drill">drill them</Link>,{' '}
-          <Link to="/progressions">comp through a progression</Link> or{' '}
-          <Link to="/progressions/new">write your own</Link>
+          <Link to="/progressions">comp through a progression</Link>,{' '}
+          <Link to="/progressions/new">write your own</Link> or{' '}
+          <Link to="/fills">learn fills between the chords</Link>
         </p>
       </div>
       <h2 style={{ marginBottom: 'var(--space-4)' }}>Coming soon</h2>

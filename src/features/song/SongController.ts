@@ -575,7 +575,11 @@ export class SongController {
 
     if (playing && beat >= 0) {
       const chord = chordAt(this.compiled, beat);
-      this.s.lights.setExactly('rh', this.snap.rhOn && chip?.note ? [chip.note.midi] : []);
+      const fill = chip?.note
+        ? undefined
+        : this.compiled.fills?.find((f) => beat >= f.beat && beat < f.beat + f.dur);
+      const rh = chip?.note ? [chip.note.midi] : (fill?.midis ?? []);
+      this.s.lights.setExactly('rh', this.snap.rhOn ? rh : []);
       this.s.lights.setExactly(
         'lh',
         this.snap.lhOn && chord ? chord.voicing.map((n) => n.midi) : [],
