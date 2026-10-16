@@ -170,6 +170,7 @@ export function formatNote(
 
 /** Chord label in the current system. */
 export function formatChord(symbol: string, key: KeyContext, system: NotationSystem): string {
+  if (symbol === 'N.C.') return 'N.C.';
   if (system === 'roman') return chordToRoman(symbol, key.tonic, key.mode);
   return prettyChord(symbol);
 }
