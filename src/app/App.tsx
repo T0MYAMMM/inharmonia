@@ -17,6 +17,8 @@ import { ProgressPage } from '@/features/progress/ProgressPage';
 import { StudioPage } from '@/features/studio/StudioPage';
 import { MySongPage } from '@/features/mysongs/MySongPage';
 import { EditSongPage } from '@/features/mysongs/EditSongPage';
+import { ChartPage } from '@/features/charts/ChartPage';
+import { ChartEditorPage } from '@/features/charts/ChartEditorPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
 import { ROUTER_BASENAME } from './config';
@@ -28,6 +30,9 @@ export function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="songs" element={<SongsPage />} />
         <Route path="songs/mine/:songId" element={<MySongPage />} />
+        <Route path="songs/charts/new" element={<ChartEditorPage />} />
+        <Route path="songs/charts/:chartId" element={<ChartPage />} />
+        <Route path="songs/charts/:chartId/edit" element={<ChartEditorPage key="edit" />} />
         <Route path="songs/:songId" element={<SongPage />} />
         <Route path="chords" element={<ChordLibraryPage />} />
         <Route path="chords/drill" element={<ChordDrillPage />} />
