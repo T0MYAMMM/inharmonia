@@ -11,14 +11,15 @@ import {
   voiceChord,
   type SpelledNote,
 } from '../theory';
-import type {
-  ChordSpec,
-  Hand,
-  Lesson,
-  NoteSpec,
-  PatternSpec,
-  PatternVoice,
-  VoicingSpec,
+import {
+  NO_CHORD,
+  type ChordSpec,
+  type Hand,
+  type Lesson,
+  type NoteSpec,
+  type PatternSpec,
+  type PatternVoice,
+  type VoicingSpec,
 } from './types';
 
 /** A chord as it sits on the timeline, with its resolved voicing. */
@@ -85,6 +86,7 @@ export interface CompiledLesson {
 const EPS = 1e-9;
 
 export function resolveVoicing(symbol: string, spec: VoicingSpec | undefined): SpelledNote[] {
+  if (symbol === NO_CHORD) return [];
   if (spec && 'notes' in spec) return explicitVoicing(spec.notes);
   return voiceChord(symbol, {
     style: spec?.style ?? 'close',
@@ -320,7 +322,8 @@ export function validateLesson(lesson: Lesson): string[] {
     if (Math.abs(sum(bar.chords) - len) > EPS)
       issues.push(`${where}: chords last ${sum(bar.chords)} beats, not ${len}`);
     for (const c of bar.chords)
-      if (!isValidChord(c.symbol)) issues.push(`${where}: unknown chord "${c.symbol}"`);
+      if (c.symbol !== NO_CHORD && !isValidChord(c.symbol))
+        issues.push(`${where}: unknown chord "${c.symbol}"`);
     for (const [hand, notes] of [
       ['right hand', bar.rh],
       ['left hand', bar.lh],

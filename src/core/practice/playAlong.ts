@@ -56,12 +56,15 @@ export class PlayAlongScorer {
   private wrong = 0;
 
   constructor(chords: readonly CompiledChord[], opts: PlayAlongOptions = {}) {
-    this.segments = chords.map((chord) => ({
-      chord,
-      target: chordTarget(chord.voicing),
-      start: chord.startBeat,
-      end: chord.startBeat + chord.beats,
-    }));
+    // N.C. slots have nothing to play, so they are not scored.
+    this.segments = chords
+      .filter((c) => c.voicing.length > 0)
+      .map((chord) => ({
+        chord,
+        target: chordTarget(chord.voicing),
+        start: chord.startBeat,
+        end: chord.startBeat + chord.beats,
+      }));
     this.strictness = opts.strictness ?? 'pitch-class';
     this.windowMs = opts.hitWindowMs ?? 150;
     this.earlyBeats = opts.earlyBeats ?? 0.5;

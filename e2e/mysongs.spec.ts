@@ -115,14 +115,18 @@ test.describe('my songs', () => {
     await expect(page.getByTestId('save-status')).toContainText('Saved');
 
     await page.goto('songs');
+    await page.getByTestId('export-open').click();
+    const dialog = page.getByTestId('export-dialog');
+    await expect(dialog.getByTestId('export-recordings')).not.toBeChecked();
     const download = page.waitForEvent('download');
-    await page.getByTestId('export-songs').click();
+    await dialog.getByTestId('export-download').click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^inharmonia-my-songs-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(file.suggestedFilename()).toBe('inharmonia-song-backup-me.json');
     const path = await file.path();
-    await expect(page.getByTestId('my-songs-status')).toContainText(
-      'Exported 1 song. Recordings stay on this device.',
+    await expect(dialog.getByTestId('export-status')).toHaveText(
+      'Saved inharmonia-song-backup-me.json: 1 item.',
     );
+    await dialog.getByRole('button', { name: 'Close' }).click();
 
     await page.getByTestId('my-songs').getByRole('link').click();
     await page.getByTestId('delete-recording').click();
@@ -132,20 +136,27 @@ test.describe('my songs', () => {
     await expect(page).toHaveURL(/\/songs$/);
     await expect(page.getByText('Nothing yet.')).toBeVisible();
 
-    await page.getByTestId('import-songs').setInputFiles(path);
-    await expect(page.getByTestId('my-songs-status')).toHaveText('Imported: 1 added.');
+    const preview = page.getByTestId('import-preview');
+    await page.getByTestId('import-file').setInputFiles(path);
+    await expect(preview.getByTestId('import-summary')).toHaveText('1 item in this file: 1 new.');
+    await preview.getByTestId('import-confirm').click();
+    await expect(page.getByTestId('import-result')).toHaveText('Imported: 1 added.');
     await expect(page.getByTestId('my-songs')).toContainText('Backup me');
     await expect(page.getByTestId('my-songs')).not.toContainText('Recording kept');
-    await page.getByTestId('import-songs').setInputFiles(path);
-    await expect(page.getByTestId('my-songs-status')).toHaveText('Imported: 1 already here.');
 
-    await page.getByTestId('import-songs').setInputFiles({
+    await page.getByTestId('import-file').setInputFiles(path);
+    await expect(preview.getByTestId('import-summary')).toHaveText(
+      '1 item in this file: 0 new, 1 already here.',
+    );
+    await preview.getByTestId('import-confirm').click();
+    await expect(page.getByTestId('import-result')).toHaveText('Imported: 1 skipped.');
+
+    await page.getByTestId('import-file').setInputFiles({
       name: 'notes.json',
       mimeType: 'application/json',
       buffer: Buffer.from('{"hello": 1}'),
     });
-    await expect(page.getByTestId('my-songs-status')).toHaveText(
-      'This file is not an Inharmonia export.',
-    );
+    await expect(preview).toContainText('This is not an Inharmonia export.');
+    await expect(preview.getByTestId('import-confirm')).toBeDisabled();
   });
 });

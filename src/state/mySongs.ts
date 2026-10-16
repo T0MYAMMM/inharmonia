@@ -1,44 +1,51 @@
 import { useSyncExternalStore } from 'react';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import {
-  buildExport,
-  parseExport,
-  recordingBytes,
-  type ParsedImport,
-  type UserRecording,
-  type UserSong,
-} from '@/core/songs';
+import type { UserChart } from '@/core/charts';
+import { recordingBytes, type UserRecording, type UserSong } from '@/core/songs';
 
 /**
- * Your songs and kept recordings, in IndexedDB on this device. Nothing here is
- * uploaded or shared; export and import move songs between your own devices.
+ * Your songs, chord charts and kept recordings, in IndexedDB on this device.
+ * Nothing here is uploaded or shared; export and import move them between your
+ * own devices (see state/transfer.ts).
  */
 interface Schema extends DBSchema {
   songs: { key: string; value: UserSong; indexes: { updatedAt: number } };
   recordings: { key: string; value: UserRecording };
+  charts: { key: string; value: UserChart; indexes: { updatedAt: number } };
 }
 
 export const DB_NAME = 'inharmonia';
-const DB_VERSION = 1;
+/** 1: songs and recordings (phase 7). 2: chord charts. */
+export const DB_VERSION = 2;
 
 export interface MySongsState {
   status: 'loading' | 'ready' | 'unavailable';
   /** Newest first. */
   songs: UserSong[];
+  /** Newest first. */
+  charts: UserChart[];
   /** Bytes of each kept recording, by song id. */
   recordings: Readonly<Record<string, number>>;
 }
 
+const EMPTY: MySongsState = { status: 'loading', songs: [], charts: [], recordings: {} };
 let dbp: Promise<IDBPDatabase<Schema>> | null = null;
-let state: MySongsState = { status: 'loading', songs: [], recordings: {} };
+let state: MySongsState = EMPTY;
 const listeners = new Set<() => void>();
 
 function db(): Promise<IDBPDatabase<Schema>> {
   dbp ??= openDB<Schema>(DB_NAME, DB_VERSION, {
-    upgrade(d) {
-      const songs = d.createObjectStore('songs', { keyPath: 'id' });
-      songs.createIndex('updatedAt', 'updatedAt');
-      d.createObjectStore('recordings', { keyPath: 'songId' });
+    // Each step adds what its version brought, so older databases keep their data.
+    upgrade(d, oldVersion) {
+      if (oldVersion < 1) {
+        const songs = d.createObjectStore('songs', { keyPath: 'id' });
+        songs.createIndex('updatedAt', 'updatedAt');
+        d.createObjectStore('recordings', { keyPath: 'songId' });
+      }
+      if (oldVersion < 2) {
+        const charts = d.createObjectStore('charts', { keyPath: 'id' });
+        charts.createIndex('updatedAt', 'updatedAt');
+      }
     },
   });
   return dbp;
@@ -49,17 +56,21 @@ function set(next: MySongsState) {
   listeners.forEach((l) => l());
 }
 
-/** Reload the list from the database. Marks storage unavailable if it cannot open. */
+const newestFirst = <T extends { updatedAt: number }>(xs: T[]) =>
+  xs.sort((a, b) => b.updatedAt - a.updatedAt);
+
+/** Reload the lists from the database. Marks storage unavailable if it cannot open. */
 export async function refresh(): Promise<void> {
   try {
     const d = await db();
-    const songs = (await d.getAll('songs')).sort((a, b) => b.updatedAt - a.updatedAt);
+    const songs = newestFirst(await d.getAll('songs'));
+    const charts = newestFirst(await d.getAll('charts'));
     const recordings: Record<string, number> = {};
     for (const r of await d.getAll('recordings')) recordings[r.songId] = recordingBytes(r);
-    set({ status: 'ready', songs, recordings });
+    set({ status: 'ready', songs, charts, recordings });
   } catch {
     dbp = null;
-    set({ status: 'unavailable', songs: [], recordings: {} });
+    set({ ...EMPTY, status: 'unavailable' });
   }
 }
 
@@ -74,13 +85,19 @@ export const mySongs = {
   },
 };
 
-/** A fresh id for a new song. */
+function rand(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10);
+}
+
+/** A fresh id for a new song. (Songs saved before phase 8 keep their "user-" ids.) */
 export function newSongId(): string {
-  const rand =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID().slice(0, 8)
-      : Math.random().toString(36).slice(2, 10);
-  return `user-${Date.now().toString(36)}-${rand}`;
+  return `mine-song-${Date.now().toString(36)}-${rand()}`;
+}
+
+export function newChartId(): string {
+  return `mine-chart-${Date.now().toString(36)}-${rand()}`;
 }
 
 export async function getSong(id: string): Promise<UserSong | undefined> {
@@ -89,6 +106,14 @@ export async function getSong(id: string): Promise<UserSong | undefined> {
 
 export async function getRecording(id: string): Promise<UserRecording | undefined> {
   return (await db()).get('recordings', id);
+}
+
+export async function getChart(id: string): Promise<UserChart | undefined> {
+  return (await db()).get('charts', id);
+}
+
+function askToKeep() {
+  void navigator.storage?.persist?.().catch(() => false);
 }
 
 /**
@@ -102,7 +127,13 @@ export async function saveSong(song: UserSong, recording?: UserRecording | null)
   if (recording) await tx.objectStore('recordings').put(recording);
   else if (recording === null) await tx.objectStore('recordings').delete(song.id);
   await tx.done;
-  void navigator.storage?.persist?.().catch(() => false);
+  askToKeep();
+  await refresh();
+}
+
+export async function saveChart(chart: UserChart): Promise<void> {
+  await (await db()).put('charts', chart);
+  askToKeep();
   await refresh();
 }
 
@@ -115,62 +146,51 @@ export async function deleteSong(id: string): Promise<void> {
   await refresh();
 }
 
+export async function deleteChart(id: string): Promise<void> {
+  await (await db()).delete('charts', id);
+  await refresh();
+}
+
 export async function deleteRecording(id: string): Promise<void> {
   await (await db()).delete('recordings', id);
   await refresh();
 }
 
-/** Every song as an export file's text (recordings are not included). */
-export async function exportSongs(now = new Date()): Promise<string> {
-  const songs = await (await db()).getAll('songs');
-  return JSON.stringify(buildExport(songs, now), null, 2);
-}
-
-export interface ImportResult {
-  added: number;
-  updated: number;
-  /** Already here and not older on this device. */
-  kept: number;
-  skipped: ParsedImport['skipped'];
-}
-
-/**
- * Bring in songs from an export. A song already here is replaced only when the
- * file's copy is newer, so importing the same backup twice changes nothing.
- */
-export async function importSongs(
-  text: string,
-  patterns: ReadonlySet<string>,
-  fallbackPattern: string,
-): Promise<ImportResult | { error: string }> {
-  const parsed = parseExport(text, patterns, fallbackPattern);
-  if ('error' in parsed) return parsed;
+/** Write many songs, charts and recordings in one go (imports). */
+export async function putMany(input: {
+  songs: UserSong[];
+  charts: UserChart[];
+  recordings: UserRecording[];
+}): Promise<void> {
   const d = await db();
-  const tx = d.transaction('songs', 'readwrite');
-  const result: ImportResult = { added: 0, updated: 0, kept: 0, skipped: parsed.skipped };
-  for (const song of parsed.songs) {
-    const existing = await tx.store.get(song.id);
-    if (!existing) result.added++;
-    else if (song.updatedAt > existing.updatedAt) result.updated++;
-    else {
-      result.kept++;
-      continue;
-    }
-    await tx.store.put(song);
-  }
+  const tx = d.transaction(['songs', 'charts', 'recordings'], 'readwrite');
+  for (const s of input.songs) await tx.objectStore('songs').put(s);
+  for (const c of input.charts) await tx.objectStore('charts').put(c);
+  for (const r of input.recordings) await tx.objectStore('recordings').put(r);
   await tx.done;
+  askToKeep();
   await refresh();
-  return result;
 }
 
-/** Tests: forget the open connection and cached list. */
+/** Every recording kept for these songs (exports that include them). */
+export async function getRecordings(ids: readonly string[]): Promise<UserRecording[]> {
+  const d = await db();
+  const out: UserRecording[] = [];
+  for (const id of ids) {
+    const r = await d.get('recordings', id);
+    if (r) out.push(r);
+  }
+  return out;
+}
+
+/** Tests: forget the open connection and cached lists. */
 export function resetForTests(): void {
   void dbp?.then((d) => d.close());
   dbp = null;
-  state = { status: 'loading', songs: [], recordings: {} };
+  state = EMPTY;
 }
 
-/** The song list for React; loads it on first use. */
+/** The lists for React; loads them on first use. */
 export function useMySongs(): MySongsState {
   return useSyncExternalStore(mySongs.subscribe, () => mySongs.snapshot);
 }

@@ -5,3 +5,4 @@ public/samples
 package-lock.json
 playwright-report
 test-results
+docs/format/examples

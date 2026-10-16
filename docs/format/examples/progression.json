@@ -1,0 +1,41 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "progression",
+      "id": "example-turnaround",
+      "title": "Example turnaround",
+      "source": {
+        "kind": "generic"
+      },
+      "progression": {
+        "mode": "major",
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "steps": [
+          {
+            "numeral": "I",
+            "beats": 4
+          },
+          {
+            "numeral": "vi",
+            "beats": 4
+          },
+          {
+            "numeral": "ii7",
+            "beats": 4
+          },
+          {
+            "numeral": "V7",
+            "beats": 4
+          }
+        ],
+        "description": "I, vi, ii7, V7: back home in four bars."
+      }
+    }
+  ]
+}

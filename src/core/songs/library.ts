@@ -1,12 +1,9 @@
-import { validateLesson } from '../content/compile';
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
 import type { Lesson } from '../content/types';
 import { isValidChord } from '../theory';
 import { MIN_NOTE_BEATS, toLesson, type SongDraft } from './draft';
 
 export const USER_SONG_VERSION = 1;
-export const EXPORT_FORMAT = 'inharmonia-songs';
-export const EXPORT_VERSION = 1;
 export const MAX_BARS = 32;
 export const MAX_TITLE = 80;
 
@@ -35,13 +32,6 @@ export interface UserRecording {
   traceHop: number;
   /** Semitones the melody was moved from the sung pitch (octaves for the piano). */
   traceShift: number;
-}
-
-export interface SongExport {
-  format: typeof EXPORT_FORMAT;
-  version: number;
-  exportedAt: string;
-  songs: UserSong[];
 }
 
 export function recordingBytes(r: Pick<UserRecording, 'samples' | 'trace'>): number {
@@ -135,68 +125,4 @@ export function cleanDraft(
     lhPattern:
       typeof lhPattern === 'string' && patterns.has(lhPattern) ? lhPattern : fallbackPattern,
   };
-}
-
-export function buildExport(songs: readonly UserSong[], now: Date): SongExport {
-  return {
-    format: EXPORT_FORMAT,
-    version: EXPORT_VERSION,
-    exportedAt: now.toISOString(),
-    songs: [...songs],
-  };
-}
-
-export interface ParsedImport {
-  songs: UserSong[];
-  /** Songs left out, with why. */
-  skipped: { title: string; reason: string }[];
-}
-
-/**
- * Read an export file. Only drafts are trusted, after checking; each lesson is
- * rebuilt from its draft and must validate, and every song is marked as yours.
- */
-export function parseExport(
-  text: string,
-  patterns: ReadonlySet<string>,
-  fallbackPattern: string,
-): ParsedImport | { error: string } {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    return { error: 'This file is not an Inharmonia export.' };
-  }
-  if (!isObj(data) || data.format !== EXPORT_FORMAT || !Array.isArray(data.songs))
-    return { error: 'This file is not an Inharmonia export.' };
-  if (typeof data.version !== 'number' || data.version > EXPORT_VERSION)
-    return {
-      error: 'This export comes from a newer version of Inharmonia. Update, then try again.',
-    };
-  const out: ParsedImport = { songs: [], skipped: [] };
-  for (const raw of data.songs as unknown[]) {
-    const title =
-      isObj(raw) && isObj(raw.draft) && typeof raw.draft.title === 'string'
-        ? raw.draft.title
-        : 'A song';
-    if (!isObj(raw) || typeof raw.id !== 'string' || !/^user-[a-z0-9-]{1,40}$/.test(raw.id)) {
-      out.skipped.push({ title, reason: 'no id' });
-      continue;
-    }
-    const draft = cleanDraft(raw.draft, patterns, fallbackPattern);
-    if (typeof draft === 'string') {
-      out.skipped.push({ title, reason: draft });
-      continue;
-    }
-    const lesson = toLesson(draft, raw.id);
-    const issues = validateLesson(lesson);
-    if (issues.length) {
-      out.skipped.push({ title, reason: issues[0]! });
-      continue;
-    }
-    const createdAt = isNum(raw.createdAt, 0, 1e15) ? raw.createdAt : Date.now();
-    const updatedAt = isNum(raw.updatedAt, 0, 1e15) ? raw.updatedAt : createdAt;
-    out.songs.push({ id: raw.id, version: USER_SONG_VERSION, createdAt, updatedAt, draft, lesson });
-  }
-  return out;
 }
