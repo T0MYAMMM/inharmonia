@@ -156,6 +156,36 @@ export class AudioEngine {
     this.pending = [];
   }
 
+  /** The shared AudioContext, once unlocked (microphone capture runs on it too). */
+  context(): AudioContext | null {
+    return this.raw;
+  }
+
+  /**
+   * Play recorded mono audio (a Studio take) at an audio-clock time, straight to
+   * the output. Returns a function that stops it.
+   */
+  playRecording(samples: Float32Array, sampleRate: number, when: number, gain = 0.9): () => void {
+    const ctx = this.raw;
+    if (!ctx) return () => undefined;
+    const buffer = ctx.createBuffer(1, samples.length, sampleRate);
+    buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(ctx.destination);
+    src.start(Math.max(when, ctx.currentTime));
+    return () => {
+      try {
+        src.stop();
+      } catch {
+        /* already stopped */
+      }
+      src.disconnect();
+    };
+  }
+
   /** Current audio-clock time, seconds. */
   now(): number {
     return this.raw?.currentTime ?? 0;
