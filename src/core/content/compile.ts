@@ -64,6 +64,8 @@ export interface CompiledLesson {
   chords: CompiledChord[];
   /** Everything the transport plays, both hands, in straight beats. */
   events: TimelineEvent[];
+  /** Right-hand fills added between chords (see `withFills`), for lighting keys. */
+  fills?: { beat: number; dur: number; midis: number[] }[];
 }
 
 const EPS = 1e-9;

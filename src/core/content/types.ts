@@ -152,23 +152,65 @@ export interface Progression {
   tags?: string[];
 }
 
-/** A fill defined relative to a chord change, so it transposes and slots in anywhere. */
+/** Kinds of fill, as the library groups them. */
+export type FillCategory =
+  | 'passing'
+  | 'chromatic'
+  | 'scale-run'
+  | 'grace'
+  | 'octave'
+  | 'pentatonic'
+  | 'sixths'
+  | 'turnaround';
+
+/**
+ * One note of a fill, relative to a chord change so it transposes to any key
+ * and slots between any two chords. Start from the root (or a chord tone) of
+ * the chord before the change ('from'), after it ('to') or the key's tonic
+ * ('key'); walk `step` notes along the fill's scale; then shift by `semis`
+ * semitones and `octave` octaves. Roots sit in the hand's register: C4–B4 for
+ * the right hand, C2–B2 for the left.
+ */
+export interface FillPitch {
+  ref: 'from' | 'to' | 'key';
+  tone?: 'root' | 'third' | 'fifth';
+  step?: number;
+  semis?: number;
+  octave?: number;
+}
+
+/** Notes struck together (one note, or a double stop), `at` beats into the fill. */
+export interface FillHitSpec {
+  at: number;
+  dur: number;
+  notes: FillPitch[];
+  /** 0..1; default from the mix. */
+  velocity?: number;
+}
+
+/** A short fill or run between two chords. */
 export interface FillSpec {
   id: string;
   schemaVersion: number;
   name: string;
-  /** Where the fill sits: leading into the next chord, or over the current one. */
+  category: FillCategory;
+  /** One line on how it sounds or what to listen for. */
+  description: string;
+  /** 1 (first week) to 3 (takes practice). */
+  level: 1 | 2 | 3;
+  /**
+   * 'into-next' fills end on the chord change: they start `beats` before it and
+   * may land on it (a hit at `at === beats`). 'over-current' fills start with
+   * the bar before the change and stay within it.
+   */
   anchor: 'into-next' | 'over-current';
-  /** Length in beats, ending at the chord change for 'into-next'. */
+  /** Length in beats (at most a bar), not counting a landing note. */
   beats: number;
-  notes: {
-    /** Scale degree relative to the anchor chord's root or the key ("1", "♭3", "5"). */
-    degree: string;
-    relativeTo: 'chord' | 'key';
-    octave: number;
-    at: number;
-    dur: number;
-    hand?: Hand;
-  }[];
+  /** What `step` walks along: the key's scale, or its pentatonic. Default 'key'. */
+  scale?: 'key' | 'pentatonic';
+  hand: Hand;
+  /** A change it suits, as Roman numerals, shown first in the trainer. */
+  suggested: { from: string; to: string };
+  hits: FillHitSpec[];
   source: ContentSource;
 }

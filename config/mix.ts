@@ -41,6 +41,8 @@ export interface Mix {
   };
   /** Chord library and drills: "Hear it" on a chord (uses leftHand.gainDb). */
   chords: { velocity: number; lengthSec: number; brokenGapSec: number };
+  /** Fills and runs (use the playing hand's gain). The landing note is a touch louder. */
+  fills: { velocity: number; landingVelocity: number };
   metronome: { gainDb: number; accentVelocity: number; velocity: number };
 }
 
@@ -57,6 +59,7 @@ export const MIX: Mix = {
     hearItLengthSec: 0.55,
   },
   chords: { velocity: 0.32, lengthSec: 1.8, brokenGapSec: 0.22 },
+  fills: { velocity: 0.4, landingVelocity: 0.46 },
   metronome: { gainDb: 0, accentVelocity: 0.9, velocity: 0.55 },
 };
 
