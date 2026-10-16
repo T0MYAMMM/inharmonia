@@ -1,7 +1,25 @@
 import { MIX, type Mix } from '@config/mix';
 import type { TimelineEvent } from '../audio/timeline';
-import { explicitVoicing, isValidChord, spelled, voiceChord, type SpelledNote } from '../theory';
-import type { ChordSpec, Hand, Lesson, NoteSpec, PatternSpec, VoicingSpec } from './types';
+import {
+  explicitVoicing,
+  isValidChord,
+  parseChord,
+  placeBelow,
+  spelled,
+  transposeNote,
+  transposePc,
+  voiceChord,
+  type SpelledNote,
+} from '../theory';
+import type {
+  ChordSpec,
+  Hand,
+  Lesson,
+  NoteSpec,
+  PatternSpec,
+  PatternVoice,
+  VoicingSpec,
+} from './types';
 
 /** A chord as it sits on the timeline, with its resolved voicing. */
 export interface CompiledChord {
@@ -11,6 +29,8 @@ export interface CompiledChord {
   startBeat: number;
   beats: number;
   voicing: SpelledNote[];
+  /** Roman numeral, when the content was written in numerals. */
+  numeral?: string;
 }
 
 /** A written note (or rest) as it sits on the timeline. */
@@ -78,11 +98,9 @@ export function applyPattern(
       const at = cycle + step.at;
       if (at >= end - EPS) break;
       const dur = step.dur === 'chord' ? end - at : Math.min(step.dur, end - at);
-      for (const raw of step.voices) {
-        const idx = raw < 0 ? v.length + raw : Math.min(raw, v.length - 1);
-        const note = v[Math.max(0, idx)]!;
-        const base =
-          step.velocity ?? (step.accent ? mix.leftHand.accentVelocity : mix.leftHand.velocity);
+      const base =
+        step.velocity ?? (step.accent ? mix.leftHand.accentVelocity : mix.leftHand.velocity);
+      for (const { note, lowest } of resolveVoices(step.voices, chord)) {
         out.push({
           id: `${idPrefix}-${n++}`,
           hand: 'lh',
@@ -91,9 +109,37 @@ export function applyPattern(
           startBeat: at,
           beats: dur,
           note,
-          velocity: Math.min(1, idx === 0 ? base * (pattern.rootAccent ?? 1) : base),
+          velocity: Math.min(1, lowest ? base * (pattern.rootAccent ?? 1) : base),
         });
       }
+    }
+  }
+  return out;
+}
+
+/** Bass notes for patterns: the chord's bass (or root) below the voicing, kept between E1 and E3. */
+export function bassNotes(chord: CompiledChord): { root: SpelledNote; fifth: SpelledNote } {
+  const info = parseChord(chord.symbol);
+  const lowest = chord.voicing[0]?.midi ?? 48;
+  let root = placeBelow(info.bass ?? info.root, Math.min(lowest - 2, 53));
+  if (root.midi < 28) root = transposeNote(root, 12);
+  const fifth = placeBelow(transposePc(info.root, '5P'), root.midi + 12);
+  return { root, fifth: fifth.midi > root.midi ? fifth : transposeNote(fifth, 12) };
+}
+
+function resolveVoices(
+  voices: readonly PatternVoice[],
+  chord: CompiledChord,
+): { note: SpelledNote; lowest: boolean }[] {
+  const v = chord.voicing;
+  const out: { note: SpelledNote; lowest: boolean }[] = [];
+  for (const raw of voices) {
+    if (raw === 'all') out.push(...v.map((note, i) => ({ note, lowest: i === 0 })));
+    else if (raw === 'root') out.push({ note: bassNotes(chord).root, lowest: true });
+    else if (raw === 'fifth') out.push({ note: bassNotes(chord).fifth, lowest: true });
+    else {
+      const idx = raw < 0 ? v.length + raw : Math.min(raw, v.length - 1);
+      out.push({ note: v[Math.max(0, idx)]!, lowest: Math.max(0, idx) === 0 });
     }
   }
   return out;
@@ -153,6 +199,7 @@ export function compileLesson(
         startBeat: t,
         beats: c.beats,
         voicing: resolveVoicing(c.symbol, c.voicing),
+        ...(c.numeral ? { numeral: c.numeral } : {}),
       };
       t += c.beats;
       return compiled;
