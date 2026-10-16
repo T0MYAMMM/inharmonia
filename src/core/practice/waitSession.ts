@@ -189,12 +189,15 @@ function noteTargets(c: CompiledLesson, both: boolean): PracticeTarget[] {
   });
 }
 
+/** Chord targets: every chord that is played (N.C. slots are skipped). */
 function chordTargets(c: CompiledLesson): PracticeTarget[] {
-  return c.chords.map((chord) => ({
-    kind: 'chord' as const,
-    id: chord.id,
-    barIndex: chord.barIndex,
-    startBeat: chord.startBeat,
-    chord,
-  }));
+  return c.chords
+    .filter((ch) => ch.voicing.length > 0)
+    .map((chord) => ({
+      kind: 'chord' as const,
+      id: chord.id,
+      barIndex: chord.barIndex,
+      startBeat: chord.startBeat,
+      chord,
+    }));
 }
