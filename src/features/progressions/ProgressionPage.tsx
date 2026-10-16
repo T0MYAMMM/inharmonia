@@ -3,7 +3,9 @@ import { useMediaQuery } from '@/app/hooks';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { PATTERN_LIST, PATTERNS, ARPEGGIO_8THS } from '@/content/patterns';
 import { getProgression } from '@/content/progressions';
+import { FILLS, getFill } from '@/content/fills';
 import { compileLesson } from '@/core/content/compile';
+import { withFills } from '@/core/content/fills';
 import { MAJOR_KEYS, MINOR_KEYS, realizeProgression } from '@/core/content/realize';
 import { prettyAccidentals, prettyNumerals } from '@/core/notation';
 import { VOICING_STYLES, type VoicingStyle } from '@/core/theory';
@@ -14,6 +16,9 @@ import { LessonPlayer } from '../song/LessonPlayer';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import songStyles from '../song/SongPage.module.css';
 import styles from './progressions.module.css';
+
+/** Right-hand fills, which sit over the comping. */
+const RH_FILLS = FILLS.filter((f) => f.hand === 'rh');
 
 function parseStyle(v: string | null): VoicingStyle {
   const found = VOICING_STYLES.find((s) => s.id === v);
@@ -33,6 +38,8 @@ export function ProgressionPage() {
   const pattern = PATTERNS[params.get('pattern') ?? ''] ?? ARPEGGIO_8THS;
   const style = parseStyle(params.get('voicing'));
   const smooth = params.get('smooth') !== '0';
+  const fill = RH_FILLS.find((f) => f.id === params.get('fill')) ?? null;
+  const fillId = fill?.id ?? '';
 
   const update = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params);
@@ -40,22 +47,21 @@ export function ProgressionPage() {
     setParams(next, { replace: true });
   };
 
-  const compiled = useMemo(
-    () =>
-      progression
-        ? compileLesson(
-            realizeProgression(progression, {
-              key,
-              style,
-              voiceLeading: smooth,
-              pattern,
-              repeats: 2,
-            }),
-            PATTERNS,
-          )
-        : null,
-    [progression, key, style, smooth, pattern],
-  );
+  const compiled = useMemo(() => {
+    if (!progression) return null;
+    const base = compileLesson(
+      realizeProgression(progression, {
+        key,
+        style,
+        voiceLeading: smooth,
+        pattern,
+        repeats: 2,
+      }),
+      PATTERNS,
+    );
+    const f = fillId ? getFill(fillId) : undefined;
+    return f ? withFills(base, f, { tonic: key, mode: progression.mode }) : base;
+  }, [progression, key, style, smooth, pattern, fillId]);
   const small = useMediaQuery('(max-width: 600px)');
   if (!progression || !compiled) return <NotFoundPage />;
 
@@ -67,6 +73,7 @@ export function ProgressionPage() {
     pattern.name,
     VOICING_STYLES.find((v) => v.id === style)!.name,
     smooth ? 'Smooth' : null,
+    fill ? fill.name : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -99,6 +106,22 @@ export function ProgressionPage() {
           {PATTERN_LIST.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={styles.field}>
+        Fill
+        <select
+          className={styles.select}
+          value={fillId}
+          onChange={(e) => update({ fill: e.target.value })}
+          data-testid="fill"
+        >
+          <option value="">None</option>
+          {RH_FILLS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
             </option>
           ))}
         </select>
