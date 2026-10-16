@@ -145,6 +145,11 @@ export const myLesson: Lesson = {
 ```
 
 - `rh` beats in each bar should add up to the bar length. Use `"r"` for a rest.
+- `tie: true` on a note ties it to the next note of the same hand, which must be the same
+  pitch: the next one in the bar, or the first of the next bar (a note held over the barline
+  is written as two tied notes). The pair sounds as one held note, practice waits only for the
+  first, and the score draws a tie arc between the two chips, split at the bar edge when it
+  crosses a barline.
 - A chord's `voicing` is either explicit notes or a style (`close`, `open`, `drop2`, `shell`,
   `rootless`) with an optional inversion.
 - `lhPattern` names a left-hand pattern from `src/content/patterns.ts`; a bar with its own `lh`
@@ -164,7 +169,8 @@ Then:
 
 `compileLesson` (`src/core/content/compile.ts`) turns a lesson into bars, chords with resolved
 voicings, and one timeline for the transport. Melody notes sound for 95% of their written length
-so repeated notes re-strike cleanly.
+so repeated notes re-strike cleanly; a tied chain sounds for its whole length, released like its
+last note.
 
 ## Song player
 
@@ -186,6 +192,10 @@ tested with a fake clock):
   A right note counts a hit and moves on. A note in neither hand's part counts a miss and
   flashes red. Clicking a bar moves the target there; "Start over" resets. Finished attempts are
   saved locally (`src/state/progress.ts`) for the progress view.
+
+The keyboard dock shows F♯1 to G5 when every note of the lesson fits there with a tone to spare.
+A lesson that reaches further gets a range at least as wide, centred on its notes and ending on
+white keys (`dockRangeFor` in `src/ui/keyboard/layout.ts`).
 
 ## Chords and drills
 
@@ -328,8 +338,8 @@ then a "Today" card with the top suggestion.
 
 ## Studio
 
-`/studio` turns a sung or hummed melody into notes on the beat grid. This first part (7a)
-covers capture through quantization; harmonizing and editing the result into a lesson follow.
+`/studio` turns a sung or hummed melody into notes on the beat grid, suggests chords for it,
+and lets you try the result as a song. Editing and saving drafts come next.
 
 **Recording.** Pick a tempo (50–140 bpm), a meter (4/4, 3/4 or 2/4) and up to 32 bars, turn
 on the microphone, and record. One bar of count-in plays first, and the click keeps going
@@ -369,8 +379,44 @@ the steps for your browser), missing, busy, or on an insecure page; a take that 
 too noisy (measured during the count-in), or has no steady pitch; and claps that could not be
 lined up.
 
-**Privacy.** Audio never leaves the device. Takes live in memory and are gone when you leave the
-page. Nothing is uploaded, and nothing is committed to the repository.
+**Chords** (`src/core/transcription/harmonize.ts`). Three suggestions, each from its own set
+of chords:
+
+- **Simple**: I, IV and V (i, iv and V in minor), one per bar.
+- **In the key**: every chord of the key, one per bar.
+- **Colourful**: sevenths, secondary dominants (V7/V, V7/vi, V7/ii) and a borrowed chord or two,
+  up to two a bar where the meter splits evenly.
+
+Each is the best path through a hidden-Markov model, found with Viterbi:
+
+- The states are the style's chords, one per segment (a bar or half bar).
+- The emission score is how well a chord holds the melody notes sounding over it. Notes are
+  weighted by length and beat (the downbeat counts most). Notes outside the chord cost less
+  when they are short, or move by step into and out of themselves (passing and neighbour tones).
+- The transitions favour functional motion (tonic → subdominant → dominant → tonic) and roots
+  falling a fifth. Secondary dominants are favoured only when they resolve. Changing chord
+  mid-bar costs something.
+- A path is rewarded for starting and ending on the tonic.
+
+The search keeps the 8 best paths per style. If a style's best path repeats an earlier
+suggestion, the next best is used, preferring one with the same ending, so the three always
+differ. Every suggestion says what it is, how much of the melody sits on chord notes and how it
+ends. Each chord has a reason in plain words, and every segment keeps ranked alternatives
+(max-marginals), ready for the editor. The weights are in `HARMONY_WEIGHTS`. The same model is
+available behind the `ChordEstimator` interface (`MelodyHarmonizer`).
+
+**Try it.** Pick a suggestion and a left-hand pattern, then **Try it with the chords**. The
+draft (`draftLesson`) is an ordinary song with `source: { kind: 'user' }`:
+
+- rests fill the gaps
+- notes held over a barline are split there and tied
+- left-hand voicings are voice-led between E2 and B3, clear of the melody
+
+It opens in the song player, with Listen and Practice, and **Back to the take** returns with
+every setting as you left it. Practising a draft is not recorded in your progress.
+
+**Privacy.** Audio never leaves the device. Takes and drafts live in memory and are gone when
+you leave the page. Nothing is uploaded, and nothing is committed to the repository.
 
 ### Evaluating transcription
 

@@ -228,3 +228,90 @@
   columns: 2 16rem;
   font-variant-numeric: tabular-nums;
 }
+
+.suggestions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-3);
+}
+
+.suggestion {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  gap: 6px 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-out);
+}
+
+.suggestion:hover {
+  border-color: var(--muted);
+}
+
+.suggestion[data-selected] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.suggestion:has(:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.radio {
+  margin: 3px 0 0;
+  accent-color: var(--ink);
+}
+
+.suggestionHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.suggestionName {
+  font-weight: 700;
+}
+
+.fit {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chordLine,
+.why {
+  grid-column: 1 / -1;
+}
+
+.chordLine {
+  color: var(--dusk-text);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  word-spacing: 0.15em;
+}
+
+.why {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.whyList {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestion {
+    transition: none;
+  }
+}

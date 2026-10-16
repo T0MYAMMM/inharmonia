@@ -8,3 +8,5 @@ export * from './quantize';
 export * from './voice';
 export * from './calibrate';
 export * from './live';
+export * from './harmonize';
+export * from './draftLesson';

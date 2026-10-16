@@ -171,8 +171,9 @@ export class WaitSession {
   }
 }
 
+/** Melody targets: every struck note. The held half of a tie is not played again, so it is skipped. */
 function noteTargets(c: CompiledLesson, both: boolean): PracticeTarget[] {
-  const notes = c.bars.flatMap((b) => b.rh.filter((n) => n.note !== null));
+  const notes = c.bars.flatMap((b) => b.rh.filter((n) => n.note !== null && !n.tiedFrom));
   return notes.map((note, i) => {
     const chord = chordOf(c, note);
     const prev = i > 0 ? chordOf(c, notes[i - 1]!) : null;

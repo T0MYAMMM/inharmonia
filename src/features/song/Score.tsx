@@ -180,7 +180,11 @@ const BarCard = memo(
           ))}
         </div>
         {bar.rh.length > 0 ? (
-          <div className={styles.chips} aria-hidden="true">
+          <div
+            className={styles.chips}
+            aria-hidden="true"
+            data-ties={bar.rh.some((n) => n.tiedTo || n.tiedFrom) || undefined}
+          >
             {bar.rh.map((n) => {
               const state =
                 n.id === activeId
@@ -190,24 +194,47 @@ const BarCard = memo(
                     : n.startBeat < doneBefore - 1e-9
                       ? 'done'
                       : undefined;
+              const inBar = (id: string | undefined) => !!id?.startsWith(`rh-${bar.index}-`);
               return (
                 <span
                   key={n.id}
-                  className={styles.chip}
-                  data-state={state}
-                  data-chip={n.id}
-                  data-angka={angka || undefined}
+                  className={styles.chipSlot}
                   style={{ flexGrow: n.beats, flexBasis: 0 }}
                 >
-                  {n.note ? (
-                    <NoteLabel
-                      label={formatNote(n.note, keyContext, { system: notation, accidentalStyle })}
-                      angka={angka}
-                      accidentalStyle={accidentalStyle}
+                  <span
+                    className={styles.chip}
+                    data-state={state}
+                    data-chip={n.id}
+                    data-angka={angka || undefined}
+                  >
+                    {n.note ? (
+                      <NoteLabel
+                        label={formatNote(n.note, keyContext, {
+                          system: notation,
+                          accidentalStyle,
+                        })}
+                        angka={angka}
+                        accidentalStyle={accidentalStyle}
+                      />
+                    ) : (
+                      '·'
+                    )}
+                  </span>
+                  {/* A tie is drawn in two halves that meet between the chips, or at the barline. */}
+                  {n.tiedTo ? (
+                    <span
+                      className={styles.tieOut}
+                      data-tie={n.id}
+                      data-across={inBar(n.tiedTo) ? undefined : true}
                     />
-                  ) : (
-                    '·'
-                  )}
+                  ) : null}
+                  {n.tiedFrom ? (
+                    <span
+                      className={styles.tieIn}
+                      data-tie={n.tiedFrom}
+                      data-across={inBar(n.tiedFrom) ? undefined : true}
+                    />
+                  ) : null}
                 </span>
               );
             })}

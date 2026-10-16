@@ -10,7 +10,7 @@ import { ProgressTrack } from '@/ui/ProgressTrack';
 import { Segmented } from '@/ui/Segmented';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
-import { KeyboardDock } from '@/ui/keyboard';
+import { dockRangeFor, KeyboardDock } from '@/ui/keyboard';
 import { Score } from './Score';
 import { SongController, type SongMode } from './SongController';
 import styles from './SongPage.module.css';
@@ -40,8 +40,11 @@ const PROGRESSION_MODES = [
 
 export interface LessonPlayerProps {
   compiled: CompiledLesson;
-  /** Progress is recorded under this id (play-along runs under `${id}:play-along`). */
-  recordId: string;
+  /**
+   * Progress is recorded under this id (play-along runs under `${id}:play-along`).
+   * Without one (a draft), nothing is recorded.
+   */
+  recordId?: string;
   /** song: melody plus left hand, with a hand selector. progression: chords only, with play-along. */
   variant: 'song' | 'progression';
   /** Settings that shape the lesson (key, pattern, voicing), shown in the sticky panel. */
@@ -63,13 +66,17 @@ export function LessonPlayer({ compiled, recordId, variant, settings }: LessonPl
         lights,
         notes,
         ...(progression ? { initialHands: 'lh' as const } : {}),
-        onFinished: (r) => recordAttempt(recordId, r),
-        onPlayAlongDone: (s, tempo) =>
-          recordAttempt(`${recordId}:play-along`, {
-            hits: s.total - s.missed,
-            misses: s.missed,
-            tempo,
-          }),
+        onFinished: (r) => {
+          if (recordId) recordAttempt(recordId, r);
+        },
+        onPlayAlongDone: (s, tempo) => {
+          if (recordId)
+            recordAttempt(`${recordId}:play-along`, {
+              hits: s.total - s.missed,
+              misses: s.missed,
+              tempo,
+            });
+        },
       }),
   );
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
@@ -123,6 +130,7 @@ export function LessonPlayer({ compiled, recordId, variant, settings }: LessonPl
       ? [firstChord[0]!.midi, firstChord.at(-1)!.midi]
       : [62, 76];
   const what = progression ? 'progression' : 'song';
+  const [low, high] = dockRange(compiled);
 
   return (
     <>
@@ -289,7 +297,24 @@ export function LessonPlayer({ compiled, recordId, variant, settings }: LessonPl
         chordScores={snap.chordScores}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
-      <KeyboardDock focus={focus} showTarget={practice && !progression} />
+      <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
     </>
   );
+}
+
+const ranges = new WeakMap<CompiledLesson, [number, number]>();
+
+/** A keyboard range that shows every note the lesson plays or asks for. */
+function dockRange(c: CompiledLesson): [number, number] {
+  let r = ranges.get(c);
+  if (!r) {
+    const midis = [
+      ...c.bars.flatMap((b) => [...b.rh, ...b.lh].flatMap((n) => (n.note ? [n.note.midi] : []))),
+      ...c.chords.flatMap((ch) => ch.voicing.map((n) => n.midi)),
+      ...(c.fills ?? []).flatMap((f) => f.midis),
+    ];
+    r = dockRangeFor(midis);
+    ranges.set(c, r);
+  }
+  return r;
 }
