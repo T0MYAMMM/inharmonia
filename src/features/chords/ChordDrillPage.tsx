@@ -13,6 +13,7 @@ import { KeyboardDock } from '@/ui/keyboard';
 import page from '../page.module.css';
 import { DrillController } from './DrillController';
 import styles from './chords.module.css';
+import { CHORD_DRILL_ID } from './drillId';
 
 const STRICTNESS = [
   { value: 'pitch-class', label: 'Any voicing' },
@@ -30,8 +31,6 @@ const ROOTS = [
   { value: 'naturals', label: 'Naturals' },
   { value: 'all', label: 'All 12 roots' },
 ] as const;
-
-export const CHORD_DRILL_ID = 'chord-drill';
 
 export function ChordDrillPage() {
   const [ctrl] = useState(
