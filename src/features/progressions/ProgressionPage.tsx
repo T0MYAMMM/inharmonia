@@ -7,6 +7,7 @@ import { compileLesson } from '@/core/content/compile';
 import { MAJOR_KEYS, MINOR_KEYS, realizeProgression } from '@/core/content/realize';
 import { prettyAccidentals, prettyNumerals } from '@/core/notation';
 import { VOICING_STYLES, type VoicingStyle } from '@/core/theory';
+import { useUserProgressions } from '@/state/userProgressions';
 import { Segmented } from '@/ui/Segmented';
 import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
@@ -21,7 +22,8 @@ function parseStyle(v: string | null): VoicingStyle {
 
 export function ProgressionPage() {
   const { progressionId = '' } = useParams();
-  const progression = getProgression(progressionId);
+  const saved = useUserProgressions((s) => s.get(progressionId));
+  const progression = getProgression(progressionId) ?? saved;
   const [params, setParams] = useSearchParams();
 
   const keys = progression?.mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
@@ -131,6 +133,12 @@ export function ProgressionPage() {
       <div className={songStyles.header}>
         <p className={songStyles.meta}>
           <Link to="/progressions">Progressions</Link>
+          {' · '}
+          {saved ? (
+            <Link to={`/progressions/${progression.id}/edit`}>Edit</Link>
+          ) : (
+            <Link to={`/progressions/new?from=${progression.id}`}>Make a copy to edit</Link>
+          )}
         </p>
         <h1>{progression.name}</h1>
         <p className={songStyles.meta}>
