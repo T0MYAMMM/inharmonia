@@ -28,6 +28,7 @@ export function Segmented<T extends string>({
   describedBy,
 }: SegmentedProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const firstEnabled = options.findIndex((o) => !o.disabled);
   const onKeyDown = (e: KeyboardEvent, i: number) => {
     const delta =
       e.key === 'ArrowRight' || e.key === 'ArrowDown'
@@ -55,6 +56,8 @@ export function Segmented<T extends string>({
     >
       {options.map((o, i) => {
         const checked = o.value === value;
+        // With nothing chosen yet, the first option takes the tab stop.
+        const tabStop = checked || (i === firstEnabled && !options.some((x) => x.value === value));
         return (
           <button
             key={o.value}
@@ -65,7 +68,7 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={checked}
             aria-disabled={o.disabled || undefined}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={tabStop ? 0 : -1}
             className={styles.option}
             onClick={() => !o.disabled && onChange(o.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
