@@ -5,9 +5,18 @@ import { PATTERNS } from '@/content/patterns';
 import { compileLesson } from '@/core/content/compile';
 import type { Lesson } from '@/core/content/types';
 import {
+  fromHarmonization,
+  toUserRecording,
+  traceOf,
+  type SongDraft,
+  type UserRecording,
+} from '@/core/songs';
+import {
   draftMelody,
+  HOP_SEC,
   SEGMENT_CONFIG,
   type GridStep,
+  type Harmonization,
   type QuantizeOptions,
 } from '@/core/transcription';
 import { MAJOR_KEYS, MINOR_KEYS } from '@/core/content/realize';
@@ -26,6 +35,9 @@ import { ChordSuggestions } from './ChordSuggestions';
 import { LiveInput } from './LiveInput';
 import { problemMessage } from './messages';
 import { CALIBRATION_CLICKS, StudioController, type Take } from './StudioController';
+import type { EditorTakeAudio } from './EditorPlayback';
+import type { EditorTrace } from './editorModel';
+import { SongEditor } from './SongEditor';
 import { TakeView } from './TakeView';
 import styles from './studio.module.css';
 
@@ -73,14 +85,27 @@ export function StudioPage() {
   const problem = snap.problem ? problemMessage(snap.problem) : null;
   const warning = snap.warning ? problemMessage(snap.warning) : null;
   const [draft, setDraft] = useState<Lesson | null>(null);
+  const [editing, setEditing] = useState<EditorInput | null>(null);
 
   const tryDraft = (lesson: Lesson) => {
     ctrl.disable();
     setDraft(lesson);
     window.scrollTo?.(0, 0);
   };
-  const backToTake = () => {
+  const edit = (input: EditorInput) => {
+    ctrl.disable();
+    setEditing(input);
+    window.scrollTo?.(0, 0);
+  };
+  const backFromTry = () => {
     setDraft(null);
+    if (!editing)
+      requestAnimationFrame(() =>
+        document.getElementById('chords-title')?.scrollIntoView({ block: 'start' }),
+      );
+  };
+  const backFromEdit = () => {
+    setEditing(null);
     requestAnimationFrame(() =>
       document.getElementById('chords-title')?.scrollIntoView({ block: 'start' }),
     );
@@ -88,8 +113,42 @@ export function StudioPage() {
 
   return (
     <>
-      {draft ? <DraftView lesson={draft} onBack={backToTake} /> : null}
-      <div hidden={draft !== null}>
+      {draft ? (
+        <DraftView
+          lesson={draft}
+          onBack={backFromTry}
+          backLabel={editing ? 'Back to the editor' : 'Back to the take'}
+        />
+      ) : null}
+      {editing ? (
+        <div hidden={draft !== null}>
+          <div className={song.header}>
+            <p className={song.meta}>
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={backFromEdit}
+                data-testid="back-to-take"
+              >
+                ← Back to the take
+              </Button>
+            </p>
+            <h1>Edit your song</h1>
+          </div>
+          <SongEditor
+            key={editing.key}
+            initial={editing.initial}
+            song={null}
+            take={editing.take}
+            hasKeptRecording={false}
+            makeRecording={editing.makeRecording}
+            recordingBytes={editing.recordingBytes}
+            onSaved={() => undefined}
+            onTry={tryDraft}
+          />
+        </div>
+      ) : null}
+      <div hidden={draft !== null || editing !== null}>
         <div className={page.hero}>
           <h1>Studio</h1>
           <p className={page.lede}>
@@ -238,27 +297,48 @@ export function StudioPage() {
           ) : null}
         </section>
 
-        {snap.take && !snap.problem ? <TakeResult take={snap.take} onTry={tryDraft} /> : null}
+        {snap.take && !snap.problem ? (
+          <TakeResult take={snap.take} onTry={tryDraft} onEdit={edit} />
+        ) : null}
       </div>
     </>
   );
 }
 
 /** The draft in the song player: listen and practise it before saving. */
-function DraftView({ lesson, onBack }: { lesson: Lesson; onBack: () => void }) {
+/** What the editor needs for a new take. */
+interface EditorInput {
+  key: number;
+  initial: SongDraft;
+  take: { audio: EditorTakeAudio; trace: EditorTrace };
+  makeRecording: (songId: string) => UserRecording;
+  recordingBytes: number;
+}
+
+let edits = 0;
+
+function DraftView({
+  lesson,
+  onBack,
+  backLabel,
+}: {
+  lesson: Lesson;
+  onBack: () => void;
+  backLabel: string;
+}) {
   const compiled = useMemo(() => compileLesson(lesson, PATTERNS), [lesson]);
   return (
     <>
       <div className={song.header}>
         <p className={song.meta}>
-          <Button variant="ghost" size="small" onClick={onBack} data-testid="back-to-take">
-            ← Back to the take
+          <Button variant="ghost" size="small" onClick={onBack} data-testid="back-from-try">
+            ← {backLabel}
           </Button>
         </p>
         <h1>{lesson.title}</h1>
         <p className={song.meta}>
           {keyName(lesson.key)}, {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length}{' '}
-          bars. Only on this page for now: leaving Studio clears it.
+          bars. Not saved yet: save it from the editor to keep it.
         </p>
       </div>
       <LessonPlayer key={lesson.id} compiled={compiled} variant="song" />
@@ -266,7 +346,15 @@ function DraftView({ lesson, onBack }: { lesson: Lesson; onBack: () => void }) {
   );
 }
 
-function TakeResult({ take, onTry }: { take: Take; onTry: (lesson: Lesson) => void }) {
+function TakeResult({
+  take,
+  onTry,
+  onEdit,
+}: {
+  take: Take;
+  onTry: (lesson: Lesson) => void;
+  onEdit: (input: EditorInput) => void;
+}) {
   const notation = useSettings((s) => s.notation);
   const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const [grid, setGrid] = useState<QuantizeOptions>({
@@ -439,6 +527,47 @@ function TakeResult({ take, onTry }: { take: Take; onTry: (lesson: Lesson) => vo
           timing={take.timing}
           keyContext={keyCtx}
           onTry={onTry}
+          onEdit={(h: Harmonization, lhPattern: string) => {
+            const trace = traceOf(take.frames, SEGMENT_CONFIG.minClarity);
+            const shift = 12 * draft.octaveShift;
+            onEdit({
+              key: ++edits,
+              initial: fromHarmonization({
+                title: 'My song',
+                notes: draft.grid.notes,
+                key: keyCtx,
+                tempo: take.timing.tempo,
+                meter: take.timing.meter,
+                bars: take.timing.bars,
+                chords: h.chords,
+                alternatives: h.segments,
+                lhPattern,
+              }),
+              take: {
+                audio: { ...take.audio, beat0: take.timing.beat0 },
+                trace: {
+                  values: trace.values,
+                  start: trace.start,
+                  hop: HOP_SEC,
+                  beat0: take.timing.beat0,
+                  tempo: take.timing.tempo,
+                  shift,
+                },
+              },
+              makeRecording: (songId) =>
+                toUserRecording({
+                  songId,
+                  samples: take.audio.samples,
+                  sampleRate: take.audio.sampleRate,
+                  beat0: take.timing.beat0,
+                  frames: take.frames,
+                  minClarity: SEGMENT_CONFIG.minClarity,
+                  hop: HOP_SEC,
+                  shift,
+                }),
+              recordingBytes: take.audio.samples.length * 2 + take.frames.length * 4,
+            });
+          }}
         />
       ) : null}
     </>
