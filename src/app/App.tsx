@@ -15,6 +15,8 @@ import { FillPage } from '@/features/fills/FillPage';
 import { EarPage } from '@/features/ear/EarPage';
 import { ProgressPage } from '@/features/progress/ProgressPage';
 import { StudioPage } from '@/features/studio/StudioPage';
+import { MySongPage } from '@/features/mysongs/MySongPage';
+import { EditSongPage } from '@/features/mysongs/EditSongPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
 import { ROUTER_BASENAME } from './config';
@@ -25,6 +27,7 @@ export function AppRoutes() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="songs" element={<SongsPage />} />
+        <Route path="songs/mine/:songId" element={<MySongPage />} />
         <Route path="songs/:songId" element={<SongPage />} />
         <Route path="chords" element={<ChordLibraryPage />} />
         <Route path="chords/drill" element={<ChordDrillPage />} />
@@ -37,6 +40,7 @@ export function AppRoutes() {
         <Route path="ear" element={<EarPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="studio" element={<StudioPage />} />
+        <Route path="studio/edit/:songId" element={<EditSongPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
