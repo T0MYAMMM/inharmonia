@@ -23,6 +23,16 @@ export interface SettingsState {
   drill: DrillSettings;
   /** The home page's first-visit welcome has been dismissed. */
   welcomeDismissed: boolean;
+  /** Round-trip delay from click to microphone, measured in the Studio; null until calibrated. */
+  inputLatencyMs: number | null;
+  studio: StudioSettings;
+}
+
+export interface StudioSettings {
+  tempo: number;
+  /** Beats per bar; the beat is a quarter note. */
+  beatsPerBar: 2 | 3 | 4;
+  bars: number;
 }
 
 export interface DrillSettings {
@@ -48,6 +58,8 @@ export const DEFAULT_SETTINGS: SettingsState = {
   midiInput: 'all',
   midiEnabled: false,
   welcomeDismissed: false,
+  inputLatencyMs: null,
+  studio: { tempo: 80, beatsPerBar: 4, bars: 8 },
   drill: {
     qualityIds: ['major', 'minor'],
     naturalsOnly: true,
@@ -102,6 +114,24 @@ function sanitize(x: unknown): Partial<SettingsState> {
   if (typeof p.midiInput === 'string') out.midiInput = p.midiInput;
   if (typeof p.midiEnabled === 'boolean') out.midiEnabled = p.midiEnabled;
   if (typeof p.welcomeDismissed === 'boolean') out.welcomeDismissed = p.welcomeDismissed;
+  if (
+    p.inputLatencyMs === null ||
+    (typeof p.inputLatencyMs === 'number' && p.inputLatencyMs >= 0 && p.inputLatencyMs < 1000)
+  )
+    out.inputLatencyMs = p.inputLatencyMs;
+  const st = p.studio as Partial<StudioSettings> | undefined;
+  if (st && typeof st === 'object') {
+    const d = DEFAULT_SETTINGS.studio;
+    out.studio = {
+      tempo: typeof st.tempo === 'number' && st.tempo >= 40 && st.tempo <= 160 ? st.tempo : d.tempo,
+      beatsPerBar:
+        st.beatsPerBar === 2 || st.beatsPerBar === 3 || st.beatsPerBar === 4
+          ? st.beatsPerBar
+          : d.beatsPerBar,
+      bars:
+        typeof st.bars === 'number' && st.bars >= 1 && st.bars <= 32 ? Math.round(st.bars) : d.bars,
+    };
+  }
   const d = p.drill as Partial<DrillSettings> | undefined;
   if (d && typeof d === 'object') {
     const known = new Set(CHORD_QUALITIES.map((q) => q.id));

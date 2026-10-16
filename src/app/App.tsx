@@ -14,6 +14,7 @@ import { FillsPage } from '@/features/fills/FillsPage';
 import { FillPage } from '@/features/fills/FillPage';
 import { EarPage } from '@/features/ear/EarPage';
 import { ProgressPage } from '@/features/progress/ProgressPage';
+import { StudioPage } from '@/features/studio/StudioPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
 import { ROUTER_BASENAME } from './config';
@@ -35,6 +36,7 @@ export function AppRoutes() {
         <Route path="fills/:fillId" element={<FillPage />} />
         <Route path="ear" element={<EarPage />} />
         <Route path="progress" element={<ProgressPage />} />
+        <Route path="studio" element={<StudioPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
