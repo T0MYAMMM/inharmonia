@@ -16,7 +16,7 @@ import {
   updateNote,
   type SongDraft,
 } from './draft';
-import { buildExport, cleanDraft, makeUserSong, parseExport, updateUserSong } from './library';
+import { cleanDraft, makeUserSong, updateUserSong } from './library';
 import { formatBytes, recordingSamples, toUserRecording } from './recording';
 
 /** A small original draft: four bars in G, a note held over the first barline. */
@@ -130,69 +130,19 @@ describe('song drafts', () => {
   });
 });
 
-describe('export and import', () => {
+describe('checking drafts from outside', () => {
   const patterns = new Set(['block', 'arpeggio-8ths']);
-  const song = makeUserSong('user-abc-1', draft(), 1000);
 
-  it('round-trips your songs', () => {
-    const text = JSON.stringify(buildExport([song], new Date(0)));
-    const parsed = parseExport(text, patterns, 'arpeggio-8ths');
-    expect(parsed).toEqual({ songs: [song], skipped: [] });
-  });
-
-  it('rebuilds lessons from drafts and marks every song as yours', () => {
-    const tampered = {
-      ...song,
-      lesson: { ...song.lesson, source: { kind: 'original', author: 'Someone' }, title: 'Other' },
-    };
-    const parsed = parseExport(
-      JSON.stringify(buildExport([tampered as never], new Date(0))),
-      patterns,
-      'arpeggio-8ths',
-    );
-    if ('error' in parsed) throw new Error(parsed.error);
-    expect(parsed.songs[0]!.lesson.source).toEqual({ kind: 'user' });
-    expect(parsed.songs[0]!.lesson.title).toBe('Morning');
-  });
-
-  it('skips broken songs and says why', () => {
-    const bad = [
-      { ...song, id: 'not-user' },
-      { ...song, id: 'user-x', draft: { ...song.draft, tempo: 900 } },
-      {
-        ...song,
-        id: 'user-y',
-        draft: { ...song.draft, chords: [{ startBeat: 0, beats: 4, symbol: 'H9' }] },
-      },
-      { ...song, id: 'user-z', draft: { ...song.draft, chords: song.draft.chords.slice(0, 2) } },
-    ];
-    const parsed = parseExport(
-      JSON.stringify({ ...buildExport([], new Date(0)), songs: bad }),
-      patterns,
-      'block',
-    );
-    if ('error' in parsed) throw new Error(parsed.error);
-    expect(parsed.songs).toEqual([]);
-    expect(parsed.skipped.map((s) => s.reason)).toEqual([
-      'no id',
-      'tempo out of range',
-      'bad chord 1',
-      'Bar 3: chords last 0 beats, not 4',
-    ]);
-  });
-
-  it('rejects files that are not exports, or from a newer version', () => {
-    expect(parseExport('{', patterns, 'block')).toEqual({
-      error: 'This file is not an Inharmonia export.',
-    });
-    expect(parseExport('{"songs":[]}', patterns, 'block')).toHaveProperty('error');
+  it('accepts a good draft and rejects broken ones with a reason', () => {
+    expect(cleanDraft(draft(), patterns, 'block')).toEqual(draft());
+    expect(cleanDraft({ ...draft(), tempo: 900 }, patterns, 'block')).toBe('tempo out of range');
     expect(
-      parseExport(
-        JSON.stringify({ ...buildExport([], new Date(0)), version: 99 }),
+      cleanDraft(
+        { ...draft(), chords: [{ startBeat: 0, beats: 4, symbol: 'H9' }] },
         patterns,
         'block',
       ),
-    ).toHaveProperty('error', expect.stringContaining('newer version'));
+    ).toBe('bad chord 1');
   });
 
   it('falls back to a known left-hand pattern and trims long titles', () => {
@@ -207,6 +157,7 @@ describe('export and import', () => {
   });
 
   it('updates a song with a new draft and a fresh lesson', () => {
+    const song = makeUserSong('user-abc-1', draft(), 1000);
     const next = updateUserSong(song, { ...draft(), title: 'Evening' }, 2000);
     expect(next).toMatchObject({ id: song.id, createdAt: 1000, updatedAt: 2000 });
     expect(next.lesson.title).toBe('Evening');

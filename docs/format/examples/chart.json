@@ -1,0 +1,83 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "chart",
+      "id": "example-chart",
+      "title": "Example chart",
+      "source": {
+        "kind": "user"
+      },
+      "updated": "2026-01-01T00:00:00.000Z",
+      "chart": {
+        "key": {
+          "tonic": "C",
+          "mode": "major"
+        },
+        "tempo": 84,
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "sections": [
+          {
+            "id": "intro",
+            "label": "Intro",
+            "type": "intro",
+            "repeat": 1,
+            "bars": [
+              "C",
+              "G/B",
+              "Am7",
+              "F"
+            ]
+          },
+          {
+            "id": "verse",
+            "label": "Verse",
+            "type": "verse",
+            "repeat": 2,
+            "bars": [
+              "Am F",
+              "C G",
+              "Am F",
+              "G"
+            ]
+          },
+          {
+            "id": "chorus",
+            "label": "Chorus",
+            "type": "chorus",
+            "repeat": 1,
+            "bars": [
+              "F",
+              "G",
+              "C . . G",
+              "Am",
+              "F",
+              "G",
+              "C",
+              "N.C."
+            ]
+          }
+        ],
+        "form": [
+          "intro",
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ],
+        "notes": "Slow down in the last chorus."
+      },
+      "view": {
+        "transpose": 0,
+        "simplify": "original",
+        "style": "triad-root",
+        "showFunction": false
+      }
+    }
+  ]
+}

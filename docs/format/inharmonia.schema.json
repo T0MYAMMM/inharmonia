@@ -1,0 +1,563 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/T0MYAMMM/inharmonia/docs/format/inharmonia.schema.json",
+  "title": "Inharmonia export file",
+  "description": "Songs, chord charts and progressions exported from Inharmonia (format version 2). Values are readable: note names, chord symbols, Roman numerals and beats. The app also checks musical rules this schema cannot express (bars adding up, chords it can voice, form ids that exist).",
+  "type": "object",
+  "required": ["format", "version", "exportedAt", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "inharmonia"
+    },
+    "version": {
+      "const": 2
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/recording"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9-]{1,80}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "original"
+            },
+            "author": {
+              "type": "string",
+              "maxLength": 80
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "generic"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "composer", "year"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "public-domain"
+            },
+            "composer": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "year": {
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "user"
+            }
+          }
+        }
+      ]
+    },
+    "key": {
+      "type": "object",
+      "required": ["tonic", "mode"],
+      "additionalProperties": false,
+      "properties": {
+        "tonic": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": ["major", "minor"]
+        }
+      },
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "major"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "tonic": {
+            "enum": ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "tonic": {
+            "enum": ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"]
+          }
+        }
+      }
+    },
+    "meter": {
+      "type": "object",
+      "required": ["beats", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "beats": {
+          "enum": [2, 3, 4]
+        },
+        "unit": {
+          "const": 4
+        }
+      }
+    },
+    "chordSymbol": {
+      "description": "A chord symbol such as \"Gmaj7\", \"F#m7b5\", \"G/B\", or \"N.C.\" for no chord.",
+      "type": "string",
+      "pattern": "^(N\\.C\\.|[A-G](##|bb|#|b)?[^\\s/|]*(/[A-G](##|bb|#|b)?)?)$"
+    },
+    "noteName": {
+      "description": "A note with octave, such as \"F#4\" (middle C is C4).",
+      "type": "string",
+      "pattern": "^[A-G](##|bb|#|b)?-?[0-9]$"
+    },
+    "beats": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 4
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "item": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/songItem"
+        },
+        {
+          "$ref": "#/$defs/chartItem"
+        },
+        {
+          "$ref": "#/$defs/progressionItem"
+        }
+      ]
+    },
+    "songItem": {
+      "type": "object",
+      "required": ["kind", "id", "title", "source", "song"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "song"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "updated": {
+          "$ref": "#/$defs/updated"
+        },
+        "song": {
+          "type": "object",
+          "required": ["key", "meter", "tempo", "lhPattern", "bars"],
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "meter": {
+              "$ref": "#/$defs/meter"
+            },
+            "tempo": {
+              "type": "object",
+              "required": ["default", "min", "max"],
+              "additionalProperties": false,
+              "properties": {
+                "default": {
+                  "type": "number",
+                  "minimum": 30,
+                  "maximum": 240
+                },
+                "min": {
+                  "type": "number",
+                  "minimum": 20
+                },
+                "max": {
+                  "type": "number",
+                  "maximum": 300
+                }
+              }
+            },
+            "lhPattern": {
+              "type": "string",
+              "description": "A left-hand pattern id, such as \"arpeggio-8ths\" or \"block\"."
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 140
+            },
+            "bars": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "required": ["chords", "melody"],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {
+                    "type": "string",
+                    "maxLength": 24
+                  },
+                  "chords": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "object",
+                      "required": ["symbol", "beats"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "symbol": {
+                          "$ref": "#/$defs/chordSymbol"
+                        },
+                        "beats": {
+                          "$ref": "#/$defs/beats"
+                        },
+                        "voicing": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "$ref": "#/$defs/noteName"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "melody": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["note", "beats"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "note": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/noteName"
+                            },
+                            {
+                              "const": "r"
+                            }
+                          ]
+                        },
+                        "beats": {
+                          "$ref": "#/$defs/beats"
+                        },
+                        "tie": {
+                          "const": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "chartItem": {
+      "type": "object",
+      "required": ["kind", "id", "title", "source", "chart", "view"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "chart"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "updated": {
+          "$ref": "#/$defs/updated"
+        },
+        "chart": {
+          "type": "object",
+          "required": ["key", "tempo", "meter", "sections", "form", "notes"],
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "tempo": {
+              "type": "number",
+              "minimum": 30,
+              "maximum": 240
+            },
+            "meter": {
+              "type": "object",
+              "required": ["beats", "unit"],
+              "additionalProperties": false,
+              "properties": {
+                "beats": {
+                  "enum": [3, 4]
+                },
+                "unit": {
+                  "const": 4
+                }
+              }
+            },
+            "sections": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 24,
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "type", "repeat", "bars"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9-]{1,40}$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 24
+                  },
+                  "type": {
+                    "enum": [
+                      "intro",
+                      "verse",
+                      "prechorus",
+                      "chorus",
+                      "postchorus",
+                      "bridge",
+                      "interlude",
+                      "solo",
+                      "hook",
+                      "breakdown",
+                      "tag",
+                      "outro",
+                      "custom"
+                    ]
+                  },
+                  "repeat": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "bars": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 32,
+                    "items": {
+                      "description": "One bar in chart syntax: \"C\", \"Am F\" (split evenly), \"C . . G\" (dots add beats), \"N.C.\".",
+                      "type": "string",
+                      "pattern": "^[^|\\n]{1,80}$"
+                    }
+                  }
+                }
+              }
+            },
+            "form": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 40,
+              "items": {
+                "type": "string"
+              }
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        "view": {
+          "type": "object",
+          "required": ["transpose", "simplify", "style", "showFunction"],
+          "additionalProperties": false,
+          "properties": {
+            "transpose": {
+              "type": "integer",
+              "minimum": -11,
+              "maximum": 11
+            },
+            "simplify": {
+              "enum": ["original", "simplified", "basic"]
+            },
+            "style": {
+              "type": "string"
+            },
+            "showFunction": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "progressionItem": {
+      "type": "object",
+      "required": ["kind", "id", "title", "source", "progression"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "progression"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "updated": {
+          "$ref": "#/$defs/updated"
+        },
+        "progression": {
+          "type": "object",
+          "required": ["mode", "meter", "steps"],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": ["major", "minor"]
+            },
+            "meter": {
+              "type": "object",
+              "required": ["beats", "unit"],
+              "additionalProperties": false,
+              "properties": {
+                "beats": {
+                  "const": 4
+                },
+                "unit": {
+                  "const": 4
+                }
+              }
+            },
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["numeral", "beats"],
+                "additionalProperties": false,
+                "properties": {
+                  "numeral": {
+                    "type": "string",
+                    "description": "A Roman numeral read against the major scale of the tonic, such as \"ii7\" or \"bVII\"."
+                  },
+                  "beats": {
+                    "enum": [1, 2, 4]
+                  }
+                }
+              }
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 140
+            }
+          }
+        }
+      }
+    },
+    "recording": {
+      "type": "object",
+      "required": [
+        "kind",
+        "for",
+        "sampleRate",
+        "beat0",
+        "traceStart",
+        "traceHop",
+        "traceShift",
+        "samples",
+        "trace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "recording"
+        },
+        "for": {
+          "$ref": "#/$defs/id"
+        },
+        "sampleRate": {
+          "type": "number"
+        },
+        "beat0": {
+          "type": "number"
+        },
+        "traceStart": {
+          "type": "number"
+        },
+        "traceHop": {
+          "type": "number"
+        },
+        "traceShift": {
+          "type": "number"
+        },
+        "samples": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Mono 16-bit little-endian PCM."
+        },
+        "trace": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "description": "Float32 little-endian pitch trace, MIDI numbers, NaN where unvoiced."
+        }
+      }
+    }
+  }
+}

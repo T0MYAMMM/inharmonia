@@ -1,6 +1,6 @@
 import type { Lesson, Meter } from '../content/types';
 import { spellInKey } from '../notation';
-import type { Mode } from '../theory';
+import { spelled, type Mode } from '../theory';
 import { draftLesson } from '../transcription/draftLesson';
 import type { HarmonyChord } from '../transcription/harmonize';
 import type { ChordSegment } from '../transcription/interfaces';
@@ -96,6 +96,59 @@ export function toLesson(d: SongDraft, id: string): Lesson {
     chords: d.chords.map((c) => ({ ...c, numeral: c.numeral ?? '', why: '' })),
     lhPattern: d.lhPattern,
   });
+}
+
+/**
+ * The editable draft for a lesson (an imported song): tied notes become one
+ * note, rests become gaps, and each bar's chords keep their place.
+ */
+export function lessonToDraft(lesson: Lesson): SongDraft {
+  const bpb = lesson.meter.beats;
+  const notes: DraftNote[] = [];
+  let tiedFrom: DraftNote | null = null;
+  lesson.bars.forEach((bar, bi) => {
+    let t = bi * bpb;
+    for (const n of bar.rh ?? []) {
+      if (n.note !== 'r') {
+        const midi = spelled(n.note).midi;
+        if (
+          tiedFrom &&
+          tiedFrom.midi === midi &&
+          Math.abs(tiedFrom.startBeat + tiedFrom.beats - t) < 1e-6
+        )
+          tiedFrom.beats += n.beats;
+        else
+          notes.push(
+            (tiedFrom = { id: `n${notes.length + 1}`, startBeat: t, beats: n.beats, midi }),
+          );
+        if (!n.tie) tiedFrom = null;
+      } else tiedFrom = null;
+      t += n.beats;
+    }
+  });
+  const chords: DraftChord[] = [];
+  lesson.bars.forEach((bar, bi) => {
+    let t = bi * bpb;
+    for (const c of bar.chords) {
+      chords.push({
+        startBeat: t,
+        beats: c.beats,
+        symbol: c.symbol,
+        ...(c.numeral ? { numeral: c.numeral } : {}),
+      });
+      t += c.beats;
+    }
+  });
+  return {
+    title: lesson.title,
+    key: lesson.key,
+    tempo: lesson.tempo.default,
+    meter: lesson.meter,
+    bars: lesson.bars.length,
+    notes,
+    chords,
+    lhPattern: lesson.lhPattern ?? 'arpeggio-8ths',
+  };
 }
 
 function nextId(notes: readonly DraftNote[]): string {
