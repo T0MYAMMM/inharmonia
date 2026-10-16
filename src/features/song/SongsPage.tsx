@@ -14,6 +14,10 @@ export function SongsPage() {
         <p className={page.lede}>
           Listen through a piece, then practice it note by note at your own pace.
         </p>
+        <p>
+          <Link to="/studio">Make your own in Studio</Link>: sing or hum a melody and it is written
+          down for you.
+        </p>
       </div>
       <ul className={styles.list}>
         {SONGS.map((s) => {
