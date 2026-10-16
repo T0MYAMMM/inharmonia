@@ -71,30 +71,55 @@ test.describe('progression builder', () => {
     await expect(page.getByRole('heading', { name: 'ii–V–I (my version)' })).toBeVisible();
   });
 
-  test('exports and imports progressions', async ({ page }) => {
+  test('exports and imports progressions in the shared format', async ({ page }) => {
     await create(page, 'Keep me', 'I V');
     await page.goto('progressions');
+    await page.getByTestId('export-open').click();
     const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Export' }).click();
+    await page.getByTestId('export-dialog').getByTestId('export-download').click();
     const file = await download;
+    expect(file.suggestedFilename()).toBe('inharmonia-progression-keep-me.json');
     const stream = await file.createReadStream();
     let text = '';
     for await (const chunk of stream) text += chunk;
     const doc = JSON.parse(text);
-    expect(doc.progressions.map((p: { name: string }) => p.name)).toEqual(['Keep me']);
+    expect(doc).toMatchObject({ format: 'inharmonia', version: 2 });
+    expect(doc.items.map((i: { kind: string; title: string }) => [i.kind, i.title])).toEqual([
+      ['progression', 'Keep me'],
+    ]);
+    await page.getByTestId('export-dialog').getByRole('button', { name: 'Close' }).click();
 
-    doc.progressions.push(
-      { ...doc.progressions[0], name: 'From a friend', steps: [{ numeral: 'vi', beats: 4 }] },
-      { ...doc.progressions[0], name: 'Broken', steps: [{ numeral: 'Q', beats: 4 }] },
-    );
+    doc.items.push({
+      ...doc.items[0],
+      id: 'from-a-friend',
+      title: 'From a friend',
+      progression: { ...doc.items[0].progression, steps: [{ numeral: 'vi', beats: 4 }] },
+    });
     await page.getByTestId('import-file').setInputFiles({
       name: 'progressions.json',
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(doc)),
     });
-    await expect(page.getByRole('status')).toContainText('Added 1 progression.');
-    await expect(page.getByRole('status')).toContainText('1 was already saved.');
-    await expect(page.getByRole('status')).toContainText('"Broken": Bar 1');
+    const preview = page.getByTestId('import-preview');
+    await expect(preview.getByTestId('import-summary')).toHaveText(
+      '2 items in this file: 1 new, 1 already here.',
+    );
+    await preview.getByTestId('import-choice-1').selectOption('copy');
+    await preview.getByTestId('import-confirm').click();
+    await expect(page.getByTestId('import-result')).toHaveText('Imported: 2 added.');
     await expect(page.getByRole('link', { name: /From a friend/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Keep me/ })).toHaveCount(2);
+
+    // A broken file names the item and field, and saves nothing.
+    doc.items[0].progression.steps = [{ numeral: 'Q', beats: 4 }];
+    await page.getByTestId('import-file').setInputFiles({
+      name: 'broken.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(doc)),
+    });
+    await expect(preview.getByTestId('import-errors')).toContainText(
+      'Item 1 (Keep me), progression:',
+    );
+    await expect(preview.getByTestId('import-confirm')).toBeDisabled();
   });
 });
