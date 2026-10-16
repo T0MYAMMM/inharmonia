@@ -32,6 +32,12 @@ export interface NoteSpec {
   beats: number;
   /** 0..1, default from the part. */
   velocity?: number;
+  /**
+   * Tied to the next note of the same hand (the next one in this bar, or the
+   * first of the next bar), which must be the same pitch. The two sound as one
+   * held note, and practice waits only for the first.
+   */
+  tie?: boolean;
 }
 
 /** How a chord is voiced: a named style, or explicit notes. */

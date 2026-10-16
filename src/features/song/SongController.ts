@@ -1,7 +1,12 @@
 import { MIX, mixVelocity } from '@config/mix';
 import type { Transport, TransportState } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
-import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
+import {
+  soundingSpans,
+  spanDuration,
+  type CompiledChord,
+  type CompiledLesson,
+} from '@/core/content/compile';
 import type { NoteStream } from '@/core/input';
 import {
   barAt,
@@ -476,13 +481,17 @@ export class SongController {
     const t0 = this.s.audio.now() + 0.02;
     const spb = 60 / this.snap.tempo;
     const end = chord.startBeat + chord.beats;
-    for (const n of bar.rh) {
-      if (!n.note || n.startBeat < chord.startBeat - 1e-9 || n.startBeat >= end - 1e-9) continue;
+    const inChord = bar.rh.filter(
+      (n) => n.startBeat >= chord.startBeat - 1e-9 && n.startBeat < end - 1e-9,
+    );
+    // Ties within the chord hold; a note tied in from the last chord is struck again,
+    // since playback waited for you in between.
+    for (const span of soundingSpans(inChord)) {
       this.s.audio.playAt(
-        n.note.midi,
-        t0 + (n.startBeat - chord.startBeat) * spb,
-        n.beats * MIX.melody.legato * spb,
-        mixVelocity('rh', n.velocity),
+        span.first.note!.midi,
+        t0 + (span.startBeat - chord.startBeat) * spb,
+        spanDuration(span, MIX.melody.legato) * spb,
+        mixVelocity('rh', span.first.velocity),
       );
     }
   }
