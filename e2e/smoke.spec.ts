@@ -88,3 +88,22 @@ test.describe('keyboard sandbox', () => {
     await expect(page.getByTestId('play')).toHaveText('Resume');
   });
 });
+
+test('works offline after the first visit', async ({ page, context }) => {
+  await page.goto('');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  await expect(page.getByText('Ready to use offline.')).toBeVisible();
+  await context.setOffline(true);
+  await page.goto('fills/enclosure');
+  await expect(page.getByRole('heading', { name: 'Enclosure' })).toBeVisible();
+  const sample = await page.evaluate(async () => {
+    const r = await fetch(`${location.origin}/inharmonia/samples/salamander/v1/C4.mp3`);
+    return r.ok && (await r.arrayBuffer()).byteLength > 1000;
+  });
+  expect(sample).toBe(true);
+  await context.setOffline(false);
+});
