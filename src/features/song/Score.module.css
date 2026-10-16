@@ -38,7 +38,8 @@
   gap: 10px;
   align-content: start;
   min-width: 0;
-  padding: 12px;
+  --bar-pad: 12px;
+  padding: var(--bar-pad);
   border-radius: 14px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -142,12 +143,25 @@
 }
 
 .chips {
+  --chip-gap: 3px;
   display: flex;
-  gap: 3px;
+  gap: var(--chip-gap);
+  min-width: 0;
+}
+
+/* Room for tie arcs under the chips. */
+.chips[data-ties] {
+  padding-bottom: 6px;
+}
+
+.chipSlot {
+  position: relative;
+  display: flex;
   min-width: 0;
 }
 
 .chip {
+  flex: 1;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -205,8 +219,46 @@
   }
 }
 
+/*
+ * Tie: a shallow arc under the two chips, from the middle of one to the middle of
+ * the next. Each chip draws its half; the halves meet in the gap, or at the edge
+ * of the bar card when the tie crosses a barline.
+ */
+.tieOut,
+.tieIn {
+  position: absolute;
+  top: calc(100% + 1px);
+  height: 7px;
+  border: 0 solid var(--muted);
+  border-bottom-width: 2px;
+  pointer-events: none;
+}
+
+.tieOut {
+  left: 50%;
+  right: calc(var(--chip-gap) / -2);
+  border-left-width: 2px;
+  border-bottom-left-radius: 100% 100%;
+}
+
+.tieIn {
+  left: calc(var(--chip-gap) / -2);
+  right: 50%;
+  border-right-width: 2px;
+  border-bottom-right-radius: 100% 100%;
+}
+
+.tieOut[data-across] {
+  right: calc(var(--bar-pad) * -1);
+}
+
+.tieIn[data-across] {
+  left: calc(var(--bar-pad) * -1);
+}
+
 @media (max-width: 400px) {
   .bar {
+    --bar-pad: 8px;
     padding: 10px 8px;
   }
   .chip {
