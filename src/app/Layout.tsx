@@ -21,6 +21,7 @@ const NAV = [
   { to: '/songs', label: 'Songs', end: false },
   { to: '/chords', label: 'Chords', end: false },
   { to: '/progressions', label: 'Progressions', end: false },
+  { to: '/fills', label: 'Fills', end: false },
   { to: '/keyboard', label: 'Keyboard', end: false },
   { to: '/about', label: 'About', end: false },
 ];
