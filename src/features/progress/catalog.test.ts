@@ -24,6 +24,10 @@ describe('exercise catalog', () => {
       title: 'Progressions: Add vi',
       href: '/ear?exercise=progressions&level=pop',
     });
+    expect(describeExercise('ear:notes:all')).toMatchObject({
+      title: 'Note names: All twelve',
+      href: '/ear?exercise=notes&level=all',
+    });
   });
 
   it('finds your own progressions and drops what no longer exists', () => {
