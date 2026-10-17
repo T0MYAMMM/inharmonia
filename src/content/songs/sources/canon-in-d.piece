@@ -1,0 +1,46 @@
+# Pachelbel, Canon in D for three violins and continuo: the opening, from the oldest
+# surviving source, a manuscript score copied ca. 1838-42 (Staatsbibliothek zu Berlin,
+# Mus.ms. 16481/8), not from a printed edition. The piece was first printed in 1919.
+# The melody is the first violin, which enters in bar 3; the other two violins follow it
+# in canon two bars apart and are not played here. The left hand is the continuo's
+# two-bar ground bass, written out once in the manuscript and repeated under every bar.
+# This covers the first eight bars, the first violin's quarter-note and eighth-note
+# statements; the faster variations that follow are not included.
+# The piano versions are generated reductions of these two parts. The chords are our
+# reading of the ground bass under the canon; the continuo has no figures here.
+title: Canon in D
+piece: canon-in-d
+added: 2026-10-17
+source: public-domain
+composer: Johann Pachelbel
+composer-died: 1706
+first-published: 1919
+edition: Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264)
+key: D major
+meter: 4/4
+# The manuscript has no tempo mark; the tempo is ours.
+tempo: 64
+summary: The opening of Pachelbel's canon: the first violin's line over the eight-note ground bass.
+figure: held
+medium-figure: held
+# The eighth-note bars stay as written in Easy.
+easy-keep: 5, 6
+
+[Ground] 1-2
+melody: | rw | rw |
+chords: | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+left: | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+
+[Canon] main 3-8
+melody:
+  | F#5q E5 D5 C#5 | B4q A4 B4 C#5 |
+  | D5q C#5 B4 A4 | G4q F#4 G4 E4 |
+  | D4e F#4 A4 G4 F#4 D4 F#4 E4 | D4e B3 D4 A4 G4 B4 A4 G4 |
+chords:
+  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+left:
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 |
