@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openDisplaySettings } from './helpers';
+import { openSettings } from './helpers';
 
 const SONG = 'songs/senja-di-teras';
 
@@ -104,7 +104,7 @@ test.describe('song player', () => {
 
   test('not angka shows the do header and digits', async ({ page }) => {
     await open(page);
-    await openDisplaySettings(page);
+    await openSettings(page);
     await page.getByRole('radio', { name: 'Not angka' }).click();
     await expect(page.getByText('do = D')).toBeVisible();
     await expect(page.locator('[data-chip="rh-0-0"]')).toHaveText('5'); // A4 in D

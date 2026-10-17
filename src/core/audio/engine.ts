@@ -20,6 +20,13 @@ export interface AudioSnapshot {
 }
 
 type Tone = typeof ToneNS;
+
+/**
+ * Output level, dB, before the player's own volume. The mix is written with
+ * headroom, so this lifts it to a full level on phone and tablet speakers; a
+ * gentle compressor and the limiter keep loud chords from clipping.
+ */
+export const MASTER_DB = 6;
 type Listener = (s: AudioSnapshot) => void;
 
 const midiToFreq = (m: number) => 440 * 2 ** ((m - 69) / 12);
@@ -47,6 +54,8 @@ export class AudioEngine {
   private synth: ToneNS.PolySynth | null = null;
   private clickSynth: ToneNS.Synth | null = null;
   private out: ToneNS.Volume | null = null;
+  /** The player's volume, dB, on top of MASTER_DB. */
+  private userDb = 0;
   private loading: Promise<void> | null = null;
   /** Which instrument each live-held note started on, so noteOff releases the right one. */
   private held = new Map<number, 'synth' | 'piano'>();
@@ -108,8 +117,12 @@ export class AudioEngine {
       true,
     );
     this.tone = Tone;
-    this.out = new Tone.Volume(-4);
-    this.out.chain(new Tone.Limiter(-1), Tone.getDestination());
+    this.out = new Tone.Volume(MASTER_DB + this.userDb);
+    this.out.chain(
+      new Tone.Compressor({ threshold: -16, ratio: 3, attack: 0.005, release: 0.15 }),
+      new Tone.Limiter(-1),
+      Tone.getDestination(),
+    );
 
     this.synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'fattriangle', count: 2, spread: 12 },
@@ -282,8 +295,10 @@ export class AudioEngine {
     this.held.clear();
   }
 
+  /** The player's volume, dB; 0 is the normal level. Kept until the engine boots. */
   setVolume(db: number): void {
-    if (this.out) this.out.volume.value = db;
+    this.userDb = db;
+    if (this.out) this.out.volume.value = MASTER_DB + db;
   }
 
   /** Adapter so a Transport can play through this engine. */

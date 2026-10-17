@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('song library', () => {
+  test('every card is the same height, versions or not', async ({ page }) => {
+    await page.goto('songs');
+    const cards = page.getByTestId('songs').locator(':scope > li > div');
+    await expect(cards.first()).toBeVisible();
+    const heights = await cards.evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().height)),
+    );
+    expect(heights.length).toBeGreaterThan(5);
+    expect(new Set(heights).size).toBe(1);
+  });
+
   test('one card per piece, with filters for level, composer and title', async ({ page }) => {
     await page.goto('songs');
     const songs = page.getByTestId('songs');
