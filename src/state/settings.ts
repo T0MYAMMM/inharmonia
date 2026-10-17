@@ -13,7 +13,7 @@ export interface SettingsState {
   accidentalStyle: AccidentalStyle;
   /** Show computer-key letters on piano keys (only on devices with a mouse). */
   showKeyHints: boolean;
-  /** Output level, decibels. */
+  /** The player's volume, decibels; 0 is the normal level. */
   volumeDb: number;
   metronome: boolean;
   countInBars: number;
@@ -52,7 +52,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   notation: 'letter',
   accidentalStyle: 'slash',
   showKeyHints: true,
-  volumeDb: -4,
+  volumeDb: 0,
   metronome: false,
   countInBars: 0,
   midiInput: 'all',
@@ -68,7 +68,11 @@ export const DEFAULT_SETTINGS: SettingsState = {
   },
 };
 
-export const SETTINGS_VERSION = 1;
+/** The volume slider's range, decibels. */
+export const VOLUME_RANGE = { min: -24, max: 6 } as const;
+
+/** Version 2: volume became relative to a louder master, so the old -4 default resets to 0. */
+export const SETTINGS_VERSION = 2;
 
 /**
  * App settings, persisted as { state, version } under "inharmonia:settings".
@@ -84,6 +88,11 @@ export const useSettings = create<SettingsState & SettingsActions>()(
     {
       name: 'settings',
       version: SETTINGS_VERSION,
+      migrate: (persisted, version) => {
+        if (version < 2 && typeof persisted === 'object' && persisted !== null)
+          return { ...persisted, volumeDb: DEFAULT_SETTINGS.volumeDb };
+        return persisted;
+      },
       storage: createJSONStorage(() => ({
         getItem: (k) => storage.get(k),
         setItem: (k, v) => void storage.set(k, v),
@@ -106,7 +115,11 @@ function sanitize(x: unknown): Partial<SettingsState> {
   if (p.accidentalStyle === 'slash' || p.accidentalStyle === 'suffix')
     out.accidentalStyle = p.accidentalStyle;
   if (typeof p.showKeyHints === 'boolean') out.showKeyHints = p.showKeyHints;
-  if (typeof p.volumeDb === 'number' && p.volumeDb <= 6 && p.volumeDb >= -40)
+  if (
+    typeof p.volumeDb === 'number' &&
+    p.volumeDb >= VOLUME_RANGE.min &&
+    p.volumeDb <= VOLUME_RANGE.max
+  )
     out.volumeDb = p.volumeDb;
   if (typeof p.metronome === 'boolean') out.metronome = p.metronome;
   if (typeof p.countInBars === 'number' && p.countInBars >= 0 && p.countInBars <= 2)

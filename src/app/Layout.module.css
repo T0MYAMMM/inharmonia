@@ -67,16 +67,18 @@
   background: var(--surface);
 }
 
-.display {
+.settings {
   position: relative;
   margin-left: auto;
 }
 
-.displayToggle {
+.settingsToggle {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: var(--surface);
@@ -87,11 +89,15 @@
   cursor: pointer;
 }
 
-.displayToggle[aria-expanded='true'] {
+.settingsToggle:hover {
+  border-color: var(--muted);
+}
+
+.settingsToggle[aria-expanded='true'] {
   border-color: var(--ink);
 }
 
-/* The display menu: note names and theme, in one place at every width. */
+/* The settings menu: volume, note names and theme, in one place at every width. */
 .controls {
   display: none;
   position: absolute;
@@ -99,6 +105,7 @@
   top: calc(100% + 8px);
   right: 0;
   width: max-content;
+  min-width: 260px;
   max-width: calc(100vw - 2 * var(--gutter));
   padding: var(--space-3);
   border-radius: var(--radius-card);
@@ -123,7 +130,7 @@
   color: var(--muted);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .header {
     padding-bottom: 6px;
   }
