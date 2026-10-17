@@ -15,12 +15,48 @@ export const NO_CHORD = 'N.C.';
 
 export type Hand = 'rh' | 'lh';
 
+/** Someone besides the composer whose work a public-domain piece uses (an arranger). */
+export interface Contributor {
+  role: string;
+  name: string;
+  died: number;
+}
+
+/**
+ * A public-domain piece, with the facts that prove it: see `publicDomainIssues`.
+ * `composer` is "Traditional" (and `composerDied` null) only for a genuinely
+ * anonymous tune.
+ */
+export interface PublicDomainSource {
+  kind: 'public-domain';
+  composer: string;
+  composerDied: number | null;
+  /** Year the piece was first published, in the form used here. */
+  firstPublished: number;
+  /** The early or first edition the notes were taken from. */
+  edition: string;
+  /** The edition's editor, recorded whenever there is one. */
+  editor?: string;
+  /** The editor's year of death; null when not known. */
+  editorDied?: number | null;
+  /**
+   * Whether any of the editor's own additions are used. Only the original notes are
+   * taken, so this is normally false; when true, the editor must pass life + 70 too.
+   */
+  editorAdditionsUsed?: boolean;
+  contributors?: Contributor[];
+}
+
 /** Where a piece of content comes from. Only original, generic or public-domain material ships. */
 export type ContentSource =
   | { kind: 'original'; author?: string }
   | { kind: 'generic' } // theory-based material (chord definitions, numeral progressions)
-  | { kind: 'public-domain'; composer: string; year: number }
+  | PublicDomainSource
   | { kind: 'user' };
+
+/** Versions of a library piece, from the generator. */
+export type SongLevel = 'easy' | 'medium' | 'advanced';
+export const SONG_LEVELS: readonly SongLevel[] = ['easy', 'medium', 'advanced'];
 
 export interface Meter {
   beats: number;
@@ -146,6 +182,13 @@ export interface Lesson {
   bars: Bar[];
   /** Default left-hand pattern id, applied to bars without explicit `lh`. */
   lhPattern?: string;
+  /** A piece's own left-hand figure; used instead of `lhPattern` when present. */
+  lhFigure?: PatternSpec;
+  /** Library pieces: the piece this is a version of, and which version. */
+  piece?: string;
+  level?: SongLevel;
+  /** Which part of the original it covers ("bars 1–16"). */
+  covers?: string;
   rules: ExerciseRules;
   tags?: string[];
 }

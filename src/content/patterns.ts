@@ -143,6 +143,15 @@ export const BLOCK_BOTH: PatternSpec = {
   steps: [step(0, 1.9, ['root', 'fifth'], true), step(0, 1.9, ['all'])],
 };
 
+/** Easy versions of library pieces: one bass note per chord, held. */
+export const BASS_HELD: PatternSpec = {
+  id: 'bass-held',
+  name: 'Held bass note',
+  description: 'The root (or slash bass) of each chord, held: the first step for the left hand.',
+  cycleBeats: 64,
+  steps: [step(0, 'chord', ['root'], true)],
+};
+
 /** In display order. */
 export const PATTERN_LIST: readonly PatternSpec[] = [
   HELD,
@@ -157,6 +166,7 @@ export const PATTERN_LIST: readonly PatternSpec[] = [
   WALTZ,
   TRIAD_ROOT,
   BLOCK_BOTH,
+  BASS_HELD,
 ];
 
 export const PATTERNS: Readonly<Record<string, PatternSpec>> = Object.fromEntries(

@@ -1,6 +1,6 @@
 import type { ChartView } from '../charts/types';
 import type { SectionType } from '../charts/sections';
-import type { ContentSource, Meter } from '../content/types';
+import type { ContentSource, Meter, SongLevel } from '../content/types';
 import type { Mode } from '../theory';
 
 /**
@@ -19,11 +19,38 @@ export interface FileKey {
   mode: Mode;
 }
 
+export interface FileNote {
+  /** "F#4", or "r" for a rest. */
+  note: string;
+  beats: number;
+  /** Holds into the next note of the same hand. */
+  tie?: true;
+}
+
 export interface FileSongBar {
   section?: string;
   chords: { symbol: string; beats: number; voicing?: string[] }[];
   /** Melody notes ("F#4") and rests ("r"); `tie` holds into the next note. */
-  melody: { note: string; beats: number; tie?: true }[];
+  melody: FileNote[];
+  /** Left-hand notes written out for this bar, in place of the figure or pattern. */
+  left?: FileNote[];
+}
+
+/** One step of a left-hand figure: when, how long, and which chord voices. */
+export interface FileFigureStep {
+  at: number;
+  /** Beats, or "chord" to hold until the chord changes. */
+  dur: number | 'chord';
+  /** Voicing indexes (0 = lowest, negative from the top), "all", "root" or "fifth". */
+  voices: (number | 'all' | 'root' | 'fifth')[];
+  accent?: true;
+}
+
+/** A piece's own left-hand figure, applied to each chord like a pattern. */
+export interface FileFigure {
+  name: string;
+  cycleBeats: number;
+  steps: FileFigureStep[];
 }
 
 export interface FileSong {
@@ -31,6 +58,13 @@ export interface FileSong {
   meter: Meter;
   tempo: { default: number; min: number; max: number };
   lhPattern: string;
+  /** Used instead of `lhPattern` when present. */
+  lhFigure?: FileFigure;
+  /** Library pieces: the piece this is a version of, and which version. */
+  piece?: string;
+  level?: SongLevel;
+  /** Which part of the original it covers ("bars 1–16"). */
+  covers?: string;
   summary?: string;
   bars: FileSongBar[];
 }

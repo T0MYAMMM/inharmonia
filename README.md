@@ -66,6 +66,7 @@ src/
     songs/              your songs: the editable draft, edits and undo, kept recordings
     charts/             chord charts: symbols, section names, bar syntax, paste parser, key, compile
     format/             the readable JSON file format for export, import and transfer
+    library/            library pieces: the .piece source format and the Easy/Medium/Advanced generator
     persistence/        safe localStorage and versioned documents with migrations
   state/                Zustand stores (settings, progress, your progressions), review, key highlights,
                         and My songs in IndexedDB
@@ -74,7 +75,8 @@ src/
   features/             one folder per page
   styles/               tokens.css (palette, light and dark) and global.css
 e2e/                    Playwright tests
-docs/format/            the file format: JSON Schema, notes and one example per kind
+docs/format/            the file format (JSON Schema, notes, one example per kind) and the piece source format
+scripts/                build-songs.ts (npm run songs) and the transcription eval
 docs/screenshots/       screenshots attached to each phase's pull request
 ```
 
@@ -162,20 +164,50 @@ export const myLesson: Lesson = {
   from the top), `'all'` for the whole voicing, or `'root'` / `'fifth'` for a bass note below it.
   Patterns restart on each chord and stop at the chord change.
 - `section` on a bar starts a titled section in the score ("Verse", "Chorus").
-- Content must be original, generic theory material, or public domain (published before 1929,
-  marked with `source: { kind: 'public-domain', ... }`). Do not transcribe copyrighted songs.
+- `lhFigure` gives a piece its own left-hand figure (a pattern written into the lesson), used
+  instead of `lhPattern`.
+- Content must be original, generic theory material, or public domain under both rules in
+  [Song library](#song-library). Do not transcribe copyrighted songs.
 
-Then:
-
-1. Put the file in `src/content/songs/` and add it to `SONGS` in `src/content/lessons.ts`. It
-   appears on the Songs page and plays at `/songs/<id>`.
-2. Add a test that `validateLesson(myLesson)` returns `[]` (see
-   `src/core/content/compile.test.ts`). It checks bar lengths, chord symbols and note names.
+Built-in songs are not written as TypeScript: they live as JSON files in `src/content/songs/` and
+load through the same reader as imports (`src/content/lessons.ts`). New songs go into the library
+as `.piece` sources, described next.
 
 `compileLesson` (`src/core/content/compile.ts`) turns a lesson into bars, chords with resolved
 voicings, and one timeline for the transport. Melody notes sound for 95% of their written length
 so repeated notes re-strike cleanly; a tied chain sounds for its whole length, released like its
 last note.
+
+## Song library
+
+The Songs page lists one card per piece. Library pieces come in three versions, all generated
+from one source, and the page filters by level and composer and searches by title or composer.
+Each song page names its version, links to the others, and says which bars of the original it
+covers.
+
+- **Sources** are written in a compact text format, one per piece, in
+  `src/content/songs/sources/*.piece` ([docs/format/source.md](docs/format/source.md)).
+  `npm run songs` builds each into `src/content/songs/<piece>.json` and prints the bars where
+  Easy merged notes, to check by ear. A test fails if a JSON file is out of date with its source.
+- **The generator** (`src/core/library/generate.ts`) uses the chord-chart tools from phase 8:
+  - _Easy:_ the main theme in the nearest easy key (C, G or F; A, E or D minor), each beat
+    playing the note sounding at its start (bars marked `easy-keep` stay as written), triads,
+    and one held bass note per chord.
+  - _Medium:_ the main theme as written, chords up to sevenths with any slash bass kept in the
+    left hand, and a simple pattern for the meter.
+  - _Advanced:_ the fuller piece as written, original chords, and the piece's own left-hand
+    figure, or the left hand written out where the source gives it.
+- **Public domain, proved.** The app is public and used from Indonesia, so a public-domain piece
+  ships only if everyone whose work it uses died at least 70 full years ago (Indonesia, EU)
+  **and** it was first published at least 96 years ago (US). Each source records `composer`,
+  `composerDied`, `firstPublished` and the early `edition` the notes were taken from, plus the
+  edition's `editor` and `editorDied` and any arranger. An editor counts toward life + 70 only
+  if their own additions are used, which they normally are not: only the original notes are
+  taken. The library test checks every built-in piece against both rules, computed from the
+  current year (`src/core/content/publicDomain.ts`). Notes come only from early editions, never
+  from modern editorial additions or published simplifications.
+- **Original pieces** (Senja di Teras, Window Light, Lanterns at Dusk, Morning Ferry) are written
+  for Inharmonia on the app's own progressions and patterns, and credited as original.
 
 ## Song player
 

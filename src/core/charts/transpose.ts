@@ -1,7 +1,16 @@
 import { Note, Scale } from 'tonal';
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
 import { NO_CHORD } from '../content/types';
-import { chroma, intervalBetween, parseChord, transposePc, type Mode } from '../theory';
+import {
+  chroma,
+  intervalBetween,
+  noteToMidi,
+  parseChord,
+  pitchClassName,
+  spellAt,
+  transposePc,
+  type Mode,
+} from '../theory';
 
 export interface Key {
   tonic: string;
@@ -45,6 +54,23 @@ export function transposeChord(
   const root = plain(transposePc(info.root, iv), scale);
   const bass = info.bass ? plain(transposePc(info.bass, iv), scale) : null;
   return `${root}${info.suffix}${bass ? `/${bass}` : ''}`;
+}
+
+/**
+ * Move a note ("F#4") by `semitones`, spelled for the new key the way chords
+ * are (by the interval between the tonics). Rests ("r") stay rests.
+ */
+export function transposeNote(
+  note: string,
+  from: string,
+  to: string,
+  semitones: number,
+  mode: Mode = 'major',
+): string {
+  if (note === 'r' || semitones === 0) return note;
+  const scale = new Set(Scale.get(`${to} ${mode}`).notes);
+  const pc = plain(transposePc(pitchClassName(note), intervalBetween(from, to)), scale);
+  return spellAt(pc, noteToMidi(note) + semitones).name;
 }
 
 /** "3 semitones lower", "5 semitones higher", "1 semitone higher" or "original key". */

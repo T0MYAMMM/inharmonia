@@ -1,0 +1,35 @@
+# An original waltz written for Inharmonia, on the minor descent
+# (i–bVII–bVI–V) and a ii–V back to i.
+title: Lanterns at Dusk
+piece: lanterns-at-dusk
+added: 2026-10-17
+source: original
+author: Inharmonia
+key: A minor
+meter: 3/4
+tempo: 84
+summary: An original minor waltz on the descending i–♭VII–♭VI–V, with a rolling left hand.
+# Its own figure: the bass on 1, then the chord rolled up and back in 8ths.
+figure: Rolling waltz | cycle 3 | 0 1 root! | 1 .5 0 | 1.5 .5 1 | 2 .5 2 | 2.5 .5 1
+
+[Verse] main 1-8
+melody:
+  | E5h C5q | D5q. C5e B4q | C5h A4q | B4h. |
+  | A4q C5q E5q | F5q. E5e D5q | E5q D5q B4q | A4h. |
+chords:
+  | Am | G | F | E7 |
+  | Am | Dm | E7 | Am |
+
+[Chorus] main 9-16
+melody:
+  | A5h F5q | G5q. F5e E5q | E5h C5q | E5q D5q C5q |
+  | D5h F5q | E5q. D5e B4q | C5h B4q | A4h. |
+chords:
+  | F | G | C | Am |
+  | Dm | E7 | Am:2 E7:1 | Am |
+
+[Coda] 17-20
+melody:
+  | C5q B4q A4q | G#4h B4q | A4h E4q | A4h. |
+chords:
+  | F | E7 | Am | Am |
