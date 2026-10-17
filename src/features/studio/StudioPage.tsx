@@ -22,6 +22,7 @@ import {
 import { MAJOR_KEYS, MINOR_KEYS } from '@/core/content/realize';
 import { formatNote, keyName, prettyAccidentals } from '@/core/notation';
 import { useSettings } from '@/state/settings';
+import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
 import { Slider } from '@/ui/Slider';
@@ -150,7 +151,9 @@ export function StudioPage() {
       ) : null}
       <div hidden={draft !== null || editing !== null}>
         <div className={page.hero}>
-          <h1>Studio</h1>
+          <h1>
+            Studio <BetaBadge />
+          </h1>
           <p className={page.lede}>
             Sing or hum a melody against the click and Inharmonia writes it down: notes on the beat
             grid and the key. Everything stays on this device.
