@@ -13,6 +13,22 @@ test.describe('ear training', () => {
     await expect(page.getByTestId('feedback')).toContainText('Press Play');
   });
 
+  test('note names: one note, twelve names, and the octave told after', async ({ page }) => {
+    await page.goto('ear?exercise=notes&level=all');
+    const options = page.getByRole('group', { name: 'Which note is it?' }).getByRole('button');
+    await expect(options).toHaveCount(12);
+    await expect(options.nth(1)).toHaveText('C♯/D♭');
+    await page.getByTestId('play').click();
+    await options.first().click();
+    await expect(page.getByTestId('feedback')).toContainText(/(Yes: |It was )[A-G]♯?[2-6]\./);
+    await page.getByTestId('next').click();
+    await expect(page.getByTestId('feedback')).toContainText('Press Play');
+    await page.goto('ear?exercise=notes&level=naturals');
+    await expect(
+      page.getByRole('group', { name: 'Which note is it?' }).getByRole('button'),
+    ).toHaveCount(7);
+  });
+
   test('progressions: name three chords and check', async ({ page }) => {
     await page.goto('ear?exercise=progressions&level=primary');
     await expect(page.getByTestId('check')).toBeDisabled();

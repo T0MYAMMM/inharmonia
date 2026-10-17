@@ -2,8 +2,15 @@ import { FILLS, getFill } from '@/content/fills';
 import { getSong, SONGS } from '@/content/lessons';
 import { getProgression, PROGRESSIONS } from '@/content/progressions';
 import type { Lesson, Progression } from '@/core/content/types';
-import { CHORD_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice';
+import { CHORD_EAR_LEVELS, NOTE_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice';
 import { CHORD_DRILL_ID } from '../chords/drillId';
+
+/** Ear-training exercises by the id used in progress ids, "ear:<exercise>:<level>". */
+const EAR_EXERCISES = {
+  notes: { name: 'Note names', levels: NOTE_EAR_LEVELS },
+  chords: { name: 'Chord quality', levels: CHORD_EAR_LEVELS },
+  progressions: { name: 'Progressions', levels: PROGRESSION_EAR_LEVELS },
+} as const;
 
 export interface ExerciseInfo {
   id: string;
@@ -46,12 +53,12 @@ export function describeExercise(
     };
   }
   if (parts[0] === 'ear' && parts[2]) {
-    const levels = parts[1] === 'chords' ? CHORD_EAR_LEVELS : PROGRESSION_EAR_LEVELS;
-    const level = levels.find((l) => l.id === parts[2]);
-    if (!level) return null;
+    const ear = EAR_EXERCISES[parts[1] as keyof typeof EAR_EXERCISES];
+    const level = ear?.levels.find((l) => l.id === parts[2]);
+    if (!ear || !level) return null;
     return {
       id,
-      title: `${parts[1] === 'chords' ? 'Chord quality' : 'Progressions'}: ${level.name}`,
+      title: `${ear.name}: ${level.name}`,
       kind: 'Ear training',
       href: `/ear?exercise=${parts[1]}&level=${level.id}`,
     };

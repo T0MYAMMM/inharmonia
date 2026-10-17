@@ -6,11 +6,15 @@ import {
   CHORD_EAR_LEVELS,
   ChordEarQuiz,
   EAR_ROUND,
+  NOTE_EAR_LEVELS,
+  NoteEarQuiz,
+  PITCH_CLASS_NAMES,
   PROGRESSION_EAR_LEVELS,
   ProgressionEarQuiz,
   voiceNumerals,
 } from '@/core/practice';
 import { formatChord, keyName, prettyAccidentals, prettyNumeral } from '@/core/notation';
+import { keyName as noteName } from '@/ui/keyboard/layout';
 import { voiceChord, type SpelledNote } from '@/core/theory';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
@@ -19,9 +23,10 @@ import { Segmented } from '@/ui/Segmented';
 import page from '../page.module.css';
 import styles from './ear.module.css';
 
-type Exercise = 'chords' | 'progressions';
+type Exercise = 'notes' | 'chords' | 'progressions';
 
 const EXERCISES = [
+  { value: 'notes', label: 'Note names' },
   { value: 'chords', label: 'Chord quality' },
   { value: 'progressions', label: 'Progressions' },
 ] as const satisfies readonly { value: Exercise; label: string }[];
@@ -56,10 +61,25 @@ function playChord(notes: readonly SpelledNote[], broken = false) {
   strike(notes, audio.now() + 0.02, { broken });
 }
 
+/** One note, as the melody hand would play it. */
+function playNote(midi: number) {
+  void audio.unlock();
+  audio.playAt(midi, audio.now() + 0.02, 1.4, mixVelocity('rh', MIX.practice.hearItVelocity));
+}
+
+const LEVELS = {
+  notes: NOTE_EAR_LEVELS,
+  chords: CHORD_EAR_LEVELS,
+  progressions: PROGRESSION_EAR_LEVELS,
+} as const;
+
+const asExercise = (v: string | null): Exercise =>
+  v === 'notes' || v === 'progressions' ? v : 'chords';
+
 export function EarPage() {
   const [params, setParams] = useSearchParams();
-  const exercise: Exercise = params.get('exercise') === 'progressions' ? 'progressions' : 'chords';
-  const levels = exercise === 'chords' ? CHORD_EAR_LEVELS : PROGRESSION_EAR_LEVELS;
+  const exercise = asExercise(params.get('exercise'));
+  const levels: readonly { id: string; name: string }[] = LEVELS[exercise];
   const level = levels.find((l) => l.id === params.get('level')) ?? levels[0]!;
   const set = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params);
@@ -72,8 +92,8 @@ export function EarPage() {
       <div className={page.hero}>
         <h1>Ear training</h1>
         <p className={page.lede}>
-          Hear a chord and name its quality, or hear four chords and name them in Roman numerals.
-          Listen as often as you like before you answer.
+          Hear a note and name it with no reference, hear a chord and name its quality, or hear four
+          chords and name them in Roman numerals. Listen as often as you like before you answer.
         </p>
       </div>
       <div className={styles.controls}>
@@ -90,7 +110,9 @@ export function EarPage() {
           onChange={(v) => set({ level: v })}
         />
       </div>
-      {exercise === 'chords' ? (
+      {exercise === 'notes' ? (
+        <NoteQuiz key={level.id} levelId={level.id} />
+      ) : exercise === 'chords' ? (
         <ChordQuiz key={level.id} levelId={level.id} />
       ) : (
         <ProgressionQuiz key={level.id} levelId={level.id} />
@@ -135,6 +157,109 @@ function RoundLine({
         : `Rounds of ${EAR_ROUND}`}
       {streak > 1 ? `, ${streak} in a row` : ''}
     </p>
+  );
+}
+
+function NoteQuiz({ levelId }: { levelId: string }) {
+  const level = NOTE_EAR_LEVELS.find((l) => l.id === levelId)!;
+  const [quiz] = useState(() => new NoteEarQuiz(level));
+  const [, setVersion] = useState(0);
+  const refresh = () => setVersion((v) => v + 1);
+  const { round, last, add, clearLast } = useRound(`ear:notes:${level.id}`);
+  const q = quiz.question;
+  const answered = quiz.answered;
+
+  const choose = (pc: number) => {
+    if (answered) return;
+    add(quiz.answer(pc));
+    refresh();
+  };
+  const next = () => {
+    quiz.next();
+    clearLast();
+    refresh();
+    playNote(quiz.question.midi);
+  };
+
+  // Enter goes on.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && quiz.answered && document.activeElement === document.body) {
+        e.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  // Your answer in the question's octave, to hear the difference.
+  const yours = answered && !answered.correct ? q.midi - q.pitchClass + answered.choice : null;
+
+  return (
+    <section className={styles.card} aria-label="Note names">
+      <p className={styles.muted}>
+        One note, from any of five octaves. Name it without a reference note: in time your ear
+        learns each note&rsquo;s colour.
+      </p>
+      <div className={styles.row}>
+        <Button variant="primary" onClick={() => playNote(q.midi)} data-testid="play">
+          Play
+        </Button>
+      </div>
+      <div className={styles.noteOptions} role="group" aria-label="Which note is it?">
+        {level.pitchClasses.map((pc) => {
+          const state = !answered
+            ? undefined
+            : pc === q.pitchClass
+              ? 'right'
+              : pc === answered.choice
+                ? 'wrong'
+                : undefined;
+          return (
+            <button
+              key={pc}
+              type="button"
+              className={styles.option}
+              data-state={state}
+              aria-pressed={answered?.choice === pc}
+              disabled={!!answered && !state}
+              onClick={() => choose(pc)}
+            >
+              {prettyAccidentals(PITCH_CLASS_NAMES[pc]!)}
+            </button>
+          );
+        })}
+      </div>
+      <div className={styles.feedback} aria-live="polite" data-testid="feedback">
+        {answered ? (
+          <>
+            <p>
+              {answered.correct ? 'Yes: ' : 'It was '}
+              <strong>{prettyAccidentals(noteName(q.midi))}</strong>.
+            </p>
+            <div className={styles.row}>
+              {yours !== null ? (
+                <>
+                  <Button size="small" onClick={() => playNote(q.midi)}>
+                    Hear {prettyAccidentals(noteName(q.midi))}
+                  </Button>
+                  <Button size="small" onClick={() => playNote(yours)}>
+                    Hear {prettyAccidentals(noteName(yours))}
+                  </Button>
+                </>
+              ) : null}
+              <Button variant="primary" onClick={next} data-testid="next">
+                Next note
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p className={styles.muted}>Press Play, then choose.</p>
+        )}
+      </div>
+      <RoundLine round={round} last={last} streak={quiz.score.streak} />
+    </section>
   );
 }
 
