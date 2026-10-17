@@ -39,6 +39,14 @@ export function publicDomainIssues(src: PublicDomainSource, year: number): strin
         `${p.name} (${p.role}) died in ${p.died}: public domain under life + ${PUBLIC_DOMAIN_RULES.lifePlusYears} only from ${freeFromDeath(p.died)}`,
       );
   }
+  if (src.editor && src.editorAdditionsUsed) {
+    if (src.editorDied === null || src.editorDied === undefined)
+      out.push(`${src.editor}: the editor's additions are used, so their year of death is needed`);
+    else if (year < freeFromDeath(src.editorDied))
+      out.push(
+        `${src.editor} (editor, additions used) died in ${src.editorDied}: public domain under life + ${PUBLIC_DOMAIN_RULES.lifePlusYears} only from ${freeFromDeath(src.editorDied)}`,
+      );
+  }
   if (!Number.isInteger(src.firstPublished)) out.push('needs the year it was first published');
   else if (year < freeFromPublication(src.firstPublished))
     out.push(

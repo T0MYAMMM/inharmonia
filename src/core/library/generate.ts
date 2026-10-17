@@ -152,6 +152,13 @@ function source(src: PieceSource): ContentSource {
     composerDied: s.composerDied,
     firstPublished: s.firstPublished,
     edition: s.edition,
+    ...(s.editor
+      ? {
+          editor: s.editor.name,
+          editorDied: s.editor.died,
+          editorAdditionsUsed: s.editor.additionsUsed,
+        }
+      : {}),
     ...(s.contributors.length ? { contributors: s.contributors } : {}),
   };
 }

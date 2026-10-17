@@ -46,6 +46,13 @@ function source(s: ContentSource): ContentSource {
         composerDied: s.composerDied,
         firstPublished: s.firstPublished,
         edition: s.edition,
+        ...(s.editor
+          ? {
+              editor: s.editor,
+              editorDied: s.editorDied ?? null,
+              editorAdditionsUsed: s.editorAdditionsUsed === true,
+            }
+          : {}),
         ...(s.contributors?.length
           ? {
               contributors: s.contributors.map((c) => ({

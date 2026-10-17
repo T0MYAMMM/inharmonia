@@ -49,6 +49,8 @@ composer: Invented Composer
 composer-died: 1850
 first-published: 1840
 edition: An invented first edition, 1840
+editor: Invented Editor
+editor-died: 1880
 contributor: arranger; Invented Arranger; 1890
 key: A minor
 meter: 3/4
@@ -120,7 +122,15 @@ describe('the source format', () => {
       composerDied: 1850,
       firstPublished: 1840,
       edition: 'An invented first edition, 1840',
+      editor: { name: 'Invented Editor', died: 1880, additionsUsed: false },
       contributors: [{ role: 'arranger', name: 'Invented Arranger', died: 1890 }],
+    });
+    expect(() => parsePiece(PD.replace('editor-died: 1880\n', ''))).toThrow(/needs "editor-died:"/);
+    expect(
+      parsePiece(PD.replace('editor-died: 1880', 'editor-died: unknown\neditor-additions: used'))
+        .meta.source,
+    ).toMatchObject({
+      editor: { name: 'Invented Editor', died: null, additionsUsed: true },
     });
   });
 

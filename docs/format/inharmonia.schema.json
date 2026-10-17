@@ -92,6 +92,19 @@
               "maxLength": 300,
               "description": "The early or first edition the notes were taken from."
             },
+            "editor": {
+              "type": "string",
+              "maxLength": 80,
+              "description": "The edition's editor."
+            },
+            "editorDied": {
+              "type": ["integer", "null"],
+              "description": "The editor's year of death, null when not known."
+            },
+            "editorAdditionsUsed": {
+              "type": "boolean",
+              "description": "Whether the editor's own additions are used (then the editor must pass life + 70 too)."
+            },
             "contributors": {
               "type": "array",
               "items": {

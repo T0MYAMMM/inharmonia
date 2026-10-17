@@ -27,6 +27,7 @@ export interface PieceSourceMeta {
         composerDied: number | null;
         firstPublished: number;
         edition: string;
+        editor?: { name: string; died: number | null; additionsUsed: boolean };
         contributors: { role: string; name: string; died: number }[];
       };
   key: { tonic: string; mode: Mode };
@@ -278,6 +279,19 @@ export function parsePiece(text: string): PieceSource {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(get('added')!))
     throw new SourceError(at('added'), 'added is a date like 2026-10-17');
 
+  const editorOf = () => {
+    const died = get('editor-died');
+    if (!died)
+      throw new SourceError(at('editor'), 'an editor needs "editor-died:" (a year, or unknown)');
+    const additions = get('editor-additions') ?? 'not used';
+    if (additions !== 'used' && additions !== 'not used')
+      throw new SourceError(at('editor-additions'), 'editor-additions is "used" or "not used"');
+    return {
+      name: get('editor')!,
+      died: died === 'unknown' ? null : num(died, at('editor-died'), 'editor-died'),
+      additionsUsed: additions === 'used',
+    };
+  };
   let source: PieceSourceMeta['source'];
   if (get('source') === 'original') {
     source = { kind: 'original', author: get('author') ?? 'Inharmonia' };
@@ -291,6 +305,7 @@ export function parsePiece(text: string): PieceSource {
       composerDied: died === 'unknown' ? null : num(died, at('composer-died'), 'composer-died'),
       firstPublished: num(get('first-published')!, at('first-published'), 'first-published'),
       edition: get('edition')!,
+      ...(get('editor') ? { editor: editorOf() } : {}),
       contributors: contributors.map(({ value, line }) => {
         const [role, name, d] = value.split(';').map((s) => s.trim());
         if (!role || !name || !d)
