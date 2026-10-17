@@ -1,6 +1,9 @@
 import { normalizeChord } from '../charts/symbols';
 import {
   NO_CHORD,
+  SONG_METERS,
+  meterName,
+  songMeter,
   type ChordSpec,
   type NoteSpec,
   type PatternSpec,
@@ -266,9 +269,10 @@ export function parsePiece(text: string): PieceSource {
   const at = (k: string) => head.get(k)?.line ?? 1;
 
   const meterM = /^(\d+)\/(\d+)$/.exec(get('meter')!);
-  if (!meterM || ![2, 3, 4].includes(Number(meterM[1])) || Number(meterM[2]) !== 4)
-    throw new SourceError(at('meter'), 'meter must be 2/4, 3/4 or 4/4');
-  const meter = { beats: Number(meterM[1]), unit: Number(meterM[2]) };
+  const found = meterM ? songMeter(Number(meterM[1]), Number(meterM[2])) : undefined;
+  if (!found)
+    throw new SourceError(at('meter'), `meter must be ${SONG_METERS.map(meterName).join(', ')}`);
+  const meter = { ...found };
   const keyM = /^([A-G](?:#|b)?)\s+(major|minor)$/.exec(get('key')!);
   if (!keyM) throw new SourceError(at('key'), 'key is like "G major" or "A minor"');
   const piece = get('piece')!;

@@ -1,5 +1,5 @@
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
-import type { Lesson } from '../content/types';
+import { songMeter, type Lesson } from '../content/types';
 import { isValidChord } from '../theory';
 import { MIN_NOTE_BEATS, toLesson, type SongDraft } from './draft';
 
@@ -74,8 +74,7 @@ export function cleanDraft(
   const tonics: readonly string[] = key.mode === 'major' ? MAJOR_KEYS : MINOR_KEYS;
   if (typeof key.tonic !== 'string' || !tonics.includes(key.tonic)) return 'unknown key';
   if (!isNum(tempo, 30, 240)) return 'tempo out of range';
-  if (!isObj(meter) || ![2, 3, 4].includes(meter.beats as number) || meter.unit !== 4)
-    return 'unsupported meter';
+  if (!isObj(meter) || !songMeter(meter.beats, meter.unit)) return 'unsupported meter';
   if (!isNum(bars, 1, MAX_BARS) || !Number.isInteger(bars)) return 'too many bars';
   const length = bars * (meter.beats as number);
   if (!Array.isArray(notes) || notes.length > 2000) return 'bad notes';
@@ -118,7 +117,7 @@ export function cleanDraft(
     title: title.slice(0, MAX_TITLE),
     key: { tonic: key.tonic, mode: key.mode },
     tempo,
-    meter: { beats: meter.beats as number, unit: 4 },
+    meter: { beats: meter.beats as number, unit: meter.unit as number },
     bars,
     notes: cleanNotes,
     chords: cleanChords,
