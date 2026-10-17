@@ -1,0 +1,1129 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-10-17T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "song",
+      "id": "lanterns-at-dusk-easy",
+      "title": "Lanterns at Dusk",
+      "source": {
+        "kind": "original",
+        "author": "Inharmonia"
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 65,
+          "min": 35,
+          "max": 105
+        },
+        "lhPattern": "bass-held",
+        "piece": "lanterns-at-dusk",
+        "level": "easy",
+        "covers": "bars 1–16",
+        "summary": "An original minor waltz on the descending i–♭VII–♭VI–V, with a rolling left hand.",
+        "bars": [
+          {
+            "section": "Verse",
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "F5",
+                "beats": 2
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "section": "Chorus",
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "G5",
+                "beats": 2
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 2
+              },
+              {
+                "symbol": "E",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "lanterns-at-dusk-medium",
+      "title": "Lanterns at Dusk",
+      "source": {
+        "kind": "original",
+        "author": "Inharmonia"
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 75,
+          "min": 35,
+          "max": 105
+        },
+        "lhPattern": "waltz",
+        "piece": "lanterns-at-dusk",
+        "level": "medium",
+        "covers": "bars 1–16",
+        "summary": "An original minor waltz on the descending i–♭VII–♭VI–V, with a rolling left hand.",
+        "bars": [
+          {
+            "section": "Verse",
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 1.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "F5",
+                "beats": 1.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "section": "Chorus",
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "G5",
+                "beats": 1.5
+              },
+              {
+                "note": "F5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 2
+              },
+              {
+                "symbol": "E7",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "lanterns-at-dusk-advanced",
+      "title": "Lanterns at Dusk",
+      "source": {
+        "kind": "original",
+        "author": "Inharmonia"
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 84,
+          "min": 35,
+          "max": 105
+        },
+        "lhPattern": "waltz",
+        "lhFigure": {
+          "name": "Rolling waltz",
+          "cycleBeats": 3,
+          "steps": [
+            {
+              "at": 0,
+              "dur": 1,
+              "voices": [
+                "root"
+              ],
+              "accent": true
+            },
+            {
+              "at": 1,
+              "dur": 0.5,
+              "voices": [
+                0
+              ]
+            },
+            {
+              "at": 1.5,
+              "dur": 0.5,
+              "voices": [
+                1
+              ]
+            },
+            {
+              "at": 2,
+              "dur": 0.5,
+              "voices": [
+                2
+              ]
+            },
+            {
+              "at": 2.5,
+              "dur": 0.5,
+              "voices": [
+                1
+              ]
+            }
+          ]
+        },
+        "piece": "lanterns-at-dusk",
+        "level": "advanced",
+        "covers": "bars 1–20",
+        "summary": "An original minor waltz on the descending i–♭VII–♭VI–V, with a rolling left hand.",
+        "bars": [
+          {
+            "section": "Verse",
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 1.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "F5",
+                "beats": 1.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "section": "Chorus",
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "G5",
+                "beats": 1.5
+              },
+              {
+                "note": "F5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 2
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Dm",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 2
+              },
+              {
+                "note": "F5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 2
+              },
+              {
+                "symbol": "E7",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "section": "Coda",
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E7",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "G#4",
+                "beats": 2
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 2
+              },
+              {
+                "note": "E4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 3
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
