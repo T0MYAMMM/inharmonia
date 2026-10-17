@@ -41,18 +41,20 @@ function setup() {
   const lights = new KeyLights();
   const audio = { unlock: vi.fn(async () => {}), now: () => 0, playAt: vi.fn() };
   const onRoundDone = vi.fn();
+  const onCleanChord = vi.fn();
   const ctrl = new DrillController({
     audio: audio as unknown as AudioEngine,
     lights,
     notes,
     onRoundDone,
+    onCleanChord,
     timers: t.timers,
   });
   ctrl.attach();
   const hold = (midis: number[]) =>
     midis.forEach((m) => notes.noteOn(m, 0.8, 'keys', t.timers.now()));
   const release = () => notes.releaseAll();
-  return { t, notes, lights, audio, ctrl, hold, release, onRoundDone };
+  return { t, notes, lights, audio, ctrl, hold, release, onRoundDone, onCleanChord };
 }
 
 const settings = {
@@ -113,6 +115,26 @@ describe('DrillController', () => {
     ]).toEqual([true, true, true]);
     e.ctrl.skip();
     expect(e.ctrl.snapshot).toMatchObject({ index: 1, showing: false });
+  });
+
+  it('reports a clean chord for the known-chords profile, but not after a slip or help', () => {
+    const e = setup();
+    e.ctrl.start(settings, C_MAJOR);
+    e.hold([60, 64, 67]);
+    e.t.advance(100);
+    expect(e.onCleanChord).toHaveBeenCalledWith('C');
+    e.release();
+    e.t.advance(700);
+    e.hold([61]);
+    e.release();
+    e.hold([60, 64, 67]);
+    e.t.advance(100);
+    e.release();
+    e.t.advance(700);
+    e.ctrl.showMe();
+    e.hold([60, 64, 67]);
+    e.t.advance(100);
+    expect(e.onCleanChord).toHaveBeenCalledTimes(1);
   });
 
   it('ends the round with a summary', () => {

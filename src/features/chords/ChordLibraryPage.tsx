@@ -103,7 +103,8 @@ export function ChordLibraryPage() {
         <h1>Chords</h1>
         <p className={page.lede}>
           Pick a root and a quality. See how the chord is built, hear it, and play it back.{' '}
-          <Link to={`/chords/drill`}>Drill chords</Link>
+          <Link to={`/chords/drill`}>Drill chords</Link> ·{' '}
+          <Link to="/chords/known">Chords you know</Link>
         </p>
       </div>
       <div className={styles.layout}>
