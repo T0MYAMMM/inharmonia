@@ -14,6 +14,7 @@ import { ProgressTrack } from '@/ui/ProgressTrack';
 import { setProgress } from '@/ui/progress';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
+import { VolumeSlider } from '@/ui/VolumeSlider';
 import { KeyboardDock } from '@/ui/keyboard';
 import { buildDemo, DEMO_BEATS_PER_BAR, DEMO_CHORDS, DEMO_KEY, DEMO_LENGTH } from './demo';
 import page from '../page.module.css';
@@ -52,12 +53,7 @@ export function KeyboardSandboxPage() {
 
 function SoundCard() {
   const a = useAudioState();
-  const volumeDb = useSettings((s) => s.volumeDb);
-  const set = useSettings((s) => s.set);
   const [latency, setLatency] = useState(() => audio.latencyInfo());
-  useEffect(() => {
-    audio.setVolume(volumeDb);
-  }, [volumeDb, a.status]);
   useEffect(() => {
     if (a.status === 'locked') return;
     const id = setInterval(() => setLatency(audio.latencyInfo()), 500);
@@ -84,14 +80,7 @@ function SoundCard() {
             </p>
           ) : null}
         </div>
-        <Slider
-          label="Volume"
-          value={volumeDb}
-          min={-30}
-          max={4}
-          onChange={(v) => set({ volumeDb: v })}
-          format={(v) => `${v > 0 ? '+' : ''}${v} dB`}
-        />
+        <VolumeSlider />
       </div>
     </Card>
   );

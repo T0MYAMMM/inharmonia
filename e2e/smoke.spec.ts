@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDisplaySettings } from './helpers';
+import { openSettings } from './helpers';
 
 test.describe('smoke', () => {
   test('home page loads and links to the keyboard', async ({ page }) => {
@@ -20,18 +20,52 @@ test.describe('smoke', () => {
 
   test('theme toggle sets data-theme and persists', async ({ page }) => {
     await page.goto('./');
-    await openDisplaySettings(page);
+    await openSettings(page);
     await page.getByRole('radio', { name: 'Dark' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await openDisplaySettings(page);
+    await openSettings(page);
     await page.getByRole('radio', { name: 'Auto' }).click();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
   });
 });
 
+test.describe('settings menu', () => {
+  test('the gear holds the volume, and it persists', async ({ page }) => {
+    await page.goto('./');
+    await openSettings(page);
+    const volume = page.getByRole('slider', { name: 'Volume' });
+    await expect(volume).toHaveValue('0');
+    await volume.fill('-6');
+    await expect(page.getByRole('group', { name: 'Settings' })).toContainText('-6 dB');
+    await page.reload();
+    await openSettings(page);
+    await expect(page.getByRole('slider', { name: 'Volume' })).toHaveValue('-6');
+  });
+
+  test('Studio is marked beta', async ({ page }) => {
+    await page.goto('studio');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Studio\s*Beta/);
+    await expect(
+      page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Studio Beta' }),
+    ).toBeVisible();
+  });
+});
+
 test.describe('keyboard sandbox', () => {
+  test('touch screens get finger-sized keys', async ({ page, isMobile }) => {
+    await page.goto('keyboard');
+    const white = page.locator('[data-midi="60"]');
+    const box = (await white.boundingBox())!;
+    if (isMobile) {
+      expect(box.width).toBeGreaterThanOrEqual(39);
+      expect(box.height).toBeGreaterThanOrEqual(140);
+    } else {
+      expect(box.width).toBeLessThan(36);
+    }
+  });
+
   test('computer keys light the on-screen key and start the piano', async ({ page, isMobile }) => {
     test.skip(isMobile, 'computer keyboard input is a desktop feature');
     await page.goto('keyboard');
