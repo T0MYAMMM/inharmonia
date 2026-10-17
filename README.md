@@ -200,8 +200,10 @@ covers.
 - **Public domain, proved.** The app is public and used from Indonesia, so a public-domain piece
   ships only if everyone whose work it uses died at least 70 full years ago (Indonesia, EU)
   **and** it was first published at least 96 years ago (US). Each source records `composer`,
-  `composerDied`, `firstPublished` and the early `edition` the notes were taken from, plus any
-  arranger. The library test checks every built-in piece against both rules, computed from the
+  `composerDied`, `firstPublished` and the early `edition` the notes were taken from, plus the
+  edition's `editor` and `editorDied` and any arranger. An editor counts toward life + 70 only
+  if their own additions are used, which they normally are not: only the original notes are
+  taken. The library test checks every built-in piece against both rules, computed from the
   current year (`src/core/content/publicDomain.ts`). Notes come only from early editions, never
   from modern editorial additions or published simplifications.
 - **Original pieces** (Senja di Teras, Window Light, Lanterns at Dusk, Morning Ferry) are written

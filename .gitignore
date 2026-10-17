@@ -9,3 +9,6 @@ playwright-report
 blob-report
 *.tsbuildinfo
 .DS_Store
+
+# Score scans downloaded to work from; never committed.
+.cache/
