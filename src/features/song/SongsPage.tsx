@@ -110,6 +110,8 @@ export function SongsPage() {
         {shown.map((g) => {
           const first = g[0]!;
           const main = g.find((s) => s.level === (level === 'all' ? 'easy' : level)) ?? first;
+          // The written key, unless a level is picked: then the key that version plays in.
+          const keyed = (level === 'all' ? g.find((s) => s.level === 'advanced') : main) ?? first;
           return (
             <li key={first.piece ?? first.id} data-testid={`piece-${first.piece ?? first.id}`}>
               <div className={styles.card}>
@@ -118,7 +120,7 @@ export function SongsPage() {
                 </Link>
                 <span className={styles.meta}>{creditLine(first.source)}</span>
                 <span className={styles.meta}>
-                  {prettyAccidentals(keyName(first.key))}, {first.meter.beats}/{first.meter.unit}
+                  {prettyAccidentals(keyName(keyed.key))}, {first.meter.beats}/{first.meter.unit}
                 </span>
                 {first.summary ? <span className={styles.summary}>{first.summary}</span> : null}
                 {first.level ? (
