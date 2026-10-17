@@ -1,7 +1,7 @@
 import { FILLS, getFill } from '@/content/fills';
 import { getSong, SONGS } from '@/content/lessons';
 import { getProgression, PROGRESSIONS } from '@/content/progressions';
-import type { Progression } from '@/core/content/types';
+import type { Lesson, Progression } from '@/core/content/types';
 import { CHORD_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice';
 import { CHORD_DRILL_ID } from '../chords/drillId';
 
@@ -57,7 +57,7 @@ export function describeExercise(
     };
   }
   const song = getSong(id);
-  if (song) return { id, title: song.title, kind: 'Song', href: `/songs/${song.id}` };
+  if (song) return { id, title: songTitle(song), kind: 'Song', href: `/songs/${song.id}` };
   return null;
 }
 
@@ -65,7 +65,8 @@ export function describeExercise(
 export function starterExercises(): ExerciseInfo[] {
   const firstFill = FILLS.find((f) => f.level === 1)!;
   const list: ExerciseInfo[] = [
-    ...SONGS.map((s) => ({ id: s.id, title: s.title, kind: 'Song', href: `/songs/${s.id}` })),
+    // Songs with one version first; library pieces come in at the end, Easy versions.
+    ...SONGS.filter((s) => !s.level).map(songStep),
     { id: CHORD_DRILL_ID, title: 'Chord drill', kind: 'Chords', href: '/chords/drill' },
     {
       id: `progression:${PROGRESSIONS[0]!.id}`,
@@ -97,9 +98,24 @@ export function starterExercises(): ExerciseInfo[] {
       kind: 'Progression',
       href: `/progressions/${p.id}`,
     })),
+    ...SONGS.filter((s) => s.level === 'easy').map(songStep),
   ];
   return list;
 }
+
+const LEVEL_NAMES = { easy: 'Easy', medium: 'Medium', advanced: 'Advanced' } as const;
+
+/** "Window Light, Easy" for a library version; the plain title otherwise. */
+export function songTitle(s: Lesson): string {
+  return s.level ? `${s.title}, ${LEVEL_NAMES[s.level]}` : s.title;
+}
+
+const songStep = (s: Lesson): ExerciseInfo => ({
+  id: s.id,
+  title: songTitle(s),
+  kind: 'Song',
+  href: `/songs/${s.id}`,
+});
 
 /** The first starter not tried yet. */
 export function nextNew(tried: (id: string) => boolean): ExerciseInfo | null {

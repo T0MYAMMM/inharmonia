@@ -1,0 +1,34 @@
+# An original piece written for Inharmonia on I–vi–ii–V, with an Alberti
+# bass in the full version.
+title: Morning Ferry
+piece: morning-ferry
+added: 2026-10-17
+source: original
+author: Inharmonia
+key: F major
+meter: 4/4
+tempo: 96
+summary: A bright original piece on I–vi–ii–V, with an Alberti bass in the full version.
+figure: alberti
+
+[Verse] main 1-8
+melody:
+  | A4q C5q F5q. E5e | D5h A4h | Bb4q. A4e G4q Bb4q | A4q G4q E4h |
+  | F4q A4q C5q F5q | E5q. D5e A4h | G4q Bb4q E4q G4q | F4w |
+chords:
+  | F | Dm | Gm | C7 |
+  | F | Dm | Gm C7 | F |
+
+[Chorus] main 9-16
+melody:
+  | D5h. F5q | E5q. D5e C5h | C5q E5q A5q G5q | F5h D5h |
+  | Bb4q D5q G5q F5q | E5h C5q Bb4q | A4q. G4e F4q A4q | C5h F4h |
+chords:
+  | Bb | C | Am | Dm |
+  | Gm | C7 | F | F |
+
+[Bridge] 17-21
+melody:
+  | F5q E5q D5q A4q | C5h E5h | D5q C5q Bb4q D5q | C5w | F5w |
+chords:
+  | Dm | Am | Bb | C7 | F |
