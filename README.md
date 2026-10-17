@@ -206,6 +206,9 @@ covers.
   taken. The library test checks every built-in piece against both rules, computed from the
   current year (`src/core/content/publicDomain.ts`). Notes come only from early editions, never
   from modern editorial additions or published simplifications.
+- **Meters.** Songs can be in 2/4, 3/4, 4/4 or 3/8 (`SONG_METERS` in
+  `src/core/content/types.ts`). Beats count the written beat, so a 3/8 bar has three
+  eighth-note beats and its tempo counts eighths; Für Elise is the first piece in 3/8.
 - **Original pieces** (Senja di Teras, Window Light, Lanterns at Dusk, Morning Ferry) are written
   for Inharmonia on the app's own progressions and patterns, and credited as original.
 
