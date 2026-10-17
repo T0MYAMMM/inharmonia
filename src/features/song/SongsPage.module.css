@@ -39,3 +39,76 @@
 .summary {
   color: var(--muted);
 }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.select {
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  min-width: 0;
+  max-width: 100%;
+}
+
+a.title {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.title:hover {
+  text-decoration: underline;
+}
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.level {
+  display: grid;
+  gap: 1px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.level:hover {
+  border-color: var(--muted);
+}
+
+.level[data-current] {
+  border: 2px solid var(--ink);
+  padding: 5px 11px;
+}
+
+.levelMeta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
