@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { audio, lights, notes } from '@/app/services';
 import { CHORD_QUALITIES } from '@/core/theory';
 import type { Strictness } from '@/core/content/types';
+import { recordCleanPlay } from '@/state/knownChords';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
@@ -41,6 +42,7 @@ export function ChordDrillPage() {
         notes,
         onRoundDone: (s) =>
           recordAttempt(CHORD_DRILL_ID, { hits: s.clean, misses: s.total - s.clean }),
+        onCleanChord: (symbol) => recordCleanPlay(symbol),
       }),
   );
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);

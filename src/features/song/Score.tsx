@@ -168,6 +168,11 @@ const BarCard = memo(
               <span className={styles.chordText}>
                 {formatChord(c.symbol, keyContext, notation)}
               </span>
+              {c.original ? (
+                <span className={styles.original} data-testid="original-chord">
+                  {formatChord(c.original, keyContext, notation)}
+                </span>
+              ) : null}
               {showNumerals && c.numeral && notation !== 'roman' ? (
                 <span className={styles.numeral}>{prettyNumeral(c.numeral)}</span>
               ) : null}

@@ -59,23 +59,30 @@ describe('realizeProgression', () => {
     expect(validateLesson(l)).toEqual([]);
   });
 
-  it('every progression realizes and compiles in every key with every pattern', () => {
-    for (const p of PROGRESSIONS) {
-      const keys = p.mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
-      for (const key of keys) {
-        for (const pattern of PATTERN_LIST) {
-          const l = realizeProgression(p, { key, style: 'close', voiceLeading: true, pattern });
-          expect(validateLesson(l), `${p.id} in ${key} with ${pattern.id}`).toEqual([]);
-          const c = compileLesson(l, PATTERNS);
-          expect(c.events.length).toBeGreaterThan(0);
-          for (const e of c.events) {
-            expect(e.midi).toBeGreaterThanOrEqual(28);
-            expect(e.beat + e.dur).toBeLessThanOrEqual(c.lengthBeats + 1e-9);
+  // Every progression × 12 keys × every pattern: real work that grows with the content, so
+  // it gets more than the default 5 s when the whole suite runs in parallel.
+  it(
+    'every progression realizes and compiles in every key with every pattern',
+    { timeout: 30_000 },
+    () => {
+      for (const p of PROGRESSIONS) {
+        const keys = p.mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
+        for (const key of keys) {
+          for (const pattern of PATTERN_LIST) {
+            const l = realizeProgression(p, { key, style: 'close', voiceLeading: true, pattern });
+            expect(validateLesson(l), `${p.id} in ${key} with ${pattern.id}`).toEqual([]);
+            const c = compileLesson(l, PATTERNS);
+            expect(c.events.length).toBeGreaterThan(0);
+            // One assertion per lesson: an expect per event is most of this test's time.
+            const bad = c.events.filter(
+              (e) => e.midi < 28 || e.beat + e.dur > c.lengthBeats + 1e-9,
+            );
+            expect(bad, `${p.id} in ${key} with ${pattern.id}`).toEqual([]);
           }
         }
       }
-    }
-  });
+    },
+  );
 });
 
 describe('pattern bass notes', () => {

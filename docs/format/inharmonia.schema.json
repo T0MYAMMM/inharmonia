@@ -433,7 +433,7 @@
               "enum": ["original", "simplified", "basic"]
             },
             "style": {
-              "type": "string"
+              "enum": ["triad-root", "block-both", "root-fifth", "arpeggio-8ths", "held"]
             },
             "showFunction": {
               "type": "boolean"

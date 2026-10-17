@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { audio, getTransport, lights, notes } from '@/app/services';
-import type { CompiledLesson } from '@/core/content/compile';
-import { formatChord } from '@/core/notation';
+import { describeChange, type VoicingChange } from '@/core/charts';
+import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
+import { formatChord, prettyAccidentals } from '@/core/notation';
 import type { PracticeHands } from '@/core/practice';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
@@ -51,6 +52,12 @@ export interface LessonPlayerProps {
   settings?: ReactNode;
   /** Roman numerals under the chord symbols (default: on for progressions). */
   showNumerals?: boolean;
+  /**
+   * Say how the hand moves into the current chord ("keep C and E, move G up 2
+   * semitones to A") and mark it on the keyboard: a dot on notes that stay, a
+   * ring on notes to move to.
+   */
+  voicingHints?: boolean;
 }
 
 /**
@@ -64,6 +71,7 @@ export function LessonPlayer({
   variant,
   settings,
   showNumerals,
+  voicingHints = false,
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
   const [ctrl] = useState(
@@ -138,6 +146,23 @@ export function LessonPlayer({
       ? [firstChord[0]!.midi, firstChord.at(-1)!.midi]
       : [62, 76];
   const what = progression ? 'progression' : 'song';
+  const hint = voicingHints
+    ? changeInto(compiled, practice ? snap.targetChordId : null, snap.bar, snap.chordSymbol)
+    : null;
+  const hintKey = hint
+    ? `${hint.change.stays.map((n) => n.midi)}|${[...hint.change.moves.map((m) => m.to), ...hint.change.adds].map((n) => n.midi)}`
+    : '';
+  useEffect(() => {
+    if (!hintKey) return;
+    const [stays = '', moves = ''] = hintKey.split('|');
+    const midis = (s: string) => (s ? s.split(',').map(Number) : []);
+    lights.setExactly('stay', midis(stays));
+    lights.setExactly('moveTo', midis(moves));
+    return () => {
+      lights.clear('stay');
+      lights.clear('moveTo');
+    };
+  }, [hintKey]);
   const [low, high] = dockRange(compiled);
 
   return (
@@ -268,6 +293,15 @@ export function LessonPlayer({
             </span>
           ) : null}
         </div>
+        {hint ? (
+          <p className={styles.note} data-testid="voicing-hint">
+            <span className={styles.chord}>
+              {formatChord(hint.from.symbol, lesson.key, notation)} →{' '}
+              {formatChord(hint.to.symbol, lesson.key, notation)}
+            </span>
+            : {prettyAccidentals(hint.change.text)}.
+          </p>
+        ) : null}
         {snap.finished ? (
           <p className={styles.finished} data-testid="finished">
             Finished. {snap.finished.hits} hits and {snap.finished.misses} misses.{' '}
@@ -308,6 +342,29 @@ export function LessonPlayer({
       <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
     </>
   );
+}
+
+/**
+ * The change into the current chord: the practice target, or the chord at the
+ * playhead. Null at the first chord, on N.C., or when there is nothing to say.
+ */
+function changeInto(
+  c: CompiledLesson,
+  targetId: string | null,
+  bar: number,
+  symbol: string | null,
+): { from: CompiledChord; to: CompiledChord; change: VoicingChange } | null {
+  const i = targetId
+    ? c.chords.findIndex((x) => x.id === targetId)
+    : c.chords.findIndex((x) => x.barIndex === bar && x.symbol === symbol);
+  const to = c.chords[i];
+  if (!to || to.voicing.length === 0) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const from = c.chords[j]!;
+    if (from.voicing.length === 0) continue;
+    return { from, to, change: describeChange(from.voicing, to.voicing) };
+  }
+  return null;
 }
 
 const ranges = new WeakMap<CompiledLesson, [number, number]>();

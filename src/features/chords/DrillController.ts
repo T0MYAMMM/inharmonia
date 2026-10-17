@@ -38,6 +38,8 @@ export interface DrillServices {
   lights: KeyLights;
   notes: NoteStream;
   onRoundDone?: (summary: DrillSummary) => void;
+  /** A chord played cleanly: no wrong note first and no "Show me". */
+  onCleanChord?: (symbol: string) => void;
   timers?: Timers;
 }
 
@@ -72,6 +74,8 @@ export class DrillController {
   private listeners = new Set<() => void>();
   private off: (() => void) | null = null;
   private pause: unknown = null;
+  /** "Show me" was used on the current prompt. */
+  private helped = false;
 
   constructor(private readonly s: DrillServices) {
     this.recognizer = new ChordRecognizer({
@@ -167,6 +171,7 @@ export class DrillController {
   showMe(): void {
     if (!this.drill) return;
     const showing = !this.snap.showing;
+    if (showing) this.helped = true;
     this.s.lights.setExactly(
       'chordTarget',
       showing ? this.drill.current.voicing.map((n) => n.midi) : [],
@@ -226,6 +231,7 @@ export class DrillController {
       return;
     }
     this.s.lights.setExactly('chordTarget', []);
+    if (result.clean && !this.helped) this.s.onCleanChord?.(result.item.symbol);
     this.set({
       correct: true,
       clean,
@@ -260,6 +266,7 @@ export class DrillController {
   private showPrompt(): void {
     if (!this.drill) return;
     this.clearLights();
+    this.helped = false;
     const v = this.drill.current.voicing;
     this.set({
       index: this.drill.results.length,
