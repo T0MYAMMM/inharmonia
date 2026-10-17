@@ -1,0 +1,53 @@
+# Beethoven, Symphony No. 9, finale: the "Freude" tune as the cellos and basses first play
+# it alone, Allegro assai, bars 92-115 of the first edition (Schott, 1826, plate 2322,
+# printed pages 101-102). The edition writes the tune's repeated notes in bars 1, 3, 5, 7
+# and 15 as half notes (F#h G A, not F# F# G A); they are kept that way here.
+# The tune is written an octave above the cellos, where the violins take it from bar 140.
+# Bar 115 ends with an upbeat A into the next statement; here the tune ends on D, as in
+# bars 99 and 107.
+# Left hand (Advanced): the double-bass line of the next statement (bars 116-138), where
+# the violas play the same tune, at the basses' sounding pitch. The chords are our reading
+# of that bass line under the tune; the orchestra has no chord parts here.
+title: Ode to Joy
+piece: ode-to-joy
+added: 2026-10-17
+source: public-domain
+composer: Ludwig van Beethoven
+composer-died: 1827
+first-published: 1826
+edition: First edition, B. Schott's Söhne, Mainz, n.d. [1826], plate 2322 (IMSLP #46254)
+key: D major
+meter: 4/4
+# The edition marks "Allegro assai"; the tempo is ours.
+tempo: 112
+summary: Beethoven's tune from the Ninth, as the cellos and basses first play it, over the bass line that follows.
+figure: held
+# Every bar with a dotted rhythm or the eighth-note turn stays as written in Easy.
+easy-keep: 4, 8, 10, 11, 12, 16, 18, 19, 20, 24
+
+[Theme] main 92-114
+melody:
+  | F#4h G4q A4 | A4 G4 F#4 E4 | D4h E4q F#4 | F#4q. E4e E4h |
+  | F#4h G4q A4 | A4 G4 F#4 E4 | D4h E4q F#4 | E4q. D4e D4h |
+  | E4h F#4q D4 | E4 F#4e G4 F#4q D4 | E4 F#4e G4 F#4q E4 | D4 E4 A3 F#4~ |
+  | F#4 F#4 G4 A4 | A4 G4 F#4 E4 | D4h E4q F#4 | E4q. D4e D4h |
+  | E4h F#4q D4 | E4 F#4e G4 F#4q D4 | E4 F#4e G4 F#4q E4 | D4 E4 A3 F#4~ |
+  | F#4 F#4 G4 A4 | A4 G4 F#4 E4 | D4h E4q F#4 |
+chords:
+  | D/A D | G/B:2 D:1 Em/G:1 | G:1 D/F#:2 D:1 | D:1 A/C#:1 A:2 |
+  | D/A D | G/B:2 D:1 Em/G:1 | G:1 D/F#:1 A/C#:1 D/A:1 | A7/G:1 D/A:1 D/F#:2 |
+  | Em/G:2 D/A:1 Bm:1 | A/C#:2 D:2 | Em/G:2 D/A:1 F#7/A#:1 | Bm:1 A/C#:2 D:1 |
+  | D/A:2 D7/C:2 | G/B:2 D:1 Em/G:1 | G:1 D/F#:1 A/C#:1 D/A:1 | A7/G:1 D/A:1 D/F#:2 |
+  | Em/G:2 D/A:1 Bm:1 | A/C#:2 D:2 | Em/G:2 D/A:1 F#7/A#:1 | Bm:1 A/C#:2 D:1 |
+  | D/A:2 D7/C:2 | G/B:2 D:1 Em/G:1 | G:1 D/F#:1 A/C#:1 D/A:1 |
+left:
+  | A2h D2h | B1q. C#2e D2q G2 | G2 F#2 E2 D2 | D2 C#2 B1 A1 |
+  | A2h D2h | B1q. C#2e D2q G2 | G2q F#2e E2 D2 C#2 B1 A1 | G1q A1 F#1 F#2 |
+  | G2h A2q B2 | C#2h D2q E2e F#2 | G2h A2q A#2 | B2q C#3h D3q |
+  | A2h C2h | B1q. C#2e D2q G2 | G2q F#2e E2 D2 C#2 B1 A1 | G1q A1 F#1 F#2 |
+  | G2h A2q B2 | C#2h D2q E2e F#2 | G2h A2q A#2 | B2q C#3h D3q |
+  | A2h C2h | B1q. C#2e D2q G2 | G2q F#2e E2 D2 C#2 B1 A1 |
+
+[Ending] main 115
+melody: | E4q. D4e D4h |
+chords: | A7:1 D:3 |

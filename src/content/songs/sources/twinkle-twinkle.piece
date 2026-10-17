@@ -1,0 +1,36 @@
+# The French tune "Ah ! vous dirai-je, maman", as the theme of Mozart's variations K. 265
+# (first published Vienna, 1785), from an early Paris print: Porro, n.d., plate 79,
+# "Variétés musicales No. II". The tune is traditional; the left hand is Mozart's.
+# Played once through: the print repeats bars 1-8 and 9-24.
+# This print writes bars 4 and 20 as two Gs, not one long G. The trills in bars 7, 15 and
+# 23 are left out (the source format has no ornaments); the notes they sit on are kept.
+# Bar 16: Mozart's left hand holds G under C-B; the left hand here plays the moving C-B.
+title: Twinkle, Twinkle, Little Star
+piece: twinkle-twinkle
+added: 2026-10-17
+source: public-domain
+composer: Traditional
+composer-died: unknown
+first-published: 1785
+edition: Early edition, Porro, Paris, n.d., plate 79, Variétés musicales No. II (IMSLP #104399, scan from the Library of Congress)
+contributor: left hand (theme of K. 265); Wolfgang Amadeus Mozart; 1791
+key: C major
+meter: 2/4
+# The print has no tempo mark; the tempo is ours.
+tempo: 100
+summary: The French tune behind the nursery song, as Mozart set it at the head of his variations.
+figure: held
+
+[Theme] main 1-24
+melody:
+  | C5q C5 | G5 G5 | A5 A5 | G5 G5 | F5 F5 | E5 E5 | D5q D5e. E5s | C5h |
+  | G5q G5 | F5 F5 | E5 E5 | D5 D5 | G5 G5 | F5 F5 | E5q E5e. F5s | E5q D5 |
+  | C5 C5 | G5 G5 | A5 A5 | G5 G5 | F5 F5 | E5 E5 | D5q D5e. E5s | C5h |
+chords:
+  | C | C | F | C | G7 | C Am | Dm/F G | C |
+  | C | G7 | C | G | C | G7 | C | C/G G |
+  | C | C | F | C | G7 | C Am | Dm/F G | C |
+left:
+  | C3q C4 | E4 C4 | F4 C4 | E4 C4 | D4 B3 | C4 A3 | F3 G3 | C3h |
+  | E4q G3 | D4 G3 | C4 G3 | B3 G3 | E4 G3 | D4 G3 | C4q C4e. D4s | C4q B3 |
+  | C3q C4 | E4 C4 | F4 C4 | E4 C4 | D4 B3 | C4 A3 | F3 G3 | C3h |
