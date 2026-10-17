@@ -1,0 +1,63 @@
+# Christian Petzold, Menuet in G (BWV Anh. 114, long credited to J. S. Bach), from the
+# Notebook for Anna Magdalena Bach (1725), as first printed in the Bach-Gesellschaft
+# Ausgabe, vol. 43.2 (1894), p. 26, No. IV. The edition prints the right hand in soprano
+# clef; the notes are written here at pitch.
+# Played once through: the edition repeats each half. Ornaments (the trills in bars 3, 5,
+# 11, 13 and 30, and the grace note before bar 8) are left out; the notes they sit on
+# are kept.
+# Left hand (Advanced): the lower line as printed. Where the edition adds a second voice
+# above it (bar 1's chord, bars 25, 26 and 29), only the lowest notes are taken. The
+# right hand's closing chord in bar 32 is played as its top note.
+# The chords are our reading of the two lines; the edition has none.
+title: Minuet in G
+piece: minuet-in-g
+added: 2026-10-17
+source: public-domain
+composer: Christian Petzold
+composer-died: 1733
+first-published: 1894
+edition: Bach-Gesellschaft Ausgabe, vol. 43.2, Breitkopf & Härtel, Leipzig, 1894, p. 26 (IMSLP #532968)
+editor: Paul Graf von Waldersee
+editor-died: 1906
+key: G major
+meter: 3/4
+# The edition has no tempo mark; the tempo is ours.
+tempo: 112
+summary: The Notebook minuet long credited to Bach, from the 1894 Bach-Gesellschaft edition.
+figure: held
+# Every bar with eighth notes stays as written in Easy: the runs are the tune.
+easy-keep: 1, 3, 5, 6, 7, 9, 11, 13, 14, 15
+
+[A] main 1-16
+melody:
+  | D5q G4e A4 B4 C5 | D5q G4 G4 | E5q C5e D5 E5 F#5 | G5q G4 G4 |
+  | C5q D5e C5 B4 A4 | B4q C5e B4 A4 G4 | F#4q G4e A4 B4 G4 | A4h. |
+  | D5q G4e A4 B4 C5 | D5q G4 G4 | E5q C5e D5 E5 F#5 | G5q G4 G4 |
+  | C5q D5e C5 B4 A4 | B4q C5e B4 A4 G4 | A4q B4e A4 G4 F#4 | G4h. |
+chords:
+  | G | G/B | C | G/B |
+  | Am | G | G | D7 |
+  | G/B:2 D7/A:1 | G | C | G/B |
+  | Am:2 D/F#:1 | G | C:1 D:2 | G |
+left:
+  | G3h A3q | B3h. | C4h. | B3h. |
+  | A3h. | G3h. | D4q B3 G3 | D4q D3e C4 B3 A3 |
+  | B3h A3q | G3q B3 G3 | C4h. | B3q C4e B3 A3 G3 |
+  | A3h F#3q | G3h B3q | C4q D4 D3 | G3h G2q |
+
+[B] 17-32
+melody:
+  | B5q G5e A5 B5 G5 | A5q D5e E5 F#5 D5 | G5q E5e F#5 G5 D5 | C#5q B4e C#5 A4q |
+  | A4e B4 C#5 D5 E5 F#5 | G5q F#5 E5 | F#5q A4 C#5 | D5h. |
+  | D5q G4e F#4 G4q | E5q G4e F#4 G4q | D5q C5 B4 | A4e G4 F#4 G4 A4q |
+  | D4e E4 F#4 G4 A4 B4 | C5q B4 A4 | B4e D5 G4q F#4 | G4h. |
+chords:
+  | G | D/F# | Em | A |
+  | A | G/B:1 D:1 A/C#:1 | D:2 A:1 | D:2 D7:1 |
+  | G/B | C | G/B:1 Am:1 G:1 | D |
+  | D | C/E:1 G:1 D/F#:1 | G:1 G/B:1 D:1 | G |
+left:
+  | G3h. | F#3h. | E3q G3 E3 | A3h A2q |
+  | A3h. | B3q D4 C#4 | D4q F#3 A3 | D4q D3 C4 |
+  | B3h B3q | C4h C4q | B3q A3 G3 | D4h rq |
+  | D3h. | E3q G3 F#3 | G3q B2 D3 | G3q D3 G2 |

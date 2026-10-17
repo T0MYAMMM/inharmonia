@@ -1,0 +1,31 @@
+# Mozart, Piano Sonata in C, K. 545, first movement: the opening phrase, bars 1-4, from
+# an 1805 edition (Charles Zulehner, Mainz, plate 76, "III Sonates pour le Piano-Forte,
+# Oeuvre posthume", Sonata II), the year the sonata was first published.
+# The trill over the F in bar 4 is left out (the source format has no ornaments).
+# The left hand (Advanced) is Mozart's Alberti bass as printed.
+title: Sonata in C (Sonata facile)
+piece: sonata-facile
+added: 2026-10-17
+source: public-domain
+composer: Wolfgang Amadeus Mozart
+composer-died: 1791
+first-published: 1805
+edition: Early edition, Charles Zulehner, Mainz, n.d. [1805], plate 76 (IMSLP #982664, Bayerische Staatsbibliothek)
+key: C major
+meter: 4/4
+# The edition marks "Allegro"; the tempo is ours.
+tempo: 112
+summary: The opening phrase of Mozart's sonata "for beginners", over its Alberti bass.
+figure: held
+medium-figure: alberti
+# The two bars with sixteenth-note turns stay as written in Easy.
+easy-keep: 2, 4
+
+[Theme] main 1-4
+melody:
+  | C5h E5q G5 | B4q. C5s D5 C5q rq | A5h G5q C6 | G5q F5e E5s F5 E5q rq |
+chords:
+  | C | G7/D C | F/C C | G/B C |
+left:
+  | C4e G4 E4 G4 C4 G4 E4 G4 | D4e G4 F4 G4 C4 G4 E4 G4 |
+  | C4e A4 F4 A4 C4 G4 E4 G4 | B3e G4 D4 G4 C4 G4 E4 G4 |

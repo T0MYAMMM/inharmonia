@@ -10,6 +10,9 @@ import {
   LESSON_SCHEMA_VERSION,
   NO_CHORD,
   SONG_LEVELS,
+  SONG_METERS,
+  meterName,
+  songMeter,
   type ContentSource,
   type Lesson,
   type NoteSpec,
@@ -151,7 +154,8 @@ export function cleanSource(raw: unknown): ContentSource {
 function readSong(raw: unknown, id: string, title: string, src: ContentSource, ctx: ImportContext) {
   if (!isObj(raw)) return fail('song', 'is missing');
   const k = key(raw.key, 'song.key');
-  const m = meter(raw.meter, 'song.meter', [2, 3, 4]);
+  const m = isObj(raw.meter) ? songMeter(raw.meter.beats, raw.meter.unit) : undefined;
+  if (!m) return fail('song.meter', `must be ${SONG_METERS.map(meterName).join(', ')}`);
   const t = raw.tempo;
   if (
     !isObj(t) ||
@@ -225,7 +229,7 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
     kind: 'song',
     source: src,
     key: k,
-    meter: m,
+    meter: { ...m },
     tempo,
     lhPattern,
     ...(lhFigure ? { lhFigure } : {}),

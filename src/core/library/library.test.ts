@@ -141,7 +141,7 @@ describe('the source format', () => {
     expect(bad('D5h C#5q', 'D5h Q5q')).toThrow(/Line 22: "Q5q" is not a note/);
     expect(bad('| D | A/C# Bm7 |', '| D |')).toThrow(/4 melody bars but 3 chord bars/);
     expect(bad('[A] main 1-4', '[A] 1-4')).toThrow(/mark the main theme/);
-    expect(bad('meter: 4/4', 'meter: 6/8')).toThrow(/Line 9: meter must be 2\/4, 3\/4 or 4\/4/);
+    expect(bad('meter: 4/4', 'meter: 6/8')).toThrow(/Line 9: meter must be 2\/4, 3\/4, 4\/4, 3\/8/);
     expect(bad('[A] main 1-4', '[A] mainly')).toThrow(/unknown section flag "mainly"/);
     expect(() => parsePiece(PD.replace('composer-died: 1850\n', ''))).toThrow(
       /needs "composer-died:"/,
@@ -302,5 +302,50 @@ describe('Easy, Medium and Advanced', () => {
       }),
     );
     expect(stringifyFile(buildFile(again, [], new Date('2026-01-02T00:00:00.000Z')))).toBe(text);
+  });
+});
+
+describe('3/8', () => {
+  // Invented: a bar of sixteenths, a dotted eighth and a held bar, counted in eighths.
+  const EIGHTHS = `title: Eighths
+piece: eighths
+added: 2026-01-02
+source: original
+author: Test
+key: A minor
+meter: 3/8
+tempo: 140
+figure: waltz
+easy-keep: 1
+[A] main 1-3
+melody: | E5s D#5 E5 B4 D5 C5 | A4e. r:0.5 C4e | A4q. |
+chords: | Am | Am E | Am |
+`;
+
+  it('counts eighths as beats, through to the file format', () => {
+    const p = parsePiece(EIGHTHS);
+    expect(p.meta.meter).toEqual({ beats: 3, unit: 8 });
+    expect(p.sections[0]!.bars[0]!.melody.map((n) => n.beats)).toEqual([
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    ]);
+    expect(p.sections[0]!.bars[2]!.melody).toEqual([{ note: 'A4', beats: 3 }]);
+    const { versions } = generatePiece(p);
+    expect(versions.easy.bars[0]!.rh).toHaveLength(6);
+    // Each eighth plays the note sounding at its start: the dotted A takes two.
+    expect(versions.easy.bars[1]!.rh).toEqual([
+      { note: 'A4', beats: 2 },
+      { note: 'C4', beats: 1 },
+    ]);
+    const parsed = parseFile(pieceFile(p), {
+      patterns: new Set(Object.keys(PATTERNS)),
+      fallbackPattern: 'held',
+    });
+    if ('fatal' in parsed) throw new Error(parsed.fatal);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.items.map((i) => i.value.kind === 'song' && i.value.lesson.meter)).toEqual([
+      { beats: 3, unit: 8 },
+      { beats: 3, unit: 8 },
+      { beats: 3, unit: 8 },
+    ]);
   });
 });
