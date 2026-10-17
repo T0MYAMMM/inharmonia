@@ -32,6 +32,10 @@ export interface CompiledChord {
   voicing: SpelledNote[];
   /** Roman numeral, when the content was written in numerals. */
   numeral?: string;
+  /** Left-hand bass kept from a slash chord the symbol no longer shows. */
+  bass?: string;
+  /** The chord as written, when shown simplified. */
+  original?: string;
 }
 
 /** A written note (or rest) as it sits on the timeline. */
@@ -139,7 +143,7 @@ export function applyPattern(
 export function bassNotes(chord: CompiledChord): { root: SpelledNote; fifth: SpelledNote } {
   const info = parseChord(chord.symbol);
   const lowest = chord.voicing[0]?.midi ?? 48;
-  let root = placeBelow(info.bass ?? info.root, Math.min(lowest - 2, 53));
+  let root = placeBelow(chord.bass ?? info.bass ?? info.root, Math.min(lowest - 2, 53));
   if (root.midi < 28) root = transposeNote(root, 12);
   const fifth = placeBelow(transposePc(info.root, '5P'), root.midi + 12);
   return { root, fifth: fifth.midi > root.midi ? fifth : transposeNote(fifth, 12) };
@@ -268,6 +272,8 @@ export function compileLesson(
         beats: c.beats,
         voicing: resolveVoicing(c.symbol, c.voicing),
         ...(c.numeral ? { numeral: c.numeral } : {}),
+        ...(c.bass ? { bass: c.bass } : {}),
+        ...(c.original ? { original: c.original } : {}),
       };
       t += c.beats;
       return compiled;
@@ -321,9 +327,12 @@ export function validateLesson(lesson: Lesson): string[] {
     const where = `Bar ${i + 1}`;
     if (Math.abs(sum(bar.chords) - len) > EPS)
       issues.push(`${where}: chords last ${sum(bar.chords)} beats, not ${len}`);
-    for (const c of bar.chords)
+    for (const c of bar.chords) {
       if (c.symbol !== NO_CHORD && !isValidChord(c.symbol))
         issues.push(`${where}: unknown chord "${c.symbol}"`);
+      if (c.bass !== undefined && !/^[A-G](?:##|bb|#|b)?$/.test(c.bass))
+        issues.push(`${where}: unknown bass note "${c.bass}"`);
+    }
     for (const [hand, notes] of [
       ['right hand', bar.rh],
       ['left hand', bar.lh],
