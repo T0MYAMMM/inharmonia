@@ -54,6 +54,10 @@ export interface ChordSpec {
   voicing?: VoicingSpec;
   /** The Roman numeral it came from, for display (progressions). */
   numeral?: string;
+  /** A bass the left hand plays although the symbol leaves it out (a simplified slash chord). */
+  bass?: string;
+  /** The chord as written, when it is shown simplified. */
+  original?: string;
 }
 
 export interface Bar {
