@@ -133,6 +133,13 @@ export function cleanSource(raw: unknown): ContentSource {
         composerDied: isNum(raw.composerDied, 0, 3000) ? raw.composerDied : null,
         firstPublished: published,
         edition: isStr(raw.edition, 300) ? raw.edition : '',
+        ...(isStr(raw.editor, 80) && raw.editor
+          ? {
+              editor: raw.editor,
+              editorDied: isNum(raw.editorDied, 0, 3000) ? raw.editorDied : null,
+              editorAdditionsUsed: raw.editorAdditionsUsed === true,
+            }
+          : {}),
         ...(contributors.length ? { contributors } : {}),
       };
     }

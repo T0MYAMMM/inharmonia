@@ -35,6 +35,15 @@ export interface PublicDomainSource {
   firstPublished: number;
   /** The early or first edition the notes were taken from. */
   edition: string;
+  /** The edition's editor, recorded whenever there is one. */
+  editor?: string;
+  /** The editor's year of death; null when not known. */
+  editorDied?: number | null;
+  /**
+   * Whether any of the editor's own additions are used. Only the original notes are
+   * taken, so this is normally false; when true, the editor must pass life + 70 too.
+   */
+  editorAdditionsUsed?: boolean;
   contributors?: Contributor[];
 }
 

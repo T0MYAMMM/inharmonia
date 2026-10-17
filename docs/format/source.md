@@ -41,31 +41,35 @@ left: | G2h D3h | D2w |
 
 One `name: value` per line, before the first section.
 
-| Field             | Required         | Meaning                                                                                      |
-| ----------------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| `title`           | yes              | The title shown in the app.                                                                  |
-| `piece`           | yes              | Short id, lowercase letters, digits and dashes; also the file name.                          |
-| `added`           | yes              | The date the piece was added (`2026-10-17`); the JSON file's date.                           |
-| `source`          | yes              | `original` or `public-domain`.                                                               |
-| `author`          | original         | Who wrote an original piece.                                                                 |
-| `composer`        | public-domain    | The composer, or `Traditional` for a genuinely anonymous tune.                               |
-| `composer-died`   | public-domain    | Year of death; `unknown` only for `Traditional`.                                             |
-| `first-published` | public-domain    | Year the piece was first published, in the form used.                                        |
-| `edition`         | public-domain    | The early or first edition the notes were taken from.                                        |
-| `contributor`     | when one is used | `role; name; year of death`, once per arranger or other contributor.                         |
-| `key`             | yes              | `G major`, `A minor`, …                                                                      |
-| `meter`           | yes              | `2/4`, `3/4` or `4/4`.                                                                       |
-| `tempo`           | yes              | Beats per minute for Advanced; Medium plays at 90%, Easy at 80%.                             |
-| `summary`         | no               | One sentence for the Songs page.                                                             |
-| `figure`          | yes              | Advanced left hand: an app pattern id, or the piece's own figure.                            |
-| `medium-figure`   | no               | Medium left hand pattern id (default: `stride` in 2/4, `waltz` in 3/4, `root-fifth` in 4/4). |
-| `easy-key`        | no               | Easy key tonic, when the nearest easy key is wrong for the piece.                            |
-| `easy-keep`       | no               | Bars of the Easy version (1-based, over the main sections) kept as written.                  |
+| Field              | Required                 | Meaning                                                                                      |
+| ------------------ | ------------------------ | -------------------------------------------------------------------------------------------- |
+| `title`            | yes                      | The title shown in the app.                                                                  |
+| `piece`            | yes                      | Short id, lowercase letters, digits and dashes; also the file name.                          |
+| `added`            | yes                      | The date the piece was added (`2026-10-17`); the JSON file's date.                           |
+| `source`           | yes                      | `original` or `public-domain`.                                                               |
+| `author`           | original                 | Who wrote an original piece.                                                                 |
+| `composer`         | public-domain            | The composer, or `Traditional` for a genuinely anonymous tune.                               |
+| `composer-died`    | public-domain            | Year of death; `unknown` only for `Traditional`.                                             |
+| `first-published`  | public-domain            | Year the piece was first published, in the form used.                                        |
+| `edition`          | public-domain            | The early or first edition the notes were taken from.                                        |
+| `contributor`      | when one is used         | `role; name; year of death`, once per arranger or other contributor.                         |
+| `editor`           | when the edition has one | The edition's editor, recorded whenever there is one.                                        |
+| `editor-died`      | with `editor`            | The editor's year of death, or `unknown`.                                                    |
+| `editor-additions` | no                       | `not used` (the default: only the original notes are taken) or `used`.                       |
+| `key`              | yes                      | `G major`, `A minor`, …                                                                      |
+| `meter`            | yes                      | `2/4`, `3/4` or `4/4`.                                                                       |
+| `tempo`            | yes                      | Beats per minute for Advanced; Medium plays at 90%, Easy at 80%.                             |
+| `summary`          | no                       | One sentence for the Songs page.                                                             |
+| `figure`           | yes                      | Advanced left hand: an app pattern id, or the piece's own figure.                            |
+| `medium-figure`    | no                       | Medium left hand pattern id (default: `stride` in 2/4, `waltz` in 3/4, `root-fifth` in 4/4). |
+| `easy-key`         | no                       | Easy key tonic, when the nearest easy key is wrong for the piece.                            |
+| `easy-keep`        | no                       | Bars of the Easy version (1-based, over the main sections) kept as written.                  |
 
 ### Public domain
 
 A public-domain piece ships only if, counted from the current year, everyone whose work is used
-(composer and any `contributor`) died at least 70 full years ago, **and** it was first published
+(composer, any `contributor`, and the editor when `editor-additions: used`) died at least 70 full
+years ago, **and** it was first published
 at least 96 years ago. The library test checks this for every built-in piece every time it runs.
 
 ## Sections

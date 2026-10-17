@@ -369,6 +369,9 @@ describe('bad files', () => {
       composerDied: 1850,
       firstPublished: 1840,
       edition: 'An invented first edition, 1840',
+      editor: 'Invented Editor',
+      editorDied: 1880,
+      editorAdditionsUsed: false,
       contributors: [{ role: 'arranger', name: 'Invented Arranger', died: 1890 }],
     };
     const a = { ...good(), source: pd };

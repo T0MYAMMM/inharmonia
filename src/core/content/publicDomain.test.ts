@@ -47,6 +47,23 @@ describe('public domain under both rules', () => {
     ]);
   });
 
+  it("checks an editor only when the editor's own additions are used", () => {
+    const edited = piece({
+      editor: 'Invented Editor',
+      editorDied: 1980,
+      editorAdditionsUsed: false,
+    });
+    expect(publicDomainIssues(edited, 2026)).toEqual([]);
+    expect(publicDomainIssues({ ...edited, editorAdditionsUsed: true }, 2026)).toEqual([
+      'Invented Editor (editor, additions used) died in 1980: public domain under life + 70 only from 2051',
+    ]);
+    expect(
+      publicDomainIssues({ ...edited, editorDied: null, editorAdditionsUsed: true }, 2026),
+    ).toEqual([
+      "Invented Editor: the editor's additions are used, so their year of death is needed",
+    ]);
+  });
+
   it('lets only a traditional tune go without a death year, and needs an edition', () => {
     expect(publicDomainIssues(piece({ composer: TRADITIONAL, composerDied: null }), 2026)).toEqual(
       [],
