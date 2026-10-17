@@ -12,6 +12,29 @@ export type Rng = () => number;
 
 const pick = <T>(xs: readonly T[], rng: Rng): T => xs[Math.floor(rng() * xs.length)]!;
 
+/** The most times one answer comes up in a row. */
+export const MAX_RUN = 3;
+
+/**
+ * Pick at random, each pick independent of the last, except that an answer
+ * already given MAX_RUN times running is left out. `recent` holds the last
+ * answers' ids, newest last.
+ */
+function pickLimitingRuns<T>(
+  xs: readonly T[],
+  id: (x: T) => string,
+  recent: readonly string[],
+  rng: Rng,
+): T {
+  const tail = recent.slice(-MAX_RUN);
+  const run = tail.length === MAX_RUN && tail.every((r) => r === tail[0]) ? tail[0] : null;
+  const pool = run !== null && xs.length > 1 ? xs.filter((x) => id(x) !== run) : xs;
+  return pick(pool, rng);
+}
+
+/** Remember an answer for pickLimitingRuns. */
+const remember = (recent: string[], id: string) => [...recent, id].slice(-MAX_RUN);
+
 /** Roots spelled the way they are most often written. */
 const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 const MAJOR_KEYS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'G', 'Ab', 'A', 'Bb'] as const;
@@ -52,8 +75,8 @@ export interface EarScore {
 
 /**
  * Hear a chord, name its quality. Each question is a random root in a
- * comfortable register, never the same quality twice running when the level
- * has more than one to choose from.
+ * comfortable register and a random quality, so the last answer never gives
+ * the next one away; no quality comes up more than MAX_RUN times running.
  */
 export class ChordEarQuiz {
   readonly level: ChordEarLevel;
@@ -62,6 +85,7 @@ export class ChordEarQuiz {
   /** The answer given to the current question, if any. */
   answered: { choice: string; correct: boolean } | null = null;
   score: EarScore = { correct: 0, total: 0, streak: 0 };
+  private recent: string[] = [];
 
   constructor(
     level: ChordEarLevel,
@@ -73,13 +97,12 @@ export class ChordEarQuiz {
       if (!q) throw new Error(`Unknown quality "${id}"`);
       return q;
     });
-    this.question = this.make(null);
+    this.question = this.make();
   }
 
-  private make(prev: ChordQuestion | null): ChordQuestion {
-    let quality = pick(this.options, this.rng);
-    for (let i = 0; i < 8 && prev && quality.id === prev.quality.id && this.options.length > 1; i++)
-      quality = pick(this.options, this.rng);
+  private make(): ChordQuestion {
+    const quality = pickLimitingRuns(this.options, (q) => q.id, this.recent, this.rng);
+    this.recent = remember(this.recent, quality.id);
     const root = pick(ROOTS, this.rng);
     const symbol = `${root}${quality.suffix}`;
     // Roots from C3 to B3, so every quality sits around middle C.
@@ -100,7 +123,7 @@ export class ChordEarQuiz {
   }
 
   next(): ChordQuestion {
-    this.question = this.make(this.question);
+    this.question = this.make();
     this.answered = null;
     return this.question;
   }
@@ -185,6 +208,87 @@ export class ProgressionEarQuiz {
   }
 
   next(): ProgressionQuestion {
+    this.question = this.make();
+    this.answered = null;
+    return this.question;
+  }
+}
+
+export interface NoteEarLevel extends EarLevel {
+  /** Pitch classes asked, 0 = C. */
+  pitchClasses: readonly number[];
+}
+
+export const NOTE_EAR_LEVELS: readonly NoteEarLevel[] = [
+  { id: 'naturals', name: 'White keys', pitchClasses: [0, 2, 4, 5, 7, 9, 11] },
+  { id: 'all', name: 'All twelve', pitchClasses: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+];
+
+/** Note names: a black key by both its names. */
+export const PITCH_CLASS_NAMES = [
+  'C',
+  'C#/Db',
+  'D',
+  'D#/Eb',
+  'E',
+  'F',
+  'F#/Gb',
+  'G',
+  'G#/Ab',
+  'A',
+  'A#/Bb',
+  'B',
+] as const;
+
+/** The notes a note question is played from: C2 to B6, five octaves. */
+export const NOTE_EAR_RANGE: readonly [number, number] = [36, 95];
+
+export interface NoteQuestion {
+  midi: number;
+  pitchClass: number;
+}
+
+/**
+ * Hear one note, in any octave, and name it with no reference: practice for
+ * perfect pitch. The note is random across five octaves, so its octave gives
+ * nothing away, and no note name comes up more than MAX_RUN times running.
+ */
+export class NoteEarQuiz {
+  question: NoteQuestion;
+  answered: { choice: number; correct: boolean } | null = null;
+  score: EarScore = { correct: 0, total: 0, streak: 0 };
+  private recent: string[] = [];
+
+  constructor(
+    readonly level: NoteEarLevel,
+    private readonly rng: Rng = Math.random,
+  ) {
+    this.question = this.make();
+  }
+
+  private make(): NoteQuestion {
+    const pitchClass = pickLimitingRuns(this.level.pitchClasses, String, this.recent, this.rng);
+    this.recent = remember(this.recent, String(pitchClass));
+    const [lo, hi] = NOTE_EAR_RANGE;
+    const octaves: number[] = [];
+    for (let m = lo; m <= hi; m++) if (m % 12 === pitchClass) octaves.push(m);
+    return { midi: pick(octaves, this.rng), pitchClass };
+  }
+
+  /** Answer with a pitch class, 0 = C. */
+  answer(pitchClass: number): boolean {
+    if (this.answered) return this.answered.correct;
+    const correct = pitchClass === this.question.pitchClass;
+    this.answered = { choice: pitchClass, correct };
+    this.score = {
+      correct: this.score.correct + (correct ? 1 : 0),
+      total: this.score.total + 1,
+      streak: correct ? this.score.streak + 1 : 0,
+    };
+    return correct;
+  }
+
+  next(): NoteQuestion {
     this.question = this.make();
     this.answered = null;
     return this.question;
