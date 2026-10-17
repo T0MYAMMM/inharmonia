@@ -25,6 +25,30 @@
   }
 }
 
+/* Touch screens get keys sized for fingers; the board scrolls sideways and keeps
+   the notes in play centred. */
+@media (pointer: coarse) {
+  .keyboard {
+    --w: 48px;
+    --key-h: 180px;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 600px) {
+  .keyboard {
+    --w: 40px;
+    --key-h: 150px;
+  }
+}
+
+/* A phone held sideways: keep the board from filling the short screen. */
+@media (pointer: coarse) and (max-height: 500px) {
+  .keyboard {
+    --w: 40px;
+    --key-h: 120px;
+  }
+}
+
 .key {
   position: absolute;
   top: 0;

@@ -14,6 +14,12 @@ export const lights = new KeyLights();
 export const midi = new WebMidiInput(notes);
 export const keys = new ComputerKeys(notes);
 
+// The volume setting applies everywhere, from the first note.
+audio.setVolume(useSettings.getState().volumeDb);
+useSettings.subscribe((s, prev) => {
+  if (s.volumeDb !== prev.volumeDb) audio.setVolume(s.volumeDb);
+});
+
 let transport: Transport | null = null;
 
 /** The shared transport, created on first use. */

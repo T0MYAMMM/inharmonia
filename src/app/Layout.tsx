@@ -1,6 +1,8 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useEffect, useId, useRef, useState } from 'react';
+import { BetaBadge } from '@/ui/BetaBadge';
 import { Segmented } from '@/ui/Segmented';
+import { VolumeSlider } from '@/ui/VolumeSlider';
 import { useSettings, type ThemeChoice } from '@/state/settings';
 import { useOfflineReady } from './pwa';
 import type { NotationSystem } from '@/core/notation';
@@ -18,13 +20,13 @@ const NOTATIONS = [
   { value: 'angka', label: 'Not angka' },
 ] as const satisfies readonly { value: NotationSystem; label: string }[];
 
-const NAV = [
+const NAV: { to: string; label: string; end: boolean; beta?: boolean }[] = [
   { to: '/songs', label: 'Songs', end: false },
   { to: '/chords', label: 'Chords', end: false },
   { to: '/progressions', label: 'Progressions', end: false },
   { to: '/fills', label: 'Fills', end: false },
   { to: '/ear', label: 'Ear training', end: false },
-  { to: '/studio', label: 'Studio', end: false },
+  { to: '/studio', label: 'Studio', end: false, beta: true },
   { to: '/progress', label: 'Progress', end: false },
 ];
 
@@ -35,21 +37,21 @@ export function Layout() {
   const mainRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   const first = useRef(true);
-  const [displayOpen, setDisplayOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const controlsId = useId();
   const offline = useOfflineReady();
-  const displayRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
-  // The display menu closes on Escape, on a click elsewhere, and on navigation.
+  // The settings menu closes on Escape, on a click elsewhere, and on navigation.
   useEffect(() => {
-    if (!displayOpen) return;
+    if (!settingsOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      setDisplayOpen(false);
-      displayRef.current?.querySelector('button')?.focus();
+      setSettingsOpen(false);
+      settingsRef.current?.querySelector('button')?.focus();
     };
     const onDown = (e: PointerEvent) => {
-      if (!displayRef.current?.contains(e.target as Node)) setDisplayOpen(false);
+      if (!settingsRef.current?.contains(e.target as Node)) setSettingsOpen(false);
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onDown);
@@ -57,11 +59,11 @@ export function Layout() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerdown', onDown);
     };
-  }, [displayOpen]);
+  }, [settingsOpen]);
   const [openedAt, setOpenedAt] = useState(pathname);
   if (openedAt !== pathname) {
     setOpenedAt(pathname);
-    if (displayOpen) setDisplayOpen(false);
+    if (settingsOpen) setSettingsOpen(false);
   }
 
   // Move focus to the page on navigation so screen readers announce the new page.
@@ -88,26 +90,32 @@ export function Layout() {
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end} className={styles.navLink}>
                 {n.label}
+                {n.beta ? <BetaBadge /> : null}
               </NavLink>
             ))}
           </nav>
-          <div className={styles.display} ref={displayRef}>
+          <div className={styles.settings} ref={settingsRef}>
             <button
               type="button"
-              className={styles.displayToggle}
-              aria-expanded={displayOpen}
+              className={styles.settingsToggle}
+              aria-label="Settings"
+              title="Settings"
+              aria-expanded={settingsOpen}
               aria-controls={controlsId}
-              onClick={() => setDisplayOpen((o) => !o)}
+              onClick={() => setSettingsOpen((o) => !o)}
             >
-              Display
+              <GearIcon />
             </button>
             <div
               id={controlsId}
               className={styles.controls}
-              data-open={displayOpen || undefined}
+              data-open={settingsOpen || undefined}
               role="group"
-              aria-label="Display settings"
+              aria-label="Settings"
             >
+              <div className={styles.controlGroup}>
+                <VolumeSlider />
+              </div>
               <div className={styles.controlGroup}>
                 <span className={styles.controlLabel}>Note names</span>
                 <Segmented
@@ -146,5 +154,21 @@ export function Layout() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+      />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
   );
 }
