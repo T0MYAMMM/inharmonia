@@ -7,9 +7,12 @@
  *
  * Colour meaning: `rh` and `target` are amber (right hand / what to play),
  * `lh` is dusk blue (left hand / chord tones), `chordTarget` is a chord to play
- * (dusk with a ring), `wrong` flashes red.
+ * (dusk with a ring), `wrong` flashes red. `stay` and `moveTo` are voicing hints
+ * drawn as shapes, not colours: a dot on a note the hand keeps, a ring on a note
+ * it moves to.
  */
-export type KeyLayer = 'held' | 'press' | 'rh' | 'lh' | 'target' | 'chordTarget' | 'wrong';
+export type KeyLayer =
+  'held' | 'press' | 'rh' | 'lh' | 'target' | 'chordTarget' | 'wrong' | 'stay' | 'moveTo';
 
 type KeyListener = (layers: ReadonlySet<KeyLayer>) => void;
 

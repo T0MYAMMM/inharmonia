@@ -148,3 +148,41 @@
   color: #fff !important;
   animation: none;
 }
+
+/* Voicing hints are shapes in the key's own text colour, never a new colour:
+   a dot on a note that stays, a ring on a note the hand moves to. */
+.key[data-layers~='stay']::before,
+.key[data-layers~='moveTo']::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.black[data-layers~='stay']::before,
+.black[data-layers~='moveTo']::before {
+  bottom: 12px;
+}
+
+.key[data-layers~='stay']::before {
+  background: currentcolor;
+}
+
+.key[data-layers~='moveTo']::before {
+  border: 2.5px solid currentcolor;
+}
+
+.white[data-layers~='stay'],
+.white[data-layers~='moveTo'] {
+  color: var(--ink);
+}
+
+.white[data-layers~='lh'],
+.white[data-layers~='chordTarget'] {
+  color: var(--on-dusk);
+}

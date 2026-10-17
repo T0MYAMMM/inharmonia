@@ -89,6 +89,16 @@
   display: inline-block;
 }
 
+.original {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .numeral {
   display: block;
   margin-top: 2px;
