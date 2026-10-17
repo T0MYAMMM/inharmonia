@@ -215,10 +215,8 @@ export function parsePiece(text: string): PieceSource {
   const lines = text.split(/\r?\n/);
   lines.forEach((full, i) => {
     const line = i + 1;
-    const body = full
-      .replace(/\s+#.*$/, '')
-      .replace(/^#.*$/, '')
-      .trimEnd();
+    // Only whole lines are comments: "#" also appears in values ("IMSLP #23019").
+    const body = full.replace(/^\s*#.*$/, '').trimEnd();
     if (!body.trim()) return;
     const sec = /^\[([^\]]{1,24})\](.*)$/.exec(body.trim());
     if (sec) {

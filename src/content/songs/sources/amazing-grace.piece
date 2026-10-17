@@ -1,0 +1,37 @@
+# The tune NEW BRITAIN, as William Walker printed it in The Southern Harmony (1835, p. 8),
+# the first printing of the tune with the hymn it is now known by. Walker credits the
+# setting only to "Baptist Harmony, p. 123" (1834); the tune itself is anonymous.
+# The print is in four-shape notation in three parts, with the tune in the middle (tenor)
+# staff; the melody here is that staff, at the written pitch. The left hand (Advanced) is
+# the bass staff. The top part is not used; the chords are our reading of all three parts.
+# Played once through: the print repeats the last line (from beat 3 of bar 7) with first
+# and second endings; this is the second ending. Bar numbers count the pickup as bar 0.
+# Any arranger of an 1834 setting died long before the 70-year line, whoever it was.
+title: Amazing Grace (New Britain)
+piece: amazing-grace
+added: 2026-10-17
+source: public-domain
+composer: Traditional
+composer-died: unknown
+first-published: 1835
+edition: First edition, William Walker, The Southern Harmony and Musical Companion, Spartanburg, S.C., 1835, p. 8 (Internet Archive, southernharmonym0000walk)
+contributor: compiler; William Walker; 1875
+key: C major
+meter: 3/4
+# The print has no tempo mark; the tempo is ours.
+tempo: 84
+summary: The old American hymn tune, from the 1835 Southern Harmony, over its own three-part bass.
+figure: held
+# Every eighth-note turn stays as written in Easy: the tune is simple enough already.
+easy-keep: 2, 6, 7, 8, 9, 10, 11, 13
+
+[Hymn] main 0-14
+melody:
+  | rh G4q | C5h E5e C5 | E5h D5q | C5h A4q | G4h G4q | C5h E5e C5 | E5h D5e E5 |
+  | G5h D5e E5 | G5h E5e D5 | C5h A4e G4 | C5h A4e G4 | G4h G4q | C5h E5e C5 | E5h D5q | C5h. |
+chords:
+  | C | C | C/E:2 G:1 | C:2 Am/E:1 | G | C:2 Am:1 | C:2 Dm:1 |
+  | G | C:2 Am:1 | C/G:2 C/E:1 | C/G:2 G/D:1 | C | C | Am:2 G:1 | C |
+left:
+  | rh C3q | C3h G3q | E3h G3q | C3h E3q | G3h G3q | C3h G3e A3 | C4h A3q |
+  | G3h G3q | C4h A3q | G3h E3q | G3h E3e D3 | C3h C3q | C3h E3e G3 | A3h G3q | C3h. |
