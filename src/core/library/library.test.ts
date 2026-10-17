@@ -48,7 +48,7 @@ source: public-domain
 composer: Invented Composer
 composer-died: 1850
 first-published: 1840
-edition: An invented first edition, 1840
+edition: An invented first edition, 1840 (plate #12)
 editor: Invented Editor
 editor-died: 1880
 contributor: arranger; Invented Arranger; 1890
@@ -121,7 +121,7 @@ describe('the source format', () => {
       composer: 'Invented Composer',
       composerDied: 1850,
       firstPublished: 1840,
-      edition: 'An invented first edition, 1840',
+      edition: 'An invented first edition, 1840 (plate #12)',
       editor: { name: 'Invented Editor', died: 1880, additionsUsed: false },
       contributors: [{ role: 'arranger', name: 'Invented Arranger', died: 1890 }],
     });

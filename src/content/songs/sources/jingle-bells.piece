@@ -1,0 +1,48 @@
+# Pierpont's song (first published by Ditson, Boston, 1857, as "One Horse Open Sleigh"),
+# in the form now sung, from Students' Songs, compiled by William H. Hills (Moses King
+# collection), 13th edition, p. 32. The page credits "Copyright, 1857, by O. Ditson & Co.,
+# by permission". The first edition of Students' Songs (1880) is not online; this later
+# edition is the scan worked from.
+# The melody is the voice line, verse 1 (other verses add pickup notes in bars 2-4; the
+# rests there are verse 1's). The piano part gives the chords and the left-hand figure:
+# a bass note on beats 1 and 3, chords on the off-beats between.
+# The chorus repeat is not written out; the verse and chorus are played once each.
+title: Jingle Bells
+piece: jingle-bells
+added: 2026-10-17
+source: public-domain
+composer: James Lord Pierpont
+composer-died: 1893
+first-published: 1857
+edition: Students' Songs, comp. William H. Hills, 13th edition, Rand Avery Co., Boston, n.d. [ca. 1887], p. 32 (Internet Archive, studentssongsco00hillgoog, from Harvard University)
+editor: William H. Hills
+editor-died: 1930
+key: Ab major
+meter: 4/4
+# The page marks "Allegro"; the tempo is ours.
+tempo: 112
+summary: The sleigh-ride song with its verse, from an 1880s college songbook, over its own oom-pah piano bass.
+figure: Bass and off-beat chords | cycle 2 | 0 1 root! | .5 .5 all | 1 .5 all | 1.5 .5 all
+# Everything but the two sixteenth-note bars of the chorus (11 and 15)
+# stays as written in Easy.
+easy-keep: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16
+
+[Verse] main 1-8
+melody:
+  | Eb4s Eb4 C5e Bb4 Ab4 Eb4q re Eb4s Eb4 | Eb4e C5 Bb4 Ab4 F4q rq |
+  | F4e Db5 C5 Bb4 G4q rq | Eb5e Eb5 Db5 Bb4 C5q Ab4e re |
+  | Eb4e C5 Bb4 Ab4 Eb4q rq | Eb4e C5 Bb4 Ab4 F4q re F4e |
+  | F4e Db5 C5 Bb4 Eb5 Eb5 Eb5 Eb5 | F5e Eb5 Db5 Bb4 Ab4q. re |
+chords:
+  | Ab | Ab Db | Eb7/Bb Eb7 | Eb7 Ab |
+  | Ab | Ab Db | Db Ab/Eb | Eb7 Ab |
+
+[Chorus] main 9-16
+melody:
+  | C5e C5 C5q C5e C5 C5q | C5e Eb5 Ab4e. Bb4s C5q. re |
+  | Db5e Db5 Db5e. Db5s Db5e C5 C5 C5s C5 | C5e Bb4 Bb4 Ab4 Bb4 Eb5q. |
+  | C5e C5 C5q C5e C5 C5q | C5e Eb5 Ab4e. Bb4s C5q. re |
+  | Db5e Db5 Db5e. Db5s Db5e C5 C5 C5s C5 | Eb5e Eb5 Db5 Bb4 Ab4q. re |
+chords:
+  | Ab | Ab | Db Ab | Ab/Eb:1 Eb7:3 |
+  | Ab | Ab | Db Ab | Eb7 Ab |
