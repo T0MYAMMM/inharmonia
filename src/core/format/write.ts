@@ -1,12 +1,14 @@
 import { formatBars } from '../charts/syntax';
 import type { ChartView, ChordChart } from '../charts/types';
-import type { ContentSource, Lesson, Progression } from '../content/types';
+import type { ContentSource, Lesson, NoteSpec, PatternSpec, Progression } from '../content/types';
 import type { UserRecording } from '../songs/library';
 import {
   FORMAT,
   FORMAT_VERSION,
   type FileAsset,
+  type FileFigure,
   type FileItem,
+  type FileNote,
   type InharmoniaFile,
 } from './types';
 
@@ -38,10 +40,46 @@ function source(s: ContentSource): ContentSource {
     case 'original':
       return s.author ? { kind: 'original', author: s.author } : { kind: 'original' };
     case 'public-domain':
-      return { kind: 'public-domain', composer: s.composer, year: s.year };
+      return {
+        kind: 'public-domain',
+        composer: s.composer,
+        composerDied: s.composerDied,
+        firstPublished: s.firstPublished,
+        edition: s.edition,
+        ...(s.contributors?.length
+          ? {
+              contributors: s.contributors.map((c) => ({
+                role: c.role,
+                name: c.name,
+                died: c.died,
+              })),
+            }
+          : {}),
+      };
     default:
       return { kind: s.kind };
   }
+}
+
+const notes = (xs: readonly NoteSpec[] | undefined): FileNote[] =>
+  (xs ?? []).map((n) => ({
+    note: n.note,
+    beats: n.beats,
+    ...(n.tie ? { tie: true as const } : {}),
+  }));
+
+/** A left-hand figure with its fields in a fixed order. */
+function figure(f: PatternSpec): FileFigure {
+  return {
+    name: f.name,
+    cycleBeats: f.cycleBeats,
+    steps: f.steps.map((s) => ({
+      at: s.at,
+      dur: s.dur,
+      voices: [...s.voices],
+      ...(s.accent ? { accent: true as const } : {}),
+    })),
+  };
 }
 
 const iso = (ms: number | undefined) =>
@@ -70,6 +108,10 @@ export function songItem(input: {
       meter: { beats: l.meter.beats, unit: l.meter.unit },
       tempo: { default: l.tempo.default, min: l.tempo.min, max: l.tempo.max },
       lhPattern: l.lhPattern ?? 'arpeggio-8ths',
+      ...(l.lhFigure ? { lhFigure: figure(l.lhFigure) } : {}),
+      ...(l.piece ? { piece: l.piece } : {}),
+      ...(l.level ? { level: l.level } : {}),
+      ...(l.covers ? { covers: l.covers } : {}),
       ...(l.summary ? { summary: l.summary } : {}),
       bars: l.bars.map((b) => ({
         ...(b.section ? { section: b.section } : {}),
@@ -80,11 +122,8 @@ export function songItem(input: {
             ? { voicing: [...c.voicing.notes] }
             : {}),
         })),
-        melody: (b.rh ?? []).map((n) => ({
-          note: n.note,
-          beats: n.beats,
-          ...(n.tie ? { tie: true as const } : {}),
-        })),
+        melody: notes(b.rh),
+        ...(b.lh ? { left: notes(b.lh) } : {}),
       })),
     },
   };

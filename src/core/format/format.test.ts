@@ -363,12 +363,29 @@ describe('bad files', () => {
   });
 
   it('keeps a source as written, and treats a strange one as yours', () => {
-    const a = { ...good(), source: { kind: 'public-domain', composer: 'Anon', year: 1850 } };
+    const pd = {
+      kind: 'public-domain',
+      composer: 'Invented Composer',
+      composerDied: 1850,
+      firstPublished: 1840,
+      edition: 'An invented first edition, 1840',
+      contributors: [{ role: 'arranger', name: 'Invented Arranger', died: 1890 }],
+    };
+    const a = { ...good(), source: pd };
     const b = { ...good(), source: { kind: 'stolen' } };
-    const p = parsed(file([a, b]));
+    // Files from before the proof fields had a year only.
+    const c = { ...good(), source: { kind: 'public-domain', composer: 'Anon', year: 1850 } };
+    const p = parsed(file([a, b, c]));
     expect(p.items.map((i) => i.source)).toEqual([
-      { kind: 'public-domain', composer: 'Anon', year: 1850 },
+      pd,
       { kind: 'user' },
+      {
+        kind: 'public-domain',
+        composer: 'Anon',
+        composerDied: null,
+        firstPublished: 1850,
+        edition: '',
+      },
     ]);
   });
 });
