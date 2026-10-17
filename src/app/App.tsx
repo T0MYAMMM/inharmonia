@@ -6,6 +6,7 @@ import { AboutPage } from '@/features/about/AboutPage';
 import { SongPage } from '@/features/song/SongPage';
 import { ChordLibraryPage } from '@/features/chords/ChordLibraryPage';
 import { ChordDrillPage } from '@/features/chords/ChordDrillPage';
+import { KnownChordsPage } from '@/features/chords/KnownChordsPage';
 import { ProgressionsPage } from '@/features/progressions/ProgressionsPage';
 import { ProgressionPage } from '@/features/progressions/ProgressionPage';
 import { ProgressionBuilderPage } from '@/features/progressions/ProgressionBuilderPage';
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="songs/:songId" element={<SongPage />} />
         <Route path="chords" element={<ChordLibraryPage />} />
         <Route path="chords/drill" element={<ChordDrillPage />} />
+        <Route path="chords/known" element={<KnownChordsPage />} />
         <Route path="progressions" element={<ProgressionsPage />} />
         <Route path="progressions/new" element={<ProgressionBuilderPage />} />
         <Route path="progressions/:progressionId" element={<ProgressionPage />} />
