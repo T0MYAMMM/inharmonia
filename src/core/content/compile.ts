@@ -253,8 +253,8 @@ export function compileLesson(
   const mix = opts.mix ?? MIX;
   const rhLegato = mix.melody.legato;
   const beatsPerBar = lesson.meter.beats;
-  const pattern = lesson.lhPattern ? patterns[lesson.lhPattern] : undefined;
-  if (lesson.lhPattern && !pattern)
+  const pattern = lesson.lhFigure ?? (lesson.lhPattern ? patterns[lesson.lhPattern] : undefined);
+  if (!lesson.lhFigure && lesson.lhPattern && !pattern)
     throw new Error(`Unknown left-hand pattern "${lesson.lhPattern}"`);
 
   const bars: CompiledBar[] = [];
@@ -319,8 +319,31 @@ export function compileLesson(
 }
 
 /** Problems that make a lesson wrong to play. Empty when the lesson is valid. */
+/** Problems with a left-hand figure (a pattern written into a piece). */
+export function figureIssues(f: PatternSpec): string[] {
+  const out: string[] = [];
+  if (!(f.cycleBeats > 0 && f.cycleBeats <= 64)) out.push('Figure: cycle must be 1 to 64 beats');
+  if (f.steps.length < 1 || f.steps.length > 32) out.push('Figure: needs 1 to 32 steps');
+  f.steps.forEach((s, i) => {
+    const where = `Figure step ${i + 1}`;
+    if (!(s.at >= 0 && s.at < f.cycleBeats)) out.push(`${where}: starts outside the cycle`);
+    if (s.dur !== 'chord' && !(s.dur > 0 && s.dur <= f.cycleBeats))
+      out.push(`${where}: length must be within the cycle, or "chord"`);
+    if (s.voices.length === 0) out.push(`${where}: plays nothing`);
+    for (const v of s.voices)
+      if (!(
+        v === 'all' ||
+        v === 'root' ||
+        v === 'fifth' ||
+        (Number.isInteger(v) && Math.abs(v) <= 8)
+      ))
+        out.push(`${where}: unknown voice "${String(v)}"`);
+  });
+  return out;
+}
+
 export function validateLesson(lesson: Lesson): string[] {
-  const issues: string[] = [];
+  const issues: string[] = lesson.lhFigure ? figureIssues(lesson.lhFigure) : [];
   const len = lesson.meter.beats;
   const sum = (xs: { beats: number }[]) => xs.reduce((s, x) => s + x.beats, 0);
   lesson.bars.forEach((bar, i) => {

@@ -69,7 +69,7 @@
         },
         {
           "type": "object",
-          "required": ["kind", "composer", "year"],
+          "required": ["kind", "composer", "composerDied", "firstPublished", "edition"],
           "additionalProperties": false,
           "properties": {
             "kind": {
@@ -77,10 +77,41 @@
             },
             "composer": {
               "type": "string",
-              "maxLength": 80
+              "maxLength": 80,
+              "description": "\"Traditional\" for a tune with no known composer."
             },
-            "year": {
+            "composerDied": {
+              "type": ["integer", "null"],
+              "description": "Year of death; null only for a traditional tune."
+            },
+            "firstPublished": {
               "type": "integer"
+            },
+            "edition": {
+              "type": "string",
+              "maxLength": 300,
+              "description": "The early or first edition the notes were taken from."
+            },
+            "contributors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["role", "name", "died"],
+                "additionalProperties": false,
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "died": {
+                    "type": "integer"
+                  }
+                }
+              }
             }
           }
         },
@@ -158,6 +189,29 @@
       "exclusiveMinimum": 0,
       "maximum": 4
     },
+    "note": {
+      "type": "object",
+      "required": ["note", "beats"],
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/noteName"
+            },
+            {
+              "const": "r"
+            }
+          ]
+        },
+        "beats": {
+          "$ref": "#/$defs/beats"
+        },
+        "tie": {
+          "const": true
+        }
+      }
+    },
     "updated": {
       "type": "string",
       "format": "date-time"
@@ -230,6 +284,82 @@
               "type": "string",
               "description": "A left-hand pattern id, such as \"arpeggio-8ths\" or \"block\"."
             },
+            "lhFigure": {
+              "type": "object",
+              "description": "A piece's own left-hand figure, used instead of lhPattern: steps over the chord's voicing.",
+              "required": ["name", "cycleBeats", "steps"],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "cycleBeats": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 64
+                },
+                "steps": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "required": ["at", "dur", "voices"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "at": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "dur": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          {
+                            "const": "chord"
+                          }
+                        ]
+                      },
+                      "voices": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -8,
+                              "maximum": 8
+                            },
+                            {
+                              "enum": ["all", "root", "fifth"]
+                            }
+                          ]
+                        }
+                      },
+                      "accent": {
+                        "const": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "piece": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]{1,60}$",
+              "description": "Library pieces: the piece this song is a version of."
+            },
+            "level": {
+              "enum": ["easy", "medium", "advanced"]
+            },
+            "covers": {
+              "type": "string",
+              "maxLength": 80,
+              "description": "Which part of the original it covers."
+            },
             "summary": {
               "type": "string",
               "maxLength": 140
@@ -276,27 +406,14 @@
                   "melody": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "required": ["note", "beats"],
-                      "additionalProperties": false,
-                      "properties": {
-                        "note": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/$defs/noteName"
-                            },
-                            {
-                              "const": "r"
-                            }
-                          ]
-                        },
-                        "beats": {
-                          "$ref": "#/$defs/beats"
-                        },
-                        "tie": {
-                          "const": true
-                        }
-                      }
+                      "$ref": "#/$defs/note"
+                    }
+                  },
+                  "left": {
+                    "type": "array",
+                    "description": "Left-hand notes written out for this bar, in place of the figure or pattern.",
+                    "items": {
+                      "$ref": "#/$defs/note"
                     }
                   }
                 }
