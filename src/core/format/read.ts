@@ -2,16 +2,21 @@ import { chartIssues, cleanView, migrateChart } from '../charts/compile';
 import { SECTION_NAMES, MAX_LABEL, type SectionType } from '../charts/sections';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, LIMITS, type ChartView, type ChordChart } from '../charts/types';
-import { validateLesson } from '../content/compile';
+import { figureIssues, validateLesson } from '../content/compile';
 import { progressionIssues } from '../content/progressionText';
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
 import {
   DEFAULT_RULES,
   LESSON_SCHEMA_VERSION,
   NO_CHORD,
+  SONG_LEVELS,
   type ContentSource,
   type Lesson,
+  type NoteSpec,
+  type PatternSpec,
+  type PatternVoice,
   type Progression,
+  type SongLevel,
 } from '../content/types';
 import { lessonToDraft, toLesson, type SongDraft } from '../songs/draft';
 import { cleanDraft, type UserRecording } from '../songs/library';
@@ -106,10 +111,38 @@ export function cleanSource(raw: unknown): ContentSource {
         : { kind: 'original' };
     case 'generic':
       return { kind: 'generic' };
-    case 'public-domain':
-      return isStr(raw.composer, 80) && isNum(raw.year, 0, 3000)
-        ? { kind: 'public-domain', composer: raw.composer, year: raw.year }
-        : { kind: 'user' };
+    case 'public-domain': {
+      if (!isStr(raw.composer, 80) || !raw.composer) return { kind: 'user' };
+      // Files from before the proof fields had only a year.
+      const published = isNum(raw.firstPublished, 0, 3000)
+        ? raw.firstPublished
+        : isNum(raw.year, 0, 3000)
+          ? raw.year
+          : null;
+      if (published === null) return { kind: 'user' };
+      const contributors = Array.isArray(raw.contributors)
+        ? raw.contributors.flatMap((c) =>
+            isObj(c) && isStr(c.role, 40) && isStr(c.name, 80) && isNum(c.died, 0, 3000)
+              ? [{ role: c.role, name: c.name, died: c.died }]
+              : [],
+          )
+        : [];
+      return {
+        kind: 'public-domain',
+        composer: raw.composer,
+        composerDied: isNum(raw.composerDied, 0, 3000) ? raw.composerDied : null,
+        firstPublished: published,
+        edition: isStr(raw.edition, 300) ? raw.edition : '',
+        ...(isStr(raw.editor, 80) && raw.editor
+          ? {
+              editor: raw.editor,
+              editorDied: isNum(raw.editorDied, 0, 3000) ? raw.editorDied : null,
+              editorAdditionsUsed: raw.editorAdditionsUsed === true,
+            }
+          : {}),
+        ...(contributors.length ? { contributors } : {}),
+      };
+    }
     default:
       return { kind: 'user' };
   }
@@ -163,19 +196,27 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
       return { symbol: c.symbol, beats: c.beats as number, ...(voicing ? { voicing } : {}) };
     });
     if (!Array.isArray(b.melody)) fail(`${f}.melody`, 'should be a list of notes (empty for none)');
-    const rh = (b.melody as unknown[]).map((n, ni) => {
-      const nf = `${f}.melody[${ni}]`;
-      if (!isObj(n) || typeof n.note !== 'string' || (n.note !== 'r' && !noteOk(n.note)))
-        return fail(nf, `"${isObj(n) ? String(n.note) : n}" is not a note`);
-      if (!isNum(n.beats, 0.05, 4)) fail(`${nf}.beats`, 'should be a length in beats');
-      return { note: n.note, beats: n.beats as number, ...(n.tie === true ? { tie: true } : {}) };
-    });
+    const rh = readNotes(b.melody as unknown[], `${f}.melody`);
+    if (b.left !== undefined && !Array.isArray(b.left))
+      fail(`${f}.left`, 'should be a list of notes');
+    const lh = Array.isArray(b.left) ? readNotes(b.left as unknown[], `${f}.left`) : null;
     return {
       chords,
       ...(rh.length ? { rh } : {}),
+      ...(lh ? { lh } : {}),
       ...(b.section ? { section: b.section as string } : {}),
     };
   });
+  if (
+    raw.piece !== undefined &&
+    (typeof raw.piece !== 'string' || !/^[a-z0-9-]{1,60}$/.test(raw.piece))
+  )
+    fail('song.piece', 'should be a short id (lowercase letters, digits, dashes)');
+  if (raw.level !== undefined && !SONG_LEVELS.includes(raw.level as SongLevel))
+    fail('song.level', `should be ${SONG_LEVELS.join(', ')}`);
+  if (raw.covers !== undefined && !isStr(raw.covers, 80))
+    fail('song.covers', 'should be text up to 80 characters');
+  const lhFigure = raw.lhFigure === undefined ? undefined : readFigure(raw.lhFigure);
   const lesson: Lesson = {
     id,
     schemaVersion: LESSON_SCHEMA_VERSION,
@@ -187,6 +228,10 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
     meter: m,
     tempo,
     lhPattern,
+    ...(lhFigure ? { lhFigure } : {}),
+    ...(raw.piece ? { piece: raw.piece as string } : {}),
+    ...(raw.level ? { level: raw.level as SongLevel } : {}),
+    ...(raw.covers ? { covers: raw.covers as string } : {}),
     rules: DEFAULT_RULES,
     bars,
   };
@@ -200,6 +245,50 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
   // included; your own songs are rebuilt the way the app builds them.
   const rebuild = src.kind === 'user';
   return { kind: 'song' as const, lesson: rebuild ? toLesson(draft, id) : lesson, draft };
+}
+
+function readNotes(raw: readonly unknown[], field: string): NoteSpec[] {
+  return raw.map((n, ni) => {
+    const nf = `${field}[${ni}]`;
+    if (!isObj(n) || typeof n.note !== 'string' || (n.note !== 'r' && !noteOk(n.note)))
+      return fail(nf, `"${isObj(n) ? String(n.note) : n}" is not a note`);
+    if (!isNum(n.beats, 0.05, 4)) fail(`${nf}.beats`, 'should be a length in beats');
+    return { note: n.note, beats: n.beats as number, ...(n.tie === true ? { tie: true } : {}) };
+  });
+}
+
+const VOICE_NAMES = new Set(['all', 'root', 'fifth']);
+
+function readFigure(raw: unknown): PatternSpec {
+  const f = 'song.lhFigure';
+  if (!isObj(raw) || !isStr(raw.name, 60) || !raw.name || !isNum(raw.cycleBeats, 0.25, 64))
+    return fail(f, 'needs a name and a cycle length in beats');
+  if (!Array.isArray(raw.steps) || raw.steps.length === 0 || raw.steps.length > 32)
+    fail(`${f}.steps`, 'needs 1 to 32 steps');
+  const steps = (raw.steps as unknown[]).map((s, i) => {
+    const sf = `${f}.steps[${i}]`;
+    if (!isObj(s) || !isNum(s.at, 0, 64)) return fail(sf, 'needs a start in beats');
+    if (s.dur !== 'chord' && !isNum(s.dur, 0.05, 64))
+      fail(`${sf}.dur`, 'should be a length in beats, or "chord"');
+    if (
+      !Array.isArray(s.voices) ||
+      s.voices.length === 0 ||
+      !s.voices.every(
+        (v) => (typeof v === 'number' && Number.isInteger(v)) || VOICE_NAMES.has(v as string),
+      )
+    )
+      fail(`${sf}.voices`, 'should list voicing indexes, "all", "root" or "fifth"');
+    return {
+      at: s.at,
+      dur: s.dur as number | 'chord',
+      voices: s.voices as PatternVoice[],
+      ...(s.accent === true ? { accent: true } : {}),
+    };
+  });
+  const figure: PatternSpec = { id: 'figure', name: raw.name, cycleBeats: raw.cycleBeats, steps };
+  const issues = figureIssues(figure);
+  if (issues.length) fail(f, issues[0]!);
+  return figure;
 }
 
 function noteOk(n: string): boolean {

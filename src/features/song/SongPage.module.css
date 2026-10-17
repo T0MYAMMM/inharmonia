@@ -78,3 +78,29 @@
     margin-bottom: var(--space-4);
   }
 }
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.level {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.level:hover {
+  border-color: var(--muted);
+}
+
+.level[aria-current='page'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
