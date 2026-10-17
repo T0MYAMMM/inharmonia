@@ -1,0 +1,1089 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-10-17T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "song",
+      "id": "canon-in-d-easy",
+      "title": "Canon in D",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Johann Pachelbel",
+        "composerDied": 1706,
+        "firstPublished": 1919,
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264)"
+      },
+      "song": {
+        "key": {
+          "tonic": "C",
+          "mode": "major"
+        },
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 50,
+          "min": 30,
+          "max": 80
+        },
+        "lhPattern": "bass-held",
+        "piece": "canon-in-d",
+        "level": "easy",
+        "covers": "bars 3–8",
+        "summary": "The opening of Pachelbel's canon: the first violin's line over the eight-note ground bass.",
+        "bars": [
+          {
+            "section": "Canon",
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "Am",
+                "beats": 1
+              },
+              {
+                "symbol": "Em",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "Am",
+                "beats": 1
+              },
+              {
+                "symbol": "Em",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "G4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "F4",
+                "beats": 1
+              },
+              {
+                "note": "E4",
+                "beats": 1
+              },
+              {
+                "note": "F4",
+                "beats": 1
+              },
+              {
+                "note": "D4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "Am",
+                "beats": 1
+              },
+              {
+                "symbol": "Em",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "F4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "D4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "C",
+                "beats": 1
+              },
+              {
+                "symbol": "F",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "A3",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "F4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "F4",
+                "beats": 0.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "canon-in-d-medium",
+      "title": "Canon in D",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Johann Pachelbel",
+        "composerDied": 1706,
+        "firstPublished": 1919,
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264)"
+      },
+      "song": {
+        "key": {
+          "tonic": "D",
+          "mode": "major"
+        },
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 60,
+          "min": 30,
+          "max": 80
+        },
+        "lhPattern": "held",
+        "piece": "canon-in-d",
+        "level": "medium",
+        "covers": "bars 3–8",
+        "summary": "The opening of Pachelbel's canon: the first violin's line over the eight-note ground bass.",
+        "bars": [
+          {
+            "section": "Canon",
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "F#5",
+                "beats": 1
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "F#4",
+                "beats": 1
+              },
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "E4",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "B3",
+                "beats": 0.5
+              },
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "canon-in-d-advanced",
+      "title": "Canon in D",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Johann Pachelbel",
+        "composerDied": 1706,
+        "firstPublished": 1919,
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264)"
+      },
+      "song": {
+        "key": {
+          "tonic": "D",
+          "mode": "major"
+        },
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "tempo": {
+          "default": 64,
+          "min": 30,
+          "max": 80
+        },
+        "lhPattern": "held",
+        "piece": "canon-in-d",
+        "level": "advanced",
+        "covers": "bars 1–8",
+        "summary": "The opening of Pachelbel's canon: the first violin's line over the eight-note ground bass.",
+        "bars": [
+          {
+            "section": "Ground",
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "r",
+                "beats": 4
+              }
+            ],
+            "left": [
+              {
+                "note": "D3",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              },
+              {
+                "note": "B2",
+                "beats": 1
+              },
+              {
+                "note": "F#2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "r",
+                "beats": 4
+              }
+            ],
+            "left": [
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "D2",
+                "beats": 1
+              },
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "section": "Canon",
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "F#5",
+                "beats": 1
+              },
+              {
+                "note": "E5",
+                "beats": 1
+              },
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              }
+            ],
+            "left": [
+              {
+                "note": "D3",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              },
+              {
+                "note": "B2",
+                "beats": 1
+              },
+              {
+                "note": "F#2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              }
+            ],
+            "left": [
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "D2",
+                "beats": 1
+              },
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D5",
+                "beats": 1
+              },
+              {
+                "note": "C#5",
+                "beats": 1
+              },
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "A4",
+                "beats": 1
+              }
+            ],
+            "left": [
+              {
+                "note": "D3",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              },
+              {
+                "note": "B2",
+                "beats": 1
+              },
+              {
+                "note": "F#2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "F#4",
+                "beats": 1
+              },
+              {
+                "note": "G4",
+                "beats": 1
+              },
+              {
+                "note": "E4",
+                "beats": 1
+              }
+            ],
+            "left": [
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "D2",
+                "beats": 1
+              },
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              },
+              {
+                "symbol": "Bm",
+                "beats": 1
+              },
+              {
+                "symbol": "F#m",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "F#4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "D3",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              },
+              {
+                "note": "B2",
+                "beats": 1
+              },
+              {
+                "note": "F#2",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "D",
+                "beats": 1
+              },
+              {
+                "symbol": "G",
+                "beats": 1
+              },
+              {
+                "symbol": "A",
+                "beats": 1
+              }
+            ],
+            "melody": [
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "B3",
+                "beats": 0.5
+              },
+              {
+                "note": "D4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              },
+              {
+                "note": "G4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "D2",
+                "beats": 1
+              },
+              {
+                "note": "G2",
+                "beats": 1
+              },
+              {
+                "note": "A2",
+                "beats": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
