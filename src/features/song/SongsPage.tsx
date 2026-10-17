@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { SONGS } from '@/content/lessons';
 import { SONG_LEVELS, type Lesson, type SongLevel } from '@/core/content/types';
@@ -7,6 +8,7 @@ import { Segmented } from '@/ui/Segmented';
 import { MySongsSection } from '../mysongs/MySongsSection';
 import page from '../page.module.css';
 import { composerOf, creditLine, LEVEL_NAMES } from './credit';
+import { paginate } from './paginate';
 import styles from './SongsPage.module.css';
 
 type LevelFilter = 'all' | SongLevel;
@@ -34,21 +36,33 @@ export function SongsPage() {
     : 'all';
   const composer = COMPOSERS.includes(params.get('composer') ?? '') ? params.get('composer')! : '';
   const query = params.get('q') ?? '';
+  const listRef = useRef<HTMLUListElement>(null);
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params);
     if (v) next.set(k, v);
     else next.delete(k);
+    // A new filter starts again from the first page.
+    if (k !== 'page') next.delete('page');
     setParams(next, { replace: true });
+  };
+  const goTo = (n: number) => {
+    set('page', n > 1 ? String(n) : '');
+    const list = listRef.current;
+    if (list && list.getBoundingClientRect().top < 0) {
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      list.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    }
   };
 
   const q = query.trim().toLowerCase();
-  const shown = GROUPS.filter((g) => {
+  const matching = GROUPS.filter((g) => {
     const first = g[0]!;
     if (level !== 'all' && !g.some((s) => s.level === level)) return false;
     if (composer && composerOf(first) !== composer) return false;
     if (q && !`${first.title} ${composerOf(first)}`.toLowerCase().includes(q)) return false;
     return true;
   });
+  const paged = paginate(matching, Number(params.get('page') ?? 1));
 
   return (
     <>
@@ -101,13 +115,13 @@ export function SongsPage() {
           />
         </label>
       </div>
-      {shown.length === 0 ? (
+      {matching.length === 0 ? (
         <p className={styles.meta} data-testid="songs-empty">
           No songs match. <Link to="/songs">Show them all</Link>
         </p>
       ) : null}
-      <ul className={styles.list} data-testid="songs">
-        {shown.map((g) => {
+      <ul ref={listRef} className={styles.list} data-testid="songs">
+        {paged.items.map((g) => {
           const first = g[0]!;
           const main = g.find((s) => s.level === (level === 'all' ? 'easy' : level)) ?? first;
           // The written key, unless a level is picked: then the key that version plays in.
@@ -161,7 +175,49 @@ export function SongsPage() {
           );
         })}
       </ul>
+      {paged.pages > 1 ? (
+        <nav className={styles.pager} aria-label="Song pages">
+          <button
+            type="button"
+            className={styles.pageButton}
+            aria-label="Previous page"
+            disabled={paged.page === 1}
+            onClick={() => goTo(paged.page - 1)}
+            data-testid="songs-prev"
+          >
+            <Chevron direction="left" />
+          </button>
+          <span className={styles.pageStatus} aria-live="polite" data-testid="songs-page">
+            Page {paged.page} of {paged.pages}
+          </span>
+          <button
+            type="button"
+            className={styles.pageButton}
+            aria-label="Next page"
+            disabled={paged.page === paged.pages}
+            onClick={() => goTo(paged.page + 1)}
+            data-testid="songs-next"
+          >
+            <Chevron direction="right" />
+          </button>
+        </nav>
+      ) : null}
       <MySongsSection />
     </>
+  );
+}
+
+function Chevron({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path
+        d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
