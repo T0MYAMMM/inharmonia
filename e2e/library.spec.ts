@@ -15,7 +15,7 @@ test.describe('song library', () => {
   test('one card per piece, with filters for level, composer and title', async ({ page }) => {
     await page.goto('songs');
     const songs = page.getByTestId('songs');
-    await expect(songs.getByTestId('piece-window-light')).toBeVisible();
+    await expect(songs.getByTestId('piece-senja-di-teras')).toBeVisible();
     const card = songs.getByTestId('piece-morning-ferry');
     await expect(card.getByRole('link', { name: /^Easy/ })).toHaveAttribute(
       'href',
@@ -49,16 +49,53 @@ test.describe('song library', () => {
     await expect(songs.getByRole('listitem')).toHaveCount(4);
   });
 
+  test('pages of nine, with previous and next, and filters start again on page one', async ({
+    page,
+  }) => {
+    await page.goto('songs');
+    const items = page.getByTestId('songs').getByRole('listitem');
+    const prev = page.getByRole('button', { name: 'Previous page' });
+    const next = page.getByRole('button', { name: 'Next page' });
+    await expect(items).toHaveCount(9);
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 1 of 2');
+    await expect(prev).toBeDisabled();
+    await expect(page.getByTestId('piece-window-light')).toHaveCount(0);
+
+    await next.click();
+    await expect(page).toHaveURL(/page=2/);
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+    await expect(page.getByTestId('piece-window-light')).toBeVisible();
+    await expect(next).toBeDisabled();
+    await page.reload();
+    await expect(page.getByTestId('piece-window-light')).toBeVisible();
+
+    await page.getByTestId('songs-composer').selectOption('Original pieces');
+    await expect(page).not.toHaveURL(/page=/);
+    await expect(items).toHaveCount(4);
+    await expect(page.getByRole('navigation', { name: 'Song pages' })).toHaveCount(0);
+
+    await page.goto('songs?page=99');
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+  });
+
   test('every version of every library piece opens and plays', async ({ page }) => {
     // Three versions per piece, so the sweep grows with the library.
     test.setTimeout(180_000);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto('songs');
-    const hrefs = await page
-      .getByTestId('songs')
-      .locator('[data-testid^="level-"]')
-      .evaluateAll((els) => els.map((e) => e.getAttribute('href')!));
+    const hrefs: string[] = [];
+    for (;;) {
+      hrefs.push(
+        ...(await page
+          .getByTestId('songs')
+          .locator('[data-testid^="level-"]')
+          .evaluateAll((els) => els.map((e) => e.getAttribute('href')!))),
+      );
+      const next = page.getByTestId('songs-next');
+      if (await next.isDisabled()) break;
+      await next.click();
+    }
     expect(hrefs.length).toBeGreaterThanOrEqual(24);
     for (const href of hrefs) {
       await page.goto(href.replace(/^\/inharmonia\//, ''));
