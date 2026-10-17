@@ -57,7 +57,7 @@ One `name: value` per line, before the first section.
 | `editor-died`      | with `editor`            | The editor's year of death, or `unknown`.                                                    |
 | `editor-additions` | no                       | `not used` (the default: only the original notes are taken) or `used`.                       |
 | `key`              | yes                      | `G major`, `A minor`, …                                                                      |
-| `meter`            | yes                      | `2/4`, `3/4` or `4/4`.                                                                       |
+| `meter`            | yes                      | `2/4`, `3/4`, `4/4` or `3/8` (three eighth-note beats; `tempo` then counts eighths).         |
 | `tempo`            | yes                      | Beats per minute for Advanced; Medium plays at 90%, Easy at 80%.                             |
 | `summary`          | no                       | One sentence for the Songs page.                                                             |
 | `figure`           | yes                      | Advanced left hand: an app pattern id, or the piece's own figure.                            |
