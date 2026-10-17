@@ -6,3 +6,8 @@ export * from './paste';
 export * from './key';
 export * from './compile';
 export * from './record';
+export * from './simplify';
+export * from './transpose';
+export * from './hints';
+export * from './known';
+export * from './easyKey';

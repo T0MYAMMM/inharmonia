@@ -72,6 +72,17 @@ export interface ChartView {
   showFunction: boolean;
 }
 
+/** Accompaniment styles for singing while playing, each a left-hand pattern applied to the chart. */
+export const CHART_STYLES = [
+  { id: 'triad-root', name: 'Triad and root', note: 'Right-hand triad, left-hand root, held.' },
+  { id: 'block-both', name: 'Block chords', note: 'Both hands together on beats 1 and 3.' },
+  { id: 'root-fifth', name: 'Root and fifth', note: 'Left hand root then fifth, triad held.' },
+  { id: 'arpeggio-8ths', name: 'Broken chords', note: 'The chord up and back in 8ths.' },
+  { id: 'held', name: 'Right hand only', note: 'Just the triad, held: start here.' },
+] as const;
+
+export type ChartStyle = (typeof CHART_STYLES)[number]['id'];
+
 export const DEFAULT_VIEW: ChartView = {
   transpose: 0,
   simplify: 'original',

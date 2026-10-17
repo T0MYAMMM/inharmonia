@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { PATTERNS } from '@/content/patterns';
-import { userChartLesson, type UserChart } from '@/core/charts';
+import { shiftLabel, userChartLesson, viewKey, type UserChart } from '@/core/charts';
 import { compileLesson } from '@/core/content/compile';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { deleteChart, getChart, saveChart, useMySongs } from '@/state/mySongs';
@@ -14,6 +14,7 @@ import mine from '../mysongs/mysongs.module.css';
 import { LessonPlayer } from '../song/LessonPlayer';
 import songStyles from '../song/SongPage.module.css';
 import { ExportButtons } from '../transfer/Export';
+import { LearnPanel } from './LearnPanel';
 import styles from './charts.module.css';
 
 /** A chord chart of yours in the player, with its notes, edit, export and delete. */
@@ -71,8 +72,11 @@ export function ChartPage() {
           <span className={mine.badge}>Chart</span>
         </span>
         <p className={songStyles.meta}>
-          {prettyAccidentals(keyName(chart.key))}, {chart.meter.beats}/{chart.meter.unit},{' '}
-          {compiled.bars.length} bars, {chart.tempo} bpm
+          {prettyAccidentals(keyName(viewKey(chart, view)))}
+          {view.transpose
+            ? ` (written in ${prettyAccidentals(keyName(chart.key))}, ${shiftLabel(view.transpose)})`
+            : ''}
+          , {chart.meter.beats}/{chart.meter.unit}, {compiled.bars.length} bars, {chart.tempo} bpm
         </p>
         {chart.notes ? (
           <p className={styles.userNotes} data-testid="chart-notes-view">
@@ -95,11 +99,17 @@ export function ChartPage() {
           <ExportButtons build={() => exportItems({ charts: [record] })} />
         </div>
       </div>
+      <LearnPanel
+        chart={chart}
+        view={view}
+        onChange={(v) => void saveChart({ ...record, view: v })}
+      />
       <LessonPlayer
         key={record.id}
         compiled={compiled}
         variant="progression"
         showNumerals={view.showFunction}
+        voicingHints
       />
       <div className={mine.danger}>
         {confirm ? (

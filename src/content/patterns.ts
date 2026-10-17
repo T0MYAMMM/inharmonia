@@ -134,6 +134,15 @@ export const TRIAD_ROOT: PatternSpec = {
   steps: [step(0, 'chord', ['root'], true), step(0, 'chord', ['all'])],
 };
 
+/** Chord charts: both hands together, the root and fifth low and the triad above. */
+export const BLOCK_BOTH: PatternSpec = {
+  id: 'block-both',
+  name: 'Block chords, both hands',
+  description: 'Root and fifth in the left hand with the triad in the right, on beats 1 and 3.',
+  cycleBeats: 2,
+  steps: [step(0, 1.9, ['root', 'fifth'], true), step(0, 1.9, ['all'])],
+};
+
 /** In display order. */
 export const PATTERN_LIST: readonly PatternSpec[] = [
   HELD,
@@ -147,6 +156,7 @@ export const PATTERN_LIST: readonly PatternSpec[] = [
   BOSSA,
   WALTZ,
   TRIAD_ROOT,
+  BLOCK_BOTH,
 ];
 
 export const PATTERNS: Readonly<Record<string, PatternSpec>> = Object.fromEntries(

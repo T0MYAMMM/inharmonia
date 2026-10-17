@@ -217,6 +217,14 @@ white keys (`dockRangeFor` in `src/ui/keyboard/layout.ts`).
   Wrong notes flash red and spoil the "clean" score for that chord. "Show me" lights the chord,
   "Hear it" plays it, "Skip" moves on. Each round's result is saved locally.
 
+- `/chords/known` is your known-chords profile: the common chords (major, minor, 7, m7, maj7,
+  sus4, dim on all 12 roots) with **I know it**, **Not yet** or **From my plays** for each, and a
+  "play it" check. A chord counts as known after 3 clean plays (no wrong note first, no "Show
+  me") on at least 2 different days; clean answers in chord drills count too. A mark you set by
+  hand always wins. Spellings share one entry (A♯m7 is B♭m7, CM7 is Cmaj7) and a slash bass is
+  ignored, since the right hand plays the same shape. Saved on this device only
+  (`src/state/knownChords.ts`, rules in `src/core/charts/known.ts`).
+
 Chord recognition (`src/core/practice/chordMatch.ts`) compares the held notes with the target at
 the chosen strictness. A match must hold steady briefly before it counts, so rolling a chord or
 brushing a wrong key is judged on the final shape. Timed modes can also require all tones within
@@ -523,6 +531,38 @@ entered once and played as often as it comes back.
   stored in IndexedDB, `source: { kind: 'user' }`, no share links, no upload.
 - **Limits.** 24 sections, 32 bars per section, 40 form entries, 400 bars once the form is
   played out.
+
+### Making a chart playable
+
+The **Make it playable** panel on a chart's page changes how it is shown and played, never the
+chart itself: key, simplify level and style are view settings saved beside it (and in its
+export).
+
+- **Transpose** (`transpose.ts`) to any key. Chords move by the interval between the tonics, so
+  each keeps its function and is spelled for the new key: V in C (G) becomes B♭ in E♭, and IV in
+  G♭ is C♭, while a borrowed ♭VI in E♭ reads B rather than C♭. Roman numerals follow the new key.
+- **Find an easier key** (`easyKey.ts`) scores every key from 6 semitones down to 5 up and shows
+  the best three, each with its chords, the ones new to you, and how far it moves ("4 semitones
+  lower"), so you can pick by ear and voice. The score weighs the share of the song on chords you
+  know (from the known-chords profile), black keys in the voicings, chord complexity at the
+  current simplify level, and the size of the move (`EASY_KEY_WEIGHTS`).
+- **Simplify** (`simplify.ts`), switchable at any time:
+  - _Original:_ every chord as written.
+  - _Simplified:_ extensions down to sevenths (Cmaj9 → Cmaj7, G13 → G7), sus to the plain chord,
+    add9 and 6/9 down to the triad and sixth. A slash chord shows its main chord, and the left
+    hand keeps the slash bass in styles that have one.
+  - _Basic:_ triads only; diminished stays diminished, and the slash bass goes.
+
+  The chord as written stays under a simplified one in small text, so you learn the real chord.
+
+- **Accompaniment styles**, each a pattern applied to the chart: triad and root (the default),
+  block chords in both hands on beats 1 and 3, root and fifth under a held triad, broken chords,
+  and right hand only.
+- **Smooth voicings.** The right hand stays between G3 and E5 and each chord takes the inversion
+  that moves least from the one before. On the chart page the player says how the hand moves into
+  the current chord ("C → G: keep G, move C down 1 semitone to B and E down 2 semitones to D"),
+  and the keyboard marks it with shapes rather than colours: a dot on notes that stay, a ring on
+  notes to move to (`hints.ts`).
 
 ## Export and import
 

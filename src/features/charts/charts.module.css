@@ -339,3 +339,52 @@
     display: none;
   }
 }
+
+/* ---- make it playable ---- */
+
+.learn {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-4);
+  min-width: 0;
+}
+
+.learn > .field {
+  justify-self: start;
+}
+
+.keyOptions {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keyOption {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-3);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+  min-width: 0;
+}
+
+.keyHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.keyChords {
+  font-weight: 700;
+  color: var(--dusk-text);
+  overflow-wrap: anywhere;
+}

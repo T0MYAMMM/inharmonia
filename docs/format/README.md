@@ -39,8 +39,10 @@ songs whose voicings were chosen by hand.
   and `tie: true` to hold into the next note). An optional `section` on a bar starts a titled
   section.
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
-  `view` (`transpose`, `simplify`, `style`, `showFunction`). Importing restores exactly what you
-  saw. Each section has an `id`, the `label` as you wrote it ("Bait 2"), a `type` used for logic
+  `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),
+  `style` (`triad-root`, `block-both`, `root-fifth`, `arpeggio-8ths` or `held` for right hand
+  only) and `showFunction`. The chart itself is always stored as written; the view only changes
+  how it is shown and played. Importing restores exactly what you saw. Each section has an `id`, the `label` as you wrote it ("Bait 2"), a `type` used for logic
   (`verse`, `chorus`, …), `repeat`, and `bars`. Each bar is one string in chart syntax:
   - `"C"`: one chord for the whole bar
   - `"Am F"`: chords splitting the bar evenly
