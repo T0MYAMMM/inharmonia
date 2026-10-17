@@ -19,6 +19,11 @@ the files, edit them by hand, and keep them in git. The schema is in
 
 - Every item has a `kind` (`"song"`, `"chart"` or `"progression"`), an `id`, a `title`, a
   `source` and its data. Songs and charts you made also have `updated`.
+- `source` says where an item comes from: `{ "kind": "user" }` for your own,
+  `{ "kind": "original", "author": … }`, `{ "kind": "generic" }` for theory material, or a
+  public-domain piece with its proof: `composer`, `composerDied` (null only for a traditional
+  tune), `firstPublished`, the `edition` the notes were taken from, and any `contributors`
+  (`role`, `name`, `died`).
 - `assets` is only present when you tick **Include recordings**. It holds kept Studio
   recordings as base64 at the end of the file, so the music stays readable at the top.
 - Files are written with two-space indentation and the same key order every time, so they diff
@@ -37,7 +42,12 @@ songs whose voicings were chosen by hand.
 - **song**: key, meter, tempo (`default`, `min`, `max`), left-hand pattern id, and bars. Each bar
   has `chords` (`symbol`, `beats`, optional `voicing`) and `melody` (`note` or `"r"`, `beats`,
   and `tie: true` to hold into the next note). An optional `section` on a bar starts a titled
-  section.
+  section, and an optional `left` lists left-hand notes written out for that bar. Library pieces
+  also carry `piece` (which piece this is a version of), `level` (`easy`, `medium` or
+  `advanced`), `covers` ("bars 1–16"), and may have an `lhFigure`: the piece's own left-hand
+  figure, as `name`, `cycleBeats` and `steps` (`at`, `dur` in beats or `"chord"`, `voices`,
+  optional `accent`). Library pieces are written in the compact [source format](source.md) and
+  generated into this format.
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
   `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),
   `style` (`triad-root`, `block-both`, `root-fifth`, `arpeggio-8ths` or `held` for right hand
