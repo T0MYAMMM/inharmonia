@@ -125,7 +125,7 @@ export function SongsPage() {
                 {first.summary ? <span className={styles.summary}>{first.summary}</span> : null}
                 {first.level ? (
                   <span
-                    className={styles.levels}
+                    className={`${styles.levels} ${styles.foot}`}
                     role="group"
                     aria-label={`${first.title} versions`}
                   >
@@ -149,7 +149,7 @@ export function SongsPage() {
                     })}
                   </span>
                 ) : (
-                  <span className={styles.meta}>
+                  <span className={`${styles.meta} ${styles.foot}`}>
                     {first.bars.length} bars
                     {progress.exercises[first.id]
                       ? `, best accuracy ${Math.round(progress.exercises[first.id]!.bestAccuracy * 100)}%`
