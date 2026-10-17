@@ -10,7 +10,7 @@ test.describe('chord library', () => {
   test('shows a chord, its formula and voicings, from the URL', async ({ page }) => {
     await page.goto('chords?root=Eb&quality=maj7');
     await expect(page.getByTestId('chord-symbol')).toHaveText('E♭maj7');
-    await expect(page.getByText('major seventh')).toBeVisible();
+    await expect(page.getByTitle('major seventh')).toContainText('7');
     await expect(page.getByTestId('voicing-notes')).toHaveText('Root position: E♭4 G4 B♭4 D5');
     await expect.poll(() => lit(page, 'lh')).toEqual([63, 67, 70, 74]);
     await page.getByRole('radio', { name: '2nd' }).click();
@@ -20,6 +20,35 @@ test.describe('chord library', () => {
     await page.getByRole('button', { name: 'G', exact: true }).click();
     await page.getByRole('button', { name: 'm7', exact: true }).click();
     await expect(page.getByTestId('chord-symbol')).toHaveText('Gm7');
+  });
+
+  test('the chord and how it is built keep one size, whatever the chord', async ({ page }) => {
+    await page.goto('chords');
+    const box = () =>
+      page.evaluate(() => {
+        const sym = document.querySelector('[data-testid="chord-symbol"]')!.closest('section')!;
+        const built = sym.parentElement!.children[1]!;
+        const slots = [...document.querySelector('[data-testid="chord-tones"]')!.children];
+        const r = (e: Element) => e.getBoundingClientRect();
+        return {
+          symbol: [r(sym).width, r(sym).height].map(Math.round),
+          built: [r(built).width, r(built).height].map(Math.round),
+          slot: Math.round(r(slots[0]!).width),
+          rows: new Set(slots.map((s) => Math.round(r(s).top))).size,
+        };
+      });
+    // The shortest and longest symbols, and the fewest and most tones.
+    const first = await box();
+    for (const [root, quality] of [
+      ['Db', 'add9'],
+      ['C', 'maj9'],
+      ['F#', '13'],
+      ['Db', 'm7b5'],
+      ['B', 'sus2'],
+    ]) {
+      await page.goto(`chords?root=${encodeURIComponent(root!)}&quality=${quality}`);
+      expect(await box(), `${root}${quality}`).toEqual({ ...first, rows: 1 });
+    }
   });
 
   test('recognises the chord when you play it', async ({ page, isMobile }) => {
