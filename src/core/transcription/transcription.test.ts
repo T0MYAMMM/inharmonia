@@ -181,7 +181,9 @@ describe('draft melody', () => {
     expect(draft.grid.notes.map((n) => n.note.name).slice(0, 4)).toEqual(['G4', 'B4', 'D5', 'G5']);
   });
 
-  it('every fixture scores well end to end', () => {
+  // Synthesizes and transcribes all 16 takes: seconds of work, so it gets more
+  // than the default 5 s when the whole suite runs in parallel.
+  it('every fixture scores well end to end', { timeout: 30_000 }, () => {
     for (const spec of FIXTURE_SPECS) {
       const s = scoreFixture(synthesize(spec));
       expect(s.f1, spec.id).toBeGreaterThanOrEqual(0.95);
