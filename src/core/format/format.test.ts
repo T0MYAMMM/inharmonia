@@ -141,6 +141,48 @@ describe('example files', () => {
   );
 });
 
+describe('meters', () => {
+  const song = () =>
+    JSON.parse(
+      stringifyFile(
+        buildFile(
+          [
+            songItem({
+              id: 's1',
+              source: { kind: 'user' },
+              lesson: makeUserSong('s1', draft, 0).lesson,
+              voicings: false,
+            }),
+          ],
+          [],
+          at,
+        ),
+      ),
+    );
+
+  it('takes 2/4, 3/4, 4/4 and 3/8, and nothing else', () => {
+    const ok = song();
+    expect(validate(ok)).toBe(true);
+    for (const meter of [
+      { beats: 3, unit: 8 },
+      { beats: 6, unit: 8 },
+      { beats: 4, unit: 8 },
+      { beats: 3, unit: 2 },
+    ]) {
+      const f = song();
+      f.items[0].song.meter = meter;
+      expect(validate(f), JSON.stringify(meter)).toBe(meter.unit === 8 && meter.beats === 3);
+    }
+    const f = song();
+    f.items[0].song.meter = { beats: 6, unit: 8 };
+    const p = parseFile(JSON.stringify(f), ctx);
+    if ('fatal' in p) throw new Error(p.fatal);
+    expect(p.errors.map(describeError)).toEqual([
+      'Item 1 (Morning), song.meter: must be 2/4, 3/4, 4/4, 3/8',
+    ]);
+  });
+});
+
 describe('exports', () => {
   it('writes every built-in song and progression, valid and readable', () => {
     const items = [

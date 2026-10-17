@@ -60,8 +60,26 @@ export const SONG_LEVELS: readonly SongLevel[] = ['easy', 'medium', 'advanced'];
 
 export interface Meter {
   beats: number;
-  /** Note value of one beat: 4 = quarter. */
+  /** Note value of one beat: 4 = quarter, 8 = eighth. */
   unit: number;
+}
+
+/**
+ * Meters a song can be in. All are simple meters, counted in their written beat:
+ * 3/8 has three eighth-note beats, and its tempo counts eighths.
+ */
+export const SONG_METERS: readonly Meter[] = [
+  { beats: 2, unit: 4 },
+  { beats: 3, unit: 4 },
+  { beats: 4, unit: 4 },
+  { beats: 3, unit: 8 },
+];
+
+export const meterName = (m: Meter) => `${m.beats}/${m.unit}`;
+
+/** The song meter with these numbers, if it is one. */
+export function songMeter(beats: unknown, unit: unknown): Meter | undefined {
+  return SONG_METERS.find((m) => m.beats === beats && m.unit === unit);
 }
 
 /** A melody or bass note in a bar. Beats are in the meter's beat unit. */

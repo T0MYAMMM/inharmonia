@@ -39,7 +39,9 @@ songs whose voicings were chosen by hand.
 
 ## Kinds
 
-- **song**: key, meter, tempo (`default`, `min`, `max`), left-hand pattern id, and bars. Each bar
+- **song**: key, meter (2/4, 3/4, 4/4 or 3/8), tempo (`default`, `min`, `max`), left-hand pattern
+  id, and bars. Beats count the meter's written beat: in 3/8 a beat is an eighth note, and the
+  tempo counts eighths per minute. Each bar
   has `chords` (`symbol`, `beats`, optional `voicing`) and `melody` (`note` or `"r"`, `beats`,
   and `tie: true` to hold into the next note). An optional `section` on a bar starts a titled
   section, and an optional `left` lists left-hand notes written out for that bar. Library pieces

@@ -1,0 +1,39 @@
+# Beethoven, Bagatelle in A minor, WoO 59 ("Für Elise"): the opening section, from its
+# first printing, in Ludwig Nohl's Neue Briefe Beethovens (Cotta, Stuttgart, 1867),
+# No. 33, p. 28. Nohl printed it from Beethoven's manuscript, now lost.
+# The opening section is played once, through its first ending; the repeat and the
+# middle section are not included. The pedal marks are not used.
+# Bar 0 is the two-note pickup; the edition numbers no bars.
+# In 3/8 each beat is an eighth note, and the tempo counts eighths.
+# The chords are our reading of the left hand's broken chords; bars 1 and 5, where the
+# left hand rests, have none.
+title: Für Elise
+piece: fur-elise
+added: 2026-10-17
+source: public-domain
+composer: Ludwig van Beethoven
+composer-died: 1827
+first-published: 1867
+edition: First printing, Ludwig Nohl, Neue Briefe Beethovens, J. G. Cotta, Stuttgart, 1867, No. 33, p. 28 (Internet Archive, 10271074bsb, Bayerische Staatsbibliothek)
+editor: Ludwig Nohl
+editor-died: 1885
+key: A minor
+meter: 3/8
+# The edition marks "poco moto"; the tempo is ours.
+tempo: 132
+summary: The opening of Beethoven's bagatelle, from its first printing in 1867, over its rippling left hand.
+figure: held
+medium-figure: arpeggio-8ths
+# Every bar stays as written in Easy: merging the sixteenths would lose the tune.
+easy-keep: 1, 2, 3, 4, 5, 6, 7, 8, 9
+
+[A] main 0-8
+melody:
+  | rq E5s D#5 | E5s D#5 E5 B4 D5 C5 | A4e rs C4s E4 A4 | B4e rs E4s G#4 B4 | C5e rs E4s E5 D#5 |
+  | E5s D#5 E5 B4 D5 C5 | A4e rs C4s E4 A4 | B4e rs E4s C5 B4 | A4e rq |
+chords:
+  | N.C. | N.C. | Am | E | Am |
+  | N.C. | Am | E | Am |
+left:
+  | r:3 | r:3 | A2s E3 A3 rs re | E2s E3 G#3 rs re | A2s E3 A3 rs re |
+  | r:3 | A2s E3 A3 rs re | E2s E3 G#3 rs re | A2s E3 A3 rs re |

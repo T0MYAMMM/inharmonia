@@ -1,0 +1,1045 @@
+{
+  "format": "inharmonia",
+  "version": 2,
+  "exportedAt": "2026-10-17T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "song",
+      "id": "fur-elise-easy",
+      "title": "Für Elise",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Ludwig van Beethoven",
+        "composerDied": 1827,
+        "firstPublished": 1867,
+        "edition": "First printing, Ludwig Nohl, Neue Briefe Beethovens, J. G. Cotta, Stuttgart, 1867, No. 33, p. 28 (Internet Archive, 10271074bsb, Bayerische Staatsbibliothek)",
+        "editor": "Ludwig Nohl",
+        "editorDied": 1885,
+        "editorAdditionsUsed": false
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 8
+        },
+        "tempo": {
+          "default": 105,
+          "min": 55,
+          "max": 165
+        },
+        "lhPattern": "bass-held",
+        "piece": "fur-elise",
+        "level": "easy",
+        "covers": "bars 0–8",
+        "summary": "The opening of Beethoven's bagatelle, from its first printing in 1867, over its rippling left hand.",
+        "bars": [
+          {
+            "section": "A",
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "r",
+                "beats": 2
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "G#4",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "fur-elise-medium",
+      "title": "Für Elise",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Ludwig van Beethoven",
+        "composerDied": 1827,
+        "firstPublished": 1867,
+        "edition": "First printing, Ludwig Nohl, Neue Briefe Beethovens, J. G. Cotta, Stuttgart, 1867, No. 33, p. 28 (Internet Archive, 10271074bsb, Bayerische Staatsbibliothek)",
+        "editor": "Ludwig Nohl",
+        "editorDied": 1885,
+        "editorAdditionsUsed": false
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 8
+        },
+        "tempo": {
+          "default": 120,
+          "min": 55,
+          "max": 165
+        },
+        "lhPattern": "arpeggio-8ths",
+        "piece": "fur-elise",
+        "level": "medium",
+        "covers": "bars 0–8",
+        "summary": "The opening of Beethoven's bagatelle, from its first printing in 1867, over its rippling left hand.",
+        "bars": [
+          {
+            "section": "A",
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "r",
+                "beats": 2
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "G#4",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "song",
+      "id": "fur-elise-advanced",
+      "title": "Für Elise",
+      "source": {
+        "kind": "public-domain",
+        "composer": "Ludwig van Beethoven",
+        "composerDied": 1827,
+        "firstPublished": 1867,
+        "edition": "First printing, Ludwig Nohl, Neue Briefe Beethovens, J. G. Cotta, Stuttgart, 1867, No. 33, p. 28 (Internet Archive, 10271074bsb, Bayerische Staatsbibliothek)",
+        "editor": "Ludwig Nohl",
+        "editorDied": 1885,
+        "editorAdditionsUsed": false
+      },
+      "song": {
+        "key": {
+          "tonic": "A",
+          "mode": "minor"
+        },
+        "meter": {
+          "beats": 3,
+          "unit": 8
+        },
+        "tempo": {
+          "default": 132,
+          "min": 55,
+          "max": 165
+        },
+        "lhPattern": "held",
+        "piece": "fur-elise",
+        "level": "advanced",
+        "covers": "bars 0–8",
+        "summary": "The opening of Beethoven's bagatelle, from its first printing in 1867, over its rippling left hand.",
+        "bars": [
+          {
+            "section": "A",
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "r",
+                "beats": 2
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "r",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "r",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "A2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "A3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "G#4",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "E2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "G#3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "C5",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "A2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "A3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "N.C.",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "D#5",
+                "beats": 0.5
+              },
+              {
+                "note": "E5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              },
+              {
+                "note": "D5",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "r",
+                "beats": 3
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "C4",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "A4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "A2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "A3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "E",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "B4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "E4",
+                "beats": 0.5
+              },
+              {
+                "note": "C5",
+                "beats": 0.5
+              },
+              {
+                "note": "B4",
+                "beats": 0.5
+              }
+            ],
+            "left": [
+              {
+                "note": "E2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "G#3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          },
+          {
+            "chords": [
+              {
+                "symbol": "Am",
+                "beats": 3
+              }
+            ],
+            "melody": [
+              {
+                "note": "A4",
+                "beats": 1
+              },
+              {
+                "note": "r",
+                "beats": 2
+              }
+            ],
+            "left": [
+              {
+                "note": "A2",
+                "beats": 0.5
+              },
+              {
+                "note": "E3",
+                "beats": 0.5
+              },
+              {
+                "note": "A3",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 0.5
+              },
+              {
+                "note": "r",
+                "beats": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

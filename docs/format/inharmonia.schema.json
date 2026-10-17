@@ -175,6 +175,7 @@
       }
     },
     "meter": {
+      "description": "2/4, 3/4, 4/4 or 3/8. Beats count the written beat: in 3/8 a beat is an eighth note, and tempos count eighths.",
       "type": "object",
       "required": ["beats", "unit"],
       "additionalProperties": false,
@@ -183,9 +184,28 @@
           "enum": [2, 3, 4]
         },
         "unit": {
-          "const": 4
+          "enum": [4, 8]
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "unit": {
+              "const": 4
+            }
+          }
+        },
+        {
+          "properties": {
+            "beats": {
+              "const": 3
+            },
+            "unit": {
+              "const": 8
+            }
+          }
+        }
+      ]
     },
     "chordSymbol": {
       "description": "A chord symbol such as \"Gmaj7\", \"F#m7b5\", \"G/B\", or \"N.C.\" for no chord.",
