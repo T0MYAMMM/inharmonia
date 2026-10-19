@@ -1,18 +1,20 @@
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router';
-import { Link, useParams } from 'react-router';
-import { PATTERN_LIST, PATTERNS } from '@/content/patterns';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { FILLS } from '@/content/fills';
+import { PATTERN_LIST, PATTERNS } from '@/content/patterns';
 import { getSong, versionsOf } from '@/content/lessons';
-import { compileSongArrangement, type SongArrangementOptions } from '@/core/content/songArrangement';
-import { VOICING_STYLES } from '@/core/theory';
+import {
+  compileSongArrangement,
+  type SongArrangementOptions,
+} from '@/core/content/songArrangement';
 import { keyName, prettyAccidentals } from '@/core/notation';
-import { NotFoundPage } from '../not-found/NotFoundPage';
+import { VOICING_STYLES } from '@/core/theory';
 import { exportItems } from '@/state/transfer';
+import { Button } from '@/ui/Button';
+import { NotFoundPage } from '../not-found/NotFoundPage';
 import { ExportButtons } from '../transfer/Export';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
-import { Button } from '@/ui/Button';
 import styles from './SongPage.module.css';
 
 export function SongPage() {
@@ -25,19 +27,22 @@ export function SongPage() {
   const inversion = option('inversion');
   const voicing = option('voicing');
   const fill = option('fill');
-  const options: SongArrangementOptions = {
-    pattern: pattern === 'original' || PATTERNS[pattern] ? pattern : 'original',
-    chordOctave: [-2, -1, 0, 1, 2].includes(octave)
-      ? (octave as SongArrangementOptions['chordOctave'])
-      : 0,
-    voicing: VOICING_STYLES.some((v) => v.id === voicing)
-      ? (voicing as SongArrangementOptions['voicing'])
-      : 'original',
-    inversion: ['0', '1', '2'].includes(inversion)
-      ? (Number(inversion) as 0 | 1 | 2)
-      : 'original',
-    fill: FILLS.some((f) => f.id === fill && f.hand === 'rh') ? fill : '',
-  };
+  const options = useMemo<SongArrangementOptions>(
+    () => ({
+      pattern: pattern === 'original' || PATTERNS[pattern] ? pattern : 'original',
+      chordOctave: [-2, -1, 0, 1, 2].includes(octave)
+        ? (octave as SongArrangementOptions['chordOctave'])
+        : 0,
+      voicing: VOICING_STYLES.some((v) => v.id === voicing)
+        ? (voicing as SongArrangementOptions['voicing'])
+        : 'original',
+      inversion: ['0', '1', '2'].includes(inversion)
+        ? (Number(inversion) as 0 | 1 | 2)
+        : 'original',
+      fill: FILLS.some((f) => f.id === fill && f.hand === 'rh') ? fill : '',
+    }),
+    [pattern, octave, voicing, inversion, fill],
+  );
   const update = (field: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value === '' || value === 'original' || (field === 'octave' && value === '0'))
@@ -47,7 +52,7 @@ export function SongPage() {
   };
   const compiled = useMemo(
     () => (lesson ? compileSongArrangement(lesson, options) : null),
-    [lesson, options.pattern, options.chordOctave, options.voicing, options.inversion, options.fill],
+    [lesson, options],
   );
   if (!lesson || !compiled) return <NotFoundPage />;
   const versions = lesson.piece ? versionsOf(lesson.piece) : [];
@@ -100,43 +105,92 @@ export function SongPage() {
           <details className={styles.arrangement} data-testid="song-arrangement">
             <summary>Playing style &amp; arrangement</summary>
             <div className={styles.arrangementFields}>
-              <label>Accompaniment
-                <select data-testid="song-pattern" value={options.pattern} onChange={(e) => update('pattern', e.target.value)}>
+              <label>
+                Accompaniment
+                <select
+                  data-testid="song-pattern"
+                  value={options.pattern}
+                  onChange={(e) => update('pattern', e.target.value)}
+                >
                   <option value="original">Original arrangement</option>
-                  {PATTERN_LIST.filter((p) => !p.beatsPerBar || p.beatsPerBar === lesson.meter.beats).map((p) =>
-                    <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {PATTERN_LIST.filter(
+                    (p) => !p.beatsPerBar || p.beatsPerBar === lesson.meter.beats,
+                  ).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <label>Chord octave
-                <select data-testid="song-octave" value={options.chordOctave} onChange={(e) => update('octave', e.target.value)}>
-                  {[-2, -1, 0, 1, 2].map((n) =>
-                    <option key={n} value={n}>{n === 0 ? 'Original register' : n > 0 ? `+${n} octave` : `${n} octave`}</option>)}
+              <label>
+                Chord octave
+                <select
+                  data-testid="song-octave"
+                  value={options.chordOctave}
+                  onChange={(e) => update('octave', e.target.value)}
+                >
+                  {[-2, -1, 0, 1, 2].map((n) => (
+                    <option key={n} value={n}>
+                      {n === 0
+                        ? 'Original register'
+                        : n > 0
+                          ? `+${n} octave`
+                          : `${n} octave`}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <label>Chord voicing
-                <select data-testid="song-voicing" value={options.voicing} onChange={(e) => update('voicing', e.target.value)}>
+              <label>
+                Chord voicing
+                <select
+                  data-testid="song-voicing"
+                  value={options.voicing}
+                  onChange={(e) => update('voicing', e.target.value)}
+                >
                   <option value="original">Original</option>
-                  {VOICING_STYLES.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                  {VOICING_STYLES.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <label>Inversion
-                <select data-testid="song-inversion" value={options.inversion} onChange={(e) => update('inversion', e.target.value)}>
+              <label>
+                Inversion
+                <select
+                  data-testid="song-inversion"
+                  value={options.inversion}
+                  onChange={(e) => update('inversion', e.target.value)}
+                >
                   <option value="original">Original</option>
                   <option value="0">Root position</option>
                   <option value="1">First inversion</option>
                   <option value="2">Second inversion</option>
                 </select>
               </label>
-              <label>Fill-ins
-                <select data-testid="song-fill" value={options.fill} onChange={(e) => update('fill', e.target.value)}>
+              <label>
+                Fill-ins
+                <select
+                  data-testid="song-fill"
+                  value={options.fill}
+                  onChange={(e) => update('fill', e.target.value)}
+                >
                   <option value="">None</option>
-                  {FILLS.filter((f) => f.hand === 'rh').map((f) =>
-                    <option key={f.id} value={f.id}>{f.name}</option>)}
+                  {FILLS.filter((f) => f.hand === 'rh').map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>Reset arrangement</Button>
+              <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
+                Reset arrangement
+              </Button>
             </div>
-            <p className={styles.note}>These settings affect playback and practice only; the original song stays unchanged. Fill-ins play only where they do not overlap the melody.</p>
+            <p className={styles.note}>
+              These settings affect playback and practice only; the original song stays unchanged.
+              Fill-ins play only where they do not overlap the melody.
+            </p>
           </details>
         }
       />
