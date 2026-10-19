@@ -17,6 +17,9 @@ import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
 import styles from './SongPage.module.css';
 
+const octaveLabel = (octave: number) =>
+  octave === 0 ? 'Original register' : `${octave > 0 ? '+' : ''}${octave} octave`;
+
 export function SongPage() {
   const { songId = '' } = useParams();
   const lesson = getSong(songId);
@@ -55,6 +58,9 @@ export function SongPage() {
     [lesson, options],
   );
   if (!lesson || !compiled) return <NotFoundPage />;
+  const compatiblePatterns = PATTERN_LIST.filter(
+    (candidate) => !candidate.beatsPerBar || candidate.beatsPerBar === lesson.meter.beats,
+  );
   const versions = lesson.piece ? versionsOf(lesson.piece) : [];
   const written = versions.find((v) => v.level === 'advanced')?.key;
   const moved = written && (written.tonic !== lesson.key.tonic || written.mode !== lesson.key.mode);
@@ -113,9 +119,7 @@ export function SongPage() {
                   onChange={(e) => update('pattern', e.target.value)}
                 >
                   <option value="original">Original arrangement</option>
-                  {PATTERN_LIST.filter(
-                    (p) => !p.beatsPerBar || p.beatsPerBar === lesson.meter.beats,
-                  ).map((p) => (
+                  {compatiblePatterns.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
@@ -131,11 +135,7 @@ export function SongPage() {
                 >
                   {[-2, -1, 0, 1, 2].map((n) => (
                     <option key={n} value={n}>
-                      {n === 0
-                        ? 'Original register'
-                        : n > 0
-                          ? `+${n} octave`
-                          : `${n} octave`}
+                      {octaveLabel(n)}
                     </option>
                   ))}
                 </select>
