@@ -4,6 +4,7 @@ import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
 import { FakeClock, Transport } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
 import { compileLesson } from '@/core/content/compile';
+import { compileSongArrangement, DEFAULT_SONG_ARRANGEMENT } from '@/core/content/songArrangement';
 import { NoteStream } from '@/core/input';
 import { KeyLights } from '@/state/keyLights';
 import { SongController } from './SongController';
@@ -88,13 +89,55 @@ describe('SongController, Listen', () => {
     expect(env.transport.loopRegion).toEqual({ start: 0, end: 64 });
   });
 
-  it('lights the sounding melody note amber and the whole chord voicing dusk', () => {
+  it('lights the notes actually sounding in the broken-chord accompaniment', () => {
     env.ctrl.playPause();
-    env.clock.advance(0.5); // beat ≈ 0.63, first note A4
+    env.clock.advance(0.1); // beat 0.13: only the first arpeggio note has started
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([38]); // D2
+    env.clock.advance(0.4); // beat 0.63: the second note joins, first is sustained
     env.ctrl.renderFrame();
     expect(lit(env.lights, 'rh')).toEqual([69]);
-    expect(lit(env.lights, 'lh')).toEqual([38, 45, 49, 54]); // D2 A2 C#3 F#3
+    expect(lit(env.lights, 'lh')).toEqual([38, 45]); // D2 and A2, not all Dmaj7 tones
     expect(env.ctrl.snapshot.activeChipId).toBe('rh-0-0');
+    env.clock.advance(0.8); // beat 1.65: all four notes have entered
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([38, 45, 49, 54]);
+  });
+
+  it('matches block-chord attacks and releases after choosing another arrangement', () => {
+    env.ctrl.load(
+      compileSongArrangement(SENJA_DI_TERAS, {
+        ...DEFAULT_SONG_ARRANGEMENT,
+        pattern: 'block',
+        chordOctave: 1,
+      }),
+    );
+    env.ctrl.playPause();
+    env.clock.advance(0.2); // beat 0.25: all chord tones sustain
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([50, 57, 61, 66]);
+    env.clock.advance(0.54); // beat 0.94: the 0.9 beat notes have released
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([]);
+    env.clock.advance(0.1); // beat 1.06: the next attack
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([50, 57, 61, 66]);
+  });
+
+  it('does not display a chord during rests in an accompaniment pattern', () => {
+    env.ctrl.load(
+      compileSongArrangement(SENJA_DI_TERAS, {
+        ...DEFAULT_SONG_ARRANGEMENT,
+        pattern: 'alberti',
+      }),
+    );
+    env.ctrl.playPause();
+    env.clock.advance(0.1);
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([38]);
+    env.clock.advance(0.4);
+    env.ctrl.renderFrame();
+    expect(lit(env.lights, 'lh')).toEqual([54]);
   });
 
   it('keeps the chip marked but clears keys when paused, and resumes from there', () => {
@@ -146,6 +189,7 @@ describe('SongController, Listen', () => {
   it('mutes a hand without stopping, and stops lighting it', () => {
     env.ctrl.playPause();
     env.ctrl.setHand('lh', false);
+    expect(lit(env.lights, 'lh')).toEqual([]);
     env.clock.advance(0.5);
     env.ctrl.renderFrame();
     expect(env.transport.isMuted('lh')).toBe(true);
