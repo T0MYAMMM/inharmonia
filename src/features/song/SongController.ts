@@ -1,6 +1,7 @@
 import { MIX, mixVelocity } from '@config/mix';
 import type { Transport, TransportState } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
+import { activeEventMidis } from '@/core/audio/timeline';
 import {
   soundingSpans,
   spanDuration,
@@ -258,6 +259,7 @@ export class SongController {
 
   setHand(hand: 'rh' | 'lh', on: boolean): void {
     if (!(this.snap.mode === 'playalong' && hand === 'lh')) this.s.transport.setMuted(hand, !on);
+    if (!on) this.s.lights.clear(hand);
     this.set(hand === 'rh' ? { rhOn: on } : { lhOn: on });
     if (this.snap.mode === 'practice') this.renderPractice();
   }
@@ -361,6 +363,7 @@ export class SongController {
   setBacking(on: boolean): void {
     this.set({ backing: on });
     if (this.snap.mode === 'playalong') this.s.transport.setMuted('lh', !on);
+    if (!on) this.s.lights.clear('lh');
   }
 
   private startPlayAlong(): void {
@@ -416,11 +419,16 @@ export class SongController {
     const t = this.s.transport;
     if (t.state !== 'playing' || !this.scorer) {
       this.s.lights.clear('chordTarget');
+      this.s.lights.clear('lh');
       if (this.snap.countIn !== null) this.set({ countIn: null });
       return;
     }
     const time = this.s.audio.now() - this.s.audio.outputLatency();
     const beat = t.beatAt(time);
+    this.s.lights.setExactly(
+      'lh',
+      beat >= 0 && this.snap.backing && !t.isMuted('lh') ? this.soundingKeys('lh', beat) : [],
+    );
     this.applyScores(this.scorer.update(this.s.notes.held(), beat, this.snap.tempo));
     // Show the chord to play: the current one, or the next one just before the change.
     const look = beat + 0.35;
@@ -569,6 +577,13 @@ export class SongController {
     this.renderProgress(this.targetBeat());
   }
 
+  /** Same swung timeline and latency-compensated beat as the audio transport. */
+  private soundingKeys(hand: 'rh' | 'lh', beat: number): number[] {
+    return activeEventMidis(this.compiled.events, hand, beat, (at) =>
+      this.s.transport.performanceBeat(at),
+    );
+  }
+
   // ---- per-frame (listen) ----------------------------------------------------------
 
   /** One visual frame in Listen mode. The page calls it via requestAnimationFrame. */
@@ -583,16 +598,10 @@ export class SongController {
     const chip = inSong ? rhNoteAt(this.compiled, beat) : null;
 
     if (playing && beat >= 0) {
-      const chord = chordAt(this.compiled, beat);
-      const fill = chip?.note
-        ? undefined
-        : this.compiled.fills?.find((f) => beat >= f.beat && beat < f.beat + f.dur);
-      const rh = chip?.note ? [chip.note.midi] : (fill?.midis ?? []);
-      this.s.lights.setExactly('rh', this.snap.rhOn ? rh : []);
-      this.s.lights.setExactly(
-        'lh',
-        this.snap.lhOn && chord ? chord.voicing.map((n) => n.midi) : [],
-      );
+      // The keyboard follows the MIDI events actually sent to the transport.
+      // This includes authored LH notes, chord patterns and optional RH fills.
+      this.s.lights.setExactly('rh', this.snap.rhOn ? this.soundingKeys('rh', beat) : []);
+      this.s.lights.setExactly('lh', this.snap.lhOn ? this.soundingKeys('lh', beat) : []);
     } else {
       this.s.lights.clear('rh');
       this.s.lights.clear('lh');

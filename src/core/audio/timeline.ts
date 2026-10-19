@@ -26,3 +26,29 @@ export function firstIndexAtOrAfter(events: readonly { beat: number }[], beat: n
   }
   return lo;
 }
+
+/**
+ * Which keys have notes actively sounding in the transport at `performanceBeat`.
+ * The source is the same sorted note-on/off timeline sent to the audio scheduler,
+ * rather than a chord's theoretical voicing. Overlapping notes share one lit key.
+ *
+ * `warp` must be the transport's performanceBeat transform so swung notes
+ * light on their audible onset and release (identity for straight playback).
+ * A note is lit from its onset up to, but not including, its release.
+ */
+export function activeEventMidis(
+  events: readonly TimelineEvent[],
+  channel: Channel,
+  performanceBeat: number,
+  warp: (beat: number) => number = (beat) => beat,
+): number[] {
+  const active = new Set<number>();
+  for (const event of events) {
+    if (event.channel !== channel) continue;
+    const start = warp(event.beat);
+    // Events are sorted by beat; the swing warp is monotonic.
+    if (start > performanceBeat) break;
+    if (performanceBeat < warp(event.beat + event.dur)) active.add(event.midi);
+  }
+  return [...active].sort((a, b) => a - b);
+}
