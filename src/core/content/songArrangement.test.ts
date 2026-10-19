@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getSong } from '@/content/lessons';
+import { PATTERNS } from '@/content/patterns';
 import { compileLesson } from './compile';
 import { compileSongArrangement, DEFAULT_SONG_ARRANGEMENT } from './songArrangement';
-import { PATTERNS } from '@/content/patterns';
 
 const song = getSong('morning-ferry-easy')!;
 
@@ -41,7 +41,10 @@ describe('compileSongArrangement', () => {
 
   it('rejects a pattern for a different meter', () => {
     const baseline = compileSongArrangement(song, DEFAULT_SONG_ARRANGEMENT);
-    const wrongMeter = compileSongArrangement(song, { ...DEFAULT_SONG_ARRANGEMENT, pattern: 'waltz' });
+    const wrongMeter = compileSongArrangement(song, {
+      ...DEFAULT_SONG_ARRANGEMENT,
+      pattern: 'waltz',
+    });
     expect(wrongMeter.events).toEqual(baseline.events);
   });
 });
