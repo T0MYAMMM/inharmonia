@@ -41,9 +41,7 @@ export function compileSongArrangement(
     !!chosen &&
     (chosen.beatsPerBar === undefined || chosen.beatsPerBar === lesson.meter.beats);
   const revoice =
-    options.chordOctave !== 0 ||
-    options.voicing !== 'original' ||
-    options.inversion !== 'original';
+    options.chordOctave !== 0 || options.voicing !== 'original' || options.inversion !== 'original';
 
   const arranged: Lesson = {
     ...lesson,
