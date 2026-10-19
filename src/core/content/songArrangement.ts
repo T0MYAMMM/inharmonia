@@ -77,7 +77,6 @@ export function compileSongArrangement(
     arranged.lhPattern = chosen.id;
   }
   const compiled = compileLesson(arranged, PATTERNS);
-  if (usePattern) compiled.practiceAccompaniment = true;
 
   const fill = FILLS.find((candidate) => candidate.id === options.fill && candidate.hand === 'rh');
   // N.C. cannot be used as a fill's harmonic source or destination.
