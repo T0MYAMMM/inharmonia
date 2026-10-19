@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
 import { audio, lights } from '@/app/services';
@@ -34,6 +34,9 @@ function parseStyle(v: string | null): VoicingStyle {
   const found = VOICING_STYLES.find((s) => s.id === v);
   return found ? found.id : 'close';
 }
+
+/** Note slots in "How it is built": the most tones any quality has, so no chord resizes it. */
+const TONE_SLOTS = Math.max(...CHORD_QUALITIES.map((q) => parseChord(`C${q.suffix}`).tones.length));
 
 const prettyRoot = (r: string) => r.replace('#', '♯').replace(/(?<=[A-G])b/, '♭');
 
@@ -149,35 +152,42 @@ export function ChordLibraryPage() {
           ))}
         </div>
 
-        <Card className={styles.areaSymbol}>
-          <div className={styles.symbol} data-testid="chord-symbol">
-            {prettyChord(symbol)}
-          </div>
-          <p className={styles.name}>
-            {prettyRoot(root)} {quality.name.toLowerCase()}
-          </p>
-        </Card>
+        <div className={`${styles.head} ${styles.areaHead}`}>
+          <Card className={styles.symbolCard}>
+            <div className={styles.headSymbol} data-testid="chord-symbol">
+              {prettyChord(symbol)}
+            </div>
+            <p className={styles.name}>
+              {prettyRoot(root)} {quality.name.toLowerCase()}
+            </p>
+          </Card>
 
-        <Card title="How it is built" className={styles.areaBuilt}>
-          <div className={styles.tones}>
-            {info.tones.map((pc, i) => {
-              const n = voicing.find((v) => v.name.replace(/-?\d+$/, '') === pc) ?? voicing[0]!;
-              return (
-                <div key={pc} className={styles.tone}>
-                  <span className={styles.toneNote}>
-                    <NoteLabel
-                      label={formatNote(n, key, { system: notation, accidentalStyle })}
-                      angka={angka}
-                      accidentalStyle={accidentalStyle}
-                    />
-                  </span>
-                  <span className={styles.toneDegree}>{info.formula[i]}</span>
-                  <span className={styles.toneInterval}>{info.intervalNames[i]}</span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+          <Card className={styles.builtCard}>
+            <h2 className={styles.builtTitle}>How it is built</h2>
+            <div
+              className={styles.slots}
+              style={{ '--slots': TONE_SLOTS } as CSSProperties}
+              data-testid="chord-tones"
+            >
+              {info.tones.map((pc, i) => {
+                const n = voicing.find((v) => v.name.replace(/-?\d+$/, '') === pc) ?? voicing[0]!;
+                return (
+                  <div key={pc} className={styles.slot} title={info.intervalNames[i]}>
+                    <span className={styles.toneNote}>
+                      <NoteLabel
+                        label={formatNote(n, key, { system: notation, accidentalStyle })}
+                        angka={angka}
+                        accidentalStyle={accidentalStyle}
+                      />
+                    </span>
+                    <span className={styles.toneDegree}>{info.formula[i]}</span>
+                    <span className="visually-hidden">{info.intervalNames[i]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
 
         <Card title="Voicing" className={styles.areaVoicing}>
           <div className={page.prose} style={{ gap: 'var(--space-3)', maxWidth: 'none' }}>
