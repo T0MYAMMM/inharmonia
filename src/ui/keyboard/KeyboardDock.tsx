@@ -35,7 +35,7 @@ export function KeyboardDock({
             {showTarget ? 'Right hand, target' : 'Right hand'}
           </span>
           <span className={styles.swatch} style={{ '--c': 'var(--dusk)' } as CSSProperties}>
-            Left hand, chord
+            Left hand
           </span>
           {extra}
           <span className={styles.spacer} />
