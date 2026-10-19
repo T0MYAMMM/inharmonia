@@ -1,11 +1,10 @@
 import { FILLS } from '@/content/fills';
 import { PATTERNS } from '@/content/patterns';
 import { sortTimeline } from '../audio/timeline';
+import { transposeNote, voiceChord, type VoicingStyle } from '../theory';
 import { compileLesson, resolveVoicing, soundingSpans, type CompiledLesson } from './compile';
 import { withFills } from './fills';
 import { NO_CHORD, type Lesson } from './types';
-import { transposeNote, voiceChord, type VoicingStyle } from '../theory';
-
 /** Playback-only arrangement choices. The authored song and its exported file stay unchanged. */
 export interface SongArrangementOptions {
   /** 'original' keeps the song's written/assigned left hand. */
@@ -42,7 +41,9 @@ export function compileSongArrangement(
     !!chosen &&
     (chosen.beatsPerBar === undefined || chosen.beatsPerBar === lesson.meter.beats);
   const revoice =
-    options.chordOctave !== 0 || options.voicing !== 'original' || options.inversion !== 'original';
+    options.chordOctave !== 0 ||
+    options.voicing !== 'original' ||
+    options.inversion !== 'original';
 
   const arranged: Lesson = {
     ...lesson,
@@ -63,9 +64,7 @@ export function compileSongArrangement(
           return {
             ...chord,
             voicing: {
-              notes: notes.map((note) =>
-                transposeNote(note, options.chordOctave * 12).name,
-              ),
+              notes: notes.map((note) => transposeNote(note, options.chordOctave * 12).name),
             },
           };
         });
@@ -95,7 +94,9 @@ export function compileSongArrangement(
     const transition = /^fill-(\d+)-/.exec(event.id)?.[1];
     if (
       transition !== undefined &&
-      melody.some((note) => event.beat < note.end - EPS && event.beat + event.dur > note.start + EPS)
+      melody.some(
+        (note) => event.beat < note.end - EPS && event.beat + event.dur > note.start + EPS,
+      )
     )
       blocked.add(transition);
   }
@@ -104,10 +105,7 @@ export function compileSongArrangement(
     return transition !== undefined && !blocked.has(transition);
   });
   const visible = decorated.fills?.filter((hit) =>
-    safe.some(
-      (event) =>
-        Math.abs(event.beat - hit.beat) < EPS && hit.midis.includes(event.midi),
-    ),
+    safe.some((event) => Math.abs(event.beat - hit.beat) < EPS && hit.midis.includes(event.midi)),
   );
   return {
     ...compiled,
