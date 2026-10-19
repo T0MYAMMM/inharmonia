@@ -22,16 +22,24 @@ test.describe('song player', () => {
     await expect(page.getByRole('heading', { name: 'Chorus' })).toBeVisible();
   });
 
-  test('listen: plays, lights melody amber and the chord dusk, pauses', async ({ page }) => {
+  test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
     await expect(page.getByTestId('play')).toHaveText('Pause');
-    await expect.poll(() => lit(page, 'lh')).toEqual([38, 45, 49, 54]); // Dmaj7 voicing
+    // Senja uses a sustained arpeggio: the chord tones enter one by one.\n    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(0);\n    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(1);
     await expect.poll(async () => (await lit(page, 'rh')).length).toBe(1);
     await page.getByTestId('play').click();
     await expect(page.getByTestId('play')).toHaveText('Play');
     await expect(page.locator('[data-state="active"]')).toHaveCount(1); // stays marked when paused
     await expect.poll(() => lit(page, 'lh')).toEqual([]); // nothing lit when not playing
+  });
+
+  test('listen: arrangement change lights real block-chord notes', async ({ page }) => {
+    await open(page);
+    await page.getByTestId('song-arrangement').locator('summary').click();
+    await page.getByTestId('song-pattern').selectOption('block');
+    await page.getByTestId('play').click();
+    await expect.poll(() => lit(page, 'lh')).toEqual([38, 45, 49, 54]);
   });
 
   test('listen: Space toggles play only when the page itself has focus', async ({
