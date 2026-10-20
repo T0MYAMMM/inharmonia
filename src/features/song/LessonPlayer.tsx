@@ -19,7 +19,8 @@ import { Segmented } from '@/ui/Segmented';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { dockRangeFor, KeyboardDock } from '@/ui/keyboard';
-import { Score } from './Score';
+import { Score, type FallingViewOptions } from './Score';
+import { FallingNotes } from './FallingNotes';
 import { SongController, type SongMode } from './SongController';
 import styles from './SongPage.module.css';
 
@@ -81,7 +82,7 @@ export function LessonPlayer({
   voicingHints = false,
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
-  const [fallingVisible, setFallingVisible] = useState(false);
+  const [fallingOptions, setFallingOptions] = useState<FallingViewOptions | null>(null);
   const [ctrl] = useState(
     () =>
       new SongController(compiled, {
@@ -347,20 +348,33 @@ export function LessonPlayer({
         targetBeat={snap.targetBeat}
         showNumerals={showNumerals ?? progression}
         chordScores={snap.chordScores}
-        onFallingChange={setFallingVisible}
-        falling={{
-          visualBeat,
-          performanceBeat,
-          playing: snap.transport === 'playing',
-          rhOn: snap.rhOn,
-          lhOn: snap.lhOn,
-          keyboard: { low, high, focus, showTarget: practice && !progression },
-        }}
+        onFallingChange={setFallingOptions}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
-      {!fallingVisible ? (
-        <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
-      ) : null}
+      <KeyboardDock
+        focus={focus}
+        low={low}
+        high={high}
+        showTarget={practice && !progression}
+        roll={
+          fallingOptions ? (
+            <FallingNotes
+              compiled={compiled}
+              hand={fallingOptions.hand}
+              lookAheadBeats={fallingOptions.lookAheadBeats}
+              mode={snap.mode}
+              playing={playing}
+              visualBeat={visualBeat}
+              performanceBeat={performanceBeat}
+              rhOn={snap.rhOn}
+              lhOn={snap.lhOn}
+              targetBeat={snap.targetBeat}
+              low={low}
+              high={high}
+            />
+          ) : undefined
+        }
+      />
     </>
   );
 }
