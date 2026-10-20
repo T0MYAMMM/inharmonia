@@ -146,8 +146,15 @@ test.describe('song player', () => {
       const r = right?.getBoundingClientRect();
       const c = scroller?.getBoundingClientRect();
       return l && r && c
-        ? { leftRight: l.right, rightLeft: r.left, centerLeft: c.left, centerRight: c.right,
-            leftBottom: l.bottom, rightBottom: r.bottom, centerTop: c.top }
+        ? {
+            leftRight: l.right,
+            rightLeft: r.left,
+            centerLeft: c.left,
+            centerRight: c.right,
+            leftBottom: l.bottom,
+            rightBottom: r.bottom,
+            centerTop: c.top,
+          }
         : null;
     });
     expect(layout).not.toBeNull();
@@ -217,8 +224,12 @@ test.describe('song player', () => {
     await expect(dock).toHaveAttribute('data-immersive', 'true');
     await expect(controls).toBeVisible();
 
-    await expect(page.getByTestId('falling-panel-left').getByRole('heading', { name: 'Playback' })).toBeVisible();
-    await expect(page.getByTestId('falling-panel-right').getByRole('heading', { name: 'Hands & arrangement' })).toBeVisible();
+    await expect(
+      page.getByTestId('falling-panel-left').getByRole('heading', { name: 'Playback' }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId('falling-panel-right').getByRole('heading', { name: 'Hands & arrangement' }),
+    ).toBeVisible();
     const loop = controls.getByRole('button', { name: 'Loop' });
     const metro = controls.getByRole('button', { name: 'Metronome' });
     const loopBefore = await loop.getAttribute('aria-pressed');
