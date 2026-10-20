@@ -36,7 +36,7 @@ function props(level: 'easy' | 'advanced', onSelectBar = vi.fn()): ScoreProps {
   return {
     compiled: compileLesson(lesson(level), PATTERNS),
     notation: 'letter',
-    accidentalStyle: 'sharp',
+    accidentalStyle: 'slash',
     mode: 'listen',
     currentBar: 0,
     activeChipId: null,
