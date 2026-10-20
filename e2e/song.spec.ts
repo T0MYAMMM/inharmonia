@@ -22,6 +22,34 @@ test.describe('song player', () => {
     await expect(page.getByRole('heading', { name: 'Chorus' })).toBeVisible();
   });
 
+  test('score view follows a single measure with zoom, navigation and overview', async ({
+    page,
+  }) => {
+    await open(page);
+    const score = page.locator('[data-score-view]');
+    await expect(score).toHaveAttribute('data-score-view', 'overview');
+    await expect(score.locator('[data-bar]')).toHaveCount(16);
+
+    await page.getByRole('radio', { name: 'Follow Along' }).click();
+    await expect(score).toHaveAttribute('data-score-view', 'follow');
+    await expect(score.locator('[data-bar]')).toHaveCount(1);
+    const slot = score.locator('[data-note-slot]').first();
+    const before = await slot.evaluate((el) => el.getBoundingClientRect().width);
+    await page.getByRole('slider', { name: 'Note size' }).press('ArrowRight');
+    await expect(page.getByText('Note size: 125%')).toBeVisible();
+    const after = await slot.evaluate((el) => el.getBoundingClientRect().width);
+    expect(after).toBeGreaterThan(before);
+
+    await page.getByRole('button', { name: 'Next bar' }).click();
+    await expect(page.getByTestId('status-line')).toContainText('Bar 2 of 16');
+    await expect(score.locator('[data-bar="1"]')).toBeVisible();
+    await page.getByRole('combobox', { name: 'Jump to section' }).selectOption('8');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 9 of 16');
+
+    await page.getByRole('radio', { name: 'Overview' }).click();
+    await expect(score.locator('[data-bar]')).toHaveCount(16);
+  });
+
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
