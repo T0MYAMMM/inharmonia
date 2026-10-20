@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 import { KEY_HINTS, BASE_MIDI } from '@/core/input';
 import { bindPointerInput } from '@/core/input/pointer';
 import type { NoteStream } from '@/core/input';
@@ -18,6 +18,8 @@ export interface KeyboardProps {
   focus?: [number, number];
   onGesture?: () => void;
   label?: string;
+  /** Content directly above the keys, with identical width and horizontal scrolling. */
+  roll?: ReactNode;
 }
 
 /**
@@ -34,6 +36,7 @@ export function Keyboard({
   focus,
   onGesture,
   label = 'Piano keyboard',
+  roll,
 }: KeyboardProps) {
   const { keys, width } = useMemo(() => layoutKeys(low, high), [low, high]);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -92,7 +95,12 @@ export function Keyboard({
   const boardStyle = { width: `calc(var(--w) * ${width})` } as CSSProperties;
 
   return (
-    <div ref={scrollerRef} className={styles.scroller}>
+    <div ref={scrollerRef} className={styles.scroller} data-keyboard-scroller>
+      {roll ? (
+        <div className={styles.roll} style={boardStyle} data-testid="keyboard-roll">
+          {roll}
+        </div>
+      ) : null}
       <div
         ref={boardRef}
         className={[styles.keyboard, showHints && styles.showHints].filter(Boolean).join(' ')}

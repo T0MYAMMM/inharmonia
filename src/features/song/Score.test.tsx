@@ -90,6 +90,33 @@ describe('adaptive score layout', () => {
     expect(container.querySelectorAll('[data-chip]')).toHaveLength(8);
   });
 
+  it('moves Falling Notes settings to the floating keyboard while leaving the score unboxed', () => {
+    const onFallingChange = vi.fn();
+    const p = props('easy');
+    const { container, rerender } = render(<Score {...p} onFallingChange={onFallingChange} />);
+    expect(onFallingChange).toHaveBeenLastCalledWith(null);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Falling Notes' }));
+    expect(container.firstElementChild).toHaveAttribute('data-score-view', 'falling');
+    expect(screen.getByTestId('falling-score-hint')).toBeInTheDocument();
+    expect(screen.queryByTestId('falling-notes')).not.toBeInTheDocument();
+    expect(onFallingChange).toHaveBeenLastCalledWith({ hand: 'both', lookAheadBeats: 4 });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Displayed hands' }), {
+      target: { value: 'lh' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Look ahead' }), {
+      target: { value: '8' },
+    });
+    expect(onFallingChange).toHaveBeenLastCalledWith({ hand: 'lh', lookAheadBeats: 8 });
+
+    rerender(<Score {...p} mode="practice" targetBeat={2} onFallingChange={onFallingChange} />);
+    expect(screen.getByTestId('falling-score-hint')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Overview' }));
+    expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
+    expect(onFallingChange).toHaveBeenLastCalledWith(null);
+  });
+
   it('keeps score navigation out of progression drills', () => {
     const p = props('easy');
     const progression = {

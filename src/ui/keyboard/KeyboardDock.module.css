@@ -108,3 +108,176 @@
     gap: 4px 12px;
   }
 }
+
+.fullScreenButton {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 6px 13px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fullScreenButton:hover,
+.fullScreenButton:focus-visible {
+  border-color: var(--amber);
+}
+
+.immersiveWorkspace {
+  /* display:contents preserves the floating keyboard's original layout. */
+  display: contents;
+}
+
+.immersiveControls {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  padding: 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.immersiveControls button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 7px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.immersiveControls button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Both native fullscreen and the CSS fallback keep the same REAL piano and
+   grow only the roll backdrop. The keyboard itself stays touch/MIDI playable. */
+.dock[data-immersive],
+.dock:fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  bottom: 0 !important;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0 !important;
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  box-shadow: none;
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dock[data-immersive] .inner,
+.dock:fullscreen .inner {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dock[data-immersive] .legend,
+.dock:fullscreen .legend {
+  flex: 0 0 auto;
+}
+
+/* Three-column workspace: independent vertical side controls, one piano in
+   the center. The piano roll and keyboard remain in the SAME scroll surface. */
+.dock[data-immersive] .immersiveWorkspace,
+.dock:fullscreen .immersiveWorkspace {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(8px, 1vw, 16px);
+  grid-template-columns:
+    clamp(190px, 19vw, 270px)
+    minmax(0, 1fr)
+    clamp(210px, 22vw, 300px);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'left piano right';
+}
+
+.dock[data-immersive] [data-testid='falling-panel-left'],
+.dock:fullscreen [data-testid='falling-panel-left'] {
+  grid-area: left;
+}
+
+.dock[data-immersive] [data-testid='falling-panel-right'],
+.dock:fullscreen [data-testid='falling-panel-right'] {
+  grid-area: right;
+}
+
+.dock[data-immersive] [data-keyboard-scroller],
+.dock:fullscreen [data-keyboard-scroller] {
+  grid-area: piano;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.dock[data-immersive] [data-testid='keyboard-roll'],
+.dock:fullscreen [data-testid='keyboard-roll'] {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.dock[data-immersive] [data-testid='keyboard'],
+.dock:fullscreen [data-testid='keyboard'] {
+  flex: 0 0 auto;
+}
+
+/* Narrow portrait screens put compact, individually scrollable controls in
+   two rows above the roll. Landscape tablets retain the left/right rail. */
+@media (max-width: 820px) {
+  .dock[data-immersive] .immersiveWorkspace,
+  .dock:fullscreen .immersiveWorkspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+    grid-template-areas: 'left right' 'piano piano';
+    gap: 6px;
+  }
+
+  .dock[data-immersive] .immersiveControls,
+  .dock:fullscreen .immersiveControls {
+    max-height: min(27dvh, 185px);
+    padding: 8px;
+  }
+}
+
+@media (max-width: 820px) and (max-height: 500px) {
+  .dock[data-immersive] .immersiveControls,
+  .dock:fullscreen .immersiveControls {
+    max-height: 25dvh;
+  }
+}

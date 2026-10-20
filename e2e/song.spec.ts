@@ -50,6 +50,250 @@ test.describe('song player', () => {
     await expect(score.locator('[data-bar]')).toHaveCount(16);
   });
 
+  test('Falling Notes plays in sync with the transport and survives mode changes', async ({
+    page,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    const roll = page.getByTestId('falling-notes');
+    await expect(roll).toBeVisible();
+    await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
+    // The ONE piano must remain sticky at the bottom of the page in every mode.
+    const dock = page.locator('[data-dock]');
+    await expect(dock).toHaveCount(1);
+    await expect(dock).toHaveAttribute('data-falling', 'true');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+    await expect(page.getByTestId('falling-score-hint')).toBeVisible();
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    const shared = dock.locator('[data-keyboard-scroller]');
+    await expect(shared.getByTestId('keyboard-roll')).toBeVisible();
+    await expect(shared.getByTestId('keyboard')).toBeVisible();
+    await expect(shared.getByTestId('falling-notes')).toBeVisible();
+    const alignment = await shared.evaluate((element) => {
+      const rollElement = element.querySelector<HTMLElement>('[data-testid="keyboard-roll"]');
+      const board = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
+      const key = board?.querySelector<HTMLElement>('[data-midi="60"]');
+      if (!rollElement || !board || !key) return null;
+      const rollRect = rollElement.getBoundingClientRect();
+      const boardRect = board.getBoundingClientRect();
+      const keyRect = key.getBoundingClientRect();
+      return {
+        leftDifference: Math.abs(rollRect.left - boardRect.left),
+        widthDifference: Math.abs(rollRect.width - boardRect.width),
+        keyIsInsideRoll: keyRect.left >= rollRect.left && keyRect.right <= rollRect.right,
+      };
+    });
+    expect(alignment).not.toBeNull();
+    expect(alignment!.leftDifference).toBeLessThan(2);
+    expect(alignment!.widthDifference).toBeLessThan(2);
+    expect(alignment!.keyIsInsideRoll).toBe(true);
+    await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'falling');
+
+    await page.getByTestId('falling-hand').selectOption('lh');
+    await page.getByTestId('falling-lookahead').selectOption('8');
+    await expect(page.getByTestId('falling-hand')).toHaveValue('lh');
+
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(0);
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Play');
+
+    await page.getByRole('radio', { name: 'Practice', exact: true }).click();
+    await expect(dock).toHaveAttribute('data-falling', 'true');
+    await page.locator('[data-midi="69"]').click(); // Senja starts on A4; the same piano is playable.
+    await expect(page.getByTestId('counts')).toHaveText('1 hit, 0 misses');
+    await expect(page.getByTestId('play')).toBeDisabled();
+    await page.getByRole('radio', { name: 'Overview' }).click();
+    await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'overview');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    await expect(dock).not.toHaveAttribute('data-falling');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+  });
+
+  test('Falling Notes Full Screen expands the same piano and restores the floating dock', async ({
+    page,
+    isMobile,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    const dock = page.locator('[data-dock]');
+    const keyboard = page.getByTestId('keyboard');
+    const roll = page.getByTestId('keyboard-roll');
+    await expect(keyboard).toHaveCount(1);
+    await expect(dock).not.toHaveAttribute('data-immersive');
+
+    // Exercise the no-Fullscreen-API fallback used by mobile Safari and PWA windows.
+    await page.evaluate(() => {
+      Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit Full Screen');
+    await expect(page.getByTestId('falling-fullscreen-controls')).toBeVisible();
+    const leftPanel = page.getByTestId('falling-panel-left');
+    const rightPanel = page.getByTestId('falling-panel-right');
+    await expect(leftPanel).toBeVisible();
+    await expect(rightPanel).toBeVisible();
+    const layout = await dock.evaluate((element) => {
+      const left = element.querySelector<HTMLElement>('[data-testid="falling-panel-left"]');
+      const right = element.querySelector<HTMLElement>('[data-testid="falling-panel-right"]');
+      const scroller = element.querySelector<HTMLElement>('[data-keyboard-scroller]');
+      const l = left?.getBoundingClientRect();
+      const r = right?.getBoundingClientRect();
+      const c = scroller?.getBoundingClientRect();
+      return l && r && c
+        ? {
+            leftRight: l.right,
+            rightLeft: r.left,
+            centerLeft: c.left,
+            centerRight: c.right,
+            leftBottom: l.bottom,
+            rightBottom: r.bottom,
+            centerTop: c.top,
+          }
+        : null;
+    });
+    expect(layout).not.toBeNull();
+    if (isMobile) {
+      expect(layout!.leftBottom).toBeLessThanOrEqual(layout!.centerTop + 3);
+      expect(layout!.rightBottom).toBeLessThanOrEqual(layout!.centerTop + 3);
+    } else {
+      expect(layout!.leftRight).toBeLessThanOrEqual(layout!.centerLeft + 3);
+      expect(layout!.rightLeft).toBeGreaterThanOrEqual(layout!.centerRight - 3);
+    }
+    await expect(keyboard).toHaveCount(1);
+    const dimensions = await dock.evaluate((element) => {
+      const piano = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
+      const rollElement = element.querySelector<HTMLElement>('[data-testid="keyboard-roll"]');
+      const bounds = element.getBoundingClientRect();
+      const pianoBounds = piano?.getBoundingClientRect();
+      const rollBounds = rollElement?.getBoundingClientRect();
+      return {
+        position: getComputedStyle(element).position,
+        height: bounds.height,
+        viewport: window.innerHeight,
+        rollHeight: rollBounds?.height ?? 0,
+        rollEndsAtPiano: Math.abs((rollBounds?.bottom ?? 0) - (pianoBounds?.top ?? 0)),
+      };
+    });
+    expect(dimensions.position).toBe('fixed');
+    expect(Math.abs(dimensions.height - dimensions.viewport)).toBeLessThan(3);
+    expect(dimensions.rollHeight).toBeGreaterThan(60);
+    expect(dimensions.rollEndsAtPiano).toBeLessThan(4);
+
+    await page.getByTestId('fullscreen-play').click();
+    await expect(page.getByTestId('fullscreen-play')).toHaveText('Pause');
+    await page.getByTestId('fullscreen-play').click();
+    await expect(page.getByTestId('fullscreen-play')).toHaveText('Play');
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+    await expect(keyboard).toHaveCount(1);
+    await expect(roll).toBeVisible();
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await page.keyboard.press('Escape');
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    await page.getByRole('radio', { name: 'Overview' }).click();
+    await expect(page.getByTestId('falling-fullscreen')).toHaveCount(0);
+    await expect(keyboard).toHaveCount(1);
+  });
+
+  test('Full Screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
+    page,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+
+    // CSS fallback exercises browsers where Fullscreen API is unavailable.
+    await page.evaluate(() => {
+      Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+    await page.getByTestId('falling-fullscreen').click();
+    const dock = page.locator('[data-dock]');
+    const controls = page.getByTestId('falling-fullscreen-controls');
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(controls).toBeVisible();
+
+    await expect(
+      page.getByTestId('falling-panel-left').getByRole('heading', { name: 'Playback' }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId('falling-panel-right').getByRole('heading', { name: 'Hands & arrangement' }),
+    ).toBeVisible();
+    const loop = controls.getByRole('button', { name: 'Loop' });
+    const metro = controls.getByRole('button', { name: 'Metronome' });
+    const loopBefore = await loop.getAttribute('aria-pressed');
+    const metroBefore = await metro.getAttribute('aria-pressed');
+    const loopAfter = loopBefore === 'true' ? 'false' : 'true';
+    const metroAfter = metroBefore === 'true' ? 'false' : 'true';
+    await loop.click();
+    await metro.click();
+    await expect(loop).toHaveAttribute('aria-pressed', loopAfter);
+    await expect(metro).toHaveAttribute('aria-pressed', metroAfter);
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('button', { name: 'Loop' }),
+    ).toHaveAttribute('aria-pressed', loopAfter);
+
+    const tempo = controls.getByTestId('fullscreen-tempo');
+    const initialTempo = Number(await tempo.inputValue());
+    await tempo.focus();
+    await tempo.press('ArrowRight');
+    await expect.poll(async () => Number(await tempo.inputValue())).toBe(initialTempo + 1);
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('slider', { name: 'Tempo' }),
+    ).toHaveValue(String(initialTempo + 1));
+
+    const melody = controls.getByRole('button', { name: 'Melody' });
+    await melody.click();
+    await expect(melody).toHaveAttribute('aria-pressed', 'false');
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('button', { name: 'Melody' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+
+    await controls.getByTestId('fullscreen-countin').selectOption('1');
+    await controls.getByTestId('fullscreen-falling-hand').selectOption('rh');
+    await controls.getByTestId('fullscreen-falling-lookahead').selectOption('8');
+    await expect(page.getByTestId('falling-hand')).toHaveValue('rh');
+    await expect(page.getByTestId('falling-lookahead')).toHaveValue('8');
+
+    const arrangement = controls.getByTestId('fullscreen-song-arrangement');
+    await arrangement.locator('summary').click();
+    await controls.getByTestId('fullscreen-song-pattern').selectOption('block');
+    await expect(page).toHaveURL(/pattern=block/);
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    await expect(page.getByTestId('song-pattern')).toHaveValue('block');
+
+    await controls.getByRole('radio', { name: 'Practice' }).click();
+    await expect(
+      controls.getByRole('radiogroup', { name: 'Full Screen practice hand' }),
+    ).toBeVisible();
+    await controls
+      .getByRole('radiogroup', { name: 'Full Screen practice hand' })
+      .getByRole('radio', { name: 'Both hands' })
+      .click();
+    await expect(
+      page
+        .locator('[data-sticky-panel]')
+        .getByRole('radiogroup', { name: 'Practice hand' })
+        .getByRole('radio', { name: 'Both hands' }),
+    ).toBeChecked();
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+  });
+
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
