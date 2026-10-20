@@ -161,7 +161,10 @@ export function KeyboardDock({
             Keys A to ' play {keyName(base)} to {keyName(base + 17)}, Z and X shift octave
           </span>
         </div>
-        <div className={styles.immersiveWorkspace} data-testid="falling-fullscreen-controls">
+        <div
+          className={styles.immersiveWorkspace}
+          data-testid={fullScreen ? 'falling-fullscreen-controls' : undefined}
+        >
           {fullScreen && fullScreenControls ? (
             <aside className={styles.immersiveControls} aria-label="Playback settings" data-testid="falling-panel-left">
               {fullScreenControls.left}
