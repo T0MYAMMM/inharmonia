@@ -90,6 +90,35 @@ describe('adaptive score layout', () => {
     expect(container.querySelectorAll('[data-chip]')).toHaveLength(8);
   });
 
+  it('offers Falling Notes with hand focus and a selectable look-ahead without replaying the song', () => {
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    try {
+      const p = props('easy');
+      const { container, rerender } = render(<Score {...p} />);
+      fireEvent.click(screen.getByRole('radio', { name: 'Falling Notes' }));
+      expect(container.firstElementChild).toHaveAttribute('data-score-view', 'falling');
+      expect(screen.getByTestId('falling-notes')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: /Falling piano notes/ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Next bar' })).not.toBeInTheDocument();
+
+      fireEvent.change(screen.getByRole('combobox', { name: 'Displayed hands' }), {
+        target: { value: 'lh' },
+      });
+      expect(screen.getByRole('combobox', { name: 'Displayed hands' })).toHaveValue('lh');
+      fireEvent.change(screen.getByRole('combobox', { name: 'Look ahead' }), {
+        target: { value: '8' },
+      });
+      expect(screen.getByRole('combobox', { name: 'Look ahead' })).toHaveValue('8');
+
+      rerender(<Score {...p} mode="practice" targetBeat={2} />);
+      expect(screen.getByText(/notes wait at your current practice target/i)).toBeVisible();
+      fireEvent.click(screen.getByRole('radio', { name: 'Overview' }));
+      expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
+    } finally {
+      context.mockRestore();
+    }
+  });
+
   it('keeps score navigation out of progression drills', () => {
     const p = props('easy');
     const progression = {
