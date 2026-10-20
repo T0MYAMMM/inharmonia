@@ -36,6 +36,7 @@ export function FallingNotes({
   compiled,
   hand,
   lookAheadBeats,
+  mode,
   playing,
   visualBeat,
   performanceBeat,
