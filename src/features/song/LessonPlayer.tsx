@@ -363,6 +363,7 @@ export function LessonPlayer({
                 Bar {snap.bar + 1} / {compiled.bars.length}
                 {snap.chordSymbol ? ' · ' + formatChord(snap.chordSymbol, lesson.key, notation) : ''}
               </span>
+              <Segmented label="Full Screen mode" value={snap.mode} options={progression ? PROGRESSION_MODES : SONG_MODES} onChange={(m) => ctrl.setMode(m)} />
               <div className={styles.fullScreenGroup}>
                 <Button
                   variant="primary"
@@ -408,6 +409,19 @@ export function LessonPlayer({
                   />
                 </label>
               ) : null}
+              <label className={styles.fullScreenField}>
+                Count-in
+                <select
+                  aria-label="Full Screen count-in"
+                  data-testid="fullscreen-countin"
+                  value={countInBars}
+                  onChange={(event) => setSettings({ countInBars: Number(event.target.value) })}
+                >
+                  <option value={0}>Off</option>
+                  <option value={1}>1 bar</option>
+                  <option value={2}>2 bars</option>
+                </select>
+              </label>
               <label className={styles.fullScreenField}>
                 View
                 <select
