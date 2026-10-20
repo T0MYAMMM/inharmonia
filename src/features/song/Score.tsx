@@ -78,7 +78,10 @@ export function Score(props: ScoreProps) {
   const [fallingHand, setFallingHand] = useState<FallingHand>('both');
   const [lookAheadBeats, setLookAheadBeats] = useState(4);
   const shownView = isSong ? view : 'overview';
-  useEffect(() => props.onFallingChange?.(shownView === 'falling'), [props.onFallingChange, shownView]);
+  useEffect(
+    () => props.onFallingChange?.(shownView === 'falling'),
+    [props.onFallingChange, shownView],
+  );
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
   const sectionAt = [...sections].reverse().find((sec) => sec.startIndex <= current.index);
