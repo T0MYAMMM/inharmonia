@@ -16,7 +16,10 @@ export interface FallingNote {
 const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
 
 /** An intentionally stable piano range across the lesson, not one that jumps on every note. */
-export function fallingKeyRange(events: readonly TimelineEvent[], hand: FallingHand): [number, number] {
+export function fallingKeyRange(
+  events: readonly TimelineEvent[],
+  hand: FallingHand,
+): [number, number] {
   const shown = events.filter(
     (event) => (hand === 'both' || event.channel === hand) && event.channel !== 'other',
   );
