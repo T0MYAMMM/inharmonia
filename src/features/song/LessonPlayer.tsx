@@ -361,9 +361,16 @@ export function LessonPlayer({
             <div className={styles.fullScreenBar}>
               <span className={styles.fullScreenPosition} data-testid="fullscreen-position">
                 Bar {snap.bar + 1} / {compiled.bars.length}
-                {snap.chordSymbol ? ' · ' + formatChord(snap.chordSymbol, lesson.key, notation) : ''}
+                {snap.chordSymbol
+                  ? ' · ' + formatChord(snap.chordSymbol, lesson.key, notation)
+                  : ''}
               </span>
-              <Segmented label="Full Screen mode" value={snap.mode} options={progression ? PROGRESSION_MODES : SONG_MODES} onChange={(m) => ctrl.setMode(m)} />
+              <Segmented
+                label="Full Screen mode"
+                value={snap.mode}
+                options={progression ? PROGRESSION_MODES : SONG_MODES}
+                onChange={(m) => ctrl.setMode(m)}
+              />
               <div className={styles.fullScreenGroup}>
                 <Button
                   variant="primary"
@@ -373,27 +380,46 @@ export function LessonPlayer({
                 >
                   {playing ? (playAlong ? 'Stop' : 'Pause') : 'Play'}
                 </Button>
-                <Button onClick={() => ctrl.restart()} disabled={practice} data-testid="fullscreen-restart">
+                <Button
+                  onClick={() => ctrl.restart()}
+                  disabled={practice}
+                  data-testid="fullscreen-restart"
+                >
                   Restart
                 </Button>
                 {practice ? (
                   <>
-                    <Button variant="primary" onClick={() => ctrl.hearIt()}>Hear it</Button>
+                    <Button variant="primary" onClick={() => ctrl.hearIt()}>
+                      Hear it
+                    </Button>
                     <Button onClick={() => ctrl.startOver()}>Start over</Button>
                   </>
                 ) : null}
               </div>
               <div className={styles.fullScreenGroup}>
                 {practice ? (
-                  <Segmented label="Full Screen practice hand" value={snap.hands} options={PRACTICE_HANDS} onChange={(v) => ctrl.setHands(v)} />
+                  <Segmented
+                    label="Full Screen practice hand"
+                    value={snap.hands}
+                    options={PRACTICE_HANDS}
+                    onChange={(v) => ctrl.setHands(v)}
+                  />
                 ) : (
                   <>
-                    <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>Loop</Toggle>
-                    <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>Metronome</Toggle>
+                    <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>
+                      Loop
+                    </Toggle>
+                    <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>
+                      Metronome
+                    </Toggle>
                   </>
                 )}
-                <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">Melody</Toggle>
-                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">Left hand</Toggle>
+                <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
+                  Melody
+                </Toggle>
+                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
+                  Left hand
+                </Toggle>
               </div>
               {!practice ? (
                 <label className={styles.fullScreenField}>
@@ -428,9 +454,13 @@ export function LessonPlayer({
                   aria-label="Full Screen displayed hands"
                   data-testid="fullscreen-falling-hand"
                   value={fallingOptions?.hand ?? 'both'}
-                  onChange={(event) => setFallingOptions((old) =>
-                    old ? { ...old, hand: event.target.value as FallingViewOptions['hand'] } : old
-                  )}
+                  onChange={(event) =>
+                    setFallingOptions((old) =>
+                      old
+                        ? { ...old, hand: event.target.value as FallingViewOptions['hand'] }
+                        : old,
+                    )
+                  }
                 >
                   <option value="both">Both hands</option>
                   <option value="rh">Right hand</option>
@@ -443,9 +473,11 @@ export function LessonPlayer({
                   aria-label="Full Screen look ahead"
                   data-testid="fullscreen-falling-lookahead"
                   value={fallingOptions?.lookAheadBeats ?? 4}
-                  onChange={(event) => setFallingOptions((old) =>
-                    old ? { ...old, lookAheadBeats: Number(event.target.value) } : old
-                  )}
+                  onChange={(event) =>
+                    setFallingOptions((old) =>
+                      old ? { ...old, lookAheadBeats: Number(event.target.value) } : old,
+                    )
+                  }
                 >
                   <option value={4}>4 beats</option>
                   <option value={8}>8 beats</option>
