@@ -58,11 +58,17 @@ test.describe('song player', () => {
     const roll = page.getByTestId('falling-notes');
     await expect(roll).toBeVisible();
     await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
-    // The roll and the single playable keyboard must share a scroll surface.
+    // The ONE piano must remain sticky at the bottom of the page in every mode.
+    const dock = page.locator('[data-dock]');
+    await expect(dock).toHaveCount(1);
+    await expect(dock).toHaveAttribute('data-falling', 'true');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+    await expect(page.getByTestId('falling-score-hint')).toBeVisible();
     await expect(page.getByTestId('keyboard')).toHaveCount(1);
-    const shared = roll.locator('[data-keyboard-scroller]');
+    const shared = dock.locator('[data-keyboard-scroller]');
     await expect(shared.getByTestId('keyboard-roll')).toBeVisible();
     await expect(shared.getByTestId('keyboard')).toBeVisible();
+    await expect(shared.getByTestId('falling-notes')).toBeVisible();
     const alignment = await shared.evaluate((element) => {
       const rollElement = element.querySelector<HTMLElement>('[data-testid="keyboard-roll"]');
       const board = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
@@ -94,14 +100,15 @@ test.describe('song player', () => {
     await expect(page.getByTestId('play')).toHaveText('Play');
 
     await page.getByRole('radio', { name: 'Practice', exact: true }).click();
-    await expect(roll.getByText(/notes wait at your current practice target/i)).toBeVisible();
+    await expect(dock).toHaveAttribute('data-falling', 'true');
     await page.locator('[data-midi="69"]').click(); // Senja starts on A4; the same piano is playable.
     await expect(page.getByTestId('counts')).toHaveText('1 hit, 0 misses');
     await expect(page.getByTestId('play')).toBeDisabled();
     await page.getByRole('radio', { name: 'Overview' }).click();
     await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'overview');
     await expect(page.getByTestId('keyboard')).toHaveCount(1);
-    await expect(page.locator('[data-dock]:not([data-inline])')).toHaveCount(1);
+    await expect(dock).not.toHaveAttribute('data-falling');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
   });
 
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
