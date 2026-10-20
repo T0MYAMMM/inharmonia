@@ -35,6 +35,8 @@ export interface ScoreProps {
   targetChordId: string | null;
   targetBeat: number;
   onSelectBar: (index: number) => void;
+  /** Hide the otherwise sticky keyboard while the interactive keys live under the roll. */
+  onFallingChange?: (falling: boolean) => void;
   /** Optional shared audio playhead, available in the song player. */
   falling?: {
     visualBeat: () => number;
@@ -42,6 +44,12 @@ export interface ScoreProps {
     playing: boolean;
     rhOn: boolean;
     lhOn: boolean;
+    keyboard?: {
+      low: number;
+      high: number;
+      focus: [number, number];
+      showTarget: boolean;
+    };
   };
 }
 
@@ -70,6 +78,7 @@ export function Score(props: ScoreProps) {
   const [fallingHand, setFallingHand] = useState<FallingHand>('both');
   const [lookAheadBeats, setLookAheadBeats] = useState(4);
   const shownView = isSong ? view : 'overview';
+  useEffect(() => props.onFallingChange?.(shownView === 'falling'), [props.onFallingChange, shownView]);
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
   const sectionAt = [...sections].reverse().find((sec) => sec.startIndex <= current.index);
@@ -210,6 +219,7 @@ export function Score(props: ScoreProps) {
           rhOn={props.falling?.rhOn ?? true}
           lhOn={props.falling?.lhOn ?? true}
           targetBeat={props.targetBeat}
+          keyboard={props.falling?.keyboard}
         />
       ) : shownView === 'follow' ? (
         <section className={styles.followSection} aria-label="Follow Along score">
