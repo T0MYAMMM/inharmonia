@@ -36,6 +36,8 @@ export interface ScoreProps {
   onSelectBar: (index: number) => void;
   /** Share the selected roll settings with the floating keyboard dock. */
   onFallingChange?: (options: FallingViewOptions | null) => void;
+  /** Controlled preferences so edits in Full Screen update the score toolbar. */
+  fallingSelected?: FallingViewOptions | null;
 }
 
 export interface FallingViewOptions {
@@ -65,8 +67,10 @@ export function Score(props: ScoreProps) {
       : 'overview',
   );
   const [zoom, setZoom] = useState(100);
-  const [fallingHand, setFallingHand] = useState<FallingHand>('both');
-  const [lookAheadBeats, setLookAheadBeats] = useState(4);
+  const [localFallingHand, setFallingHand] = useState<FallingHand>('both');
+  const [localLookAhead, setLookAheadBeats] = useState(4);
+  const fallingHand = props.fallingSelected?.hand ?? localFallingHand;
+  const lookAheadBeats = props.fallingSelected?.lookAheadBeats ?? localLookAhead;
   const shownView = isSong ? view : 'overview';
   const onFallingChange = props.onFallingChange;
   useEffect(() => {
@@ -123,7 +127,11 @@ export function Score(props: ScoreProps) {
                   data-testid="falling-hand"
                   aria-label="Displayed hands"
                   value={fallingHand}
-                  onChange={(event) => setFallingHand(event.target.value as FallingHand)}
+                  onChange={(event) => {
+                    const hand = event.target.value as FallingHand;
+                    setFallingHand(hand);
+                    props.onFallingChange?.({ hand, lookAheadBeats });
+                  }}
                 >
                   <option value="both">Both hands</option>
                   <option value="rh">Right hand</option>
@@ -136,7 +144,11 @@ export function Score(props: ScoreProps) {
                   aria-label="Look ahead"
                   data-testid="falling-lookahead"
                   value={lookAheadBeats}
-                  onChange={(event) => setLookAheadBeats(Number(event.target.value))}
+                  onChange={(event) => {
+                    const beats = Number(event.target.value);
+                    setLookAheadBeats(beats);
+                    props.onFallingChange?.({ hand: fallingHand, lookAheadBeats: beats });
+                  }}
                 >
                   <option value={4}>4 beats</option>
                   <option value={8}>8 beats</option>
