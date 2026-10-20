@@ -98,6 +98,8 @@ describe('adaptive score layout', () => {
       fireEvent.click(screen.getByRole('radio', { name: 'Falling Notes' }));
       expect(container.firstElementChild).toHaveAttribute('data-score-view', 'falling');
       expect(screen.getByTestId('falling-notes')).toBeInTheDocument();
+      expect(screen.getAllByTestId('keyboard')).toHaveLength(1);
+      expect(screen.getByTestId('keyboard-roll')).toBeInTheDocument();
       expect(screen.getByRole('img', { name: /Falling piano notes/ })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Next bar' })).not.toBeInTheDocument();
 
