@@ -51,12 +51,7 @@ describe('the built-in song library', () => {
     const advancedCanon = canon[2]!;
     expect(advancedCanon.bars[0]!.rh).toEqual([{ note: 'r', beats: 4 }]);
     expect(advancedCanon.bars[1]!.rh).toEqual([{ note: 'r', beats: 4 }]);
-    expect(advancedCanon.bars[2]!.rh!.map((n) => n.note)).toEqual([
-      'F#5',
-      'E5',
-      'D5',
-      'C#5',
-    ]);
+    expect(advancedCanon.bars[2]!.rh!.map((n) => n.note)).toEqual(['F#5', 'E5', 'D5', 'C#5']);
     expect(advancedCanon.bars[56]!.section).toBe('Cadence');
     expect(advancedCanon.bars[56]!.chords[0]!.symbol).toBe('D');
     expect(advancedCanon.source.kind).toBe('public-domain');
