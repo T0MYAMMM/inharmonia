@@ -198,22 +198,25 @@ test.describe('song player', () => {
     await metro.click();
     await expect(loop).toHaveAttribute('aria-pressed', 'true');
     await expect(metro).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-sticky-panel]').getByRole('button', { name: 'Loop' }))
-      .toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('button', { name: 'Loop' }),
+    ).toHaveAttribute('aria-pressed', 'true');
 
     const tempo = controls.getByTestId('fullscreen-tempo');
     const initialTempo = Number(await tempo.inputValue());
     await tempo.focus();
     await tempo.press('ArrowRight');
     await expect.poll(async () => Number(await tempo.inputValue())).toBe(initialTempo + 1);
-    await expect(page.locator('[data-sticky-panel]').getByRole('slider', { name: 'Tempo' }))
-      .toHaveValue(String(initialTempo + 1));
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('slider', { name: 'Tempo' }),
+    ).toHaveValue(String(initialTempo + 1));
 
     const melody = controls.getByRole('button', { name: 'Melody' });
     await melody.click();
     await expect(melody).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.locator('[data-sticky-panel]').getByRole('button', { name: 'Melody' }))
-      .toHaveAttribute('aria-pressed', 'false');
+    await expect(
+      page.locator('[data-sticky-panel]').getByRole('button', { name: 'Melody' }),
+    ).toHaveAttribute('aria-pressed', 'false');
 
     await controls.getByTestId('fullscreen-countin').selectOption('1');
     await controls.getByTestId('fullscreen-falling-hand').selectOption('rh');
@@ -230,12 +233,19 @@ test.describe('song player', () => {
     await expect(page.getByTestId('song-pattern')).toHaveValue('block');
 
     await controls.getByRole('radio', { name: 'Practice' }).click();
-    await expect(controls.getByRole('radiogroup', { name: 'Full Screen practice hand' })).toBeVisible();
-    await controls.getByRole('radiogroup', { name: 'Full Screen practice hand' })
-      .getByRole('radio', { name: 'Both hands' }).click();
-    await expect(page.locator('[data-sticky-panel]')
-      .getByRole('radiogroup', { name: 'Practice hand' })
-      .getByRole('radio', { name: 'Both hands' })).toBeChecked();
+    await expect(
+      controls.getByRole('radiogroup', { name: 'Full Screen practice hand' }),
+    ).toBeVisible();
+    await controls
+      .getByRole('radiogroup', { name: 'Full Screen practice hand' })
+      .getByRole('radio', { name: 'Both hands' })
+      .click();
+    await expect(
+      page
+        .locator('[data-sticky-panel]')
+        .getByRole('radiogroup', { name: 'Practice hand' })
+        .getByRole('radio', { name: 'Both hands' }),
+    ).toBeChecked();
 
     await page.getByTestId('falling-fullscreen').click();
     await expect(dock).not.toHaveAttribute('data-immersive');

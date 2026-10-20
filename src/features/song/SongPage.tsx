@@ -67,90 +67,93 @@ export function SongPage() {
   // Render the same controlled, URL-backed arrangement in the normal player
   // and the immersive falling-notes controls. Both always reflect the same values.
   const arrangementControls = (fullscreen: boolean) => (
-    <details className={styles.arrangement} data-testid={fullscreen ? "fullscreen-song-arrangement" : "song-arrangement"}>
-          <summary>Playing style &amp; arrangement</summary>
-          <div className={styles.arrangementFields}>
-            <label>
-              Accompaniment
-              <select
-                data-testid={fullscreen ? "fullscreen-song-pattern" : "song-pattern"}
-                value={options.pattern}
-                onChange={(e) => update('pattern', e.target.value)}
-              >
-                <option value="original">Original arrangement</option>
-                {compatiblePatterns.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Chord octave
-              <select
-                data-testid={fullscreen ? "fullscreen-song-octave" : "song-octave"}
-                value={options.chordOctave}
-                onChange={(e) => update('octave', e.target.value)}
-              >
-                {[-2, -1, 0, 1, 2].map((n) => (
-                  <option key={n} value={n}>
-                    {octaveLabel(n)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Chord voicing
-              <select
-                data-testid={fullscreen ? "fullscreen-song-voicing" : "song-voicing"}
-                value={options.voicing}
-                onChange={(e) => update('voicing', e.target.value)}
-              >
-                <option value="original">Original</option>
-                {VOICING_STYLES.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Inversion
-              <select
-                data-testid={fullscreen ? "fullscreen-song-inversion" : "song-inversion"}
-                value={options.inversion}
-                onChange={(e) => update('inversion', e.target.value)}
-              >
-                <option value="original">Original</option>
-                <option value="0">Root position</option>
-                <option value="1">First inversion</option>
-                <option value="2">Second inversion</option>
-              </select>
-            </label>
-            <label>
-              Fill-ins
-              <select
-                data-testid={fullscreen ? "fullscreen-song-fill" : "song-fill"}
-                value={options.fill}
-                onChange={(e) => update('fill', e.target.value)}
-              >
-                <option value="">None</option>
-                {FILLS.filter((f) => f.hand === 'rh').map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
-              Reset arrangement
-            </Button>
-          </div>
-          <p className={styles.note}>
-            These settings affect playback and practice only; the original song stays unchanged.
-            Fill-ins play only where they do not overlap the melody.
-          </p>
-        </details>
+    <details
+      className={styles.arrangement}
+      data-testid={fullscreen ? 'fullscreen-song-arrangement' : 'song-arrangement'}
+    >
+      <summary>Playing style &amp; arrangement</summary>
+      <div className={styles.arrangementFields}>
+        <label>
+          Accompaniment
+          <select
+            data-testid={fullscreen ? 'fullscreen-song-pattern' : 'song-pattern'}
+            value={options.pattern}
+            onChange={(e) => update('pattern', e.target.value)}
+          >
+            <option value="original">Original arrangement</option>
+            {compatiblePatterns.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Chord octave
+          <select
+            data-testid={fullscreen ? 'fullscreen-song-octave' : 'song-octave'}
+            value={options.chordOctave}
+            onChange={(e) => update('octave', e.target.value)}
+          >
+            {[-2, -1, 0, 1, 2].map((n) => (
+              <option key={n} value={n}>
+                {octaveLabel(n)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Chord voicing
+          <select
+            data-testid={fullscreen ? 'fullscreen-song-voicing' : 'song-voicing'}
+            value={options.voicing}
+            onChange={(e) => update('voicing', e.target.value)}
+          >
+            <option value="original">Original</option>
+            {VOICING_STYLES.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Inversion
+          <select
+            data-testid={fullscreen ? 'fullscreen-song-inversion' : 'song-inversion'}
+            value={options.inversion}
+            onChange={(e) => update('inversion', e.target.value)}
+          >
+            <option value="original">Original</option>
+            <option value="0">Root position</option>
+            <option value="1">First inversion</option>
+            <option value="2">Second inversion</option>
+          </select>
+        </label>
+        <label>
+          Fill-ins
+          <select
+            data-testid={fullscreen ? 'fullscreen-song-fill' : 'song-fill'}
+            value={options.fill}
+            onChange={(e) => update('fill', e.target.value)}
+          >
+            <option value="">None</option>
+            {FILLS.filter((f) => f.hand === 'rh').map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
+          Reset arrangement
+        </Button>
+      </div>
+      <p className={styles.note}>
+        These settings affect playback and practice only; the original song stays unchanged.
+        Fill-ins play only where they do not overlap the melody.
+      </p>
+    </details>
   );
   return (
     <>

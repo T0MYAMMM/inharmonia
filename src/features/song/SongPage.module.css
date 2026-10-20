@@ -147,7 +147,6 @@
   font: inherit;
 }
 
-
 /* Full Screen score controls sit ABOVE the falling roll. The panel is allowed to
    scroll independently so an open arrangement never pushes the piano off-screen. */
 .fullScreenPanel {

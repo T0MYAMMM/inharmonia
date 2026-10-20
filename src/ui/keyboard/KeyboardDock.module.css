@@ -221,7 +221,6 @@
   flex: 0 0 auto;
 }
 
-
 @media (max-width: 600px) {
   .immersiveControls {
     max-height: min(42dvh, 310px);
