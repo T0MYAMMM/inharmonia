@@ -68,12 +68,19 @@ export function KeyboardDock({
   }, [screenMode]);
 
   // Switching away from Falling Notes must never strand the user fullscreen.
+  // Update local state on the asynchronous exit completion, not inside the effect.
   useEffect(() => {
     if (roll || screenMode === 'normal') return;
-    if (document.fullscreenElement === dockRef.current) {
-      void document.exitFullscreen?.().catch(() => undefined);
-    }
-    setScreenMode('normal');
+    const exit =
+      document.fullscreenElement === dockRef.current
+        ? document.exitFullscreen()
+        : Promise.resolve();
+    let mounted = true;
+    void exit.then(
+      () => { if (mounted) setScreenMode('normal'); },
+      () => { if (mounted) setScreenMode('normal'); },
+    );
+    return () => { mounted = false; };
   }, [roll, screenMode]);
 
   useEffect(() => {
