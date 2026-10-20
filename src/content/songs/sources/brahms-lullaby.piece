@@ -1,7 +1,8 @@
 # Brahms, Wiegenlied, Op. 49 No. 4. Notes from the first edition (Simrock, ca. 1868,
 # plate 323), the voice line as the melody. Not included: the piano's eighth-note
 # pickup before bar 1, the grace note in bar 14 and the grace figure in bar 17
-# (the source format has no grace notes), and the second verse (the same music).
+# (the source format has no grace notes). The second verse repeats the same
+# musical setting as the first; both verses are now played (no lyrics stored).
 # Bar numbers follow the edition, counting the pickup as bar 0.
 title: Brahms' Lullaby (Wiegenlied)
 piece: brahms-lullaby
@@ -15,7 +16,7 @@ key: Eb major
 meter: 3/4
 # The edition marks only "Zart bewegt" (tenderly moving); the tempo is ours.
 tempo: 96
-summary: The 1868 lullaby, voice line as the melody, over Brahms's rocking E♭ pedal.
+summary: Both verses of the 1868 lullaby, the voice line over Brahms's rocking E♭ pedal.
 # Brahms's left hand: the E♭ pedal on 1, then a chord tone on 2 sliding to the fifth below on 3.
 figure: Pedal and sway | cycle 3 | 0 1 root! | 1 1 1 | 2 1 fifth
 # Every bar stays as written in Easy: the eighth-note pickups are the lullaby's lilt.
@@ -26,6 +27,18 @@ melody: | rh. |
 chords: | Eb |
 
 [Song] main 2-18
+melody:
+  | rq r G4e G4 | Bb4q. G4e G4q | Bb4q r G4e Bb4 |
+  | Eb5q D5q. C5e | C5q Bb4 F4e G4 | Ab4q F4 F4e G4 | Ab4q r F4e Ab4 |
+  | D5e C5 Bb4q D5 | Eb5q r Eb4e Eb4 | Eb5h C5e Ab4 | Bb4h G4e Eb4 | Ab4q Bb4 C5 |
+  | Bb4h Eb4e Eb4 | Eb5h C5e Ab4 | Bb4h G4e Eb4 | Ab4q G4 F4 | Eb4h rq |
+chords:
+  | Eb | Eb | Eb |
+  | Eb | Bb7/Eb | Bb7/Eb | Bb7/Eb |
+  | Bb7/Eb | Eb:2 Eb7:1 | Ab/Eb | Eb | Bb7/Eb |
+  | Eb:2 Eb7:1 | Ab/Eb | Eb | Bb7/Eb | Eb |
+
+[Second verse] main 19-35
 melody:
   | rq r G4e G4 | Bb4q. G4e G4q | Bb4q r G4e Bb4 |
   | Eb5q D5q. C5e | C5q Bb4 F4e G4 | Ab4q F4 F4e G4 | Ab4q r F4e Ab4 |
