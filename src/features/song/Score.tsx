@@ -82,9 +82,7 @@ export function Score(props: ScoreProps) {
           props.targetChipId?.startsWith('rh-' + bar.index + '-') ? props.targetChipId : null
         }
         targetChordId={
-          props.targetChordId?.startsWith('chord-' + bar.index + '-')
-            ? props.targetChordId
-            : null
+          props.targetChordId?.startsWith('chord-' + bar.index + '-') ? props.targetChordId : null
         }
         doneBefore={mode === 'practice' ? props.targetBeat : -Infinity}
         showNumerals={props.showNumerals ?? false}

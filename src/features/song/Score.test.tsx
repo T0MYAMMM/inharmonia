@@ -92,7 +92,10 @@ describe('adaptive score layout', () => {
 
   it('keeps score navigation out of progression drills', () => {
     const p = props('easy');
-    const progression = { ...p.compiled, lesson: { ...p.compiled.lesson, kind: 'progression' as const } };
+    const progression = {
+      ...p.compiled,
+      lesson: { ...p.compiled.lesson, kind: 'progression' as const },
+    };
     const { container } = render(<Score {...p} compiled={progression} />);
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
     expect(screen.queryByTestId('score-tools')).not.toBeInTheDocument();
