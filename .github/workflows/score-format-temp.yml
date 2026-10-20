@@ -1,0 +1,26 @@
+name: Format adaptive score (temporary)
+on:
+  push:
+    branches: [feature/adaptive-score-follow-along]
+permissions:
+  contents: write
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/features/song/Score.tsx src/features/song/Score.test.tsx
+      - name: Commit formatting
+        run: |
+          git config user.name "inharmonia-ci-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/features/song/Score.tsx src/features/song/Score.test.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply Prettier to adaptive score feature"
+            git push origin HEAD:feature/adaptive-score-follow-along
+          fi
