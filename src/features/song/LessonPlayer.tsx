@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { describeChange, type VoicingChange } from '@/core/charts';
 import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
@@ -96,6 +96,8 @@ export function LessonPlayer({
       }),
   );
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
+  const visualBeat = useCallback(() => ctrl.visualBeat(), [ctrl]);
+  const performanceBeat = useCallback((beat: number) => getTransport().performanceBeat(beat), []);
   const notation = useSettings((s) => s.notation);
   const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const metronome = useSettings((s) => s.metronome);
@@ -337,6 +339,13 @@ export function LessonPlayer({
         targetBeat={snap.targetBeat}
         showNumerals={showNumerals ?? progression}
         chordScores={snap.chordScores}
+        falling={{
+          visualBeat,
+          performanceBeat,
+          playing: snap.transport === 'playing',
+          rhOn: snap.rhOn,
+          lhOn: snap.lhOn,
+        }}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
       <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
