@@ -77,10 +77,16 @@ export function KeyboardDock({
         : Promise.resolve();
     let mounted = true;
     void exit.then(
-      () => { if (mounted) setScreenMode('normal'); },
-      () => { if (mounted) setScreenMode('normal'); },
+      () => {
+        if (mounted) setScreenMode('normal');
+      },
+      () => {
+        if (mounted) setScreenMode('normal');
+      },
     );
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [roll, screenMode]);
 
   useEffect(() => {
