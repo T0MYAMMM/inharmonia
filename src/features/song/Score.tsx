@@ -14,6 +14,7 @@ import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
 import type { SongMode } from './SongController';
 import { barDensity } from './scoreLayout';
+import type { FallingHand } from './fallingNotesLayout';
 import styles from './Score.module.css';
 
 export interface ScoreProps {
@@ -33,13 +34,23 @@ export interface ScoreProps {
   targetChordId: string | null;
   targetBeat: number;
   onSelectBar: (index: number) => void;
+  /** Share the selected roll settings with the floating keyboard dock. */
+  onFallingChange?: (options: FallingViewOptions | null) => void;
+  /** Controlled preferences so edits in Full Screen update the score toolbar. */
+  fallingSelected?: FallingViewOptions | null;
 }
 
-type ScoreView = 'overview' | 'follow';
+export interface FallingViewOptions {
+  hand: FallingHand;
+  lookAheadBeats: number;
+}
+
+type ScoreView = 'overview' | 'follow' | 'falling';
 
 const VIEW_OPTIONS = [
   { value: 'overview', label: 'Overview' },
   { value: 'follow', label: 'Follow Along' },
+  { value: 'falling', label: 'Falling Notes' },
 ] as const;
 
 /** The transport remains the source of truth for the bar and note in both layouts. */
@@ -56,7 +67,15 @@ export function Score(props: ScoreProps) {
       : 'overview',
   );
   const [zoom, setZoom] = useState(100);
+  const [localFallingHand, setFallingHand] = useState<FallingHand>('both');
+  const [localLookAhead, setLookAheadBeats] = useState(4);
+  const fallingHand = props.fallingSelected?.hand ?? localFallingHand;
+  const lookAheadBeats = props.fallingSelected?.lookAheadBeats ?? localLookAhead;
   const shownView = isSong ? view : 'overview';
+  const onFallingChange = props.onFallingChange;
+  useEffect(() => {
+    onFallingChange?.(shownView === 'falling' ? { hand: fallingHand, lookAheadBeats } : null);
+  }, [onFallingChange, shownView, fallingHand, lookAheadBeats]);
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
   const sectionAt = [...sections].reverse().find((sec) => sec.startIndex <= current.index);
@@ -100,6 +119,43 @@ export function Score(props: ScoreProps) {
       {isSong ? (
         <div className={styles.scoreTools} data-testid="score-tools">
           <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={setView} />
+          {shownView === 'falling' ? (
+            <div className={styles.followTools}>
+              <label className={styles.field}>
+                Displayed hands
+                <select
+                  data-testid="falling-hand"
+                  aria-label="Displayed hands"
+                  value={fallingHand}
+                  onChange={(event) => {
+                    const hand = event.target.value as FallingHand;
+                    setFallingHand(hand);
+                    props.onFallingChange?.({ hand, lookAheadBeats });
+                  }}
+                >
+                  <option value="both">Both hands</option>
+                  <option value="rh">Right hand</option>
+                  <option value="lh">Left hand</option>
+                </select>
+              </label>
+              <label className={styles.field}>
+                Look ahead
+                <select
+                  aria-label="Look ahead"
+                  data-testid="falling-lookahead"
+                  value={lookAheadBeats}
+                  onChange={(event) => {
+                    const beats = Number(event.target.value);
+                    setLookAheadBeats(beats);
+                    props.onFallingChange?.({ hand: fallingHand, lookAheadBeats: beats });
+                  }}
+                >
+                  <option value={4}>4 beats</option>
+                  <option value={8}>8 beats</option>
+                </select>
+              </label>
+            </div>
+          ) : null}
           {shownView === 'follow' ? (
             <div className={styles.followTools}>
               <button
@@ -156,7 +212,13 @@ export function Score(props: ScoreProps) {
           ) : null}
         </div>
       ) : null}
-      {shownView === 'follow' ? (
+      {shownView === 'falling' ? (
+        <p className={styles.followHint} data-testid="falling-score-hint">
+          Falling Notes appear above the floating playable keyboard. Notes descend onto the same
+          keys used in Overview and Follow Along; scroll the piano sideways on small screens to
+          follow the melody.
+        </p>
+      ) : shownView === 'follow' ? (
         <section className={styles.followSection} aria-label="Follow Along score">
           {sectionAt?.title ? <h2 className={styles.sectionTitle}>{sectionAt.title}</h2> : null}
           {card(current, true)}
