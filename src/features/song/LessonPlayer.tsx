@@ -356,9 +356,10 @@ export function LessonPlayer({
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
       <KeyboardDock
-        fullScreenControls={
-          <section className={styles.fullScreenPanel} aria-label="Full Screen player settings">
-            <div className={styles.fullScreenBar}>
+        fullScreenControls={{
+          left: (
+            <section className={styles.fullScreenPanel} aria-label="Playback and timing">
+              <h2 className={styles.fullScreenHeading}>Playback</h2>
               <span className={styles.fullScreenPosition} data-testid="fullscreen-position">
                 Bar {snap.bar + 1} / {compiled.bars.length}
                 {snap.chordSymbol
@@ -397,28 +398,13 @@ export function LessonPlayer({
                 ) : null}
               </div>
               <div className={styles.fullScreenGroup}>
-                {practice ? (
-                  <Segmented
-                    label="Full Screen practice hand"
-                    value={snap.hands}
-                    options={PRACTICE_HANDS}
-                    onChange={(v) => ctrl.setHands(v)}
-                  />
-                ) : (
-                  <>
-                    <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>
-                      Loop
-                    </Toggle>
-                    <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>
-                      Metronome
-                    </Toggle>
-                  </>
-                )}
-                <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
-                  Melody
-                </Toggle>
-                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                  Left hand
+                {!practice ? (
+                  <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>
+                    Loop
+                  </Toggle>
+                ) : null}
+                <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>
+                  Metronome
                 </Toggle>
               </div>
               {!practice ? (
@@ -448,47 +434,70 @@ export function LessonPlayer({
                   <option value={2}>2 bars</option>
                 </select>
               </label>
-              <label className={styles.fullScreenField}>
-                View
-                <select
-                  aria-label="Full Screen displayed hands"
-                  data-testid="fullscreen-falling-hand"
-                  value={fallingOptions?.hand ?? 'both'}
-                  onChange={(event) =>
-                    setFallingOptions((old) =>
-                      old
-                        ? { ...old, hand: event.target.value as FallingViewOptions['hand'] }
-                        : old,
-                    )
-                  }
-                >
-                  <option value="both">Both hands</option>
-                  <option value="rh">Right hand</option>
-                  <option value="lh">Left hand</option>
-                </select>
-              </label>
-              <label className={styles.fullScreenField}>
-                Look ahead
-                <select
-                  aria-label="Full Screen look ahead"
-                  data-testid="fullscreen-falling-lookahead"
-                  value={fallingOptions?.lookAheadBeats ?? 4}
-                  onChange={(event) =>
-                    setFallingOptions((old) =>
-                      old ? { ...old, lookAheadBeats: Number(event.target.value) } : old,
-                    )
-                  }
-                >
-                  <option value={4}>4 beats</option>
-                  <option value={8}>8 beats</option>
-                </select>
-              </label>
-            </div>
-            {fullScreenSettings ? (
-              <div className={styles.fullScreenArrangement}>{fullScreenSettings}</div>
-            ) : null}
-          </section>
-        }
+            </section>
+          ),
+          right: (
+            <section className={styles.fullScreenPanel} aria-label="Arrangement and visualization">
+              <h2 className={styles.fullScreenHeading}>Hands &amp; arrangement</h2>
+              {practice ? (
+                <Segmented
+                  label="Full Screen practice hand"
+                  value={snap.hands}
+                  options={PRACTICE_HANDS}
+                  onChange={(v) => ctrl.setHands(v)}
+                />
+              ) : null}
+              <div className={styles.fullScreenGroup}>
+                <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
+                  Melody
+                </Toggle>
+                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
+                  Left hand
+                </Toggle>
+              </div>
+              <div className={styles.fullScreenGroup}>
+                <label className={styles.fullScreenField}>
+                  View
+                  <select
+                    aria-label="Full Screen displayed hands"
+                    data-testid="fullscreen-falling-hand"
+                    value={fallingOptions?.hand ?? 'both'}
+                    onChange={(event) =>
+                      setFallingOptions((old) =>
+                        old
+                          ? { ...old, hand: event.target.value as FallingViewOptions['hand'] }
+                          : old,
+                      )
+                    }
+                  >
+                    <option value="both">Both hands</option>
+                    <option value="rh">Right hand</option>
+                    <option value="lh">Left hand</option>
+                  </select>
+                </label>
+                <label className={styles.fullScreenField}>
+                  Look ahead
+                  <select
+                    aria-label="Full Screen look ahead"
+                    data-testid="fullscreen-falling-lookahead"
+                    value={fallingOptions?.lookAheadBeats ?? 4}
+                    onChange={(event) =>
+                      setFallingOptions((old) =>
+                        old ? { ...old, lookAheadBeats: Number(event.target.value) } : old,
+                      )
+                    }
+                  >
+                    <option value={4}>4 beats</option>
+                    <option value={8}>8 beats</option>
+                  </select>
+                </label>
+              </div>
+              {fullScreenSettings ? (
+                <div className={styles.fullScreenArrangement}>{fullScreenSettings}</div>
+              ) : null}
+            </section>
+          ),
+        }}
 
         focus={focus}
         low={low}
