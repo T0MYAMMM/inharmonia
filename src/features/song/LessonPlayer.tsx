@@ -81,6 +81,7 @@ export function LessonPlayer({
   voicingHints = false,
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
+  const [fallingVisible, setFallingVisible] = useState(false);
   const [ctrl] = useState(
     () =>
       new SongController(compiled, {
@@ -346,16 +347,20 @@ export function LessonPlayer({
         targetBeat={snap.targetBeat}
         showNumerals={showNumerals ?? progression}
         chordScores={snap.chordScores}
+        onFallingChange={setFallingVisible}
         falling={{
           visualBeat,
           performanceBeat,
           playing: snap.transport === 'playing',
           rhOn: snap.rhOn,
           lhOn: snap.lhOn,
+          keyboard: { low, high, focus, showTarget: practice && !progression },
         }}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
-      <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
+      {!fallingVisible ? (
+        <KeyboardDock focus={focus} low={low} high={high} showTarget={practice && !progression} />
+      ) : null}
     </>
   );
 }
