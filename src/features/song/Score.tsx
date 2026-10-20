@@ -13,6 +13,7 @@ import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
 import type { SongMode } from './SongController';
+import { barDensity } from './scoreLayout';
 import styles from './Score.module.css';
 
 export interface ScoreProps {
@@ -40,12 +41,6 @@ const VIEW_OPTIONS = [
   { value: 'overview', label: 'Overview' },
   { value: 'follow', label: 'Follow Along' },
 ] as const;
-
-/** Expand moderately dense cards; summarize very dense cards before labels overlap. */
-export function barDensity(bar: Pick<CompiledBar, 'rh'>): 'normal' | 'wide' | 'dense' {
-  const count = bar.rh.filter((note) => note.note !== null).length;
-  return count >= 9 ? 'dense' : count >= 5 ? 'wide' : 'normal';
-}
 
 /** The transport remains the source of truth for the bar and note in both layouts. */
 export function Score(props: ScoreProps) {
