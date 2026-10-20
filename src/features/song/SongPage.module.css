@@ -146,3 +146,102 @@
   padding: 0 12px;
   font: inherit;
 }
+
+
+/* Full Screen score controls sit ABOVE the falling roll. The panel is allowed to
+   scroll independently so an open arrangement never pushes the piano off-screen. */
+.fullScreenPanel {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink);
+}
+
+.fullScreenBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.fullScreenPosition {
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  margin-right: 3px;
+}
+
+.fullScreenGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.fullScreenField {
+  display: grid;
+  gap: 3px;
+  min-width: 100px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fullScreenField input {
+  max-width: 158px;
+  min-width: 115px;
+  accent-color: var(--amber);
+}
+
+.fullScreenField select {
+  min-height: 36px;
+  max-width: 160px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 5px 8px;
+  font: inherit;
+}
+
+.fullScreenArrangement {
+  min-width: 0;
+}
+
+.fullScreenArrangement .arrangement {
+  padding: 3px 9px;
+  border-radius: 9px;
+}
+
+.fullScreenArrangement .arrangement summary {
+  font-size: 0.85rem;
+  min-height: 30px;
+}
+
+.fullScreenArrangement .arrangementFields {
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.fullScreenArrangement .arrangementFields label {
+  font-size: 0.78rem;
+}
+
+.fullScreenArrangement .arrangementFields select {
+  min-height: 36px;
+}
+
+@media (max-width: 600px) {
+  .fullScreenBar {
+    gap: 6px;
+  }
+
+  .fullScreenPosition {
+    width: 100%;
+  }
+
+  .fullScreenField input {
+    max-width: 118px;
+  }
+}
