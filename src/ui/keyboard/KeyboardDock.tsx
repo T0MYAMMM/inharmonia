@@ -17,8 +17,8 @@ export interface KeyboardDockProps {
   showTarget?: boolean;
   /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
-  /** Play/pause and restart controls to retain while the dock fills the screen. */
-  fullScreenControls?: ReactNode;
+  /** Controls flanking the SAME scroll-aligned playable piano in Full Screen. */
+  fullScreenControls?: { left: ReactNode; right: ReactNode };
 }
 
 export function KeyboardDock({
@@ -161,11 +161,12 @@ export function KeyboardDock({
             Keys A to ' play {keyName(base)} to {keyName(base + 17)}, Z and X shift octave
           </span>
         </div>
-        {fullScreen && fullScreenControls ? (
-          <div className={styles.immersiveControls} data-testid="falling-fullscreen-controls">
-            {fullScreenControls}
-          </div>
-        ) : null}
+        <div className={styles.immersiveWorkspace} data-testid="falling-fullscreen-controls">
+          {fullScreen && fullScreenControls ? (
+            <aside className={styles.immersiveControls} aria-label="Playback settings" data-testid="falling-panel-left">
+              {fullScreenControls.left}
+            </aside>
+          ) : null}
         <Keyboard
           low={low}
           high={high}
@@ -177,6 +178,12 @@ export function KeyboardDock({
           focus={focus ?? [base, base + 17]}
           onGesture={() => void audio.unlock()}
         />
+          {fullScreen && fullScreenControls ? (
+            <aside className={styles.immersiveControls} aria-label="Arrangement and hands" data-testid="falling-panel-right">
+              {fullScreenControls.right}
+            </aside>
+          ) : null}
+        </div>
       </div>
     </aside>
   );
