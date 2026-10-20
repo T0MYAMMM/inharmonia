@@ -8,11 +8,22 @@
   padding-bottom: 4px;
 }
 
+/* Extension of the floating piano: notes fall straight into these keys.
+   Responsive height leaves room to see the song and use the keyboard on phones. */
 .roll {
   width: 100%;
+  height: clamp(120px, 29vh, 250px);
   margin: 0 auto;
   position: relative;
+  overflow: hidden;
   pointer-events: none;
+  background: linear-gradient(#101a2c, #1c3047);
+}
+
+@media (max-height: 500px) {
+  .roll {
+    height: clamp(90px, 22vh, 130px);
+  }
 }
 
 .keyboard {
