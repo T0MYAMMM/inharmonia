@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { CompiledLesson } from '@/core/content/compile';
 import { layoutKeys, keyName } from '@/ui/keyboard/layout';
-import { KeyboardDock } from '@/ui/keyboard/KeyboardDock';
 import type { SongMode } from './SongController';
-import { fallingKeyRange, fallingNotesAt, type FallingHand } from './fallingNotesLayout';
+import { fallingNotesAt, type FallingHand } from './fallingNotesLayout';
 import styles from './FallingNotes.module.css';
 
 export interface FallingNotesProps {
@@ -19,16 +18,11 @@ export interface FallingNotesProps {
   rhOn: boolean;
   lhOn: boolean;
   targetBeat: number;
-  /** Same MIDI range and focus as the regular playable keyboard dock. */
-  keyboard?: {
-    low: number;
-    high: number;
-    focus: [number, number];
-    showTarget: boolean;
-  };
+  /** The fixed MIDI range rendered by the floating playable keyboard. */
+  low: number;
+  high: number;
 }
 
-const ROLL_HEIGHT = 265;
 const RH = '#F2B65B';
 const LH = '#A9A0EB';
 
@@ -42,24 +36,21 @@ export function FallingNotes({
   compiled,
   hand,
   lookAheadBeats,
-  mode,
   playing,
   visualBeat,
   performanceBeat,
   rhOn,
   lhOn,
   targetBeat,
-  keyboard,
+  low,
+  high,
 }: FallingNotesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const focusedMidiRef = useRef<number | null>(null);
-  const [low, high] = keyboard
-    ? [keyboard.low, keyboard.high]
-    : fallingKeyRange(compiled.events, hand);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const strip = canvas?.parentElement;
+    const strip = canvas?.closest<HTMLElement>('[data-testid="keyboard-roll"]');
     const scroller = canvas?.closest<HTMLElement>('[data-keyboard-scroller]');
     const ctx = canvas?.getContext('2d');
     if (!canvas || !strip || !ctx) return;
@@ -79,19 +70,20 @@ export function FallingNotes({
       // Read width from the SAME element that uses the keyboard's --w unit.
       // This includes pointer-coarse and phone-landscape key size rules.
       const width = Math.max(1, strip.clientWidth);
+      const height = Math.max(1, strip.clientHeight);
       const density = Math.min(2, window.devicePixelRatio || 1);
       const pixelWidth = Math.ceil(width * density);
-      const pixelHeight = Math.ceil(ROLL_HEIGHT * density);
+      const pixelHeight = Math.ceil(height * density);
       if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
         canvas.width = pixelWidth;
         canvas.height = pixelHeight;
       }
       canvas.style.width = width + 'px';
-      canvas.style.height = ROLL_HEIGHT + 'px';
+      canvas.style.height = height + 'px';
       ctx.setTransform(density, 0, 0, density, 0, 0);
-      ctx.clearRect(0, 0, width, ROLL_HEIGHT);
+      ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = '#131E30';
-      ctx.fillRect(0, 0, width, ROLL_HEIGHT);
+      ctx.fillRect(0, 0, width, height);
 
       const beat = visualBeat();
       const notes = fallingNotesAt(selected, beat, lookAheadBeats, hand, performanceBeat);
@@ -101,13 +93,13 @@ export function FallingNotes({
       for (const key of geometry.keys) {
         if (key.black) continue;
         ctx.fillStyle = key.midi % 12 === 0 ? '#24324A' : '#1C293C';
-        ctx.fillRect(key.x * unit, 0, unit - 1, ROLL_HEIGHT);
+        ctx.fillRect(key.x * unit, 0, unit - 1, height);
       }
       ctx.strokeStyle = '#64748B55';
       ctx.lineWidth = 1;
       for (let b = Math.ceil(beat); b <= beat + lookAheadBeats; b++) {
-        const y = ROLL_HEIGHT * (1 - (performanceBeat(b) - beat) / lookAheadBeats);
-        if (y < 0 || y > ROLL_HEIGHT) continue;
+        const y = height * (1 - (performanceBeat(b) - beat) / lookAheadBeats);
+        if (y < 0 || y > height) continue;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -122,8 +114,8 @@ export function FallingNotes({
         const pitchWidth = unit * (key.black ? 0.6 : 1);
         const x = key.x * unit + pitchWidth * 0.12;
         const w = Math.max(4, pitchWidth * 0.76);
-        const y = note.top * ROLL_HEIGHT;
-        const h = Math.max(3, (note.bottom - note.top) * ROLL_HEIGHT);
+        const y = note.top * height;
+        const h = Math.max(3, (note.bottom - note.top) * height);
         ctx.fillStyle = note.hand === 'rh' ? RH : LH;
         ctx.globalAlpha = note.active ? 1 : 0.85;
         ctx.fillRect(x, y, w, h);
@@ -142,7 +134,7 @@ export function FallingNotes({
       }
 
       ctx.fillStyle = '#D9E7F7';
-      ctx.fillRect(0, ROLL_HEIGHT - 2, width, 3);
+      ctx.fillRect(0, height - 2, width, 3);
 
       // On mobile, move the ONE shared scroller, so the notes and actual keys
       // never scroll independently. Avoid fighting manual scrolling each frame.
@@ -190,40 +182,15 @@ export function FallingNotes({
   ]);
 
   return (
-    <div className={styles.frame} data-testid="falling-notes">
-      <div className={styles.legend} aria-hidden="true">
-        <span>
-          <i className={styles.right} /> Right hand
-        </span>
-        <span>
-          <i className={styles.left} /> Left hand
-        </span>
-        <span className={styles.explanation}>Notes arrive on the playable keys below</span>
-      </div>
-      <KeyboardDock
-        inline
-        low={low}
-        high={high}
-        focus={keyboard?.focus}
-        showTarget={keyboard?.showTarget ?? mode === 'practice'}
-        roll={
-          <canvas
-            ref={canvasRef}
-            className={styles.canvas}
-            role="img"
-            aria-label="Falling piano notes aligned with the interactive piano below. Amber for right hand, lavender for left hand."
-          >
-            Falling-notes visualization requires Canvas support. Use Follow Along for text-based
-            notes.
-          </canvas>
-        }
-      />
-      <p className={styles.hint}>
-        {mode === 'practice'
-          ? 'Notes wait at your current practice target. Play the corresponding keys below to advance.'
-          : 'The falling notes arrive on the same playable piano you use in every other mode.'}{' '}
-        Scroll sideways to see more keys on small screens.
-      </p>
+    <div className={styles.roll} data-testid="falling-notes">
+      <canvas
+        ref={canvasRef}
+        className={styles.canvas}
+        role="img"
+        aria-label="Falling piano notes aligned with the floating playable keyboard. Amber for right hand, lavender for left hand."
+      >
+        Falling-notes visualization requires Canvas support. Use Follow Along for text-based notes.
+      </canvas>
     </div>
   );
 }
