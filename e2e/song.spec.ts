@@ -95,6 +95,8 @@ test.describe('song player', () => {
 
     await page.getByRole('radio', { name: 'Practice', exact: true }).click();
     await expect(roll.getByText(/notes wait at your current practice target/i)).toBeVisible();
+    await page.locator('[data-midi="69"]').click(); // Senja starts on A4; the same piano is playable.
+    await expect(page.getByTestId('counts')).toHaveText('1 hit, 0 misses');
     await expect(page.getByTestId('play')).toBeDisabled();
     await page.getByRole('radio', { name: 'Overview' }).click();
     await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'overview');
