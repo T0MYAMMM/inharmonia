@@ -1,13 +1,16 @@
-# Pachelbel, Canon in D for three violins and continuo: the opening, from the oldest
-# surviving source, a manuscript score copied ca. 1838-42 (Staatsbibliothek zu Berlin,
-# Mus.ms. 16481/8), not from a printed edition. The piece was first printed in 1919.
-# The melody is the first violin, which enters in bar 3; the other two violins follow it
-# in canon two bars apart and are not played here. The left hand is the continuo's
-# two-bar ground bass, written out once in the manuscript and repeated under every bar.
-# This covers the first eight bars, the first violin's quarter-note and eighth-note
-# statements; the faster variations that follow are not included.
-# The piano versions are generated reductions of these two parts. The chords are our
-# reading of the ground bass under the canon; the continuo has no figures here.
+# Pachelbel, Canon in D, complete first-violin line (57 bars), reduced for piano
+# over the original two-bar ground bass. Violin II and III, which imitate the
+# same theme at two-bar intervals, are NOT included; this is NOT the full
+# three-violin score or a modern keyboard arrangement.
+# The opening is checked against the 1838-42 manuscript (Berlin Mus.ms. 16481/8),
+# preserving the first eight bars previously transcribed in InHarmonia.
+# Continuation follows Michael Fischer v. Mollard's full first-violin transcription,
+# Mutopia Project (2015), CC BY 4.0, based on IMSLP:
+# https://github.com/MutopiaProject/MutopiaProject/tree/master/ftp/PachelbelJ/Canon_per_3_Violini_e_Basso
+# https://creativecommons.org/licenses/by/4.0/
+# Changes: monophonic first violin moved to piano RH; repeated ground bass in LH;
+# harmonic chord symbols supplied by InHarmonia; no other violin parts or figured
+# continuo realizations; no additional compositional notes.
 title: Canon in D
 piece: canon-in-d
 added: 2026-10-17
@@ -15,32 +18,71 @@ source: public-domain
 composer: Johann Pachelbel
 composer-died: 1706
 first-published: 1919
-edition: Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264)
+edition: Manuscript ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264); full violin I transcription Michael Fischer v. Mollard, Mutopia Project 2015, CC BY 4.0
 key: D major
 meter: 4/4
-# The manuscript has no tempo mark; the tempo is ours.
+# Tempo is editorial; the manuscript gives none.
 tempo: 64
-summary: The opening of Pachelbel's canon: the first violin's line over the eight-note ground bass.
+summary: Full first-violin canon across 57 bars over Pachelbel's repeating ground bass (piano reduction; other violins omitted).
 figure: held
 medium-figure: held
-# The eighth-note bars stay as written in Easy.
+# Retain the characteristic opening arpeggios in Easy; fast variations elsewhere
+# are simplified by the generator without altering the source.
 easy-keep: 5, 6
 
 [Ground] 1-2
-melody: | rw | rw |
-chords: | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+melody: | r:4 | r:4 |
+chords: | D A Bm F#m | G D G A |
 left: | D3q A2 B2 F#2 | G2q D2 G2 A2 |
 
-[Canon] main 3-8
+[Canon] main 3-56
 melody:
-  | F#5q E5 D5 C#5 | B4q A4 B4 C#5 |
-  | D5q C#5 B4 A4 | G4q F#4 G4 E4 |
-  | D4e F#4 A4 G4 F#4 D4 F#4 E4 | D4e B3 D4 A4 G4 B4 A4 G4 |
+  | F#5:1 E5:1 D5:1 C#5:1 | B4:1 A4:1 B4:1 C#5:1 | D5:1 C#5:1 B4:1 A4:1 | G4:1 F#4:1 G4:1 E4:1 |
+  | D4:0.5 F#4:0.5 A4:0.5 G4:0.5 F#4:0.5 D4:0.5 F#4:0.5 E4:0.5 | D4:0.5 B3:0.5 D4:0.5 A4:0.5 G4:0.5 B4:0.5 A4:0.5 G4:0.5 | F#4:0.5 D4:0.5 E4:0.5 C#5:0.5 D5:0.5 F#5:0.5 A5:0.5 A4:0.5 | B4:0.5 G4:0.5 A4:0.5 F#4:0.5 D4:0.5 D5:0.5 D5:0.75 C#5:0.25 |
+  | D5:0.25 C#5:0.25 D5:0.25 D4:0.25 C#4:0.25 A4:0.25 E4:0.25 F#4:0.25 D4:0.25 D5:0.25 C#5:0.25 B4:0.25 C#5:0.25 F#5:0.25 A5:0.25 B5:0.25 | G5:0.25 F#5:0.25 E5:0.25 G5:0.25 F#5:0.25 E5:0.25 D5:0.25 C#5:0.25 B4:0.25 A4:0.25 G4:0.25 F#4:0.25 E4:0.25 G4:0.25 F#4:0.25 E4:0.25 | D4:0.25 E4:0.25 F#4:0.25 G4:0.25 A4:0.25 E4:0.25 A4:0.25 G4:0.25 F#4:0.25 B4:0.25 A4:0.25 G4:0.25 A4:0.25 G4:0.25 F#4:0.25 E4:0.25 | D4:0.25 B3:0.25 B4:0.25 C#5:0.25 D5:0.25 C#5:0.25 B4:0.25 A4:0.25 G4:0.25 F#4:0.25 E4:0.25 B4:0.25 A4:0.25 B4:0.25 A4:0.25 G4:0.25 |
+  | F#4:0.5 F#5:0.5 E5:1 r:0.5 D5:0.5 F#5:1 | B5:1 A5:1 B5:1 C#6:1 | D6:0.5 D5:0.5 C#5:1 r:0.5 B4:0.5 D5:1 | D5:1.5 D5:0.5 D5:0.5 G5:0.5 E5:0.5 A5:0.5 |
+  | A5:0.25 F#5:0.125 G5:0.125 A5:0.25 F#5:0.125 G5:0.125 A5:0.125 A4:0.125 B4:0.125 C#5:0.125 D5:0.125 E5:0.125 F#5:0.125 G5:0.125 F#5:0.25 D5:0.125 E5:0.125 F#5:0.25 F#4:0.125 G4:0.125 A4:0.125 B4:0.125 A4:0.125 G4:0.125 A4:0.125 F#4:0.125 G4:0.125 A4:0.125 | G4:0.25 B4:0.125 A4:0.125 G4:0.25 F#4:0.125 E4:0.125 F#4:0.125 E4:0.125 D4:0.125 E4:0.125 F#4:0.125 G4:0.125 A4:0.125 B4:0.125 G4:0.25 B4:0.125 A4:0.125 B4:0.25 C#5:0.125 D5:0.125 A4:0.125 B4:0.125 C#5:0.125 D5:0.125 E5:0.125 F#5:0.125 G5:0.125 A5:0.125 | F#5:0.25 D5:0.125 E5:0.125 F#5:0.25 E5:0.125 D5:0.125 E5:0.125 C#5:0.125 D5:0.125 E5:0.125 F#5:0.125 E5:0.125 D5:0.125 C#5:0.125 D5:0.25 B4:0.125 C#5:0.125 D5:0.25 D4:0.125 E4:0.125 F#4:0.125 G4:0.125 F#4:0.125 E4:0.125 F#4:0.125 D5:0.125 C#5:0.125 D5:0.125 | B4:0.25 D5:0.125 C#5:0.125 B4:0.25 A4:0.125 G4:0.125 A4:0.125 G4:0.125 F#4:0.125 G4:0.125 A4:0.125 B4:0.125 C#5:0.125 D5:0.125 B4:0.25 D5:0.125 C#5:0.125 D5:0.25 C#5:0.125 B4:0.125 C#5:0.125 D5:0.125 E5:0.125 D5:0.125 C#5:0.125 D5:0.125 B4:0.125 C#5:0.125 |
+  | D5:0.5 r:0.5 C#5:0.5 r:0.5 B4:0.5 r:0.5 D5:0.5 r:0.5 | D4:0.5 r:0.5 D4:0.5 r:0.5 D4:0.5 r:0.5 E4:0.5 r:0.5 | r:0.5 A4:0.5 r:0.5 A4:0.5 r:0.5 F#4:0.5 r:0.5 A4:0.5 | r:0.5 G4:0.5 r:0.5 F#4:0.5 r:0.5 G4:0.5 r:0.5 E5:0.5 |
+  | F#5:0.25 F#4:0.25 G4:0.25 F#4:0.25 E4:0.25 E5:0.25 F#5:0.25 E5:0.25 D5:0.25 F#4:0.25 D4:0.25 B4:0.25 A4:0.25 A3:0.25 G3:0.25 A3:0.25 | B3:0.25 B4:0.25 C#5:0.25 B4:0.25 A4:0.25 A3:0.25 G3:0.25 A3:0.25 B3:0.25 B4:0.25 A4:0.25 B4:0.25 C#5:0.25 C#4:0.25 B3:0.25 C#4:0.25 | D4:0.25 D5:0.25 E5:0.25 D5:0.25 C#5:0.25 C#4:0.25 D4:0.25 C#4:0.25 B3:0.25 B4:0.25 A4:0.25 B4:0.25 C#5:0.25 C#4:0.25 F#4:0.25 E4:0.25 | D4:0.25 D5:0.25 E5:0.25 G5:0.25 F#5:0.25 F#4:0.25 A4:0.25 F#5:0.25 D5:0.25 G5:0.25 F#5:0.25 G5:0.25 E5:0.25 A4:0.25 G4:0.25 A4:0.25 |
+  | F#4:0.25 A4:0.25 A4:0.25 A4:0.25 A4:0.25 A4:0.25 A4:0.25 A4:0.25 F#4:0.25 F#4:0.25 F#4:0.25 F#4:0.25 F#4:0.25 F#4:0.25 A4:0.25 A4:0.25 | G4:0.25 G4:0.25 G4:0.25 D5:0.25 D5:0.25 D5:0.25 D5:0.25 D5:0.25 D5:0.25 D5:0.25 B4:0.25 B4:0.25 A4:0.25 A4:0.25 E5:0.25 C#5:0.25 | A4:0.25 F#5:0.25 F#5:0.25 F#5:0.25 E5:0.25 E5:0.25 E5:0.25 E5:0.25 D5:0.25 D5:0.25 D5:0.25 D5:0.25 A5:0.25 A5:0.25 A5:0.25 A5:0.25 | B5:0.25 B5:0.25 B5:0.25 B5:0.25 A5:0.25 A5:0.25 A5:0.25 A5:0.25 B5:0.25 B5:0.25 B5:0.25 B5:0.25 C#6:0.25 C#5:0.25 C#5:0.25 C#5:0.25 |
+  | D5:0.25 D4:0.125 E4:0.125 F#4:0.25 D4:0.25 C#4:0.25 C#5:0.125 D5:0.125 E5:0.25 C#5:0.25 B4:0.25 B3:0.125 C#4:0.125 D4:0.25 B3:0.25 C#4:0.25 A4:0.125 G4:0.125 F#4:0.25 E4:0.25 | D4:0.25 G4:0.125 F#4:0.125 E4:0.25 G4:0.25 F#4:0.25 D4:0.125 E4:0.125 F#4:0.25 A4:0.25 G4:0.25 B4:0.125 A4:0.125 G4:0.25 F#4:0.25 E4:0.25 A4:0.125 G4:0.125 F#4:0.25 E4:0.25 | F#4:0.25 D5:0.125 C#5:0.125 D5:0.25 F#4:0.25 A4:0.25 A4:0.125 B4:0.125 C#5:0.25 A4:0.25 F#4:0.25 D5:0.125 E5:0.125 F#5:0.25 D5:0.25 F#5:0.25 F#5:0.125 E5:0.125 D5:0.25 C#5:0.25 | B4:0.25 B4:0.125 A4:0.125 B4:0.25 C#5:0.25 D5:0.25 F#5:0.125 E5:0.125 D5:0.25 F#5:0.25 G5:0.25 D5:0.125 C#5:0.125 B4:0.25 B4:0.25 A4:0.25 E4:0.25 A4:0.25 A4:0.25 |
+  | A4:1.5 A4:0.5 D4:1.5 A4:0.5 | G4:1 A4:1 G4:0.5 D4:0.5 D4:0.75 C#4:0.25 | D4:0.5 D5:0.5 C#5:1 B4:1 A4:1 | D4:0.75 E4:0.25 F#4:1 B4:1 E4:0.75 E4:0.25 |
+  | F#4:0.75 F#5:0.25 F#5:0.25 G5:0.25 F#5:0.25 E5:0.25 D5:0.75 D5:0.25 D5:0.25 E5:0.25 D5:0.25 C#5:0.25 | B4:1 D5:1 D5:0.25 C5:0.25 B4:0.25 C5:0.25 A4:0.75 A4:0.25 | A4:0.75 A5:0.25 A5:0.25 B5:0.25 A5:0.25 G5:0.25 F#5:0.75 F#5:0.25 F#5:0.25 G5:0.25 F#5:0.25 E5:0.25 | D5:0.25 C5:0.25 B4:0.25 C5:0.25 A4:0.75 A4:0.25 G4:0.5 D5:0.5 C#5:0.75 C#5:0.25 |
+  | D5:0.5 D5:1 C#5:1 B4:1 A4:0.5~ | A4:0.5 G4:1 F#4:0.5~ F#4:0.75 E4:0.25 E4:1 | F#4:0.5 F#5:1 E5:0.5 D5:0.5 D6:1 C6:0.5 | B5:1 D6:0.5 A5:0.5 B5:1 A5:1 |
+  | A5:1 A4:0.75 G4:0.25 F#4:1 F#5:0.75 E5:0.25 | D5:1.5 D5:0.5 D5:1 C#5:1 | D5:0.5 D4:0.5 C#4:0.5 C#5:0.5 B4:0.5 B3:0.5 A3:0.5 A4:0.5 | G4:0.5 G5:0.5 F#5:0.5 F#4:0.5 E4:0.5 B4:0.5 E4:0.5 E5:0.5 |
+  | F#5:0.5 F#4:0.5 E4:0.5 E5:0.5 D5:0.5 D4:0.5 C#4:0.5 C#5:0.5 | B4:0.5 B5:0.5 A5:0.5 A4:0.5 G4:0.75 E5:0.25 A4:0.5 A4:0.5 |
 chords:
-  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
-  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
-  | D:1 A:1 Bm:1 F#m:1 | G:1 D:1 G:1 A:1 |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A | D A Bm F#m | G D G A |
+  | D A Bm F#m | G D G A |
 left:
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+  | D3q A2 B2 F#2 | G2q D2 G2 A2 | D3q A2 B2 F#2 | G2q D2 G2 A2 |
   | D3q A2 B2 F#2 | G2q D2 G2 A2 |
-  | D3q A2 B2 F#2 | G2q D2 G2 A2 |
-  | D3q A2 B2 F#2 | G2q D2 G2 A2 |
+
+[Cadence] main 57
+melody: | A4:1 r:1 r:2 |
+chords: | D |
+left: | D3q r:3 |

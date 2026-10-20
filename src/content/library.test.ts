@@ -45,6 +45,31 @@ describe('the built-in song library', () => {
     expect(new Set(SONGS.map((s) => s.id)).size).toBe(SONGS.length);
   });
 
+  it('keeps complete source-backed musical forms for the extended pieces', () => {
+    const canon = versionsOf('canon-in-d');
+    expect(canon.map((s) => s.bars.length)).toEqual([55, 55, 57]);
+    const advancedCanon = canon[2]!;
+    expect(advancedCanon.bars[0]!.rh).toEqual([{ note: 'r', beats: 4 }]);
+    expect(advancedCanon.bars[1]!.rh).toEqual([{ note: 'r', beats: 4 }]);
+    expect(advancedCanon.bars[2]!.rh!.map((n) => n.note)).toEqual(['F#5', 'E5', 'D5', 'C#5']);
+    expect(advancedCanon.bars[56]!.section).toBe('Cadence');
+    expect(advancedCanon.bars[56]!.chords[0]!.symbol).toBe('D');
+    expect(advancedCanon.source.kind).toBe('public-domain');
+    if (advancedCanon.source.kind === 'public-domain')
+      expect(advancedCanon.source.edition).toContain('Mutopia Project 2015, CC BY 4.0');
+
+    const lullaby = versionsOf('brahms-lullaby');
+    expect(lullaby.map((s) => s.bars.length)).toEqual([34, 34, 35]);
+    const advanced = lullaby[2]!;
+    expect(advanced.bars[18]!.section).toBe('Second verse');
+    expect(advanced.bars.slice(18).map((b) => b.rh)).toEqual(
+      advanced.bars.slice(1, 18).map((b) => b.rh),
+    );
+    expect(advanced.bars.slice(18).map((b) => b.chords)).toEqual(
+      advanced.bars.slice(1, 18).map((b) => b.chords),
+    );
+  });
+
   // Computed from this year, so a piece cannot drift out of the rules unnoticed.
   it('ships only public-domain pieces that pass both rules this year', () => {
     const year = new Date().getFullYear();
