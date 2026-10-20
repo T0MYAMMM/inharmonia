@@ -108,3 +108,22 @@
     gap: 4px 12px;
   }
 }
+
+/* Falling Notes reuses the actual keyboard inside the score, so the dock
+   becomes a normal inline region instead of a second sticky instrument. */
+.dock[data-inline] {
+  position: relative;
+  bottom: auto;
+  z-index: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dock[data-inline] .inner {
+  max-width: none;
+}
