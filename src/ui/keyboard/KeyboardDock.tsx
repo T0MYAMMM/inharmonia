@@ -166,23 +166,31 @@ export function KeyboardDock({
           data-testid={fullScreen ? 'falling-fullscreen-controls' : undefined}
         >
           {fullScreen && fullScreenControls ? (
-            <aside className={styles.immersiveControls} aria-label="Playback settings" data-testid="falling-panel-left">
+            <aside
+              className={styles.immersiveControls}
+              aria-label="Playback settings"
+              data-testid="falling-panel-left"
+            >
               {fullScreenControls.left}
             </aside>
           ) : null}
-        <Keyboard
-          low={low}
-          high={high}
-          roll={roll}
-          stream={notes}
-          lights={lights}
-          octaveShift={shift}
-          showHints={showHints}
-          focus={focus ?? [base, base + 17]}
-          onGesture={() => void audio.unlock()}
-        />
+          <Keyboard
+            low={low}
+            high={high}
+            roll={roll}
+            stream={notes}
+            lights={lights}
+            octaveShift={shift}
+            showHints={showHints}
+            focus={focus ?? [base, base + 17]}
+            onGesture={() => void audio.unlock()}
+          />
           {fullScreen && fullScreenControls ? (
-            <aside className={styles.immersiveControls} aria-label="Arrangement and hands" data-testid="falling-panel-right">
+            <aside
+              className={styles.immersiveControls}
+              aria-label="Arrangement and hands"
+              data-testid="falling-panel-right"
+            >
               {fullScreenControls.right}
             </aside>
           ) : null}
