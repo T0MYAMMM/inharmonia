@@ -15,6 +15,9 @@ export interface KeyboardDockProps {
   /** Extra legend items, e.g. a target swatch. */
   extra?: ReactNode;
   showTarget?: boolean;
+  /** Place the normal playable keyboard directly below a shared-scroll note roll. */
+  roll?: ReactNode;
+  inline?: boolean;
 }
 
 export function KeyboardDock({
@@ -23,12 +26,14 @@ export function KeyboardDock({
   high = DOCK_RANGE[1],
   extra,
   showTarget = false,
+  roll,
+  inline = false,
 }: KeyboardDockProps) {
   const shift = useComputerKeys();
   const showHints = useSettings((s) => s.showKeyHints);
   const base = BASE_MIDI + 12 * shift;
   return (
-    <aside className={styles.dock} aria-label="Keyboard" data-dock>
+    <aside className={styles.dock} aria-label="Keyboard" data-dock data-inline={inline || undefined}>
       <div className={styles.inner}>
         <div className={styles.legend}>
           <span className={styles.swatch} style={{ '--c': 'var(--amber)' } as CSSProperties}>
@@ -47,6 +52,7 @@ export function KeyboardDock({
         <Keyboard
           low={low}
           high={high}
+          roll={roll}
           stream={notes}
           lights={lights}
           octaveShift={shift}
