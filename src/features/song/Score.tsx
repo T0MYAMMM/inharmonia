@@ -14,6 +14,8 @@ import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
 import type { SongMode } from './SongController';
 import { barDensity } from './scoreLayout';
+import { FallingNotes } from './FallingNotes';
+import type { FallingHand } from './fallingNotesLayout';
 import styles from './Score.module.css';
 
 export interface ScoreProps {
@@ -33,13 +35,22 @@ export interface ScoreProps {
   targetChordId: string | null;
   targetBeat: number;
   onSelectBar: (index: number) => void;
+  /** Optional shared audio playhead, available in the song player. */
+  falling?: {
+    visualBeat: () => number;
+    performanceBeat: (beat: number) => number;
+    playing: boolean;
+    rhOn: boolean;
+    lhOn: boolean;
+  };
 }
 
-type ScoreView = 'overview' | 'follow';
+type ScoreView = 'overview' | 'follow' | 'falling';
 
 const VIEW_OPTIONS = [
   { value: 'overview', label: 'Overview' },
   { value: 'follow', label: 'Follow Along' },
+  { value: 'falling', label: 'Falling Notes' },
 ] as const;
 
 /** The transport remains the source of truth for the bar and note in both layouts. */
@@ -56,6 +67,8 @@ export function Score(props: ScoreProps) {
       : 'overview',
   );
   const [zoom, setZoom] = useState(100);
+  const [fallingHand, setFallingHand] = useState<FallingHand>('both');
+  const [lookAheadBeats, setLookAheadBeats] = useState(4);
   const shownView = isSong ? view : 'overview';
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
@@ -100,6 +113,35 @@ export function Score(props: ScoreProps) {
       {isSong ? (
         <div className={styles.scoreTools} data-testid="score-tools">
           <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={setView} />
+          {shownView === 'falling' ? (
+            <div className={styles.followTools}>
+              <label className={styles.field}>
+                Displayed hands
+                <select
+                  data-testid="falling-hand"
+                  aria-label="Displayed hands"
+                  value={fallingHand}
+                  onChange={(event) => setFallingHand(event.target.value as FallingHand)}
+                >
+                  <option value="both">Both hands</option>
+                  <option value="rh">Right hand</option>
+                  <option value="lh">Left hand</option>
+                </select>
+              </label>
+              <label className={styles.field}>
+                Look ahead
+                <select
+                  aria-label="Look ahead"
+                  data-testid="falling-lookahead"
+                  value={lookAheadBeats}
+                  onChange={(event) => setLookAheadBeats(Number(event.target.value))}
+                >
+                  <option value={4}>4 beats</option>
+                  <option value={8}>8 beats</option>
+                </select>
+              </label>
+            </div>
+          ) : null}
           {shownView === 'follow' ? (
             <div className={styles.followTools}>
               <button
@@ -156,7 +198,20 @@ export function Score(props: ScoreProps) {
           ) : null}
         </div>
       ) : null}
-      {shownView === 'follow' ? (
+      {shownView === 'falling' ? (
+        <FallingNotes
+          compiled={compiled}
+          hand={fallingHand}
+          lookAheadBeats={lookAheadBeats}
+          mode={mode}
+          playing={props.falling?.playing ?? false}
+          visualBeat={props.falling?.visualBeat ?? DEFAULT_BEAT}
+          performanceBeat={props.falling?.performanceBeat ?? DEFAULT_WARP}
+          rhOn={props.falling?.rhOn ?? true}
+          lhOn={props.falling?.lhOn ?? true}
+          targetBeat={props.targetBeat}
+        />
+      ) : shownView === 'follow' ? (
         <section className={styles.followSection} aria-label="Follow Along score">
           {sectionAt?.title ? <h2 className={styles.sectionTitle}>{sectionAt.title}</h2> : null}
           {card(current, true)}
@@ -405,6 +460,8 @@ const BarCard = memo(
 );
 
 const NO_SCORES: Readonly<Record<string, Timing>> = {};
+const DEFAULT_BEAT = () => 0;
+const DEFAULT_WARP = (beat: number) => beat;
 
 const ACTION: Record<SongMode, string> = {
   listen: ' Play from here',
