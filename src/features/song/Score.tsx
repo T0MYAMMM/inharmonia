@@ -200,6 +200,8 @@ interface BarCardProps {
   /** Chips that start before this beat show as done. */
   doneBefore: number;
   onSelect: (index: number) => void;
+  follow: boolean;
+  zoom: number;
 }
 
 const BarCard = memo(
@@ -219,11 +221,39 @@ const BarCard = memo(
       showNumerals,
       chordScores,
       onSelect,
+      follow,
+      zoom,
     }: BarCardProps,
     ref,
   ) {
     const chordText = bar.chords.map((c) => formatChord(c.symbol, keyContext, notation)).join(', ');
     const angka = notation === 'angka';
+    const noteCount = bar.rh.filter((n) => n.note !== null).length;
+    const density = barDensity(bar);
+    const noteStrip = useRef<HTMLDivElement | null>(null);
+
+    // Keep the sounding note (or the practice target) visible within the strip,
+    // without unexpectedly scrolling the entire document.
+    useEffect(() => {
+      if (!follow) return;
+      const id = mode === 'practice' ? targetId : activeId;
+      const strip = noteStrip.current;
+      if (!id || !strip) return;
+      const chip = [...strip.querySelectorAll<HTMLElement>('[data-chip]')].find(
+        (node) => node.dataset.chip === id,
+      );
+      const slot = chip?.closest<HTMLElement>('[data-note-slot]');
+      if (!slot) return;
+      const left = slot.offsetLeft;
+      const right = left + slot.offsetWidth;
+      if (left >= strip.scrollLeft + 24 && right <= strip.scrollLeft + strip.clientWidth - 24)
+        return;
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      strip.scrollTo({
+        left: Math.max(0, left - strip.clientWidth * 0.3),
+        behavior: reduceMotion ? 'instant' : 'smooth',
+      });
+    }, [activeId, targetId, follow, mode, zoom, bar.index]);
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -235,7 +265,8 @@ const BarCard = memo(
         ref={ref}
         role="button"
         tabIndex={0}
-        className={styles.bar}
+        className={[styles.bar, follow ? styles.followBar : ''].filter(Boolean).join(' ')}
+        data-density={density}
         aria-current={current ? 'true' : undefined}
         data-bar={bar.index}
         onClick={() => onSelect(bar.index)}
@@ -243,7 +274,7 @@ const BarCard = memo(
       >
         {/* The name comes from this text, so voice control can say the bar number shown. */}
         <span className="visually-hidden">
-          Bar {bar.index + 1} of {barCount}, {chordText}.{ACTION[mode]}
+          Bar {bar.index + 1} of {barCount}, {chordText}; {noteCount} melody notes.{ACTION[mode]}
         </span>
         <span className={styles.barNumber} aria-hidden="true">
           {bar.index + 1}
@@ -275,9 +306,31 @@ const BarCard = memo(
             </span>
           ))}
         </div>
+        {!follow && density === 'dense' ? (
+          <div className={styles.denseSummary} data-testid="dense-summary" aria-hidden="true">
+            <strong>{noteCount} notes</strong>
+            <span>Open Follow Along to read every note</span>
+            <span className={styles.rhythm}>
+              {bar.rh.map((note) => (
+                <i key={note.id} style={{ flexGrow: note.beats }} />
+              ))}
+            </span>
+          </div>
+        ) : null}
+        {!follow && density === 'wide' ? (
+          <div className={styles.mobileSummary} aria-hidden="true">
+            {noteCount} notes · Use Follow Along to see each note
+          </div>
+        ) : null}
+        {follow ? (
+          <span className="visually-hidden">
+            Written melody: {bar.rh.map((n) => n.note?.name ?? 'rest').join(', ')}.
+          </span>
+        ) : null}
         {bar.rh.length > 0 ? (
           <div
-            className={styles.chips}
+            ref={noteStrip}
+            className={[styles.chips, follow ? styles.followChips : ''].filter(Boolean).join(' ')}
             aria-hidden="true"
             data-ties={bar.rh.some((n) => n.tiedTo || n.tiedFrom) || undefined}
           >
@@ -295,8 +348,23 @@ const BarCard = memo(
                 <span
                   key={n.id}
                   className={styles.chipSlot}
-                  style={{ flexGrow: n.beats, flexBasis: 0 }}
+                  data-note-slot
+                  style={
+                    follow
+                      ? {
+                          flex: '0 0 auto',
+                          width: Math.max(48, n.beats * 64) * (zoom / 100),
+                        }
+                      : { flexGrow: n.beats, flexBasis: 0 }
+                  }
                 >
+                  {follow &&
+                  Math.abs(n.startBeat - bar.startBeat - Math.round(n.startBeat - bar.startBeat)) <
+                    1e-8 ? (
+                    <span className={styles.beatTag} aria-hidden="true">
+                      {Math.round(n.startBeat - bar.startBeat) + 1}
+                    </span>
+                  ) : null}
                   <span
                     className={styles.chip}
                     data-state={state}
@@ -371,7 +439,11 @@ function groupSections(bars: CompiledBar[]) {
  * or behind the keyboard dock, scroll it to the middle of the visible area
  * (smoothly unless reduced motion).
  */
-function useScrollIntoView(ref: React.RefObject<HTMLDivElement | null>, bar: number) {
+function useScrollIntoView(
+  ref: React.RefObject<HTMLDivElement | null>,
+  bar: number,
+  view: ScoreView,
+) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -386,5 +458,5 @@ function useScrollIntoView(ref: React.RefObject<HTMLDivElement | null>, bar: num
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const delta = rect.top + rect.height / 2 - (top + bottom) / 2;
     window.scrollBy?.({ top: delta, behavior: reduce ? 'auto' : 'smooth' });
-  }, [ref, bar]);
+  }, [ref, bar, view]);
 }
