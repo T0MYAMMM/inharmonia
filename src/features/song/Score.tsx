@@ -70,9 +70,7 @@ export function Score(props: ScoreProps) {
   const shownView = isSong ? view : 'overview';
   const onFallingChange = props.onFallingChange;
   useEffect(() => {
-    onFallingChange?.(
-      shownView === 'falling' ? { hand: fallingHand, lookAheadBeats } : null,
-    );
+    onFallingChange?.(shownView === 'falling' ? { hand: fallingHand, lookAheadBeats } : null);
   }, [onFallingChange, shownView, fallingHand, lookAheadBeats]);
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
@@ -204,9 +202,9 @@ export function Score(props: ScoreProps) {
       ) : null}
       {shownView === 'falling' ? (
         <p className={styles.followHint} data-testid="falling-score-hint">
-          Falling Notes appear above the floating playable keyboard. Notes descend onto
-          the same keys used in Overview and Follow Along; scroll the piano sideways on
-          small screens to follow the melody.
+          Falling Notes appear above the floating playable keyboard. Notes descend onto the same
+          keys used in Overview and Follow Along; scroll the piano sideways on small screens to
+          follow the melody.
         </p>
       ) : shownView === 'follow' ? (
         <section className={styles.followSection} aria-label="Follow Along score">
