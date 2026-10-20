@@ -15,9 +15,8 @@ export interface KeyboardDockProps {
   /** Extra legend items, e.g. a target swatch. */
   extra?: ReactNode;
   showTarget?: boolean;
-  /** Place the normal playable keyboard directly below a shared-scroll note roll. */
+  /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
-  inline?: boolean;
 }
 
 export function KeyboardDock({
@@ -27,7 +26,6 @@ export function KeyboardDock({
   extra,
   showTarget = false,
   roll,
-  inline = false,
 }: KeyboardDockProps) {
   const shift = useComputerKeys();
   const showHints = useSettings((s) => s.showKeyHints);
@@ -37,7 +35,7 @@ export function KeyboardDock({
       className={styles.dock}
       aria-label="Keyboard"
       data-dock
-      data-inline={inline || undefined}
+      data-falling={roll ? 'true' : undefined}
     >
       <div className={styles.inner}>
         <div className={styles.legend}>
