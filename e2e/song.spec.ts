@@ -173,6 +173,75 @@ test.describe('song player', () => {
     await expect(keyboard).toHaveCount(1);
   });
 
+  test('Full Screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
+    page,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+
+    // CSS fallback exercises browsers where Fullscreen API is unavailable.
+    await page.evaluate(() => {
+      Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+    await page.getByTestId('falling-fullscreen').click();
+    const dock = page.locator('[data-dock]');
+    const controls = page.getByTestId('falling-fullscreen-controls');
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(controls).toBeVisible();
+
+    const loop = controls.getByRole('button', { name: 'Loop' });
+    const metro = controls.getByRole('button', { name: 'Metronome' });
+    await loop.click();
+    await metro.click();
+    await expect(loop).toHaveAttribute('aria-pressed', 'true');
+    await expect(metro).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-sticky-panel]').getByRole('button', { name: 'Loop' }))
+      .toHaveAttribute('aria-pressed', 'true');
+
+    const tempo = controls.getByTestId('fullscreen-tempo');
+    const initialTempo = Number(await tempo.inputValue());
+    await tempo.focus();
+    await tempo.press('ArrowRight');
+    await expect.poll(async () => Number(await tempo.inputValue())).toBe(initialTempo + 1);
+    await expect(page.locator('[data-sticky-panel]').getByRole('slider', { name: 'Tempo' }))
+      .toHaveValue(String(initialTempo + 1));
+
+    const melody = controls.getByRole('button', { name: 'Melody' });
+    await melody.click();
+    await expect(melody).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('[data-sticky-panel]').getByRole('button', { name: 'Melody' }))
+      .toHaveAttribute('aria-pressed', 'false');
+
+    await controls.getByTestId('fullscreen-countin').selectOption('1');
+    await controls.getByTestId('fullscreen-falling-hand').selectOption('rh');
+    await controls.getByTestId('fullscreen-falling-lookahead').selectOption('8');
+    await expect(page.getByTestId('falling-hand')).toHaveValue('rh');
+    await expect(page.getByTestId('falling-lookahead')).toHaveValue('8');
+
+    const arrangement = controls.getByTestId('fullscreen-song-arrangement');
+    await arrangement.locator('summary').click();
+    await controls.getByTestId('fullscreen-song-pattern').selectOption('block');
+    await expect(page).toHaveURL(/pattern=block/);
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    await expect(page.getByTestId('song-pattern')).toHaveValue('block');
+
+    await controls.getByRole('radio', { name: 'Practice' }).click();
+    await expect(controls.getByRole('radiogroup', { name: 'Full Screen practice hand' })).toBeVisible();
+    await controls.getByRole('radiogroup', { name: 'Full Screen practice hand' })
+      .getByRole('radio', { name: 'Both hands' }).click();
+    await expect(page.locator('[data-sticky-panel]')
+      .getByRole('radiogroup', { name: 'Practice hand' })
+      .getByRole('radio', { name: 'Both hands' })).toBeChecked();
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+  });
+
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
