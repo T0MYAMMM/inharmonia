@@ -352,6 +352,27 @@ export function LessonPlayer({
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
       <KeyboardDock
+        fullScreenControls={
+          <>
+            <button
+              type="button"
+              data-testid="fullscreen-play"
+              onClick={() => ctrl.playPause()}
+              disabled={practice}
+            >
+              {playing ? 'Pause' : 'Play'}
+            </button>
+            <button
+              type="button"
+              data-testid="fullscreen-restart"
+              onClick={() => ctrl.restart()}
+              disabled={practice}
+            >
+              Restart
+            </button>
+            {practice ? <span>Practice: play the highlighted notes to advance</span> : null}
+          </>
+        }
         focus={focus}
         low={low}
         high={high}
