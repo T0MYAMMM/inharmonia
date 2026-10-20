@@ -14,7 +14,6 @@ import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
 import type { SongMode } from './SongController';
 import { barDensity } from './scoreLayout';
-import { FallingNotes } from './FallingNotes';
 import type { FallingHand } from './fallingNotesLayout';
 import styles from './Score.module.css';
 
@@ -35,22 +34,13 @@ export interface ScoreProps {
   targetChordId: string | null;
   targetBeat: number;
   onSelectBar: (index: number) => void;
-  /** Hide the otherwise sticky keyboard while the interactive keys live under the roll. */
-  onFallingChange?: (falling: boolean) => void;
-  /** Optional shared audio playhead, available in the song player. */
-  falling?: {
-    visualBeat: () => number;
-    performanceBeat: (beat: number) => number;
-    playing: boolean;
-    rhOn: boolean;
-    lhOn: boolean;
-    keyboard?: {
-      low: number;
-      high: number;
-      focus: [number, number];
-      showTarget: boolean;
-    };
-  };
+  /** Share the selected roll settings with the floating keyboard dock. */
+  onFallingChange?: (options: FallingViewOptions | null) => void;
+}
+
+export interface FallingViewOptions {
+  hand: FallingHand;
+  lookAheadBeats: number;
 }
 
 type ScoreView = 'overview' | 'follow' | 'falling';
@@ -78,10 +68,12 @@ export function Score(props: ScoreProps) {
   const [fallingHand, setFallingHand] = useState<FallingHand>('both');
   const [lookAheadBeats, setLookAheadBeats] = useState(4);
   const shownView = isSong ? view : 'overview';
-  useEffect(
-    () => props.onFallingChange?.(shownView === 'falling'),
-    [props.onFallingChange, shownView],
-  );
+  const onFallingChange = props.onFallingChange;
+  useEffect(() => {
+    onFallingChange?.(
+      shownView === 'falling' ? { hand: fallingHand, lookAheadBeats } : null,
+    );
+  }, [onFallingChange, shownView, fallingHand, lookAheadBeats]);
   const currentRef = useRef<HTMLDivElement | null>(null);
   const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
   const sectionAt = [...sections].reverse().find((sec) => sec.startIndex <= current.index);
@@ -211,19 +203,11 @@ export function Score(props: ScoreProps) {
         </div>
       ) : null}
       {shownView === 'falling' ? (
-        <FallingNotes
-          compiled={compiled}
-          hand={fallingHand}
-          lookAheadBeats={lookAheadBeats}
-          mode={mode}
-          playing={props.falling?.playing ?? false}
-          visualBeat={props.falling?.visualBeat ?? DEFAULT_BEAT}
-          performanceBeat={props.falling?.performanceBeat ?? DEFAULT_WARP}
-          rhOn={props.falling?.rhOn ?? true}
-          lhOn={props.falling?.lhOn ?? true}
-          targetBeat={props.targetBeat}
-          keyboard={props.falling?.keyboard}
-        />
+        <p className={styles.followHint} data-testid="falling-score-hint">
+          Falling Notes appear above the floating playable keyboard. Notes descend onto
+          the same keys used in Overview and Follow Along; scroll the piano sideways on
+          small screens to follow the melody.
+        </p>
       ) : shownView === 'follow' ? (
         <section className={styles.followSection} aria-label="Follow Along score">
           {sectionAt?.title ? <h2 className={styles.sectionTitle}>{sectionAt.title}</h2> : null}
@@ -473,8 +457,6 @@ const BarCard = memo(
 );
 
 const NO_SCORES: Readonly<Record<string, Timing>> = {};
-const DEFAULT_BEAT = () => 0;
-const DEFAULT_WARP = (beat: number) => beat;
 
 const ACTION: Record<SongMode, string> = {
   listen: ' Play from here',
