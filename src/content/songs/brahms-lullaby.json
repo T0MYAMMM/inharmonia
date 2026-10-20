@@ -31,7 +31,6 @@
         "lhPattern": "bass-held",
         "piece": "brahms-lullaby",
         "level": "easy",
-        "covers": "bars 2–35",
         "summary": "Both verses of the 1868 lullaby, the voice line over Brahms's rocking E♭ pedal.",
         "bars": [
           {
@@ -823,7 +822,6 @@
         "lhPattern": "waltz",
         "piece": "brahms-lullaby",
         "level": "medium",
-        "covers": "bars 2–35",
         "summary": "Both verses of the 1868 lullaby, the voice line over Brahms's rocking E♭ pedal.",
         "bars": [
           {
@@ -1699,7 +1697,6 @@
         },
         "piece": "brahms-lullaby",
         "level": "advanced",
-        "covers": "bars 1–35",
         "summary": "Both verses of the 1868 lullaby, the voice line over Brahms's rocking E♭ pedal.",
         "bars": [
           {
