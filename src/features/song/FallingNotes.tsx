@@ -139,10 +139,10 @@ export function FallingNotes({
       ctx.fillRect(0, ROLL_HEIGHT - 2, width, 3);
       ctx.fillStyle = '#263348';
       ctx.fillRect(0, ROLL_HEIGHT + 1, width, PIANO_HEIGHT - 1);
-      const active = new Set(notes.filter((n) => n.active).map((n) => n.midi));
+      const active = new Map(notes.filter((n) => n.active).map((n) => [n.midi, n.hand]));
       for (const key of keys.keys) {
         if (key.black) continue;
-        ctx.fillStyle = active.has(key.midi) ? RH : '#F1F1EF';
+        ctx.fillStyle = active.get(key.midi) === 'lh' ? LH : active.has(key.midi) ? RH : '#F1F1EF';
         ctx.fillRect(shift + key.x + 1, ROLL_HEIGHT + 2, Math.max(2, key.width - 2), 64);
         ctx.strokeStyle = '#344054';
         ctx.strokeRect(shift + key.x + 1, ROLL_HEIGHT + 2, Math.max(2, key.width - 2), 64);
@@ -155,7 +155,7 @@ export function FallingNotes({
       }
       for (const key of keys.keys) {
         if (!key.black) continue;
-        ctx.fillStyle = active.has(key.midi) ? LH : '#0C1424';
+        ctx.fillStyle = active.get(key.midi) === 'rh' ? RH : active.has(key.midi) ? LH : '#0C1424';
         ctx.fillRect(
           shift + key.x,
           ROLL_HEIGHT + 2,
