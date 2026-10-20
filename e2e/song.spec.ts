@@ -50,6 +50,33 @@ test.describe('song player', () => {
     await expect(score.locator('[data-bar]')).toHaveCount(16);
   });
 
+  test('Falling Notes plays in sync with the transport and survives mode changes', async ({
+    page,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    const roll = page.getByTestId('falling-notes');
+    await expect(roll).toBeVisible();
+    await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
+    await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'falling');
+
+    await page.getByTestId('falling-hand').selectOption('lh');
+    await page.getByTestId('falling-lookahead').selectOption('8');
+    await expect(page.getByTestId('falling-hand')).toHaveValue('lh');
+
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Pause');
+    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(0);
+    await page.getByTestId('play').click();
+    await expect(page.getByTestId('play')).toHaveText('Play');
+
+    await page.getByRole('radio', { name: 'Practice', exact: true }).click();
+    await expect(roll.getByText(/notes wait at your current practice target/i)).toBeVisible();
+    await expect(page.getByTestId('play')).toBeDisabled();
+    await page.getByRole('radio', { name: 'Overview' }).click();
+    await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'overview');
+  });
+
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
