@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { describeChange, type VoicingChange } from '@/core/charts';
 import type { CompiledChord, CompiledLesson } from '@/core/content/compile';

@@ -60,8 +60,7 @@ export function FallingNotes({
     if (!canvas || !viewport || !ctx) return;
 
     const enabled = compiled.events.filter(
-      (event) =>
-        (event.channel === 'rh' && rhOn) || (event.channel === 'lh' && lhOn),
+      (event) => (event.channel === 'rh' && rhOn) || (event.channel === 'lh' && lhOn),
     );
     const range = fallingKeyRange(enabled, hand);
     const keys = fallingKeyPositions(range[0], range[1], hand === 'both' ? 21 : 26);
@@ -156,17 +155,13 @@ export function FallingNotes({
       for (const key of keys.keys) {
         if (!key.black) continue;
         ctx.fillStyle = active.get(key.midi) === 'rh' ? RH : active.has(key.midi) ? LH : '#0C1424';
-        ctx.fillRect(
-          shift + key.x,
-          ROLL_HEIGHT + 2,
-          Math.max(3, key.width),
-          41,
-        );
+        ctx.fillRect(shift + key.x, ROLL_HEIGHT + 2, Math.max(3, key.width), 41);
       }
 
       // On narrow screens keep the active melody within the viewport. Follow a
       // change in pitch, not every frame, to avoid fighting touch scrolling.
-      const focus = notes.find((n) => n.active && n.hand === 'rh') ??
+      const focus =
+        notes.find((n) => n.active && n.hand === 'rh') ??
         notes.find((n) => n.active) ??
         notes.find((n) => n.hand === 'rh' && n.bottom > 0.9);
       if (playing && focus && focusedMidiRef.current !== focus.midi) {
@@ -207,8 +202,12 @@ export function FallingNotes({
   return (
     <div className={styles.frame} data-testid="falling-notes">
       <div className={styles.legend} aria-hidden="true">
-        <span><i className={styles.right} /> Right hand</span>
-        <span><i className={styles.left} /> Left hand</span>
+        <span>
+          <i className={styles.right} /> Right hand
+        </span>
+        <span>
+          <i className={styles.left} /> Left hand
+        </span>
         <span className={styles.explanation}>Notes reach the line when played</span>
       </div>
       <div className={styles.viewport} ref={viewportRef} data-testid="falling-notes-viewport">
@@ -218,14 +217,15 @@ export function FallingNotes({
           role="img"
           aria-label="Falling piano notes, amber for right hand and lavender for left hand. Notes descend to the keyboard in time with the song."
         >
-          Falling-notes visualization requires Canvas support. Use Follow Along for text-based notes.
+          Falling-notes visualization requires Canvas support. Use Follow Along for text-based
+          notes.
         </canvas>
       </div>
       <p className={styles.hint}>
         {mode === 'practice'
           ? 'The notes wait at your current practice target. Play the requested melody note or chord to advance.'
-          : 'The animation follows the song transport, including tempo changes and accompaniment patterns.'}
-        {' '}Scroll sideways on small screens to see more keys.
+          : 'The animation follows the song transport, including tempo changes and accompaniment patterns.'}{' '}
+        Scroll sideways on small screens to see more keys.
       </p>
     </div>
   );
