@@ -113,6 +113,7 @@ test.describe('song player', () => {
 
   test('Falling Notes Full Screen expands the same piano and restores the floating dock', async ({
     page,
+    isMobile,
   }) => {
     await open(page);
     await page.getByRole('radio', { name: 'Falling Notes' }).click();
@@ -133,6 +134,30 @@ test.describe('song player', () => {
     await expect(dock).toHaveAttribute('data-immersive', 'true');
     await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit Full Screen');
     await expect(page.getByTestId('falling-fullscreen-controls')).toBeVisible();
+    const leftPanel = page.getByTestId('falling-panel-left');
+    const rightPanel = page.getByTestId('falling-panel-right');
+    await expect(leftPanel).toBeVisible();
+    await expect(rightPanel).toBeVisible();
+    const layout = await dock.evaluate((element) => {
+      const left = element.querySelector<HTMLElement>('[data-testid="falling-panel-left"]');
+      const right = element.querySelector<HTMLElement>('[data-testid="falling-panel-right"]');
+      const scroller = element.querySelector<HTMLElement>('[data-keyboard-scroller]');
+      const l = left?.getBoundingClientRect();
+      const r = right?.getBoundingClientRect();
+      const c = scroller?.getBoundingClientRect();
+      return l && r && c
+        ? { leftRight: l.right, rightLeft: r.left, centerLeft: c.left, centerRight: c.right,
+            leftBottom: l.bottom, rightBottom: r.bottom, centerTop: c.top }
+        : null;
+    });
+    expect(layout).not.toBeNull();
+    if (isMobile) {
+      expect(layout!.leftBottom).toBeLessThanOrEqual(layout!.centerTop + 3);
+      expect(layout!.rightBottom).toBeLessThanOrEqual(layout!.centerTop + 3);
+    } else {
+      expect(layout!.leftRight).toBeLessThanOrEqual(layout!.centerLeft + 3);
+      expect(layout!.rightLeft).toBeGreaterThanOrEqual(layout!.centerRight - 3);
+    }
     await expect(keyboard).toHaveCount(1);
     const dimensions = await dock.evaluate((element) => {
       const piano = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
@@ -192,6 +217,8 @@ test.describe('song player', () => {
     await expect(dock).toHaveAttribute('data-immersive', 'true');
     await expect(controls).toBeVisible();
 
+    await expect(page.getByTestId('falling-panel-left').getByRole('heading', { name: 'Playback' })).toBeVisible();
+    await expect(page.getByTestId('falling-panel-right').getByRole('heading', { name: 'Hands & arrangement' })).toBeVisible();
     const loop = controls.getByRole('button', { name: 'Loop' });
     const metro = controls.getByRole('button', { name: 'Metronome' });
     const loopBefore = await loop.getAttribute('aria-pressed');
