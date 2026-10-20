@@ -10,6 +10,7 @@
 
 .roll {
   width: 100%;
+  margin: 0 auto;
   position: relative;
   pointer-events: none;
 }
