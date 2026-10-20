@@ -127,10 +127,14 @@
 }
 
 .immersiveControls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(48dvh, 350px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  padding: 4px 2px;
 }
 
 .immersiveControls button {
@@ -215,4 +219,17 @@
 .dock[data-immersive] [data-testid='keyboard'],
 .dock:fullscreen [data-testid='keyboard'] {
   flex: 0 0 auto;
+}
+
+
+@media (max-width: 600px) {
+  .immersiveControls {
+    max-height: min(42dvh, 310px);
+  }
+}
+
+@media (max-height: 500px) {
+  .immersiveControls {
+    max-height: 35dvh;
+  }
 }
