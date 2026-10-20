@@ -58,6 +58,8 @@ export interface LessonPlayerProps {
   variant: 'song' | 'progression';
   /** Settings that shape the lesson (key, pattern, voicing), shown in the sticky panel. */
   settings?: ReactNode;
+  /** The same URL-controlled arrangement, rendered only inside Falling Notes fullscreen. */
+  fullScreenSettings?: ReactNode;
   /** Roman numerals under the chord symbols (default: on for progressions). */
   showNumerals?: boolean;
   /**
@@ -78,6 +80,7 @@ export function LessonPlayer({
   recordId,
   variant,
   settings,
+  fullScreenSettings,
   showNumerals,
   voicingHints = false,
 }: LessonPlayerProps) {
@@ -349,30 +352,98 @@ export function LessonPlayer({
         showNumerals={showNumerals ?? progression}
         chordScores={snap.chordScores}
         onFallingChange={setFallingOptions}
+        fallingSelected={fallingOptions}
         onSelectBar={(i) => ctrl.selectBar(i)}
       />
       <KeyboardDock
         fullScreenControls={
-          <>
-            <button
-              type="button"
-              data-testid="fullscreen-play"
-              onClick={() => ctrl.playPause()}
-              disabled={practice}
-            >
-              {playing ? 'Pause' : 'Play'}
-            </button>
-            <button
-              type="button"
-              data-testid="fullscreen-restart"
-              onClick={() => ctrl.restart()}
-              disabled={practice}
-            >
-              Restart
-            </button>
-            {practice ? <span>Practice: play the highlighted notes to advance</span> : null}
-          </>
+          <section className={styles.fullScreenPanel} aria-label="Full Screen player settings">
+            <div className={styles.fullScreenBar}>
+              <span className={styles.fullScreenPosition} data-testid="fullscreen-position">
+                Bar {snap.bar + 1} / {compiled.bars.length}
+                {snap.chordSymbol ? ' · ' + formatChord(snap.chordSymbol, lesson.key, notation) : ''}
+              </span>
+              <div className={styles.fullScreenGroup}>
+                <Button
+                  variant="primary"
+                  onClick={() => ctrl.playPause()}
+                  disabled={practice}
+                  data-testid="fullscreen-play"
+                >
+                  {playing ? (playAlong ? 'Stop' : 'Pause') : 'Play'}
+                </Button>
+                <Button onClick={() => ctrl.restart()} disabled={practice} data-testid="fullscreen-restart">
+                  Restart
+                </Button>
+                {practice ? (
+                  <>
+                    <Button variant="primary" onClick={() => ctrl.hearIt()}>Hear it</Button>
+                    <Button onClick={() => ctrl.startOver()}>Start over</Button>
+                  </>
+                ) : null}
+              </div>
+              <div className={styles.fullScreenGroup}>
+                {practice ? (
+                  <Segmented label="Full Screen practice hand" value={snap.hands} options={PRACTICE_HANDS} onChange={(v) => ctrl.setHands(v)} />
+                ) : (
+                  <>
+                    <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>Loop</Toggle>
+                    <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>Metronome</Toggle>
+                  </>
+                )}
+                <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">Melody</Toggle>
+                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">Left hand</Toggle>
+              </div>
+              {!practice ? (
+                <label className={styles.fullScreenField}>
+                  Tempo: {snap.tempo} bpm
+                  <input
+                    type="range"
+                    aria-label="Full Screen tempo"
+                    data-testid="fullscreen-tempo"
+                    min={lesson.tempo.min}
+                    max={lesson.tempo.max}
+                    value={snap.tempo}
+                    onChange={(event) => ctrl.setTempo(Number(event.target.value))}
+                  />
+                </label>
+              ) : null}
+              <label className={styles.fullScreenField}>
+                View
+                <select
+                  aria-label="Full Screen displayed hands"
+                  data-testid="fullscreen-falling-hand"
+                  value={fallingOptions?.hand ?? 'both'}
+                  onChange={(event) => setFallingOptions((old) =>
+                    old ? { ...old, hand: event.target.value as FallingViewOptions['hand'] } : old
+                  )}
+                >
+                  <option value="both">Both hands</option>
+                  <option value="rh">Right hand</option>
+                  <option value="lh">Left hand</option>
+                </select>
+              </label>
+              <label className={styles.fullScreenField}>
+                Look ahead
+                <select
+                  aria-label="Full Screen look ahead"
+                  data-testid="fullscreen-falling-lookahead"
+                  value={fallingOptions?.lookAheadBeats ?? 4}
+                  onChange={(event) => setFallingOptions((old) =>
+                    old ? { ...old, lookAheadBeats: Number(event.target.value) } : old
+                  )}
+                >
+                  <option value={4}>4 beats</option>
+                  <option value={8}>8 beats</option>
+                </select>
+              </label>
+            </div>
+            {fullScreenSettings ? (
+              <div className={styles.fullScreenArrangement}>{fullScreenSettings}</div>
+            ) : null}
+          </section>
         }
+
         focus={focus}
         low={low}
         high={high}
