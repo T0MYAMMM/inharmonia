@@ -1,4 +1,5 @@
 .scroller {
+  --w: 34px;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -7,8 +8,13 @@
   padding-bottom: 4px;
 }
 
+.roll {
+  width: 100%;
+  position: relative;
+  pointer-events: none;
+}
+
 .keyboard {
-  --w: 34px;
   position: relative;
   height: var(--key-h, 132px);
   margin: 0 auto;
@@ -19,8 +25,10 @@
 }
 
 @media (max-width: 600px) {
-  .keyboard {
+  .scroller {
     --w: 30px;
+  }
+  .keyboard {
     --key-h: 108px;
   }
 }
@@ -28,23 +36,29 @@
 /* Touch screens get keys sized for fingers; the board scrolls sideways and keeps
    the notes in play centred. */
 @media (pointer: coarse) {
-  .keyboard {
+  .scroller {
     --w: 48px;
+  }
+  .keyboard {
     --key-h: 180px;
   }
 }
 
 @media (pointer: coarse) and (max-width: 600px) {
-  .keyboard {
+  .scroller {
     --w: 40px;
+  }
+  .keyboard {
     --key-h: 150px;
   }
 }
 
 /* A phone held sideways: keep the board from filling the short screen. */
 @media (pointer: coarse) and (max-height: 500px) {
-  .keyboard {
+  .scroller {
     --w: 40px;
+  }
+  .keyboard {
     --key-h: 120px;
   }
 }
