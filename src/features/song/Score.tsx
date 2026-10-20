@@ -1,4 +1,4 @@
-import { forwardRef, memo, useEffect, useRef, type KeyboardEvent } from 'react';
+import { forwardRef, memo, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { CompiledBar, CompiledLesson } from '@/core/content/compile';
 import {
   prettyNumeral,
@@ -10,6 +10,7 @@ import {
   type NotationSystem,
 } from '@/core/notation';
 import { NoteLabel } from '@/ui/NoteLabel';
+import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
 import type { SongMode } from './SongController';
 import styles from './Score.module.css';
@@ -33,62 +34,152 @@ export interface ScoreProps {
   onSelectBar: (index: number) => void;
 }
 
-/**
- * The song as bar cards: sections, chords sized by duration, note chips sized by
- * duration. Re-renders only bars whose state changed (BarCard is memoised on
- * per-bar props).
- */
+type ScoreView = 'overview' | 'follow';
+
+const VIEW_OPTIONS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'follow', label: 'Follow Along' },
+] as const;
+
+/** Expand moderately dense cards; summarize very dense cards before labels overlap. */
+export function barDensity(bar: Pick<CompiledBar, 'rh'>): 'normal' | 'wide' | 'dense' {
+  const count = bar.rh.filter((note) => note.note !== null).length;
+  return count >= 9 ? 'dense' : count >= 5 ? 'wide' : 'normal';
+}
+
+/** The transport remains the source of truth for the bar and note in both layouts. */
 export function Score(props: ScoreProps) {
   const { compiled, notation, mode, currentBar } = props;
   const key = compiled.lesson.key;
   const sections = groupSections(compiled.bars);
+  const isSong = compiled.lesson.kind === 'song';
+  const [view, setView] = useState<ScoreView>(() =>
+    isSong &&
+    compiled.lesson.level === 'advanced' &&
+    compiled.bars.some((bar) => bar.rh.filter((n) => n.note).length >= 9)
+      ? 'follow'
+      : 'overview',
+  );
+  const [zoom, setZoom] = useState(100);
+  const shownView = isSong ? view : 'overview';
   const currentRef = useRef<HTMLDivElement | null>(null);
+  const current = compiled.bars[currentBar] ?? compiled.bars[0]!;
+  const sectionAt = [...sections].reverse().find((sec) => sec.startIndex <= current.index);
+  useScrollIntoView(currentRef, currentBar, shownView);
 
-  useScrollIntoView(currentRef, currentBar);
+  const card = (bar: CompiledBar, follow: boolean) => {
+    const isCurrent = bar.index === currentBar;
+    return (
+      <BarCard
+        key={bar.index}
+        ref={isCurrent ? currentRef : undefined}
+        bar={bar}
+        barCount={compiled.bars.length}
+        keyContext={key}
+        notation={notation}
+        accidentalStyle={props.accidentalStyle}
+        mode={mode}
+        current={isCurrent}
+        activeId={
+          props.activeChipId?.startsWith('rh-' + bar.index + '-') ? props.activeChipId : null
+        }
+        targetId={
+          props.targetChipId?.startsWith('rh-' + bar.index + '-') ? props.targetChipId : null
+        }
+        targetChordId={
+          props.targetChordId?.startsWith('chord-' + bar.index + '-')
+            ? props.targetChordId
+            : null
+        }
+        doneBefore={mode === 'practice' ? props.targetBeat : -Infinity}
+        showNumerals={props.showNumerals ?? false}
+        chordScores={props.chordScores ?? NO_SCORES}
+        onSelect={props.onSelectBar}
+        follow={follow}
+        zoom={zoom}
+      />
+    );
+  };
 
   return (
-    <div className={styles.score}>
+    <div className={styles.score} data-score-view={shownView}>
       {notation === 'angka' ? <p className={styles.doHeader}>{doHeader(key)}</p> : null}
-      {sections.map((sec) => (
-        <section key={sec.startIndex} className={styles.section} aria-label={sec.title ?? 'Bars'}>
-          {sec.title ? <h2 className={styles.sectionTitle}>{sec.title}</h2> : null}
-          <div className={styles.grid}>
-            {sec.bars.map((bar) => {
-              const isCurrent = bar.index === currentBar;
-              const doneBefore = mode === 'practice' ? props.targetBeat : -Infinity;
-              const activeId = props.activeChipId?.startsWith(`rh-${bar.index}-`)
-                ? props.activeChipId
-                : null;
-              const targetId = props.targetChipId?.startsWith(`rh-${bar.index}-`)
-                ? props.targetChipId
-                : null;
-              const targetChordId = props.targetChordId?.startsWith(`chord-${bar.index}-`)
-                ? props.targetChordId
-                : null;
-              return (
-                <BarCard
-                  key={bar.index}
-                  ref={isCurrent ? currentRef : undefined}
-                  bar={bar}
-                  barCount={compiled.bars.length}
-                  keyContext={key}
-                  notation={notation}
-                  accidentalStyle={props.accidentalStyle}
-                  mode={mode}
-                  current={isCurrent}
-                  activeId={activeId}
-                  targetId={targetId}
-                  doneBefore={doneBefore}
-                  targetChordId={targetChordId}
-                  showNumerals={props.showNumerals ?? false}
-                  chordScores={props.chordScores ?? NO_SCORES}
-                  onSelect={props.onSelectBar}
+      {isSong ? (
+        <div className={styles.scoreTools} data-testid="score-tools">
+          <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={setView} />
+          {shownView === 'follow' ? (
+            <div className={styles.followTools}>
+              <button
+                className={styles.navButton}
+                type="button"
+                onClick={() => props.onSelectBar(current.index - 1)}
+                disabled={current.index === 0}
+                aria-label="Previous bar"
+              >
+                Previous
+              </button>
+              <strong className={styles.barPosition}>
+                Bar {current.index + 1} of {compiled.bars.length}
+              </strong>
+              <button
+                className={styles.navButton}
+                type="button"
+                onClick={() => props.onSelectBar(current.index + 1)}
+                disabled={current.index === compiled.bars.length - 1}
+                aria-label="Next bar"
+              >
+                Next
+              </button>
+              {sections.length > 1 ? (
+                <label className={styles.field}>
+                  Section
+                  <select
+                    aria-label="Jump to section"
+                    value={sectionAt?.startIndex ?? 0}
+                    onChange={(event) => props.onSelectBar(Number(event.target.value))}
+                  >
+                    {sections.map((section) => (
+                      <option key={section.startIndex} value={section.startIndex}>
+                        {section.title ?? 'Opening'} (bar {section.startIndex + 1})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <label className={styles.field}>
+                Note size: {zoom}%
+                <input
+                  type="range"
+                  min={75}
+                  max={175}
+                  step={25}
+                  value={zoom}
+                  data-testid="score-zoom"
+                  onChange={(event) => setZoom(Number(event.target.value))}
+                  aria-label="Note size"
                 />
-              );
-            })}
-          </div>
+              </label>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {shownView === 'follow' ? (
+        <section className={styles.followSection} aria-label="Follow Along score">
+          {sectionAt?.title ? <h2 className={styles.sectionTitle}>{sectionAt.title}</h2> : null}
+          {card(current, true)}
+          <p className={styles.followHint}>
+            Notes stay readable at their actual rhythm. Scroll the note strip sideways, or use
+            Previous and Next to move by bar.
+          </p>
         </section>
-      ))}
+      ) : (
+        sections.map((sec) => (
+          <section key={sec.startIndex} className={styles.section} aria-label={sec.title ?? 'Bars'}>
+            {sec.title ? <h2 className={styles.sectionTitle}>{sec.title}</h2> : null}
+            <div className={styles.grid}>{sec.bars.map((bar) => card(bar, false))}</div>
+          </section>
+        ))
+      )}
     </div>
   );
 }
