@@ -194,13 +194,17 @@ test.describe('song player', () => {
 
     const loop = controls.getByRole('button', { name: 'Loop' });
     const metro = controls.getByRole('button', { name: 'Metronome' });
+    const loopBefore = await loop.getAttribute('aria-pressed');
+    const metroBefore = await metro.getAttribute('aria-pressed');
+    const loopAfter = loopBefore === 'true' ? 'false' : 'true';
+    const metroAfter = metroBefore === 'true' ? 'false' : 'true';
     await loop.click();
     await metro.click();
-    await expect(loop).toHaveAttribute('aria-pressed', 'true');
-    await expect(metro).toHaveAttribute('aria-pressed', 'true');
+    await expect(loop).toHaveAttribute('aria-pressed', loopAfter);
+    await expect(metro).toHaveAttribute('aria-pressed', metroAfter);
     await expect(
       page.locator('[data-sticky-panel]').getByRole('button', { name: 'Loop' }),
-    ).toHaveAttribute('aria-pressed', 'true');
+    ).toHaveAttribute('aria-pressed', loopAfter);
 
     const tempo = controls.getByTestId('fullscreen-tempo');
     const initialTempo = Number(await tempo.inputValue());
