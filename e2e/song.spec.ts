@@ -111,6 +111,68 @@ test.describe('song player', () => {
     expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
   });
 
+  test('Falling Notes Full Screen expands the same piano and restores the floating dock', async ({
+    page,
+  }) => {
+    await open(page);
+    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    const dock = page.locator('[data-dock]');
+    const keyboard = page.getByTestId('keyboard');
+    const roll = page.getByTestId('keyboard-roll');
+    await expect(keyboard).toHaveCount(1);
+    await expect(dock).not.toHaveAttribute('data-immersive');
+
+    // Exercise the no-Fullscreen-API fallback used by mobile Safari and PWA windows.
+    await page.evaluate(() => {
+      Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit Full Screen');
+    await expect(page.getByTestId('falling-fullscreen-controls')).toBeVisible();
+    await expect(keyboard).toHaveCount(1);
+    const dimensions = await dock.evaluate((element) => {
+      const piano = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
+      const rollElement = element.querySelector<HTMLElement>('[data-testid="keyboard-roll"]');
+      const bounds = element.getBoundingClientRect();
+      const pianoBounds = piano?.getBoundingClientRect();
+      const rollBounds = rollElement?.getBoundingClientRect();
+      return {
+        position: getComputedStyle(element).position,
+        height: bounds.height,
+        viewport: window.innerHeight,
+        rollHeight: rollBounds?.height ?? 0,
+        rollEndsAtPiano: Math.abs((rollBounds?.bottom ?? 0) - (pianoBounds?.top ?? 0)),
+      };
+    });
+    expect(dimensions.position).toBe('fixed');
+    expect(Math.abs(dimensions.height - dimensions.viewport)).toBeLessThan(3);
+    expect(dimensions.rollHeight).toBeGreaterThan(60);
+    expect(dimensions.rollEndsAtPiano).toBeLessThan(4);
+
+    await page.getByTestId('fullscreen-play').click();
+    await expect(page.getByTestId('fullscreen-play')).toHaveText('Pause');
+    await page.getByTestId('fullscreen-play').click();
+    await expect(page.getByTestId('fullscreen-play')).toHaveText('Play');
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+    await expect(keyboard).toHaveCount(1);
+    await expect(roll).toBeVisible();
+
+    await page.getByTestId('falling-fullscreen').click();
+    await expect(dock).toHaveAttribute('data-immersive', 'true');
+    await page.keyboard.press('Escape');
+    await expect(dock).not.toHaveAttribute('data-immersive');
+    await page.getByRole('radio', { name: 'Overview' }).click();
+    await expect(page.getByTestId('falling-fullscreen')).toHaveCount(0);
+    await expect(keyboard).toHaveCount(1);
+  });
+
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
     await open(page);
     await page.getByTestId('play').click();
