@@ -58,6 +58,29 @@ test.describe('song player', () => {
     const roll = page.getByTestId('falling-notes');
     await expect(roll).toBeVisible();
     await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
+    // The roll and the single playable keyboard must share a scroll surface.
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    const shared = roll.locator('[data-keyboard-scroller]');
+    await expect(shared.getByTestId('keyboard-roll')).toBeVisible();
+    await expect(shared.getByTestId('keyboard')).toBeVisible();
+    const alignment = await shared.evaluate((element) => {
+      const rollElement = element.querySelector<HTMLElement>('[data-testid="keyboard-roll"]');
+      const board = element.querySelector<HTMLElement>('[data-testid="keyboard"]');
+      const key = board?.querySelector<HTMLElement>('[data-midi="60"]');
+      if (!rollElement || !board || !key) return null;
+      const rollRect = rollElement.getBoundingClientRect();
+      const boardRect = board.getBoundingClientRect();
+      const keyRect = key.getBoundingClientRect();
+      return {
+        leftDifference: Math.abs(rollRect.left - boardRect.left),
+        widthDifference: Math.abs(rollRect.width - boardRect.width),
+        keyIsInsideRoll: keyRect.left >= rollRect.left && keyRect.right <= rollRect.right,
+      };
+    });
+    expect(alignment).not.toBeNull();
+    expect(alignment!.leftDifference).toBeLessThan(2);
+    expect(alignment!.widthDifference).toBeLessThan(2);
+    expect(alignment!.keyIsInsideRoll).toBe(true);
     await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'falling');
 
     await page.getByTestId('falling-hand').selectOption('lh');
@@ -75,6 +98,8 @@ test.describe('song player', () => {
     await expect(page.getByTestId('play')).toBeDisabled();
     await page.getByRole('radio', { name: 'Overview' }).click();
     await expect(page.locator('[data-score-view]')).toHaveAttribute('data-score-view', 'overview');
+    await expect(page.getByTestId('keyboard')).toHaveCount(1);
+    await expect(page.locator('[data-dock]:not([data-inline])')).toHaveCount(1);
   });
 
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
