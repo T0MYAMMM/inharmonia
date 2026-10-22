@@ -191,3 +191,52 @@ export function downloadMidi(project: MidiProject) {
 }
 export const projectEndBeat = (p: MidiProject) =>
   Math.max(4, ...p.tracks.flatMap((t) => t.notes.map((n) => n.startBeat + n.beats)));
+
+/** Defensive validation of MIDI JSON transported through a saved-song file. */
+export function cleanMidiProject(value: unknown): MidiProject | string {
+  if (!value || typeof value !== 'object') return 'invalid MIDI project';
+  const p = value as Partial<MidiProject>;
+  const num = (v: unknown, lo: number, hi: number) =>
+    typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+  if (typeof p.title !== 'string' || !num(p.ppq, 24, 9600) ||
+      !num(p.tempo, 20, 300) || !p.meter ||
+      !num(p.meter.beats, 1, 16) || ![2, 4, 8, 16].includes(p.meter.unit))
+    return 'invalid MIDI metadata';
+  if (!Array.isArray(p.tracks) || p.tracks.length > 96 || !Array.isArray(p.tempos) ||
+      !Array.isArray(p.meters) || p.tempos.length > 256 || p.meters.length > 256)
+    return 'invalid MIDI tracks or markers';
+  const tracks: MidiTrack[] = [];
+  let total = 0;
+  for (const [i, t] of p.tracks.entries()) {
+    if (!t || typeof t !== 'object' || !Array.isArray(t.notes) ||
+        !num(t.channel, 0, 15) || !num(t.program, 0, 127))
+      return 'invalid MIDI track ' + (i + 1);
+    total += t.notes.length;
+    if (total > 50000) return 'too many MIDI notes';
+    const notes: MidiNote[] = [];
+    for (const [j, n] of t.notes.entries()) {
+      if (!n || !num(n.startBeat, 0, 10000) || !num(n.beats, 0.0001, 10000) ||
+          !num(n.midi, 0, 127) || !num(n.velocity, 1, 127))
+        return 'invalid MIDI note ' + (j + 1);
+      notes.push({ id: String(n.id ?? 'n' + j).slice(0, 64), startBeat: n.startBeat,
+        beats: n.beats, midi: Math.round(n.midi), velocity: Math.round(n.velocity) });
+    }
+    tracks.push({ id: String(t.id ?? 't' + i).slice(0, 64),
+      name: String(t.name ?? 'Track ' + (i + 1)).slice(0, 80),
+      channel: Math.round(t.channel), program: Math.round(t.program),
+      muted: Boolean(t.muted), notes });
+  }
+  const tempos: MidiTempo[] = [];
+  for (const t of p.tempos) {
+    if (!t || !num(t.beat, 0, 10000) || !num(t.bpm, 20, 300)) return 'invalid tempo event';
+    tempos.push({ beat: t.beat, bpm: t.bpm });
+  }
+  const meters: MidiMeter[] = [];
+  for (const m of p.meters) {
+    if (!m || !num(m.beat, 0, 10000) || !num(m.numerator, 1, 16) ||
+        ![2, 4, 8, 16].includes(m.denominator)) return 'invalid meter event';
+    meters.push({ beat: m.beat, numerator: m.numerator, denominator: m.denominator });
+  }
+  return { title: p.title.slice(0, 80), ppq: p.ppq!, tempo: p.tempo!,
+    meter: { beats: p.meter.beats, unit: p.meter.unit }, tempos, meters, tracks };
+}
