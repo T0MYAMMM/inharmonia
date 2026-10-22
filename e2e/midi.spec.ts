@@ -73,3 +73,106 @@ test('MIDI Studio supports composing without using the microphone', async ({ pag
   await page.getByRole('button', { name: '← Back to Studio' }).click();
   await expect(page.getByTestId('enable-mic')).toBeVisible();
 });
+
+test('MIDI piano roll: fixed headers, zooms, box select, hover, seeking and keyboard input', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Box selection and hover need a mouse.');
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  const frame = page.getByTestId('midi-roll-frame');
+  const f = (await frame.boundingBox())!;
+  // Grid origin: past the 56 px pitch column and under the 28 px ruler.
+  const gx = f.x + 56;
+  const gy = f.y + 28;
+  for (const [x, y] of [
+    [40, 100],
+    [100, 80],
+    [300, 140],
+  ])
+    await page.mouse.click(gx + x, gy + y);
+  const notes = page.getByTestId('midi-note');
+  await expect(notes).toHaveCount(3);
+
+  // Hover an empty cell, then a note.
+  await page.mouse.move(gx + 500, gy + 200);
+  await expect(page.getByTestId('midi-hover')).toContainText(/bar \d+, beat/);
+  await notes.nth(1).hover();
+  await expect(page.getByTestId('midi-hover')).toContainText('velocity 95');
+
+  // Drag a box around the first two notes, then move them together.
+  await page.mouse.move(gx + 20, gy + 50);
+  await page.mouse.down();
+  await page.mouse.move(gx + 150, gy + 130, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('[data-testid="midi-note"][data-selected]')).toHaveCount(2);
+  await expect(page.getByText('2 notes selected')).toBeVisible();
+  const xs = async () => notes.evaluateAll((els) => els.map((e) => Number(e.getAttribute('x'))));
+  const before = await xs();
+  const b = (await notes.nth(0).boundingBox())!;
+  await page.mouse.move(b.x + 3, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + 3 + 56, b.y + b.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const after = await xs();
+  expect(after[0]! - before[0]!).toBeCloseTo(56, 0);
+  expect(after[1]! - before[1]!).toBeCloseTo(56, 0);
+  expect(after[2]).toBe(before[2]);
+  await page.getByRole('region', { name: 'MIDI Studio' }).focus();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('midi-status')).toHaveText('Moved 2 notes.');
+
+  // Vertical zoom makes rows taller; the pitch column and ruler stay in view when scrolling.
+  const tall = async () => Number(await notes.first().getAttribute('height'));
+  const short = await tall();
+  await page.getByRole('slider', { name: 'MIDI row height' }).fill('40');
+  expect(await tall()).toBeGreaterThan(short);
+  await page.getByTestId('midi-roll').evaluate((el) => {
+    el.scrollLeft = 400;
+    el.scrollTop += 300;
+  });
+  const keys = (await page.getByTestId('midi-keys').boundingBox())!;
+  const ruler = (await page.getByTestId('midi-ruler').boundingBox())!;
+  expect(Math.abs(keys.x - f.x)).toBeLessThan(2);
+  expect(Math.abs(ruler.y - f.y)).toBeLessThan(2);
+
+  // The mute button is a speaker that shows when the track is muted.
+  const mute = page.getByTestId('midi-track-mute');
+  await expect(mute).toHaveAttribute('aria-label', 'Mute Piano · melody');
+  await mute.click();
+  await expect(mute).toHaveAttribute('aria-pressed', 'true');
+  await expect(mute).toHaveAttribute('aria-label', 'Unmute Piano · melody');
+  await mute.click();
+
+  // Click the progress bar to move the playhead.
+  const seek = page.getByTestId('midi-seek');
+  await seek.scrollIntoViewIfNeeded();
+  const s = (await seek.boundingBox())!;
+  await page.mouse.click(s.x + s.width / 2, s.y + s.height / 2);
+  await expect(seek).not.toHaveAttribute('aria-valuenow', '0');
+  await expect(page.getByTestId('midi-seek-where')).not.toHaveText('bar 1, beat 1');
+
+  // Show the keyboard and play a note: it lands at the playhead.
+  await page.getByTestId('midi-keyboard-toggle').click();
+  await expect(page.getByTestId('midi-keyboard')).toBeVisible();
+  await page.locator('body').focus();
+  await page.keyboard.down('a');
+  await page.keyboard.up('a');
+  await expect(notes).toHaveCount(4);
+  await expect(page.getByTestId('midi-status')).toHaveText('Added C4 from the keyboard.');
+});
+
+test('MIDI piano roll on touch: a tap draws a note, the keyboard toggles', async ({ page }) => {
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  const f = (await page.getByTestId('midi-roll-frame').boundingBox())!;
+  await page.getByTestId('midi-roll-empty').click({ position: { x: 60, y: 120 } });
+  await expect(page.getByTestId('midi-note')).toHaveCount(1);
+  expect(f.width).toBeGreaterThan(0);
+  await page.getByTestId('midi-keyboard-toggle').click();
+  await expect(page.getByTestId('midi-keyboard')).toBeVisible();
+  await expect(page.getByTestId('midi-record-note')).toContainText('at the playhead');
+  await page.getByTestId('midi-keyboard-toggle').click();
+  await expect(page.getByTestId('midi-keyboard')).toHaveCount(0);
+});
