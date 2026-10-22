@@ -478,10 +478,20 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
               >
                 Quantize track
               </Button>
-              <Button size="small" variant="ghost" onClick={() => {
-                const repaired = joinTinyRetriggers(track);
-                update({ ...p, tracks: p.tracks.map((t) => t.id === track.id ? repaired : t) }, 'Joined tiny repeat fragments; Undo restores the originals.');
-              }} data-testid="midi-join-fragments">Join tiny repeated notes</Button>
+              <Button
+                size="small"
+                variant="ghost"
+                onClick={() => {
+                  const repaired = joinTinyRetriggers(track);
+                  update(
+                    { ...p, tracks: p.tracks.map((t) => (t.id === track.id ? repaired : t)) },
+                    'Joined tiny repeat fragments; Undo restores the originals.',
+                  );
+                }}
+                data-testid="midi-join-fragments"
+              >
+                Join tiny repeated notes
+              </Button>
             </div>
           ) : null}
         </aside>
