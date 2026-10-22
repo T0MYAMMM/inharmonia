@@ -65,15 +65,16 @@ export function EditSongPage() {
       </div>
       {song.draft.midi ? (
         <MidiWorkspace key={song.id} initial={song.draft.midi} song={song} />
-      ) : <SongEditor
-        initial={song.draft}
-        song={song}
-        take={take}
-        hasKeptRecording={!!recording}
-        recordingBytes={recording ? recordingBytes(recording) : 0}
-        onSaved={() => undefined}
-      />}
-
+      ) : (
+        <SongEditor
+          initial={song.draft}
+          song={song}
+          take={take}
+          hasKeptRecording={!!recording}
+          recordingBytes={recording ? recordingBytes(recording) : 0}
+          onSaved={() => undefined}
+        />
+      )}
     </>
   );
 }

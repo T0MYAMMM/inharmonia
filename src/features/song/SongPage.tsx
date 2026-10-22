@@ -195,7 +195,14 @@ export function SongPage() {
           </p>
         ) : null}
         <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
-        <Button size="small" variant="ghost" onClick={() => downloadMidi(compiledToMidi(compiled))} data-testid="song-midi-export">Export .mid</Button>
+        <Button
+          size="small"
+          variant="ghost"
+          onClick={() => downloadMidi(compiledToMidi(compiled))}
+          data-testid="song-midi-export"
+        >
+          Export .mid
+        </Button>
       </div>
       <LessonPlayer
         key={lesson.id}

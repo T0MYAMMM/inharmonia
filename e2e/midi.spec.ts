@@ -10,14 +10,26 @@ const sample: MidiProject = {
   tempos: [{ beat: 0, bpm: 90 }],
   meters: [{ beat: 0, numerator: 4, denominator: 4 }],
   tracks: [
-    { id: 'piano', name: 'Lead', channel: 0, program: 0, muted: false, notes: [
-      { id: 'one', midi: 72, startBeat: 0, beats: 1, velocity: 100 },
-      { id: 'two', midi: 76, startBeat: 0, beats: 1, velocity: 75 },
-      { id: 'three', midi: 79, startBeat: 1, beats: 1, velocity: 65 },
-    ] },
-    { id: 'bass', name: 'Bass', channel: 1, program: 32, muted: false, notes: [
-      { id: 'four', midi: 48, startBeat: 0, beats: 4, velocity: 115 },
-    ] },
+    {
+      id: 'piano',
+      name: 'Lead',
+      channel: 0,
+      program: 0,
+      muted: false,
+      notes: [
+        { id: 'one', midi: 72, startBeat: 0, beats: 1, velocity: 100 },
+        { id: 'two', midi: 76, startBeat: 0, beats: 1, velocity: 75 },
+        { id: 'three', midi: 79, startBeat: 1, beats: 1, velocity: 65 },
+      ],
+    },
+    {
+      id: 'bass',
+      name: 'Bass',
+      channel: 1,
+      program: 32,
+      muted: false,
+      notes: [{ id: 'four', midi: 48, startBeat: 0, beats: 4, velocity: 115 }],
+    },
   ],
 };
 

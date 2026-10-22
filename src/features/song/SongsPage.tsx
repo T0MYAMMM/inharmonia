@@ -73,8 +73,8 @@ export function SongsPage() {
           come in Easy, Medium and Advanced versions.
         </p>
         <p>
-          <Link to="/studio">Make your own in Studio</Link>: import or edit .mid files, compose
-          on a piano roll, or sing a melody and let InHarmonia write it down.
+          <Link to="/studio">Make your own in Studio</Link>: import or edit .mid files, compose on a
+          piano roll, or sing a melody and let InHarmonia write it down.
         </p>
       </div>
       <div className={styles.filters}>
