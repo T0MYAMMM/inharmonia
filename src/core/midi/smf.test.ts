@@ -87,7 +87,7 @@ describe('Standard MIDI File support', () => {
   it('rejects corrupted files, SMPTE, oversized files and bad saved MIDI JSON', () => {
     expect(() => parseMidi(new Uint8Array([0, 1, 2]))).toThrow();
     const bad = writeMidi(project);
-    bad[13] = 0xe7; // SMPTE instead of PPQ
+    bad[12] = 0xe7; // SMPTE instead of PPQ
     expect(() => parseMidi(bad)).toThrow(/SMPTE/);
     expect(() => parseMidi(new Uint8Array(10 * 1024 * 1024 + 1))).toThrow();
     expect(
@@ -99,7 +99,7 @@ describe('Standard MIDI File support', () => {
     const lesson = toLesson(draft, 'mine-midi');
     const compiled = compileLesson(lesson, PATTERNS);
     expect(draft.midi?.tracks).toHaveLength(2);
-    expect(compiled.bars.length).toBeGreaterThanOrEqual(2);
+    expect(compiled.bars.length).toBe(1); // Four quarter-note beats form one 4/4 bar.
     expect(compiled.events).toHaveLength(4);
     expect(compiled.events.filter((n) => n.beat === 0)).toHaveLength(3);
     expect(compiled.events.find((n) => n.midi === 36)?.channel).toBe('lh');
