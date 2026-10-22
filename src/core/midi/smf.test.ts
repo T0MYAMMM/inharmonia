@@ -57,23 +57,28 @@ describe('Standard MIDI File support', () => {
   it('reads MIDI format 0 with running note-on/note-off status', () => {
     // One track, 96 ticks per beat; note-on C4, 96 ticks later running-status note-off.
     const bytes = Uint8Array.from([
-      77, 84, 104, 100, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96,
-      77, 84, 114, 107, 0, 0, 0, 11,
-      0, 0x90, 60, 95, 0x60, 60, 0, 0, 0xff, 0x2f, 0,
+      77, 84, 104, 100, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96, 77, 84, 114, 107, 0, 0, 0, 11, 0, 0x90, 60,
+      95, 0x60, 60, 0, 0, 0xff, 0x2f, 0,
     ]);
     const loaded = parseMidi(bytes, 'format-zero.mid');
     expect(loaded.tracks).toHaveLength(1);
     expect(loaded.tracks[0]!.notes[0]).toMatchObject({
-      midi: 60, velocity: 95, startBeat: 0, beats: 1,
+      midi: 60,
+      velocity: 95,
+      startBeat: 0,
+      beats: 1,
     });
   });
   it('joins only tiny fragmented retriggers and can be undone by keeping the source', () => {
-    const source = { ...project.tracks[0]!, notes: [
-      { id: 'a', midi: 60, startBeat: 0, beats: 0.125, velocity: 70 },
-      { id: 'b', midi: 60, startBeat: 0.13, beats: 0.125, velocity: 80 },
-      { id: 'c', midi: 60, startBeat: 1, beats: 1, velocity: 90 },
-      { id: 'd', midi: 60, startBeat: 2, beats: 1, velocity: 90 },
-    ] };
+    const source = {
+      ...project.tracks[0]!,
+      notes: [
+        { id: 'a', midi: 60, startBeat: 0, beats: 0.125, velocity: 70 },
+        { id: 'b', midi: 60, startBeat: 0.13, beats: 0.125, velocity: 80 },
+        { id: 'c', midi: 60, startBeat: 1, beats: 1, velocity: 90 },
+        { id: 'd', midi: 60, startBeat: 2, beats: 1, velocity: 90 },
+      ],
+    };
     const fixed = joinTinyRetriggers(source);
     expect(fixed.notes).toHaveLength(3);
     expect(fixed.notes[0]).toMatchObject({ startBeat: 0, beats: 0.255, velocity: 80 });
