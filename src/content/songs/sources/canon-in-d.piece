@@ -1,16 +1,14 @@
-# Pachelbel, Canon in D, complete first-violin line (57 bars), reduced for piano
-# over the original two-bar ground bass. Violin II and III, which imitate the
-# same theme at two-bar intervals, are NOT included; this is NOT the full
-# three-violin score or a modern keyboard arrangement.
-# The opening is checked against the 1838-42 manuscript (Berlin Mus.ms. 16481/8),
-# preserving the first eight bars previously transcribed in InHarmonia.
-# Continuation follows Michael Fischer v. Mollard's full first-violin transcription,
-# Mutopia Project (2015), CC BY 4.0, based on IMSLP:
-# https://github.com/MutopiaProject/MutopiaProject/tree/master/ftp/PachelbelJ/Canon_per_3_Violini_e_Basso
-# https://creativecommons.org/licenses/by/4.0/
-# Changes: monophonic first violin moved to piano RH; repeated ground bass in LH;
-# harmonic chord symbols supplied by InHarmonia; no other violin parts or figured
-# continuo realizations; no additional compositional notes.
+# Pachelbel, Canon in D: the complete first-violin line (57 bars), reduced for piano over
+# the two-bar ground bass. Violins II and III, which play the same line two and four bars
+# later, are not included; the piano versions are generated reductions of these two parts.
+# Bars 1-54 are from the oldest surviving source, a manuscript score copied ca. 1838-42
+# (Staatsbibliothek zu Berlin, Mus.ms. 16481/8, IMSLP #346264), checked bar by bar.
+# The manuscript breaks off after bar 54. Bars 55-57 are from Max Seiffert's edition
+# (Organum III/24, Kistner & Siegel, 1929, IMSLP #44549), made from an old set of parts;
+# only its violin notes are used, not its dynamics, articulation or keyboard realization.
+# Seiffert's violin I also agrees with every manuscript bar. The trills in bars 10 and 40
+# are left out (the source format has no ornaments); the notes they sit on are kept.
+# The chord symbols are our reading of the ground bass; the continuo has no figures here.
 title: Canon in D
 piece: canon-in-d
 added: 2026-10-17
@@ -18,16 +16,19 @@ source: public-domain
 composer: Johann Pachelbel
 composer-died: 1706
 first-published: 1919
-edition: Manuscript ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264); full violin I transcription Michael Fischer v. Mollard, Mutopia Project 2015, CC BY 4.0
+edition: Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264), bars 1-54; Organum III/24, Kistner & Siegel, Leipzig, 1929 (IMSLP #44549), bars 55-57
+editor: Max Seiffert
+editor-died: 1948
+editor-additions: not used
 key: D major
 meter: 4/4
-# Tempo is editorial; the manuscript gives none.
+# The manuscript has no tempo mark; the tempo is ours.
 tempo: 64
-summary: Full first-violin canon across 57 bars over Pachelbel's repeating ground bass (piano reduction; other violins omitted).
+summary: Pachelbel's canon: the whole first-violin line over the eight-note ground bass.
 figure: held
 medium-figure: held
-# Retain the characteristic opening arpeggios in Easy; fast variations elsewhere
-# are simplified by the generator without altering the source.
+# The opening eighth-note arpeggios stay as written in Easy; the generator merges the
+# faster variations into the beat.
 easy-keep: 5, 6
 
 [Ground] 1-2
