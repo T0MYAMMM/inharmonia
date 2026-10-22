@@ -1,3 +1,4 @@
+import { MidiWorkspace } from '../studio/MidiWorkspace';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { recordingBytes, recordingSamples, type UserRecording, type UserSong } from '@/core/songs';
@@ -62,14 +63,17 @@ export function EditSongPage() {
         </p>
         <h1>Edit {song.lesson.title}</h1>
       </div>
-      <SongEditor
+      {song.draft.midi ? (
+        <MidiWorkspace key={song.id} initial={song.draft.midi} song={song} />
+      ) : <SongEditor
         initial={song.draft}
         song={song}
         take={take}
         hasKeptRecording={!!recording}
         recordingBytes={recording ? recordingBytes(recording) : 0}
         onSaved={() => undefined}
-      />
+      />}
+
     </>
   );
 }
