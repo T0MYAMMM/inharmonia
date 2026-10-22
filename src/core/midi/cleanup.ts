@@ -10,9 +10,12 @@ export function joinTinyRetriggers(track: MidiTrack, gapBeats = 0.125): MidiTrac
   const joined: MidiNote[] = [];
   for (const note of notes) {
     const previous = joined.at(-1);
-    if (previous && previous.midi === note.midi &&
+    if (
+      previous &&
+      previous.midi === note.midi &&
       note.startBeat <= previous.startBeat + previous.beats + gapBeats &&
-      (note.beats <= gapBeats || previous.beats <= gapBeats)) {
+      (note.beats <= gapBeats || previous.beats <= gapBeats)
+    ) {
       previous.beats = Math.max(previous.beats, note.startBeat + note.beats - previous.startBeat);
       previous.velocity = Math.max(previous.velocity, note.velocity);
     } else joined.push({ ...note });
