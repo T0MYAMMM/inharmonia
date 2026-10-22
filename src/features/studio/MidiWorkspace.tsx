@@ -220,7 +220,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
                 update(next(p, track.id, (notes) => notes.map((n) => ({
                   ...n, startBeat: Math.round(n.startBeat / step) * step,
                   beats: Math.max(step, Math.round(n.beats / step) * step),
-                })), 'Quantized current track.');
+                }))), 'Quantized current track.');
               }}>Quantize track</Button>
             </div>
           ) : null}
