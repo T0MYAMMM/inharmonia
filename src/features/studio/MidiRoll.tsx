@@ -24,6 +24,7 @@ type Drag = {
   y: number;
   origin: MidiNote;
   resize: boolean;
+  preview: MidiNote | null;
 };
 const snap = (beat: number, step: number) =>
   Math.max(0, step ? Math.round(beat / step) * step : Math.round(beat * 1000) / 1000);
@@ -43,8 +44,8 @@ export function MidiRoll({
   const px = zoom;
   const tracks = project.tracks;
   const pitchList = tracks.flatMap((t) => t.notes.map((n) => n.midi));
-  const lo = Math.max(21, Math.min(48, ...pitchList) - 4);
-  const hi = Math.min(108, Math.max(84, ...pitchList) + 4);
+  const lo = Math.max(0, Math.min(48, ...pitchList) - 4);
+  const hi = Math.min(127, Math.max(84, ...pitchList) + 4);
   const rollHeight = (hi - lo + 1) * ROW;
   const width = Math.max(960, Math.ceil(projectEndBeat(project) / 4) * 4 * px);
   const scroll = useRef<HTMLDivElement>(null);
@@ -82,6 +83,7 @@ export function MidiRoll({
       y: e.clientY,
       origin: n,
       resize: e.clientX >= rect.right - 9,
+      preview: null,
     });
   };
   const move = (e: PointerEvent<SVGRectElement>) => {
@@ -90,24 +92,19 @@ export function MidiRoll({
       ? Math.round((e.clientX - drag.x) / px / step) * step
       : (e.clientX - drag.x) / px;
     const dy = -Math.round((e.clientY - drag.y) / ROW);
-    if (drag.resize) onNote(drag.id, { beats: Math.max(step || 0.0625, drag.origin.beats + dx) });
-    else
-      onNote(drag.id, {
-        startBeat: Math.max(0, drag.origin.startBeat + dx),
-        midi: Math.max(21, Math.min(108, drag.origin.midi + dy)),
-      });
-    // Move in small increments relative to the last committed preview.
-    setDrag({
-      ...drag,
-      x: e.clientX,
-      y: e.clientY,
-      origin: {
-        ...drag.origin,
-        startBeat: drag.resize ? drag.origin.startBeat : Math.max(0, drag.origin.startBeat + dx),
-        beats: drag.resize ? Math.max(step || 0.0625, drag.origin.beats + dx) : drag.origin.beats,
-        midi: drag.resize ? drag.origin.midi : Math.max(21, Math.min(108, drag.origin.midi + dy)),
-      },
-    });
+    const preview = drag.resize
+      ? { ...drag.origin, beats: Math.max(step || 0.0625, drag.origin.beats + dx) }
+      : { ...drag.origin, startBeat: Math.max(0, drag.origin.startBeat + dx),
+          midi: Math.max(0, Math.min(127, drag.origin.midi + dy)) };
+    setDrag({ ...drag, preview });
+  };
+  const up = (e: PointerEvent<SVGRectElement>) => {
+    if (!drag || e.pointerId !== drag.pointer) return;
+    if (drag.preview) {
+      // A drag is ONE undo operation, no matter how many frames it moved through.
+      onNote(drag.id, drag.preview);
+    }
+    setDrag(null);
   };
   const grid: number[] = [];
   const gridStart = Math.floor(windowBeats[0] / Math.max(step, 0.25)) * Math.max(step, 0.25);
@@ -187,12 +184,13 @@ export function MidiRoll({
                 )
                 .map((n) => {
                   const active = t.id === trackId;
-                  const rectWidth = Math.max(3, n.beats * px);
+                  const shown = active && drag?.id === n.id ? (drag.preview ?? n) : n;
+                  const rectWidth = Math.max(3, shown.beats * px);
                   return (
                     <rect
                       key={t.id + '-' + n.id}
-                      x={LABEL + n.startBeat * px}
-                      y={noteY(n.midi) + 2}
+                      x={LABEL + shown.startBeat * px}
+                      y={noteY(shown.midi) + 2}
                       width={rectWidth}
                       height={ROW - 4}
                       rx={3}
@@ -205,13 +203,7 @@ export function MidiRoll({
                       style={{ cursor: active ? 'grab' : 'default', touchAction: 'none' }}
                       onPointerDown={active ? (e) => down(e, n) : undefined}
                       onPointerMove={active ? move : undefined}
-                      onPointerUp={
-                        active
-                          ? (e) => {
-                              if (drag?.pointer === e.pointerId) setDrag(null);
-                            }
-                          : undefined
-                      }
+                      onPointerUp={active ? up : undefined}
                       onPointerCancel={active ? () => setDrag(null) : undefined}
                     />
                   );
