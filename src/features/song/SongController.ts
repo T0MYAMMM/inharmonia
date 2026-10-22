@@ -577,6 +577,18 @@ export class SongController {
     this.renderProgress(this.targetBeat());
   }
 
+  /**
+   * Visual playhead shared by the score and the piano roll. It uses exactly
+   * the same audio-clock/output-latency calculation as key highlights.
+   * Practice holds at its current target until the player satisfies it.
+   */
+  visualBeat(): number {
+    if (this.snap.mode === 'practice') return this.snap.targetBeat;
+    const t = this.s.transport;
+    if (t.state === 'stopped') return 0;
+    return t.beatAt(this.s.audio.now() - this.s.audio.outputLatency());
+  }
+
   /** Same swung timeline and latency-compensated beat as the audio transport. */
   private soundingKeys(hand: 'rh' | 'lh', beat: number): number[] {
     return activeEventMidis(this.compiled.events, hand, beat, (at) =>
