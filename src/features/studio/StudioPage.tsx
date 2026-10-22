@@ -90,7 +90,9 @@ export function StudioPage() {
   const warning = snap.warning ? problemMessage(snap.warning) : null;
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [editing, setEditing] = useState<EditorInput | null>(null);
-  const [midiSession, setMidiSession] = useState<{ key: number; project: MidiProject } | null>(null);
+  const [midiSession, setMidiSession] = useState<{ key: number; project: MidiProject } | null>(
+    null,
+  );
   const [midiError, setMidiError] = useState('');
   const openMidi = (project: MidiProject) => {
     ctrl.disable();
@@ -100,8 +102,11 @@ export function StudioPage() {
   };
   const importMidi = async (file?: File) => {
     if (!file) return;
-    try { openMidi(parseMidi(await file.arrayBuffer(), file.name)); }
-    catch (error) { setMidiError(error instanceof Error ? error.message : 'Invalid MIDI file.'); }
+    try {
+      openMidi(parseMidi(await file.arrayBuffer(), file.name));
+    } catch (error) {
+      setMidiError(error instanceof Error ? error.message : 'Invalid MIDI file.');
+    }
   };
 
   const tryDraft = (lesson: Lesson) => {
@@ -186,22 +191,39 @@ export function StudioPage() {
         </div>
 
         <section className={styles.card} aria-labelledby="midi-studio-title">
-          <h2 id="midi-studio-title" className={styles.cardTitle}>MIDI editor</h2>
+          <h2 id="midi-studio-title" className={styles.cardTitle}>
+            MIDI editor
+          </h2>
           <p className={styles.note}>
             Import .mid or .midi from a converter or DAW, draw and resize notes on a multitrack
             piano roll, adjust velocity and timing, preview, and export MIDI again.
           </p>
           <div className={styles.row}>
-            <Button variant="primary" onClick={() => openMidi(blankMidiProject())}
-              data-testid="studio-new-midi">Create MIDI</Button>
+            <Button
+              variant="primary"
+              onClick={() => openMidi(blankMidiProject())}
+              data-testid="studio-new-midi"
+            >
+              Create MIDI
+            </Button>
             <label className={styles.select}>
               Open MIDI file
-              <input type="file" accept=".mid,.midi,audio/midi,audio/x-midi"
+              <input
+                type="file"
+                accept=".mid,.midi,audio/midi,audio/x-midi"
                 data-testid="studio-import-midi"
-                onChange={(e) => { void importMidi(e.target.files?.[0]); e.target.value = ''; }} />
+                onChange={(e) => {
+                  void importMidi(e.target.files?.[0]);
+                  e.target.value = '';
+                }}
+              />
             </label>
           </div>
-          {midiError ? <p role="alert" className={styles.problem}>{midiError}</p> : null}
+          {midiError ? (
+            <p role="alert" className={styles.problem}>
+              {midiError}
+            </p>
+          ) : null}
         </section>
 
         <section className={styles.card} aria-labelledby="setup-title">

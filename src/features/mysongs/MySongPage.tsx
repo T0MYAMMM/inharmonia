@@ -91,7 +91,14 @@ export function MySongPage() {
           )}
         </div>
         <div className={styles.actions}>
-          <Button size="small" variant="ghost" onClick={() => downloadMidi(song.draft.midi ?? compiledToMidi(compiled))} data-testid="my-song-midi-export">Export .mid</Button>
+          <Button
+            size="small"
+            variant="ghost"
+            onClick={() => downloadMidi(song.draft.midi ?? compiledToMidi(compiled))}
+            data-testid="my-song-midi-export"
+          >
+            Export .mid
+          </Button>
           <ExportButtons
             build={() =>
               exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })

@@ -10,13 +10,15 @@ export function compiledToMidi(compiled: CompiledLesson): MidiProject {
       channel: i,
       program: 0,
       muted: false,
-      notes: compiled.events.filter((n) => n.channel === hand).map((n, j) => ({
-        id: hand + j,
-        startBeat: n.beat,
-        beats: n.dur,
-        midi: n.midi,
-        velocity: Math.max(1, Math.min(127, Math.round(n.velocity * 127))),
-      })),
+      notes: compiled.events
+        .filter((n) => n.channel === hand)
+        .map((n, j) => ({
+          id: hand + j,
+          startBeat: n.beat,
+          beats: n.dur,
+          midi: n.midi,
+          velocity: Math.max(1, Math.min(127, Math.round(n.velocity * 127))),
+        })),
     }))
     .filter((track) => track.notes.length);
   const tempo = compiled.lesson.tempo.default;
@@ -34,16 +36,18 @@ export function compiledToMidi(compiled: CompiledLesson): MidiProject {
 
 /** A MIDI project's full polyphony, not a lossy monophonic score reduction. */
 export function midiEvents(project: MidiProject) {
-  return project.tracks.flatMap((track, index) =>
-    track.notes.map((n) => ({
-      id: track.id + '-' + n.id,
-      beat: n.startBeat,
-      dur: n.beats,
-      midi: n.midi,
-      velocity: n.velocity / 127,
-      channel: (index === 0 ? 'rh' : 'lh') as 'rh' | 'lh',
-    })),
-  ).sort((a, b) => a.beat - b.beat || a.midi - b.midi);
+  return project.tracks
+    .flatMap((track, index) =>
+      track.notes.map((n) => ({
+        id: track.id + '-' + n.id,
+        beat: n.startBeat,
+        dur: n.beats,
+        midi: n.midi,
+        velocity: n.velocity / 127,
+        channel: (index === 0 ? 'rh' : 'lh') as 'rh' | 'lh',
+      })),
+    )
+    .sort((a, b) => a.beat - b.beat || a.midi - b.midi);
 }
 
 export function blankMidiProject(): MidiProject {
