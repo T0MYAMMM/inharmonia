@@ -1,3 +1,6 @@
+import { compiledToMidi } from '@/core/midi/adapters';
+import { downloadMidi } from '@/core/midi/smf';
+import { Button } from '@/ui/Button';
 import { useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { FILLS } from '@/content/fills';
@@ -192,6 +195,7 @@ export function SongPage() {
           </p>
         ) : null}
         <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
+        <Button size="small" variant="ghost" onClick={() => downloadMidi(compiledToMidi(compiled))} data-testid="song-midi-export">Export .mid</Button>
       </div>
       <LessonPlayer
         key={lesson.id}
