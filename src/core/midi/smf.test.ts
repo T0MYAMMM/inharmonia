@@ -58,7 +58,7 @@ describe('Standard MIDI File support', () => {
     // One track, 96 ticks per beat; note-on C4, 96 ticks later running-status note-off.
     const bytes = Uint8Array.from([
       77, 84, 104, 100, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96,
-      77, 84, 114, 107, 0, 0, 0, 12,
+      77, 84, 114, 107, 0, 0, 0, 11,
       0, 0x90, 60, 95, 0x60, 60, 0, 0, 0xff, 0x2f, 0,
     ]);
     const loaded = parseMidi(bytes, 'format-zero.mid');
