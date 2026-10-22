@@ -94,8 +94,11 @@ export function MidiRoll({
     const dy = -Math.round((e.clientY - drag.y) / ROW);
     const preview = drag.resize
       ? { ...drag.origin, beats: Math.max(step || 0.0625, drag.origin.beats + dx) }
-      : { ...drag.origin, startBeat: Math.max(0, drag.origin.startBeat + dx),
-          midi: Math.max(0, Math.min(127, drag.origin.midi + dy)) };
+      : {
+          ...drag.origin,
+          startBeat: Math.max(0, drag.origin.startBeat + dx),
+          midi: Math.max(0, Math.min(127, drag.origin.midi + dy)),
+        };
     setDrag({ ...drag, preview });
   };
   const up = (e: PointerEvent<SVGRectElement>) => {
