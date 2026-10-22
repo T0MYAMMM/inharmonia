@@ -7,6 +7,7 @@
  * migration in `core/persistence` when the shape changes.
  */
 import type { Mode, VoicingStyle } from '../theory';
+import type { MidiProject } from '../midi/smf';
 
 export const LESSON_SCHEMA_VERSION = 1;
 
@@ -198,6 +199,8 @@ export interface Lesson {
   /** Default tempo, beats per minute, and the slider range. */
   tempo: { default: number; min: number; max: number };
   bars: Bar[];
+  /** Original multitrack MIDI notes override the score reduction during playback. */
+  midi?: MidiProject;
   /** Default left-hand pattern id, applied to bars without explicit `lh`. */
   lhPattern?: string;
   /** A piece's own left-hand figure; used instead of `lhPattern` when present. */
