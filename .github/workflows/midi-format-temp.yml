@@ -1,0 +1,27 @@
+name: Format MIDI feature (temporary)
+on:
+  push:
+    branches: [feature/studio-midi-import-export-editor]
+permissions:
+  contents: write
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Apply Prettier
+        run: npx prettier --write src/core/midi src/core/songs/draft.ts src/core/songs/library.ts src/core/content/types.ts src/core/content/compile.ts src/features/studio/MidiRoll.tsx src/features/studio/MidiWorkspace.tsx src/features/studio/midiWorkspace.module.css src/features/studio/StudioPage.tsx src/features/mysongs/EditSongPage.tsx src/features/mysongs/MySongPage.tsx src/features/song/SongPage.tsx src/features/song/SongsPage.tsx e2e/midi.spec.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "inharmonia-ci-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/core/midi src/core/songs/draft.ts src/core/songs/library.ts src/core/content/types.ts src/core/content/compile.ts src/features/studio/MidiRoll.tsx src/features/studio/MidiWorkspace.tsx src/features/studio/midiWorkspace.module.css src/features/studio/StudioPage.tsx src/features/mysongs/EditSongPage.tsx src/features/mysongs/MySongPage.tsx src/features/song/SongPage.tsx src/features/song/SongsPage.tsx e2e/midi.spec.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Format MIDI Studio import/export"
+            git push origin HEAD:feature/studio-midi-import-export-editor
+          fi
