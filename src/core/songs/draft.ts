@@ -1,4 +1,10 @@
-import { DEFAULT_RULES, LESSON_SCHEMA_VERSION, NO_CHORD, type Lesson, type Meter } from '../content/types';
+import {
+  DEFAULT_RULES,
+  LESSON_SCHEMA_VERSION,
+  NO_CHORD,
+  type Lesson,
+  type Meter,
+} from '../content/types';
 import { melodyBars } from '../transcription/draftLesson';
 import type { MidiProject } from '../midi/smf';
 import { projectEndBeat } from '../midi/smf';
@@ -102,7 +108,8 @@ export function toLesson(d: SongDraft, id: string): Lesson {
       kind: 'song',
       source: { kind: 'user' },
       title: d.title,
-      summary: 'Imported MIDI. The score shows a single melody; playback and Falling Notes use all MIDI tracks.',
+      summary:
+        'Imported MIDI. The score shows a single melody; playback and Falling Notes use all MIDI tracks.',
       key: d.key,
       meter: d.meter,
       tempo: { default: d.tempo, min: Math.min(30, d.tempo), max: Math.max(240, d.tempo) },
@@ -331,21 +338,30 @@ export function redo<T>(h: History<T>): History<T> {
 export function midiToDraft(project: MidiProject): SongDraft {
   const bpb = project.meter.beats;
   if (![2, 3, 4].includes(bpb) || project.meter.unit !== 4)
-    throw new Error('Saving as a practice song currently supports 2/4, 3/4 or 4/4. Keep other meters in Studio and export MIDI.');
+    throw new Error(
+      'Saving as a practice song currently supports 2/4, 3/4 or 4/4. Keep other meters in Studio and export MIDI.',
+    );
   const bars = Math.ceil(projectEndBeat(project) / bpb);
-  if (bars > 512) throw new Error('Songs may contain at most 512 bars. Edit or export the MIDI in Studio.');
+  if (bars > 512)
+    throw new Error('Songs may contain at most 512 bars. Edit or export the MIDI in Studio.');
   // Pick a representative melodic line. Its note list is display-only;
   // the authoritative polyphonic performance is always project.tracks.
   const ranked = [...project.tracks].sort(
-    (a, b) => b.notes.reduce((sum, n) => sum + n.midi, 0) / (b.notes.length || 1)
-      - a.notes.reduce((sum, n) => sum + n.midi, 0) / (a.notes.length || 1),
+    (a, b) =>
+      b.notes.reduce((sum, n) => sum + n.midi, 0) / (b.notes.length || 1) -
+      a.notes.reduce((sum, n) => sum + n.midi, 0) / (a.notes.length || 1),
   );
   const notes: DraftNote[] = [];
   let end = 0;
   for (const n of ranked[0]?.notes ?? []) {
     if (n.startBeat < end - 1e-5 || n.beats < 0.0625) continue;
     if (notes.length >= 2000) break;
-    notes.push({ id: 'n' + (notes.length + 1), startBeat: n.startBeat, beats: n.beats, midi: n.midi });
+    notes.push({
+      id: 'n' + (notes.length + 1),
+      startBeat: n.startBeat,
+      beats: n.beats,
+      midi: n.midi,
+    });
     end = n.startBeat + n.beats;
   }
   return {
