@@ -13,7 +13,6 @@ import {
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { VOICING_STYLES } from '@/core/theory';
 import { exportItems } from '@/state/transfer';
-import { Button } from '@/ui/Button';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { ExportButtons } from '../transfer/Export';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
