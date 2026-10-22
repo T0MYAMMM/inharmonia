@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from 'react-router';
-import { audio, getTransport } from '@/app/services';
+import { audio, getTransport, notes as noteInput } from '@/app/services';
 import {
   commit,
   historyOf,
@@ -21,13 +21,21 @@ import {
   type MidiProject,
 } from '@/core/midi/smf';
 import { newSongId, saveSong } from '@/state/mySongs';
+import { KeyboardDock } from '@/ui/keyboard';
 import { keyName } from '@/ui/keyboard/layout';
 import { Button } from '@/ui/Button';
 import { joinTinyRetriggers } from '@/core/midi/cleanup';
 import { MidiRoll } from './MidiRoll';
+import { PianoIcon, SpeakerIcon } from './icons';
+import { KeyRecorder, moveNotes } from './rollEdit';
+import { SeekBar } from './SeekBar';
 import styles from './midiWorkspace.module.css';
 
 const STEPS = [1, 0.5, 0.25, 0.125, 0];
+/** Horizontal zoom, pixels per beat, and vertical zoom, pixels per pitch row. */
+const ZOOM_RANGE = { min: 20, max: 240, initial: 56 } as const;
+const ROW_RANGE = { min: 12, max: 44, initial: 22 } as const;
+type NewNote = Omit<MidiNote, 'id'>;
 const next = (p: MidiProject, trackId: string, fn: (notes: MidiNote[]) => MidiNote[]) => ({
   ...p,
   tracks: p.tracks.map((t) => (t.id === trackId ? { ...t, notes: fn(t.notes) } : t)),
@@ -44,25 +52,85 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
   const [history, setHistory] = useState(() => historyOf(initial ?? blankMidiProject()));
   const p = history.present;
   const [trackId, setTrackId] = useState(p.tracks[0]?.id ?? '');
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selection, setSelection] = useState<string[]>([]);
   const [step, setStep] = useState(0.25);
-  const [zoom, setZoom] = useState(42);
+  const [zoom, setZoom] = useState<number>(ZOOM_RANGE.initial);
+  const [row, setRow] = useState<number>(ROW_RANGE.initial);
   const [status, setStatus] = useState('');
   const [saved, setSaved] = useState<UserSong | null>(song ?? null);
   const [playing, setPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
+  const [showKeys, setShowKeys] = useState(false);
+  const [pending, setPending] = useState<NewNote[]>([]);
   const t = getTransport();
-  const playhead = useRef<SVGLineElement>(null);
   const nextId = useRef(1);
+  /** Where playback starts and step input lands, in beats, while stopped. */
+  const cursor = useRef(0);
+  const playingRef = useRef(false);
+  const pendingRef = useRef<NewNote[]>([]);
+  const recorder = useRef(new KeyRecorder());
   const track = p.tracks.find((tr) => tr.id === trackId) ?? p.tracks[0];
-  const chosen = track?.notes.find((n) => n.id === selected) ?? null;
-  const update = (value: MidiProject, message: string) => {
-    setHistory((h) => commit(h, value));
+  // Refs for the keyboard listener and the transport's end callback.
+  const trackRef = useRef(track?.id ?? '');
+  const stepRef = useRef(step);
+  useEffect(() => {
+    trackRef.current = track?.id ?? '';
+    stepRef.current = step;
+  });
+  const picked = new Set(selection);
+  const chosen =
+    selection.length === 1 ? (track?.notes.find((n) => n.id === selection[0]) ?? null) : null;
+  const setSelected = (id: string | null) => setSelection(id ? [id] : []);
+  /** The beat heard now while playing; the cursor otherwise. */
+  const beatNow = useCallback(
+    () =>
+      playingRef.current
+        ? Math.max(0, t.beatAt(audio.now() - audio.outputLatency()))
+        : cursor.current,
+    [t],
+  );
+  const withIds = (added: NewNote[]): MidiNote[] =>
+    added.map((n) => ({ ...n, id: 'new-' + nextId.current++ }));
+  /** Add recorded notes to the track the recording was made on, as one undo step. */
+  const addNotes = (trackKey: string, added: NewNote[], message: string) => {
+    if (!added.length) return;
+    const notes = withIds(added);
+    setHistory((h) =>
+      commit(
+        h,
+        next(h.present, trackKey, (ns) => [...ns, ...notes]),
+      ),
+    );
     setStatus(message);
-    if (playing) {
-      t.stop();
-      setPlaying(false);
-    }
+  };
+  /**
+   * Stop playback, keeping the playhead where it was. What was recorded from the
+   * keyboard is added to the track, or handed back when the caller adds it itself.
+   */
+  const halt = (at?: number, keepRecorded = true): NewNote[] => {
+    const beat = at ?? beatNow();
+    t.stop();
+    playingRef.current = false;
+    setPlaying(false);
+    cursor.current = Math.max(0, beat);
+    const recorded = [...pendingRef.current, ...recorder.current.releaseAll(beat, stepRef.current)];
+    pendingRef.current = [];
+    setPending([]);
+    if (keepRecorded)
+      addNotes(
+        trackRef.current,
+        recorded,
+        `Recorded ${recorded.length} note${recorded.length === 1 ? '' : 's'} from the keyboard.`,
+      );
+    return recorded;
+  };
+  const update = (value: MidiProject, message: string) => {
+    // An edit stops playback; notes recorded so far go in with the edit.
+    const recorded = playingRef.current ? halt(undefined, false) : [];
+    const edited = recorded.length
+      ? next(value, trackRef.current, (ns) => [...ns, ...withIds(recorded)])
+      : value;
+    setHistory((h) => commit(h, edited));
+    setStatus(message);
   };
   const setTrack = (fn: (t: NonNullable<typeof track>) => NonNullable<typeof track>) => {
     update(
@@ -90,6 +158,13 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       'Updated MIDI note.',
     );
   };
+  const setTrackNotes = (notes: MidiNote[], message: string) => {
+    if (!track) return;
+    update(
+      next(p, track.id, () => notes),
+      message,
+    );
+  };
   const addNote = (midi: number, startBeat: number) => {
     if (!track) return;
     const id = 'new-' + nextId.current++;
@@ -110,10 +185,18 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
   };
   const stop = () => {
     t.stop();
+    playingRef.current = false;
     setPlaying(false);
+    pendingRef.current = [];
+    setPending([]);
+    recorder.current.releaseAll(0, 0);
+  };
+  const seek = (beat: number) => {
+    cursor.current = Math.max(0, beat);
+    if (playingRef.current) t.seek(cursor.current);
   };
   const play = () => {
-    if (playing) return stop();
+    if (playingRef.current) return halt();
     void audio.unlock();
     const events = midiEvents({ ...p, tracks: p.tracks.filter((tr) => !tr.muted) });
     t.stop();
@@ -125,36 +208,56 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
     t.setMetronome(false, 0);
     t.setMuted('rh', false);
     t.setMuted('lh', false);
-    t.play(0, { countInBars: 0 });
+    // Play from the playhead; from the start once it has reached the end.
+    const end = projectEndBeat(p);
+    t.play(cursor.current >= end ? 0 : cursor.current, { countInBars: 0 });
+    playingRef.current = true;
     setPlaying(true);
   };
+  const haltRef = useRef(halt);
   useEffect(() => {
-    const off = t.onEnd(() => setPlaying(false));
+    haltRef.current = halt;
+  });
+  useEffect(() => {
+    const off = t.onEnd(() => haltRef.current(0));
     return () => {
       off();
       t.stop();
     };
   }, [t]);
+
+  // With the keyboard shown, what is played on it is written into the current track:
+  // step by step at the playhead while stopped, or in time while playing.
   useEffect(() => {
-    let frame = 0;
-    const draw = () => {
-      if (playing) {
+    if (!showKeys) return;
+    const rec = recorder.current;
+    return noteInput.subscribe((e) => {
+      if (playingRef.current) {
         const beat = Math.max(0, t.beatAt(audio.now() - audio.outputLatency()));
-        setPosition(Math.floor(beat * 4) / 4);
-        if (playhead.current) {
-          const x = 52 + beat * zoom;
-          playhead.current.setAttribute('x1', String(x));
-          playhead.current.setAttribute('x2', String(x));
+        if (e.type === 'on') rec.press(e.midi, e.velocity, beat);
+        else {
+          const done = rec.release(e.midi, beat, stepRef.current);
+          if (done) {
+            pendingRef.current = [...pendingRef.current, done];
+            setPending(pendingRef.current);
+          }
         }
-      } else if (playhead.current) {
-        playhead.current.setAttribute('x1', '-10');
-        playhead.current.setAttribute('x2', '-10');
+        return;
       }
-      frame = requestAnimationFrame(draw);
-    };
-    frame = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frame);
-  }, [t, playing, zoom]);
+      if (e.type !== 'on') return;
+      const { note, cursor: after } = rec.step(
+        e.midi,
+        e.velocity,
+        e.at,
+        cursor.current,
+        stepRef.current || 0.25,
+      );
+      cursor.current = after;
+      addNotes(trackRef.current, [note], `Added ${keyName(note.midi)} from the keyboard.`);
+    });
+    // addNotes only touches refs and state setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showKeys, t]);
   const load = async (file?: File) => {
     if (!file) return;
     try {
@@ -163,6 +266,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       setHistory(historyOf(imported));
       setTrackId(imported.tracks[0]?.id ?? '');
       setSelected(null);
+      cursor.current = 0;
       setSaved(null);
       setStatus('Opened ' + imported.tracks.length + ' tracks. Notes stay on this device.');
     } catch (error) {
@@ -189,13 +293,35 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
       e.preventDefault();
       setHistory((h) => redo(h));
-    } else if ((e.key === 'Delete' || e.key === 'Backspace') && selected && track) {
+    } else if ((e.key === 'Delete' || e.key === 'Backspace') && selection.length && track) {
       e.preventDefault();
       update(
-        next(p, track.id, (notes) => notes.filter((n) => n.id !== selected)),
-        'Deleted note.',
+        next(p, track.id, (notes) => notes.filter((n) => !picked.has(n.id))),
+        selection.length === 1 ? 'Deleted note.' : `Deleted ${selection.length} notes.`,
       );
-      setSelected(null);
+      setSelection([]);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && track) {
+      e.preventDefault();
+      setSelection(track.notes.map((n) => n.id));
+    } else if (e.key === 'Escape' && selection.length) {
+      setSelection([]);
+    } else if (e.key.startsWith('Arrow') && selection.length && track) {
+      // Nudge the selection: a grid step left or right, a semitone (Shift: an octave) up or down.
+      e.preventDefault();
+      const by = step || 0.25;
+      const octave = e.shiftKey ? 12 : 1;
+      const [db, dm] =
+        e.key === 'ArrowLeft'
+          ? [-by, 0]
+          : e.key === 'ArrowRight'
+            ? [by, 0]
+            : e.key === 'ArrowUp'
+              ? [0, octave]
+              : [0, -octave];
+      setTrackNotes(
+        moveNotes(track.notes, picked, db, dm),
+        `Moved ${selection.length} note${selection.length === 1 ? '' : 's'}.`,
+      );
     } else if (e.key === ' ' && e.target === e.currentTarget) {
       e.preventDefault();
       play();
@@ -211,8 +337,9 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       <div className={styles.heading}>
         <h2>MIDI piano-roll editor</h2>
         <p>
-          Open a .mid file or create one from scratch. Drag notes to move, drag the right edge to
-          resize, and click empty space to draw. MIDI is edited locally.
+          Open a .mid file or create one from scratch. Click empty space to draw, drag notes to move
+          them and their right edge to resize them. Drag a box (or Shift-click) to select several
+          notes and move them together, with the mouse or the arrow keys. MIDI is edited locally.
         </p>
       </div>
       <div className={styles.toolbar}>
@@ -236,6 +363,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
         <Button
           onClick={() => {
             stop();
+            cursor.current = 0;
             setHistory(historyOf(blankMidiProject()));
             setTrackId('melody');
             setSelected(null);
@@ -251,8 +379,19 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           Redo
         </Button>
         <Button variant="primary" onClick={play} data-testid="midi-play">
-          {playing ? 'Stop' : 'Play'}
+          {playing ? 'Pause' : 'Play'}
         </Button>
+        <button
+          type="button"
+          className={styles.pianoToggle}
+          aria-pressed={showKeys}
+          onClick={() => setShowKeys((v) => !v)}
+          title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
+          data-testid="midi-keyboard-toggle"
+        >
+          <PianoIcon />
+          {showKeys ? 'Hide keyboard' : 'Keyboard'}
+        </button>
         <Button
           onClick={() => {
             try {
@@ -315,21 +454,36 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
             ))}
           </select>
         </label>
-        <label>
-          Zoom{' '}
-          <input
-            type="range"
-            min={20}
-            max={100}
-            step={10}
-            value={zoom}
-            aria-label="MIDI zoom"
-            onChange={(e) => setZoom(Number(e.target.value))}
-          />
-        </label>
+        <div className={styles.zoomGroup}>
+          <label>
+            Zoom ↔{' '}
+            <input
+              type="range"
+              min={ZOOM_RANGE.min}
+              max={ZOOM_RANGE.max}
+              step={4}
+              value={zoom}
+              aria-label="MIDI zoom"
+              onChange={(e) => setZoom(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Zoom ↕{' '}
+            <input
+              type="range"
+              min={ROW_RANGE.min}
+              max={ROW_RANGE.max}
+              step={2}
+              value={row}
+              aria-label="MIDI row height"
+              onChange={(e) => setRow(Number(e.target.value))}
+            />
+          </label>
+        </div>
         <span className={styles.dim}>
-          Bar {Math.floor(position / p.meter.beats) + 1} · {p.meter.beats}/{p.meter.unit} ·{' '}
-          {p.tracks.reduce((n, tr) => n + tr.notes.length, 0)} notes
+          {p.meter.beats}/{p.meter.unit} · {p.tracks.reduce((n, tr) => n + tr.notes.length, 0)}{' '}
+          notes
+          {selection.length > 1 ? ` · ${selection.length} selected` : ''}
         </span>
       </div>
       {p.tempos.length > 1 || p.meters.length > 1 ? (
@@ -387,8 +541,11 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
               </button>
               <button
                 type="button"
+                className={styles.iconButton}
                 aria-pressed={tr.muted}
-                aria-label={'Mute ' + tr.name}
+                aria-label={(tr.muted ? 'Unmute ' : 'Mute ') + tr.name}
+                title={tr.muted ? 'Muted: click to hear this track' : 'Click to mute this track'}
+                data-testid="midi-track-mute"
                 onClick={() =>
                   update(
                     {
@@ -399,7 +556,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
                   )
                 }
               >
-                {tr.muted ? 'Unmute' : 'Mute'}
+                <SpeakerIcon muted={tr.muted} />
               </button>
             </div>
           ))}
@@ -495,21 +652,73 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
             </div>
           ) : null}
         </aside>
-        <MidiRoll
-          project={p}
-          trackId={track?.id ?? ''}
-          selected={selected}
-          step={step}
-          zoom={zoom}
-          playheadRef={playhead}
-          onSelect={setSelected}
-          onNote={notePatch}
-          onAdd={addNote}
-        />
+        <div className={styles.rollColumn}>
+          <MidiRoll
+            project={p}
+            trackId={track?.id ?? ''}
+            selection={picked}
+            step={step}
+            zoom={zoom}
+            row={row}
+            getBeat={beatNow}
+            follow={playing}
+            pending={pending}
+            onSelection={setSelection}
+            onTrackNotes={setTrackNotes}
+            onAdd={addNote}
+            onSeek={seek}
+          />
+          <SeekBar
+            getBeat={beatNow}
+            endBeat={projectEndBeat(p)}
+            beatsPerBar={p.meter.beats}
+            bpm={p.tempo}
+            onSeek={seek}
+          />
+        </div>
       </div>
+      {showKeys ? (
+        <div className={styles.inlineKeys} data-testid="midi-keyboard">
+          <KeyboardDock />
+        </div>
+      ) : null}
+      {showKeys ? (
+        <p className={styles.recordNote} data-testid="midi-record-note">
+          {playing
+            ? `Recording into ${track?.name ?? 'the track'}: notes keep the timing you play, snapped to the grid.`
+            : `Notes you play go into ${track?.name ?? 'the track'} at the playhead, one grid step each; press keys together for a chord. Press Play to record in time.`}
+        </p>
+      ) : null}
       <div className={styles.inspector}>
-        <strong>{chosen ? 'Selected note · ' + keyName(chosen.midi) : 'Note inspector'}</strong>
-        {chosen ? (
+        <strong>
+          {chosen
+            ? 'Selected note · ' + keyName(chosen.midi)
+            : selection.length > 1
+              ? `${selection.length} notes selected`
+              : 'Note inspector'}
+        </strong>
+        {selection.length > 1 && track ? (
+          <div className={styles.toolbar}>
+            <p className={styles.dim}>
+              Drag any of them, or use the arrow keys (Shift for an octave), to move them together.
+            </p>
+            <Button
+              onClick={() => {
+                update(
+                  next(p, track.id, (notes) => notes.filter((n) => !picked.has(n.id))),
+                  `Deleted ${selection.length} notes.`,
+                );
+                setSelection([]);
+              }}
+              data-testid="midi-delete-selected"
+            >
+              Delete {selection.length} notes
+            </Button>
+            <Button variant="ghost" onClick={() => setSelection([])}>
+              Clear selection
+            </Button>
+          </div>
+        ) : chosen ? (
           <div className={styles.toolbar}>
             <label>
               Pitch{' '}
