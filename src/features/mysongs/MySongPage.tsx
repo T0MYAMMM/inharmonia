@@ -1,3 +1,5 @@
+import { compiledToMidi } from '@/core/midi/adapters';
+import { downloadMidi } from '@/core/midi/smf';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { PATTERNS } from '@/content/patterns';
@@ -89,6 +91,7 @@ export function MySongPage() {
           )}
         </div>
         <div className={styles.actions}>
+          <Button size="small" variant="ghost" onClick={() => downloadMidi(song.draft.midi ?? compiledToMidi(compiled))} data-testid="my-song-midi-export">Export .mid</Button>
           <ExportButtons
             build={() =>
               exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })
