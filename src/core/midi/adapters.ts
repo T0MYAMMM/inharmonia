@@ -37,6 +37,7 @@ export function compiledToMidi(compiled: CompiledLesson): MidiProject {
 /** A MIDI project's full polyphony, not a lossy monophonic score reduction. */
 export function midiEvents(project: MidiProject) {
   return project.tracks
+    .filter((track) => !track.muted)
     .flatMap((track, index) =>
       track.notes.map((n) => ({
         id: track.id + '-' + n.id,
