@@ -12,7 +12,10 @@
         "composer": "Johann Pachelbel",
         "composerDied": 1706,
         "firstPublished": 1919,
-        "edition": "Manuscript ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264); full violin I transcription Michael Fischer v. Mollard, Mutopia Project 2015, CC BY 4.0"
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264), bars 1-54; Organum III/24, Kistner & Siegel, Leipzig, 1929 (IMSLP #44549), bars 55-57",
+        "editor": "Max Seiffert",
+        "editorDied": 1948,
+        "editorAdditionsUsed": false
       },
       "song": {
         "key": {
@@ -32,7 +35,7 @@
         "piece": "canon-in-d",
         "level": "easy",
         "covers": "bars 3–57",
-        "summary": "Full first-violin canon across 57 bars over Pachelbel's repeating ground bass (piano reduction; other violins omitted).",
+        "summary": "Pachelbel's canon: the whole first-violin line over the eight-note ground bass.",
         "bars": [
           {
             "section": "Canon",
@@ -2138,7 +2141,10 @@
         "composer": "Johann Pachelbel",
         "composerDied": 1706,
         "firstPublished": 1919,
-        "edition": "Manuscript ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264); full violin I transcription Michael Fischer v. Mollard, Mutopia Project 2015, CC BY 4.0"
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264), bars 1-54; Organum III/24, Kistner & Siegel, Leipzig, 1929 (IMSLP #44549), bars 55-57",
+        "editor": "Max Seiffert",
+        "editorDied": 1948,
+        "editorAdditionsUsed": false
       },
       "song": {
         "key": {
@@ -2158,7 +2164,7 @@
         "piece": "canon-in-d",
         "level": "medium",
         "covers": "bars 3–57",
-        "summary": "Full first-violin canon across 57 bars over Pachelbel's repeating ground bass (piano reduction; other violins omitted).",
+        "summary": "Pachelbel's canon: the whole first-violin line over the eight-note ground bass.",
         "bars": [
           {
             "section": "Canon",
@@ -5834,7 +5840,10 @@
         "composer": "Johann Pachelbel",
         "composerDied": 1706,
         "firstPublished": 1919,
-        "edition": "Manuscript ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264); full violin I transcription Michael Fischer v. Mollard, Mutopia Project 2015, CC BY 4.0"
+        "edition": "Manuscript score, ca. 1838-42, Staatsbibliothek zu Berlin, Mus.ms. 16481/8 (IMSLP #346264), bars 1-54; Organum III/24, Kistner & Siegel, Leipzig, 1929 (IMSLP #44549), bars 55-57",
+        "editor": "Max Seiffert",
+        "editorDied": 1948,
+        "editorAdditionsUsed": false
       },
       "song": {
         "key": {
@@ -5854,7 +5863,7 @@
         "piece": "canon-in-d",
         "level": "advanced",
         "covers": "bars 1–57",
-        "summary": "Full first-violin canon across 57 bars over Pachelbel's repeating ground bass (piano reduction; other violins omitted).",
+        "summary": "Pachelbel's canon: the whole first-violin line over the eight-note ground bass.",
         "bars": [
           {
             "section": "Ground",
