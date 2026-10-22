@@ -55,8 +55,11 @@ describe('the built-in song library', () => {
     expect(advancedCanon.bars[56]!.section).toBe('Cadence');
     expect(advancedCanon.bars[56]!.chords[0]!.symbol).toBe('D');
     expect(advancedCanon.source.kind).toBe('public-domain');
-    if (advancedCanon.source.kind === 'public-domain')
-      expect(advancedCanon.source.edition).toContain('Mutopia Project 2015, CC BY 4.0');
+    if (advancedCanon.source.kind === 'public-domain') {
+      expect(advancedCanon.source.edition).toContain('Mus.ms. 16481/8');
+      expect(advancedCanon.source.edition).not.toContain('Mutopia');
+      expect(advancedCanon.source).toMatchObject({ editor: 'Max Seiffert', editorDied: 1948 });
+    }
 
     const lullaby = versionsOf('brahms-lullaby');
     expect(lullaby.map((s) => s.bars.length)).toEqual([34, 34, 35]);
