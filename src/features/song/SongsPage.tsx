@@ -73,8 +73,8 @@ export function SongsPage() {
           come in Easy, Medium and Advanced versions.
         </p>
         <p>
-          <Link to="/studio">Make your own in Studio</Link>: sing or hum a melody and it is written
-          down for you.
+          <Link to="/studio">Create or import a MIDI song in Studio</Link>, or sing a melody
+          and let InHarmonia write it down.
         </p>
       </div>
       <div className={styles.filters}>
