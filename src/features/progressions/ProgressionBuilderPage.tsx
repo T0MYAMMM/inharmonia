@@ -21,7 +21,11 @@ import { romanToChord, voiceChord, type Mode } from '@/core/theory';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
+import { TextArea } from '@/ui/TextArea';
+import { TextInput } from '@/ui/TextInput';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import songStyles from '../song/SongPage.module.css';
 import styles from './progressions.module.css';
@@ -120,7 +124,7 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const errorsRef = useRef<HTMLDivElement | null>(null);
-  const ids = { help: useId(), errors: useId(), name: useId(), chords: useId() };
+  const ids = { errors: useId(), name: useId(), chords: useId() };
 
   const keys: readonly string[] = mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
   const key = keys.includes(previewKey) ? previewKey : 'C';
@@ -191,18 +195,15 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
       </div>
 
       <form className={styles.builder} onSubmit={onSubmit} noValidate>
-        <label className={styles.field} htmlFor={ids.name}>
-          Name
-          <input
-            id={ids.name}
-            className={styles.input}
+        <Field label="Name" id={ids.name}>
+          <TextInput
             value={name}
             maxLength={MAX_NAME}
             onChange={(e) => setName(e.target.value)}
             aria-invalid={nameIssue ? true : undefined}
             autoComplete="off"
           />
-        </label>
+        </Field>
 
         <Segmented
           label="Mode"
@@ -212,25 +213,24 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           className={styles.start}
         />
 
-        <div className={styles.field}>
-          <label htmlFor={ids.chords}>Chords</label>
-          <textarea
-            id={ids.chords}
-            className={styles.textarea}
+        <Field
+          label="Chords"
+          id={ids.chords}
+          hint="Roman numerals, one bar each. Split a bar with a comma: ii7,V7. Write ♭ as b and ♯ as #."
+        >
+          <TextArea
+            className={styles.chords}
             value={text}
             rows={3}
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
             onChange={(e) => setText(e.target.value)}
-            aria-describedby={`${ids.help} ${ids.errors}`}
+            aria-describedby={ids.errors}
             aria-invalid={chordIssues.length ? true : undefined}
             placeholder={mode === 'minor' ? 'i bVII bVI V7' : 'I vi ii7,V7 I'}
           />
-          <span id={ids.help} className={styles.help}>
-            Roman numerals, one bar each. Split a bar with a comma: ii7,V7. Write ♭ as b and ♯ as #.
-          </span>
-        </div>
+        </Field>
 
         <div className={styles.palette} role="group" aria-label="Add a chord">
           {PALETTE[mode].map((n) => (
@@ -259,10 +259,8 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
         <section className={styles.preview} aria-label="Preview">
           <div className={styles.previewHead}>
             <h2 className={styles.previewTitle}>Preview</h2>
-            <label className={styles.inlineField}>
-              In
-              <select
-                className={styles.select}
+            <Field label="In" inline>
+              <Select
                 value={key}
                 onChange={(e) => setPreviewKey(e.target.value)}
                 data-testid="preview-key"
@@ -272,8 +270,8 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
                     {keyLabel(k)}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
           </div>
           {parsed.bars.length ? (
             <ol className={styles.previewBars}>
@@ -306,17 +304,15 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           )}
         </section>
 
-        <label className={styles.field}>
-          Note (optional)
-          <input
-            className={styles.input}
+        <Field label="Note (optional)">
+          <TextInput
             value={description}
             maxLength={MAX_DESCRIPTION}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Where you heard it, or what it's for"
             autoComplete="off"
           />
-        </label>
+        </Field>
 
         <div className={styles.actions}>
           <Button type="submit" variant="primary">
