@@ -11,6 +11,7 @@ import { Field } from './Field';
 import { FilePicker } from './FilePicker';
 import { Keyboard } from './keyboard/Keyboard';
 import { DOCK_RANGE, dockRangeFor, isBlack, layoutKeys } from './keyboard/layout';
+import { Menu, MenuItem, MenuSeparator } from './Menu';
 import { NoteLabel } from './NoteLabel';
 import { NumberInput } from './NumberInput';
 import { RangeInput } from './RangeInput';
@@ -453,6 +454,110 @@ describe('FilePicker', () => {
     expect(target).toHaveAttribute('data-over', 'true');
     fireEvent.dragLeave(target);
     expect(target).not.toHaveAttribute('data-over');
+  });
+});
+
+describe('Menu', () => {
+  function FileMenu({ ran = [] as string[], undoable = true }) {
+    return (
+      <Menu label="File">
+        <MenuItem onSelect={() => ran.push('undo')} disabled={!undoable}>
+          Undo
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem onSelect={() => ran.push('new')}>New</MenuItem>
+        <MenuItem onSelect={() => ran.push('export')}>Export</MenuItem>
+      </Menu>
+    );
+  }
+  const item = (name: string) => screen.getByRole('menuitem', { name });
+
+  it('opens from its button and moves through the items with the arrow keys', async () => {
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    const button = screen.getByRole('button', { name: 'File' });
+    expect(button).toHaveAttribute('aria-haspopup', 'menu');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    await user.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menu', { name: 'File' })).toBeInTheDocument();
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(item('New')).toHaveFocus();
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(item('Export')).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{End}');
+    expect(item('Export')).toHaveFocus();
+  });
+
+  it('opens at the last item with ArrowUp; Escape closes it and returns focus', async () => {
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    const button = screen.getByRole('button', { name: 'File' });
+    act(() => button.focus());
+    await user.keyboard('{ArrowUp}');
+    expect(item('Export')).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(item('Undo')).toHaveFocus();
+  });
+
+  it('runs a chosen item, closes, and returns focus; a disabled item does nothing', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    render(<FileMenu ran={ran} undoable={false} />);
+    const button = screen.getByRole('button', { name: 'File' });
+    await user.click(button);
+    expect(item('Undo')).toHaveAttribute('aria-disabled', 'true');
+    await user.keyboard('{Enter}');
+    expect(ran).toEqual([]);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(ran).toEqual(['new']);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+
+  it('closes on a press outside and on Tab', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FileMenu />
+        <button type="button">After</button>
+      </>,
+    );
+    const button = screen.getByRole('button', { name: 'File' });
+    await user.click(button);
+    await user.click(screen.getByRole('button', { name: 'After' }));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus();
+
+    await user.click(button);
+    await user.tab();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus();
+  });
+
+  it('keeps the keys pressed in it from the page around it', async () => {
+    const user = userEvent.setup();
+    const keys: string[] = [];
+    render(
+      <div onKeyDown={(e) => keys.push(e.key)}>
+        <FileMenu />
+      </div>,
+    );
+    await user.click(screen.getByRole('button', { name: 'File' }));
+    await user.keyboard('{ArrowDown}{Delete}{Escape}');
+    expect(keys).toEqual([]);
   });
 });
 
