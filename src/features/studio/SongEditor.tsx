@@ -31,7 +31,11 @@ import {
 import { newSongId, saveSong } from '@/state/mySongs';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Checkbox } from '@/ui/Checkbox';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
+import { TextInput } from '@/ui/TextInput';
 import { Toggle } from '@/ui/Toggle';
 import { EditorPlayback, type EditorTakeAudio, type HearSource } from './EditorPlayback';
 import { EditorRoll } from './EditorRoll';
@@ -228,10 +232,8 @@ export function SongEditor(props: SongEditorProps) {
 
   return (
     <div className={styles.editor} onKeyDown={onKeyDown}>
-      <label className={styles.title}>
-        Title
-        <input
-          type="text"
+      <Field label="Title" className={styles.title}>
+        <TextInput
           value={draft.title}
           maxLength={80}
           onChange={(e) =>
@@ -239,7 +241,7 @@ export function SongEditor(props: SongEditorProps) {
           }
           data-testid="song-title"
         />
-      </label>
+      </Field>
 
       <div className={styles.toolbar} role="toolbar" aria-label="Edit">
         <Button size="small" onClick={() => setHistory(undo)} disabled={!history.past.length}>
@@ -325,22 +327,25 @@ export function SongEditor(props: SongEditorProps) {
       </p>
 
       <div className={styles.toolbar}>
-        <label className={styles.inline}>
-          Style
-          <select value={restyle} onChange={(e) => setRestyle(e.target.value as HarmonyStyleId)}>
+        <Field label="Style" inline>
+          <Select
+            size="small"
+            value={restyle}
+            onChange={(e) => setRestyle(e.target.value as HarmonyStyleId)}
+          >
             {HARMONY_STYLES.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button size="small" onClick={suggestAgain} data-testid="suggest-again">
           Suggest chords again
         </Button>
-        <label className={styles.inline}>
-          Left hand
-          <select
+        <Field label="Left hand" inline>
+          <Select
+            size="small"
             value={draft.lhPattern}
             onChange={(e) => change({ ...draft, lhPattern: e.target.value }, 'Left hand changed')}
           >
@@ -349,8 +354,8 @@ export function SongEditor(props: SongEditorProps) {
                 {PATTERNS[id]!.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
 
       <section className={styles.save} aria-labelledby="save-title">
@@ -362,16 +367,10 @@ export function SongEditor(props: SongEditorProps) {
           export on the Songs page to back them up.
         </p>
         {canKeep ? (
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={keep}
-              onChange={(e) => setKeep(e.target.checked)}
-              data-testid="keep-recording"
-            />
+          <Checkbox checked={keep} onChange={setKeep} data-testid="keep-recording">
             Keep the recording of my take ({formatBytes(props.recordingBytes)}), to compare and see
             my pitch line later
-          </label>
+          </Checkbox>
         ) : null}
         {kept && !keep ? (
           <p className={styles.small}>Saving now deletes the kept recording.</p>
