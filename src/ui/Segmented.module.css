@@ -10,9 +10,10 @@
   scrollbar-width: none;
 }
 
+/* As tall as the other controls: the group's padding and border take 8px. */
 .option {
   position: relative;
-  min-height: 34px;
+  min-height: calc(var(--control-height) - 8px);
   padding: 0 14px;
   border: 0;
   border-radius: var(--radius-pill);
