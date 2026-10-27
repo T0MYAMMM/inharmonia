@@ -1,0 +1,66 @@
+.menu {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The same surface as the settings menu in the header. */
+.list {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  display: grid;
+  min-width: 14rem;
+  max-width: calc(100vw - 2 * var(--gutter));
+  padding: var(--space-2);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.list[data-align='end'] {
+  left: auto;
+  right: 0;
+}
+
+/* A full touch target at every width. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.item:hover:not([aria-disabled='true']),
+.item:focus-visible {
+  background: var(--surface-sunk);
+}
+
+/* Inside the item, so the ring doesn't cover its neighbours. */
+.item:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+}
+
+.item[aria-disabled='true'] {
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.separator {
+  height: 1px;
+  margin: var(--space-1) calc(-1 * var(--space-2));
+  background: var(--line);
+}
