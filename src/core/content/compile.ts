@@ -1,4 +1,5 @@
 import { MIX, type Mix } from '@config/mix';
+import { midiEvents } from '../midi/adapters';
 import type { TimelineEvent } from '../audio/timeline';
 import {
   explicitVoicing,
@@ -315,7 +316,15 @@ export function compileLesson(
     (a, b) => a.beat - b.beat || (a.channel === b.channel ? 0 : a.channel === 'rh' ? -1 : 1),
   );
 
-  return { lesson, beatsPerBar, lengthBeats: bars.length * beatsPerBar, bars, chords, events };
+  return {
+    lesson,
+    beatsPerBar,
+    lengthBeats: bars.length * beatsPerBar,
+    bars,
+    chords,
+    // Display the representative monophonic score, but HEAR every imported MIDI note.
+    events: lesson.midi ? midiEvents(lesson.midi) : events,
+  };
 }
 
 /** Problems that make a lesson wrong to play. Empty when the lesson is valid. */
