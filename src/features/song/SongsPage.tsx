@@ -4,7 +4,10 @@ import { SONGS } from '@/content/lessons';
 import { SONG_LEVELS, type Lesson, type SongLevel } from '@/core/content/types';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { loadProgress } from '@/state/progress';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
+import { TextInput } from '@/ui/TextInput';
 import { MySongsSection } from '../mysongs/MySongsSection';
 import page from '../page.module.css';
 import { composerOf, creditLine, LEVEL_NAMES } from './credit';
@@ -87,10 +90,8 @@ export function SongsPage() {
           ]}
           onChange={(v) => set('level', v === 'all' ? '' : v)}
         />
-        <label className={styles.field}>
-          Composer
-          <select
-            className={styles.select}
+        <Field label="Composer">
+          <Select
             value={composer}
             onChange={(e) => set('composer', e.target.value)}
             data-testid="songs-composer"
@@ -101,19 +102,17 @@ export function SongsPage() {
                 {c}
               </option>
             ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          Search
-          <input
-            className={styles.select}
+          </Select>
+        </Field>
+        <Field label="Search">
+          <TextInput
             type="search"
             value={query}
             placeholder="Title or composer"
             onChange={(e) => set('q', e.target.value)}
             data-testid="songs-search"
           />
-        </label>
+        </Field>
       </div>
       {matching.length === 0 ? (
         <p className={styles.meta} data-testid="songs-empty">

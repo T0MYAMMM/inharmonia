@@ -357,29 +357,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.field {
-  display: grid;
-  gap: 3px;
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.field select {
-  min-height: 40px;
-  max-width: min(100%, 260px);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--ink);
-  padding: 6px 12px;
-  font: inherit;
-}
-
-.field input {
-  min-height: 32px;
+.zoom {
   max-width: 160px;
-  accent-color: var(--dusk);
 }
 
 .followSection {
