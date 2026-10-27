@@ -11,6 +11,9 @@ import {
 } from '@/core/transcription';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Radio } from '@/ui/Checkbox';
+import { Field } from '@/ui/Field';
+import { Select } from '@/ui/Select';
 import { patternIdsFor } from './patternChoices';
 import styles from './studio.module.css';
 
@@ -74,20 +77,15 @@ export function ChordSuggestions({
         {suggestions.map((h, i) => {
           const id = `suggestion-${h.style}`;
           return (
-            <label
+            <Radio
               key={h.style}
               className={styles.suggestion}
-              data-selected={h === picked || undefined}
-              data-testid={id}
+              labelProps={{ 'data-selected': h === picked || undefined, 'data-testid': id }}
+              name="harmonization"
+              checked={h === picked}
+              onChange={() => setChoice(i)}
+              aria-describedby={`${id}-why`}
             >
-              <input
-                type="radio"
-                name="harmonization"
-                className={styles.radio}
-                checked={h === picked}
-                onChange={() => setChoice(i)}
-                aria-describedby={`${id}-why`}
-              />
               <span className={styles.suggestionHead}>
                 <span className={styles.suggestionName}>{h.name}</span>
                 <span className={styles.fit}>{Math.round(h.fit * 100)}% on chord notes</span>
@@ -98,7 +96,7 @@ export function ChordSuggestions({
               <span id={`${id}-why`} className={styles.why}>
                 {h.explanation.join(' ')}
               </span>
-            </label>
+            </Radio>
           );
         })}
       </div>
@@ -121,10 +119,8 @@ export function ChordSuggestions({
       </details>
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          Left hand
-          <select
-            className={styles.select}
+        <Field label="Left hand">
+          <Select
             value={lhPattern}
             onChange={(e) => setPattern(e.target.value)}
             data-testid="lh-pattern"
@@ -134,8 +130,8 @@ export function ChordSuggestions({
                 {PATTERNS[p]!.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button
           variant="primary"
           onClick={() => onEdit(picked, lhPattern)}

@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from 'react';
 import { formatChord, prettyNumeral, type NotationSystem } from '@/core/notation';
+import { Select } from '@/ui/Select';
 import {
   addNote,
   deleteNote,
@@ -232,8 +233,10 @@ export function EditorRoll(props: EditorRollProps) {
             const bar = Math.floor(c.startBeat / bpb + 1e-6) + 1;
             const beat = (c.startBeat % bpb) + 1;
             return (
-              <select
+              <Select
                 key={`${c.startBeat}`}
+                size="small"
+                tone="dusk"
                 className={styles.chordSelect}
                 style={{ left: x(c.startBeat) + 2, width: x(c.beats) - 4 }}
                 value={c.symbol}
@@ -258,7 +261,7 @@ export function EditorRoll(props: EditorRollProps) {
                     </option>
                   ))}
                 </optgroup>
-              </select>
+              </Select>
             );
           })}
         </div>

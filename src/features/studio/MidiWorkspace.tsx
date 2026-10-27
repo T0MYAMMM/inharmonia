@@ -21,10 +21,16 @@ import {
   type MidiProject,
 } from '@/core/midi/smf';
 import { newSongId, saveSong } from '@/state/mySongs';
+import { Field } from '@/ui/Field';
+import { FilePicker } from '@/ui/FilePicker';
 import { KeyboardDock } from '@/ui/keyboard';
 import { keyName } from '@/ui/keyboard/layout';
 import { Button } from '@/ui/Button';
 import { joinTinyRetriggers } from '@/core/midi/cleanup';
+import { NumberInput } from '@/ui/NumberInput';
+import { RangeInput } from '@/ui/RangeInput';
+import { Select } from '@/ui/Select';
+import { TextInput } from '@/ui/TextInput';
 import { MidiRoll } from './MidiRoll';
 import { PianoIcon, SpeakerIcon } from './icons';
 import { KeyRecorder, moveNotes } from './rollEdit';
@@ -348,18 +354,13 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
             ← Back to Studio
           </Button>
         ) : null}
-        <label className={styles.filePicker}>
+        <FilePicker
+          accept=".mid,.midi,audio/midi,audio/x-midi"
+          data-testid="midi-file"
+          onFiles={([file]) => void load(file)}
+        >
           Open .mid / .midi
-          <input
-            type="file"
-            accept=".mid,.midi,audio/midi,audio/x-midi"
-            data-testid="midi-file"
-            onChange={(e) => {
-              void load(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
-        </label>
+        </FilePicker>
         <Button
           onClick={() => {
             stop();
@@ -410,25 +411,23 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
         </Button>
       </div>
       <div className={styles.toolbar}>
-        <label>
-          Title{' '}
-          <input
+        <Field label="Title">
+          <TextInput
+            size="small"
             aria-label="MIDI title"
             value={p.title}
             maxLength={80}
             onChange={(e) => update({ ...p, title: e.target.value }, 'Renamed project.')}
           />
-        </label>
-        <label>
-          Tempo (BPM){' '}
-          <input
-            type="number"
+        </Field>
+        <Field label="Tempo (BPM)">
+          <NumberInput
+            size="small"
             min={20}
             max={300}
             aria-label="MIDI tempo"
             value={p.tempo}
-            onChange={(e) => {
-              const tempo = Math.max(20, Math.min(300, Number(e.target.value) || 120));
+            onChange={(tempo) => {
               update(
                 {
                   ...p,
@@ -439,10 +438,10 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
               );
             }}
           />
-        </label>
-        <label>
-          Snap{' '}
-          <select
+        </Field>
+        <Field label="Snap">
+          <Select
+            size="small"
             value={step}
             onChange={(e) => setStep(Number(e.target.value))}
             aria-label="Note snap"
@@ -452,33 +451,33 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
                 {value ? String(value) + ' beat' : 'Free'}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <div className={styles.zoomGroup}>
-          <label>
-            Zoom ↔{' '}
-            <input
-              type="range"
+          <Field label="Zoom ↔">
+            <RangeInput
+              size="small"
+              className={styles.range}
               min={ZOOM_RANGE.min}
               max={ZOOM_RANGE.max}
               step={4}
               value={zoom}
               aria-label="MIDI zoom"
-              onChange={(e) => setZoom(Number(e.target.value))}
+              onChange={setZoom}
             />
-          </label>
-          <label>
-            Zoom ↕{' '}
-            <input
-              type="range"
+          </Field>
+          <Field label="Zoom ↕">
+            <RangeInput
+              size="small"
+              className={styles.range}
               min={ROW_RANGE.min}
               max={ROW_RANGE.max}
               step={2}
               value={row}
               aria-label="MIDI row height"
-              onChange={(e) => setRow(Number(e.target.value))}
+              onChange={setRow}
             />
-          </label>
+          </Field>
         </div>
         <span className={styles.dim}>
           {p.meter.beats}/{p.meter.unit} · {p.tracks.reduce((n, tr) => n + tr.notes.length, 0)}{' '}
@@ -562,46 +561,34 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           ))}
           {track ? (
             <div className={styles.trackInspector}>
-              <label>
-                Track name{' '}
-                <input
+              <Field label="Track name">
+                <TextInput
+                  size="small"
                   aria-label="Track name"
                   value={track.name}
                   onChange={(e) => setTrack((t) => ({ ...t, name: e.target.value }))}
                 />
-              </label>
-              <label>
-                Instrument (GM program){' '}
-                <input
-                  type="number"
+              </Field>
+              <Field label="Instrument (GM program)">
+                <NumberInput
+                  size="small"
                   aria-label="Track program"
                   min={0}
                   max={127}
                   value={track.program}
-                  onChange={(e) =>
-                    setTrack((t) => ({
-                      ...t,
-                      program: Math.max(0, Math.min(127, +e.target.value || 0)),
-                    }))
-                  }
+                  onChange={(program) => setTrack((t) => ({ ...t, program }))}
                 />
-              </label>
-              <label>
-                Channel{' '}
-                <input
-                  type="number"
+              </Field>
+              <Field label="Channel">
+                <NumberInput
+                  size="small"
                   aria-label="Track channel"
                   min={1}
                   max={16}
                   value={track.channel + 1}
-                  onChange={(e) =>
-                    setTrack((t) => ({
-                      ...t,
-                      channel: Math.max(0, Math.min(15, (+e.target.value || 1) - 1)),
-                    }))
-                  }
+                  onChange={(channel) => setTrack((t) => ({ ...t, channel: channel - 1 }))}
                 />
-              </label>
+              </Field>
               <Button
                 size="small"
                 variant="ghost"
@@ -720,50 +707,47 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </div>
         ) : chosen ? (
           <div className={styles.toolbar}>
-            <label>
-              Pitch{' '}
-              <input
-                type="number"
+            <Field label="Pitch">
+              <NumberInput
+                size="small"
                 min={0}
                 max={127}
                 aria-label="Note pitch"
                 value={chosen.midi}
-                onChange={(e) => notePatch(chosen.id, { midi: +e.target.value })}
+                onChange={(midi) => notePatch(chosen.id, { midi })}
               />
-            </label>
-            <label>
-              Start (beats){' '}
-              <input
-                type="number"
+            </Field>
+            <Field label="Start (beats)">
+              <NumberInput
+                size="small"
                 min={0}
                 step={step || 0.01}
                 aria-label="Note start"
                 value={chosen.startBeat}
-                onChange={(e) => notePatch(chosen.id, { startBeat: +e.target.value })}
+                onChange={(startBeat) => notePatch(chosen.id, { startBeat })}
               />
-            </label>
-            <label>
-              Length (beats){' '}
-              <input
-                type="number"
+            </Field>
+            <Field label="Length (beats)">
+              <NumberInput
+                size="small"
                 min={0.01}
                 step={step || 0.01}
                 aria-label="Note length"
                 value={chosen.beats}
-                onChange={(e) => notePatch(chosen.id, { beats: +e.target.value })}
+                onChange={(beats) => notePatch(chosen.id, { beats })}
               />
-            </label>
-            <label>
-              Velocity {chosen.velocity}
-              <input
-                type="range"
+            </Field>
+            <Field label={<>Velocity {chosen.velocity}</>}>
+              <RangeInput
+                size="small"
+                className={styles.range}
                 min={1}
                 max={127}
                 aria-label="Note velocity"
                 value={chosen.velocity}
-                onChange={(e) => notePatch(chosen.id, { velocity: +e.target.value })}
+                onChange={(velocity) => notePatch(chosen.id, { velocity })}
               />
-            </label>
+            </Field>
             <Button
               onClick={() => {
                 update(
