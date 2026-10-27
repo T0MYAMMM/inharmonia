@@ -50,7 +50,8 @@
 
 /* ---- Select: a native select with the arrow drawn in, so it looks the same everywhere ---- */
 
-.select {
+/* Zero specificity, so a caller's class can place the select, even absolutely. */
+:where(.select) {
   position: relative;
   display: inline-grid;
   min-width: 0;
@@ -84,6 +85,11 @@
 
 .select:has(.small)::after {
   right: var(--control-pad-x-small);
+}
+
+/* Chord names are dusk: chord tones. */
+.dusk {
+  color: var(--dusk-text);
 }
 
 /* ---- TextArea ---- */
