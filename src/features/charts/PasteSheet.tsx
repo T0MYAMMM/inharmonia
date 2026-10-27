@@ -8,6 +8,8 @@ import {
 } from '@/core/charts';
 import { prettyChord } from '@/core/notation';
 import { Button } from '@/ui/Button';
+import { Checkbox } from '@/ui/Checkbox';
+import { TextArea } from '@/ui/TextArea';
 import styles from './charts.module.css';
 
 export interface PasteSheetProps {
@@ -51,7 +53,8 @@ export function PasteSheet(props: PasteSheetProps) {
       </p>
       {!sheet ? (
         <>
-          <textarea
+          <TextArea
+            mono
             className={styles.paste}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -113,22 +116,21 @@ export function PasteSheet(props: PasteSheetProps) {
                       <span className={styles.unknown}> Can't read: {l.unknown.join(', ')}</span>
                     ) : null}
                     {l.dense ? (
-                      <label className={styles.inlineCheck}>
-                        <input
-                          type="checkbox"
-                          checked={two.has(l.n)}
-                          onChange={(e) =>
-                            setTwo((s) => {
-                              const next = new Set(s);
-                              if (e.target.checked) next.add(l.n);
-                              else next.delete(l.n);
-                              return next;
-                            })
-                          }
-                          data-testid={`two-per-bar-${l.n}`}
-                        />
+                      <Checkbox
+                        className={styles.inlineCheck}
+                        checked={two.has(l.n)}
+                        onChange={(checked) =>
+                          setTwo((s) => {
+                            const next = new Set(s);
+                            if (checked) next.add(l.n);
+                            else next.delete(l.n);
+                            return next;
+                          })
+                        }
+                        data-testid={`two-per-bar-${l.n}`}
+                      >
                         Two chords a bar
-                      </label>
+                      </Checkbox>
                     ) : null}
                   </span>
                 </div>
