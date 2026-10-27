@@ -414,7 +414,13 @@ describe('Checkbox and Radio', () => {
             Include recordings
           </Checkbox>
           {['a', 'b'].map((v) => (
-            <Radio key={v} name="r" checked={pick === v} onChange={() => setPick(v)}>
+            <Radio
+              key={v}
+              name="r"
+              checked={pick === v}
+              onChange={() => setPick(v)}
+              labelProps={{ 'data-testid': `card-${v}` }}
+            >
               Option {v}
             </Radio>
           ))}
@@ -427,5 +433,10 @@ describe('Checkbox and Radio', () => {
     await user.click(screen.getByText('Option b'));
     expect(screen.getByRole('radio', { name: 'Option b' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Option a' })).not.toBeChecked();
+    // labelProps land on the label, so a whole card can carry its test id.
+    expect(screen.getByTestId('card-b').tagName).toBe('LABEL');
+    expect(screen.getByTestId('card-b')).toContainElement(
+      screen.getByRole('radio', { name: 'Option b' }),
+    );
   });
 });
