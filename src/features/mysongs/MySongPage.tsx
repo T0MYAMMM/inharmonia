@@ -10,6 +10,7 @@ import { deleteRecording, deleteSong, getSong, useMySongs } from '@/state/mySong
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
 import { exportItems } from '@/state/transfer';
+import { Checkbox } from '@/ui/Checkbox';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportButtons } from '../transfer/Export';
 import songStyles from '../song/SongPage.module.css';
@@ -105,14 +106,9 @@ export function MySongPage() {
             }
           />
           {bytes ? (
-            <label className={styles.note}>
-              <input
-                type="checkbox"
-                checked={withRecording}
-                onChange={(e) => setWithRecording(e.target.checked)}
-              />{' '}
+            <Checkbox className={styles.note} checked={withRecording} onChange={setWithRecording}>
               Include the recording
-            </label>
+            </Checkbox>
           ) : null}
         </div>
       </div>
