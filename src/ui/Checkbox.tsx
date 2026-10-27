@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
+import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode } from 'react';
 import styles from './Control.module.css';
 
 export interface CheckboxProps extends Omit<
@@ -12,6 +12,8 @@ export interface CheckboxProps extends Omit<
    * with one, className goes on the label.
    */
   children?: ReactNode;
+  /** More attributes for the label, such as a data-testid for the whole row or card. */
+  labelProps?: LabelHTMLAttributes<HTMLLabelElement> & { [data: `data-${string}`]: unknown };
 }
 
 function Check({
@@ -20,6 +22,7 @@ function Check({
   onChange,
   children,
   className,
+  labelProps,
   ...rest
 }: CheckboxProps & { type: 'checkbox' | 'radio' }) {
   const input = (
@@ -33,7 +36,7 @@ function Check({
   );
   if (!children) return input;
   return (
-    <label className={[styles.check, className].filter(Boolean).join(' ')}>
+    <label {...labelProps} className={[styles.check, className].filter(Boolean).join(' ')}>
       {input}
       {children}
     </label>
