@@ -16,7 +16,9 @@ import { NO_CHORD } from '@/core/content/types';
 import { keyName, prettyAccidentals, prettyChord } from '@/core/notation';
 import { isKnownChord, useKnownChords } from '@/state/knownChords';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import styles from './charts.module.css';
 
 const LEVELS: { value: SimplifyLevel; label: string }[] = [
@@ -69,10 +71,8 @@ export function LearnPanel({
         Make it playable
       </h2>
       <div className={styles.fields}>
-        <label className={styles.field}>
-          Key
-          <select
-            className={styles.select}
+        <Field label="Key">
+          <Select
             value={view.transpose}
             onChange={(e) => set({ transpose: Number(e.target.value) })}
             data-testid="transpose"
@@ -83,8 +83,8 @@ export function LearnPanel({
                 {t === 0 ? ' (as written)' : ` (${shiftLabel(t)})`}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button
           size="small"
           onClick={() => setOptions(easierKeys(chart, view, isKnown))}
@@ -138,10 +138,8 @@ export function LearnPanel({
         onChange={(v) => set({ simplify: v })}
       />
       <p className={styles.note}>{LEVEL_NOTES[view.simplify]}</p>
-      <label className={styles.field}>
-        Accompaniment
-        <select
-          className={styles.select}
+      <Field label="Accompaniment" className={styles.start}>
+        <Select
           value={view.style}
           onChange={(e) => set({ style: e.target.value as ChartStyle })}
           data-testid="style"
@@ -151,8 +149,8 @@ export function LearnPanel({
               {s.name}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
       <p className={styles.note}>{style.note}</p>
     </section>
   );

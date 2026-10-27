@@ -51,6 +51,31 @@
   --space-7: 48px;
   --gutter: clamp(16px, 4vw, 32px);
   --content-max: 1120px;
+  /* The measure for running text: heroes, ledes and prose. */
+  --text-width: 44rem;
+
+  /*
+   * Breakpoints. CSS can't read custom properties in media queries, so these
+   * are the only widths a max-width query should use:
+   *   compact  600px  phones: stack rows, fold settings away
+   *   medium   760px  small tablets: side-by-side panels become one column
+   *   wide     960px  the nav and four-up grids give way
+   */
+
+  /* Form controls (src/ui Select, TextInput, NumberInput, TextArea, FilePicker). */
+  --control-height: 40px;
+  --control-height-small: 32px;
+  --control-radius: var(--radius-sm);
+  --control-pad-x: 12px;
+  --control-pad-x-small: 10px;
+  --control-font-size: 1rem;
+  --control-font-size-small: 0.875rem;
+
+  /* The label above or beside a control. */
+  --label-font-size: 0.85rem;
+  --label-font-weight: 600;
+  --label-color: var(--muted);
+  --label-gap: 4px;
 
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --press-ms: 160ms;

@@ -9,9 +9,12 @@ import {
   type KeyContext,
   type NotationSystem,
 } from '@/core/notation';
+import { Field } from '@/ui/Field';
 import { NoteLabel } from '@/ui/NoteLabel';
+import { RangeInput } from '@/ui/RangeInput';
 import { Segmented } from '@/ui/Segmented';
 import type { Timing } from '@/core/practice';
+import { Select } from '@/ui/Select';
 import type { SongMode } from './SongController';
 import { barDensity } from './scoreLayout';
 import type { FallingHand } from './fallingNotesLayout';
@@ -121,9 +124,8 @@ export function Score(props: ScoreProps) {
           <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={setView} />
           {shownView === 'falling' ? (
             <div className={styles.followTools}>
-              <label className={styles.field}>
-                Displayed hands
-                <select
+              <Field label="Displayed hands">
+                <Select
                   data-testid="falling-hand"
                   aria-label="Displayed hands"
                   value={fallingHand}
@@ -136,11 +138,10 @@ export function Score(props: ScoreProps) {
                   <option value="both">Both hands</option>
                   <option value="rh">Right hand</option>
                   <option value="lh">Left hand</option>
-                </select>
-              </label>
-              <label className={styles.field}>
-                Look ahead
-                <select
+                </Select>
+              </Field>
+              <Field label="Look ahead">
+                <Select
                   aria-label="Look ahead"
                   data-testid="falling-lookahead"
                   value={lookAheadBeats}
@@ -152,8 +153,8 @@ export function Score(props: ScoreProps) {
                 >
                   <option value={4}>4 beats</option>
                   <option value={8}>8 beats</option>
-                </select>
-              </label>
+                </Select>
+              </Field>
             </div>
           ) : null}
           {shownView === 'follow' ? (
@@ -180,9 +181,8 @@ export function Score(props: ScoreProps) {
                 Next
               </button>
               {sections.length > 1 ? (
-                <label className={styles.field}>
-                  Section
-                  <select
+                <Field label="Section">
+                  <Select
                     aria-label="Jump to section"
                     value={sectionAt?.startIndex ?? 0}
                     onChange={(event) => props.onSelectBar(Number(event.target.value))}
@@ -192,22 +192,21 @@ export function Score(props: ScoreProps) {
                         {section.title ?? 'Opening'} (bar {section.startIndex + 1})
                       </option>
                     ))}
-                  </select>
-                </label>
+                  </Select>
+                </Field>
               ) : null}
-              <label className={styles.field}>
-                Note size: {zoom}%
-                <input
-                  type="range"
+              <Field label={<>Note size: {zoom}%</>}>
+                <RangeInput
+                  className={styles.zoom}
                   min={75}
                   max={175}
                   step={25}
                   value={zoom}
                   data-testid="score-zoom"
-                  onChange={(event) => setZoom(Number(event.target.value))}
+                  onChange={setZoom}
                   aria-label="Note size"
                 />
-              </label>
+              </Field>
             </div>
           ) : null}
         </div>

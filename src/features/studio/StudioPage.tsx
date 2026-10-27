@@ -24,7 +24,10 @@ import { formatNote, keyName, prettyAccidentals } from '@/core/notation';
 import { useSettings } from '@/state/settings';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { FilePicker } from '@/ui/FilePicker';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import page from '../page.module.css';
@@ -206,18 +209,13 @@ export function StudioPage() {
             >
               Create MIDI
             </Button>
-            <label className={styles.select}>
+            <FilePicker
+              accept=".mid,.midi,audio/midi,audio/x-midi"
+              data-testid="studio-import-midi"
+              onFiles={([file]) => void importMidi(file)}
+            >
               Open MIDI file
-              <input
-                type="file"
-                accept=".mid,.midi,audio/midi,audio/x-midi"
-                data-testid="studio-import-midi"
-                onChange={(e) => {
-                  void importMidi(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-            </label>
+            </FilePicker>
           </div>
           {midiError ? (
             <p role="alert" className={styles.problem}>
@@ -241,19 +239,16 @@ export function StudioPage() {
                 format={(v) => `${v} bpm`}
               />
             </div>
-            <div className={styles.field}>
-              <span>Meter</span>
+            <Field label="Meter" group>
               <Segmented
                 label="Meter"
                 value={String(studio.beatsPerBar) as '4' | '3' | '2'}
                 options={METERS}
                 onChange={(v) => setStudio({ beatsPerBar: Number(v) as 2 | 3 | 4 })}
               />
-            </div>
-            <label className={styles.field}>
-              Bars
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Bars">
+              <Select
                 value={studio.bars}
                 onChange={(e) => setStudio({ bars: Number(e.target.value) })}
                 data-testid="bars"
@@ -263,8 +258,8 @@ export function StudioPage() {
                     {b}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
           </div>
           <p className={styles.note}>
             Wear headphones if you can, so the click stays out of the recording. Wired ones keep the
@@ -479,8 +474,7 @@ function TakeResult({
         </div>
 
         <div className={styles.controls}>
-          <div className={styles.field}>
-            <span>Key</span>
+          <Field label="Key" group>
             <Segmented
               label="Key"
               value={top.some((k) => `${k.tonic} ${k.mode}` === keyId) ? keyId : ''}
@@ -490,11 +484,9 @@ function TakeResult({
               }))}
               onChange={(v) => setKeyChoice(v)}
             />
-          </div>
-          <label className={styles.field}>
-            Or another key
-            <select
-              className={styles.select}
+          </Field>
+          <Field label="Or another key">
+            <Select
               value={keyId}
               onChange={(e) => setKeyChoice(e.target.value)}
               data-testid="key-select"
@@ -506,17 +498,16 @@ function TakeResult({
                   </option>
                 ),
               )}
-            </select>
-          </label>
-          <div className={styles.field}>
-            <span>Grid</span>
+            </Select>
+          </Field>
+          <Field label="Grid" group>
             <Segmented
               label="Grid"
               value={String(grid.step) as '1' | '0.5' | '0.25'}
               options={GRIDS}
               onChange={(v) => setGrid({ ...grid, step: Number(v) as GridStep })}
             />
-          </div>
+          </Field>
           <Toggle pressed={grid.triplets} onChange={(v) => setGrid({ ...grid, triplets: v })}>
             Triplets
           </Toggle>
@@ -531,8 +522,7 @@ function TakeResult({
               format={(v) => `${v}% of a step`}
             />
           </div>
-          <div className={styles.field}>
-            <span>Octave</span>
+          <Field label="Octave" group>
             <Segmented
               label="Octave"
               value={String(draft.octaveShift)}
@@ -542,7 +532,7 @@ function TakeResult({
               }))}
               onChange={(v) => setOctave(Number(v))}
             />
-          </div>
+          </Field>
         </div>
 
         <TakeView

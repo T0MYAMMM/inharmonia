@@ -10,7 +10,9 @@ import { MAJOR_KEYS, MINOR_KEYS, realizeProgression } from '@/core/content/reali
 import { prettyAccidentals, prettyNumerals } from '@/core/notation';
 import { VOICING_STYLES, type VoicingStyle } from '@/core/theory';
 import { useUserProgressions } from '@/state/userProgressions';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportButtons } from '../transfer/Export';
@@ -82,25 +84,17 @@ export function ProgressionPage() {
 
   const fields = (
     <div className={styles.settings}>
-      <label className={styles.field}>
-        Key
-        <select
-          className={styles.select}
-          value={key}
-          onChange={(e) => update({ key: e.target.value })}
-          data-testid="key"
-        >
+      <Field label="Key">
+        <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
           {keys.map((k) => (
             <option key={k} value={k}>
               {keyLabel(k)}
             </option>
           ))}
-        </select>
-      </label>
-      <label className={styles.field}>
-        Pattern
-        <select
-          className={styles.select}
+        </Select>
+      </Field>
+      <Field label="Pattern">
+        <Select
           value={pattern.id}
           onChange={(e) => update({ pattern: e.target.value })}
           data-testid="pattern"
@@ -110,12 +104,10 @@ export function ProgressionPage() {
               {p.name}
             </option>
           ))}
-        </select>
-      </label>
-      <label className={styles.field}>
-        Fill
-        <select
-          className={styles.select}
+        </Select>
+      </Field>
+      <Field label="Fill">
+        <Select
           value={fillId}
           onChange={(e) => update({ fill: e.target.value })}
           data-testid="fill"
@@ -126,8 +118,8 @@ export function ProgressionPage() {
               {f.name}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
       <Segmented
         label="Voicing"
         value={style}

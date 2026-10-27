@@ -13,6 +13,8 @@ import {
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { VOICING_STYLES } from '@/core/theory';
 import { exportItems } from '@/state/transfer';
+import { Field } from '@/ui/Field';
+import { Select } from '@/ui/Select';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { ExportButtons } from '../transfer/Export';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
@@ -75,9 +77,9 @@ export function SongPage() {
     >
       <summary>Playing style &amp; arrangement</summary>
       <div className={styles.arrangementFields}>
-        <label>
-          Accompaniment
-          <select
+        <Field label="Accompaniment">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-pattern' : 'song-pattern'}
             value={options.pattern}
             onChange={(e) => update('pattern', e.target.value)}
@@ -88,11 +90,11 @@ export function SongPage() {
                 {p.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Chord octave
-          <select
+          </Select>
+        </Field>
+        <Field label="Chord octave">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-octave' : 'song-octave'}
             value={options.chordOctave}
             onChange={(e) => update('octave', e.target.value)}
@@ -102,11 +104,11 @@ export function SongPage() {
                 {octaveLabel(n)}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Chord voicing
-          <select
+          </Select>
+        </Field>
+        <Field label="Chord voicing">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-voicing' : 'song-voicing'}
             value={options.voicing}
             onChange={(e) => update('voicing', e.target.value)}
@@ -117,11 +119,11 @@ export function SongPage() {
                 {v.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Inversion
-          <select
+          </Select>
+        </Field>
+        <Field label="Inversion">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-inversion' : 'song-inversion'}
             value={options.inversion}
             onChange={(e) => update('inversion', e.target.value)}
@@ -130,11 +132,11 @@ export function SongPage() {
             <option value="0">Root position</option>
             <option value="1">First inversion</option>
             <option value="2">Second inversion</option>
-          </select>
-        </label>
-        <label>
-          Fill-ins
-          <select
+          </Select>
+        </Field>
+        <Field label="Fill-ins">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-fill' : 'song-fill'}
             value={options.fill}
             onChange={(e) => update('fill', e.target.value)}
@@ -145,8 +147,8 @@ export function SongPage() {
                 {f.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
           Reset arrangement
         </Button>

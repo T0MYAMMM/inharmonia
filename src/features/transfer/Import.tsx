@@ -6,6 +6,10 @@ import {
   type ImportPreview,
 } from '@/state/transfer';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { FilePicker } from '@/ui/FilePicker';
+import { Select } from '@/ui/Select';
+import { TextArea } from '@/ui/TextArea';
 import styles from './transfer.module.css';
 
 const KIND = { song: 'Song', chart: 'Chart', progression: 'Progression' } as const;
@@ -21,7 +25,6 @@ export function ImportControls({
   /** Lays out the area that accepts dropped files; place the import buttons inside it. */
   children: (buttons: ReactNode) => ReactNode;
 }) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLDialogElement | null>(null);
   const pasteRef = useRef<HTMLDialogElement | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -80,9 +83,16 @@ export function ImportControls({
     >
       {children(
         <span className={styles.actions}>
-          <Button size="small" onClick={() => fileRef.current?.click()} data-testid="import-open">
+          <FilePicker
+            size="small"
+            accept="application/json,.json"
+            acceptDrop={false}
+            onFiles={([file]) => void readFile(file)}
+            data-testid="import-file"
+            buttonTestId="import-open"
+          >
             Import file
-          </Button>
+          </FilePicker>
           <Button
             size="small"
             variant="ghost"
@@ -94,19 +104,6 @@ export function ImportControls({
           >
             Paste JSON
           </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className={styles.file}
-            tabIndex={-1}
-            aria-hidden="true"
-            data-testid="import-file"
-            onChange={(e) => {
-              void readFile(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
           <span className={styles.status} role="status" data-testid="import-result">
             {result}
           </span>
@@ -121,7 +118,8 @@ export function ImportControls({
           <p className={styles.note}>
             Paste an Inharmonia export. You'll see what's in it before anything is saved.
           </p>
-          <textarea
+          <TextArea
+            mono
             className={styles.textarea}
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
@@ -191,10 +189,9 @@ export function ImportControls({
                       {r.recording ? ' (with its recording)' : ''}
                     </span>
                     {r.existing ? (
-                      <label className={styles.note}>
-                        Already here:{' '}
-                        <select
-                          className={styles.select}
+                      <Field label="Already here:" inline>
+                        <Select
+                          size="small"
                           value={choices[r.index] ?? 'skip'}
                           onChange={(e) =>
                             setChoices((c) => ({
@@ -207,8 +204,8 @@ export function ImportControls({
                           <option value="skip">Skip</option>
                           <option value="replace">Replace</option>
                           <option value="copy">Keep both</option>
-                        </select>
-                      </label>
+                        </Select>
+                      </Field>
                     ) : (
                       <span className={styles.note}>New</span>
                     )}

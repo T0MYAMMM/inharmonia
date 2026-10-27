@@ -21,8 +21,12 @@ import {
 } from '@/core/charts';
 import { keyName, prettyAccidentals, prettyChord } from '@/core/notation';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
+import { TextArea } from '@/ui/TextArea';
+import { TextInput } from '@/ui/TextInput';
 import { PasteSheet } from './PasteSheet';
 import styles from './charts.module.css';
 
@@ -100,20 +104,16 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           The song
         </h2>
         <div className={styles.fields}>
-          <label className={styles.field}>
-            Title
-            <input
-              className={styles.input}
+          <Field label="Title">
+            <TextInput
               value={chart.title}
               maxLength={LIMITS.title}
               onChange={(e) => patch({ title: e.target.value })}
               data-testid="chart-title"
             />
-          </label>
-          <label className={styles.field}>
-            Key
-            <select
-              className={styles.select}
+          </Field>
+          <Field label="Key">
+            <Select
               value={keyId(chart.key)}
               onChange={(e) => {
                 const [tonic, mode] = e.target.value.split(' ') as [string, 'major' | 'minor'];
@@ -126,10 +126,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   {prettyAccidentals(keyName(k))}
                 </option>
               ))}
-            </select>
-          </label>
-          <div className={styles.field}>
-            <span>Meter</span>
+            </Select>
+          </Field>
+          <Field label="Meter" group>
             <Segmented
               label="Meter"
               value={String(bpb) as '4' | '3'}
@@ -155,7 +154,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 }));
               }}
             />
-          </div>
+          </Field>
           <div className={styles.slider}>
             <Slider
               label="Tempo"
@@ -186,9 +185,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             .
           </p>
         ) : null}
-        <label className={styles.field}>
-          Notes for yourself
-          <textarea
+        <Field label="Notes for yourself" className={styles.start}>
+          <TextArea
             className={styles.notes}
             value={chart.notes}
             maxLength={LIMITS.notes}
@@ -196,7 +194,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             placeholder="Slow down in the bridge."
             data-testid="chart-notes"
           />
-        </label>
+        </Field>
       </section>
 
       {pasting ? (
@@ -241,10 +239,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           data-testid={`section-${si}`}
         >
           <div className={styles.sectionHead}>
-            <label className={styles.field}>
-              Section
-              <input
-                className={styles.input}
+            <Field label="Section">
+              <TextInput
                 value={s.label}
                 maxLength={MAX_LABEL}
                 onChange={(e) => {
@@ -255,11 +251,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 }}
                 data-testid={`section-label-${si}`}
               />
-            </label>
-            <label className={styles.field}>
-              Kind
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Kind">
+              <Select
                 value={s.type}
                 onChange={(e) => patchSection(s.id, { type: e.target.value as SectionType })}
               >
@@ -268,12 +262,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                     {t === 'custom' ? 'Other' : SECTION_NAMES[t]}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className={styles.field}>
-              Repeat
-              <select
-                className={styles.select}
+              </Select>
+            </Field>
+            <Field label="Repeat">
+              <Select
                 value={s.repeat}
                 onChange={(e) => patchSection(s.id, { repeat: Number(e.target.value) })}
               >
@@ -282,8 +274,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                     ×{n}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
             <span className={styles.spacer} />
             <span className={styles.sectionTools}>
               <Button
@@ -409,10 +401,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
       ))}
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          Add a section
-          <select
-            className={styles.select}
+        <Field label="Add a section">
+          <Select
             value=""
             onChange={(e) => e.target.value && addSection(e.target.value)}
             disabled={chart.sections.length >= LIMITS.sections}
@@ -424,8 +414,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 {l}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
 
       <section className={styles.card} aria-labelledby="form-title">
@@ -484,10 +474,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           })}
         </ol>
         {chart.sections.length ? (
-          <label className={styles.field}>
-            Play next
-            <select
-              className={styles.select}
+          <Field label="Play next">
+            <Select
               value=""
               onChange={(e) => e.target.value && patch({ form: [...chart.form, e.target.value] })}
               disabled={chart.form.length >= LIMITS.form}
@@ -499,8 +487,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   {s.label}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Field>
         ) : null}
       </section>
 
@@ -559,29 +547,23 @@ function BarEditor({
   };
   return (
     <div className={styles.barEditor} role="group" aria-label="Edit bar" data-testid="bar-editor">
-      <label className={styles.field}>
-        Chords in the bar
-        <select
-          className={styles.select}
-          value={bar.chords.length}
-          onChange={(e) => setCount(Number(e.target.value))}
-        >
+      <Field label="Chords in the bar">
+        <Select value={bar.chords.length} onChange={(e) => setCount(Number(e.target.value))}>
           {[1, 2, 3, 4].map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
       {bar.chords.map((c, i) => {
         const draft = drafts[i] ?? c.symbol;
         const ok = normalizeChord(draft) !== null;
         return (
           <div key={i} className={styles.slot}>
-            <label className={styles.field}>
-              Chord {i + 1}
-              <input
-                className={styles.input}
+            <Field label={<>Chord {i + 1}</>}>
+              <TextInput
+                className={styles.chordInput}
                 value={draft}
                 aria-invalid={!ok}
                 onChange={(e) => {
@@ -596,11 +578,9 @@ function BarEditor({
                 }}
                 data-testid={`chord-input-${i}`}
               />
-            </label>
-            <label className={styles.field}>
-              Beats
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Beats">
+              <Select
                 value={c.beats}
                 onChange={(e) =>
                   onChange({
@@ -622,8 +602,8 @@ function BarEditor({
                       {b}
                     </option>
                   ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
             <Button
               size="small"
               variant="ghost"
@@ -673,7 +653,8 @@ function BarsText({
   const { bars, issues } = parseBars(text, beatsPerBar);
   return (
     <div className={styles.barsText}>
-      <textarea
+      <TextArea
+        mono
         className={styles.paste}
         value={text}
         onChange={(e) => setText(e.target.value)}
