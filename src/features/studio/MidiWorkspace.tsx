@@ -286,9 +286,9 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       const row = saved ? updateUserSong(saved, draft, now) : makeUserSong(newSongId(), draft, now);
       await saveSong(row);
       setSaved(row);
-      setStatus('Saved full MIDI and a representative practice score to My Songs.');
+      setStatus('Saved full MIDI and a representative practice score to My songs.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not save to My Songs.');
+      setStatus(error instanceof Error ? error.message : 'Could not save to My songs.');
     }
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -359,7 +359,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           data-testid="midi-file"
           onFiles={([file]) => void load(file)}
         >
-          Open .mid / .midi
+          Open MIDI file
         </FilePicker>
         <Button
           onClick={() => {
@@ -371,7 +371,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
             setSaved(null);
           }}
         >
-          New
+          New MIDI
         </Button>
         <Button onClick={() => setHistory((h) => undo(h))} disabled={!history.past.length}>
           Undo
@@ -407,7 +407,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           Export .mid
         </Button>
         <Button onClick={() => void save()} data-testid="midi-save-song">
-          Save to My Songs
+          Save to My songs
         </Button>
       </div>
       <div className={styles.toolbar}>
@@ -771,7 +771,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       </p>
       {saved ? (
         <p className={styles.dim}>
-          <Link to={'/songs/mine/' + saved.id}>Open saved song in My Songs →</Link>
+          <Link to={'/songs/mine/' + saved.id}>Open saved song in My songs →</Link>
         </p>
       ) : null}
       <p className={styles.warning}>

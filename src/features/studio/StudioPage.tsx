@@ -207,7 +207,7 @@ export function StudioPage() {
               onClick={() => openMidi(blankMidiProject())}
               data-testid="studio-new-midi"
             >
-              Create MIDI
+              New MIDI
             </Button>
             <FilePicker
               accept=".mid,.midi,audio/midi,audio/x-midi"
