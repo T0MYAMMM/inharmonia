@@ -547,6 +547,17 @@ describe('Menu', () => {
     expect(screen.getByRole('button', { name: 'After' })).toHaveFocus();
   });
 
+  it('names its menu after an icon-only button', async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu label={<svg aria-hidden="true" />} aria-label="More" icon>
+        <MenuItem onSelect={() => undefined}>Save</MenuItem>
+      </Menu>,
+    );
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('menu', { name: 'More' })).toContainElement(item('Save'));
+  });
+
   it('keeps the keys pressed in it from the page around it', async () => {
     const user = userEvent.setup();
     const keys: string[] = [];
