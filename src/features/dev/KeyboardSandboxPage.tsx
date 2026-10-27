@@ -9,9 +9,11 @@ import type { TransportState } from '@/core/audio';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Field } from '@/ui/Field';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { ProgressTrack } from '@/ui/ProgressTrack';
 import { setProgress } from '@/ui/progress';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { VolumeSlider } from '@/ui/VolumeSlider';
@@ -185,10 +187,8 @@ function MidiCard() {
             No MIDI keyboard found yet. Plug one in and it will appear here.
           </p>
         ) : (
-          <label className={styles.stack} style={{ gap: 6 }}>
-            <span className={page.muted}>Input</span>
-            <select
-              className={styles.select}
+          <Field label="Input">
+            <Select
               value={m.selected}
               onChange={(e) => {
                 midi.select(e.target.value);
@@ -201,8 +201,8 @@ function MidiCard() {
                   {d.name}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Field>
         )}
         {m.sustain ? <p className={styles.meta}>Sustain pedal down</p> : null}
       </div>
