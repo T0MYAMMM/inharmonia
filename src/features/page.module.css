@@ -2,13 +2,12 @@
   display: grid;
   gap: var(--space-3);
   margin: var(--space-5) 0 var(--space-6);
-  max-width: 46rem;
+  max-width: var(--text-width);
 }
 
 .lede {
   font-size: 1.125rem;
   color: var(--muted);
-  max-width: 40rem;
 }
 
 .grid {
@@ -28,7 +27,7 @@
 .prose {
   display: grid;
   gap: var(--space-4);
-  max-width: 44rem;
+  max-width: var(--text-width);
 }
 
 .prose h2 {
