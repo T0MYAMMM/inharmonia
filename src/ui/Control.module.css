@@ -156,6 +156,10 @@
   cursor: pointer;
 }
 
+.sliderSmall {
+  height: var(--control-height-small);
+}
+
 /* ---- Checkbox and Radio ---- */
 
 /* Zero specificity, so a caller's class can lay the label out as a row or a card. */
