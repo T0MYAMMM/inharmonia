@@ -61,3 +61,13 @@
   padding: 0 14px;
   font-size: 0.9rem;
 }
+
+/* Only an icon: a circle as wide as the button is tall. */
+.icon {
+  width: 44px;
+  padding: 0;
+}
+
+.small.icon {
+  width: 36px;
+}

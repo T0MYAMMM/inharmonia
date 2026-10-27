@@ -26,6 +26,8 @@ export interface MenuProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
   children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** A round button for a lone icon, like Button's. */
+  icon?: boolean;
   /** Which edge of the button the menu lines up with. */
   align?: 'start' | 'end';
 }
@@ -41,6 +43,7 @@ export function Menu({
   children,
   variant = 'secondary',
   size = 'normal',
+  icon = false,
   align = 'start',
   className,
   id,
@@ -130,7 +133,7 @@ export function Menu({
         type="button"
         ref={buttonRef}
         id={buttonId}
-        className={buttonClass(variant, size, className)}
+        className={buttonClass(variant, size, className, icon)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
