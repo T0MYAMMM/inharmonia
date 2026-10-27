@@ -1,0 +1,171 @@
+/* Select, TextInput, NumberInput, TextArea: one box, two sizes. */
+.control {
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--control-pad-x);
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  line-height: 1.25;
+  transition: border-color 140ms var(--ease-out);
+}
+
+.control:hover:not(:disabled, :has(:disabled)) {
+  border-color: var(--muted);
+}
+
+/* The global focus ring rounds to 6px; keep the control's own corners. */
+.control:focus-visible {
+  border-radius: var(--control-radius);
+}
+
+.control:disabled,
+.control:has(:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control[aria-invalid='true'],
+.control:has([aria-invalid='true']) {
+  border-color: var(--wrong);
+}
+
+.control::placeholder,
+.control ::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+  opacity: 1;
+}
+
+.small {
+  min-height: var(--control-height-small);
+  padding: 0 var(--control-pad-x-small);
+  font-size: var(--control-font-size-small);
+}
+
+/* ---- Select: a native select with the arrow drawn in, so it looks the same everywhere ---- */
+
+.select {
+  position: relative;
+  display: inline-grid;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.select::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: var(--control-pad-x);
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-75%) rotate(45deg);
+  pointer-events: none;
+}
+
+.select > .control {
+  width: 100%;
+  padding-right: calc(var(--control-pad-x) + 18px);
+  appearance: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.select > .small {
+  padding-right: calc(var(--control-pad-x-small) + 16px);
+}
+
+.select:has(.small)::after {
+  right: var(--control-pad-x-small);
+}
+
+/* ---- TextArea ---- */
+
+.textarea {
+  padding-block: 8px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* ---- NumberInput: the box holds the input and its range ---- */
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: text;
+}
+
+.number:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.numberInput {
+  flex: 1 1 auto;
+  width: calc(var(--digits, 3) * 1ch + 24px);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.numberInput:focus-visible {
+  outline: none;
+}
+
+.range {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.8em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- RangeInput ---- */
+
+.slider {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---- Checkbox and Radio ---- */
+
+/* Zero specificity, so a caller's class can lay the label out as a row or a card. */
+:where(.check) {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.box {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0.15em 0 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
