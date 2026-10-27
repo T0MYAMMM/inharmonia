@@ -47,25 +47,6 @@
   gap: var(--space-3);
 }
 
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.select {
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
 .patternNote {
   flex-basis: 100%;
   color: var(--muted);
@@ -154,33 +135,9 @@
   max-width: 46rem;
 }
 
-.input,
-.textarea {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.input {
-  min-height: 44px;
-  padding: 0 12px;
-}
-
-.textarea {
-  padding: 10px 12px;
+/* Numerals read at a glance. */
+.chords {
   font-size: 1.125rem;
-  line-height: 1.5;
-  resize: vertical;
-}
-
-.input[aria-invalid='true'],
-.textarea[aria-invalid='true'] {
-  border-color: var(--wrong);
 }
 
 .help {
@@ -233,14 +190,6 @@
 .previewTitle {
   margin: 0;
   font-size: 1.1rem;
-}
-
-.inlineField {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-weight: 600;
-  color: var(--muted);
 }
 
 .previewBars {
