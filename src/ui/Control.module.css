@@ -139,11 +139,11 @@
   white-space: nowrap;
 }
 
-/* ---- RangeInput ---- */
+/* ---- RangeInput: as tall as the other controls, so labels in a row line up ---- */
 
 .slider {
   width: 100%;
-  height: 28px;
+  height: var(--control-height);
   margin: 0;
   background: transparent;
   accent-color: var(--ink);
