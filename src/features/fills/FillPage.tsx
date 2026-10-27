@@ -17,7 +17,9 @@ import { romanToChord, type Mode } from '@/core/theory';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { KeyboardDock } from '@/ui/keyboard';
@@ -100,25 +102,17 @@ export function FillPage() {
         options={KEY_MODES}
         onChange={(m) => update({ mode: m, key: null, change: null })}
       />
-      <label className={progStyles.field}>
-        Key
-        <select
-          className={progStyles.select}
-          value={key}
-          onChange={(e) => update({ key: e.target.value })}
-          data-testid="key"
-        >
+      <Field label="Key">
+        <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
           {keys.map((k) => (
             <option key={k} value={k}>
               {keyLabel(k)}
             </option>
           ))}
-        </select>
-      </label>
-      <label className={progStyles.field}>
-        Change
-        <select
-          className={progStyles.select}
+        </Select>
+      </Field>
+      <Field label="Change">
+        <Select
           value={changeKey(change!)}
           onChange={(e) => update({ change: e.target.value })}
           data-testid="change"
@@ -128,8 +122,8 @@ export function FillPage() {
               {changeLabel(c)}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
     </div>
   );
 
