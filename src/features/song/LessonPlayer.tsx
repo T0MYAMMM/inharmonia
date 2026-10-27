@@ -14,8 +14,11 @@ import type { PracticeHands } from '@/core/practice';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { ProgressTrack } from '@/ui/ProgressTrack';
+import { RangeInput } from '@/ui/RangeInput';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { dockRangeFor, KeyboardDock } from '@/ui/keyboard';
@@ -408,22 +411,20 @@ export function LessonPlayer({
                 </Toggle>
               </div>
               {!practice ? (
-                <label className={styles.fullScreenField}>
-                  Tempo: {snap.tempo} bpm
-                  <input
-                    type="range"
+                <Field label={<>Tempo: {snap.tempo} bpm</>}>
+                  <RangeInput
                     aria-label="Full Screen tempo"
                     data-testid="fullscreen-tempo"
                     min={lesson.tempo.min}
                     max={lesson.tempo.max}
                     value={snap.tempo}
-                    onChange={(event) => ctrl.setTempo(Number(event.target.value))}
+                    onChange={(v) => ctrl.setTempo(v)}
                   />
-                </label>
+                </Field>
               ) : null}
-              <label className={styles.fullScreenField}>
-                Count-in
-                <select
+              <Field label="Count-in">
+                <Select
+                  size="small"
                   aria-label="Full Screen count-in"
                   data-testid="fullscreen-countin"
                   value={countInBars}
@@ -432,8 +433,8 @@ export function LessonPlayer({
                   <option value={0}>Off</option>
                   <option value={1}>1 bar</option>
                   <option value={2}>2 bars</option>
-                </select>
-              </label>
+                </Select>
+              </Field>
             </section>
           ),
           right: (
@@ -456,9 +457,9 @@ export function LessonPlayer({
                 </Toggle>
               </div>
               <div className={styles.fullScreenGroup}>
-                <label className={styles.fullScreenField}>
-                  View
-                  <select
+                <Field label="View">
+                  <Select
+                    size="small"
                     aria-label="Full Screen displayed hands"
                     data-testid="fullscreen-falling-hand"
                     value={fallingOptions?.hand ?? 'both'}
@@ -473,11 +474,11 @@ export function LessonPlayer({
                     <option value="both">Both hands</option>
                     <option value="rh">Right hand</option>
                     <option value="lh">Left hand</option>
-                  </select>
-                </label>
-                <label className={styles.fullScreenField}>
-                  Look ahead
-                  <select
+                  </Select>
+                </Field>
+                <Field label="Look ahead">
+                  <Select
+                    size="small"
                     aria-label="Full Screen look ahead"
                     data-testid="fullscreen-falling-lookahead"
                     value={fallingOptions?.lookAheadBeats ?? 4}
@@ -489,8 +490,8 @@ export function LessonPlayer({
                   >
                     <option value={4}>4 beats</option>
                     <option value={8}>8 beats</option>
-                  </select>
-                </label>
+                  </Select>
+                </Field>
               </div>
               {fullScreenSettings ? (
                 <div className={styles.fullScreenArrangement}>{fullScreenSettings}</div>
