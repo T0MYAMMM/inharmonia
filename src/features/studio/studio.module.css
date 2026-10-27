@@ -27,25 +27,6 @@
   width: min(100%, 280px);
 }
 
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.select {
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
 .row {
   display: flex;
   flex-wrap: wrap;
@@ -260,11 +241,6 @@
 .suggestion:has(:focus-visible) {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
-}
-
-.radio {
-  margin: 3px 0 0;
-  accent-color: var(--ink);
 }
 
 .suggestionHead {
