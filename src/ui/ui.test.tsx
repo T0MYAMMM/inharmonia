@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -399,6 +399,60 @@ describe('FilePicker', () => {
     });
     expect(got).toEqual([]);
     expect(dropped).toBe(1);
+  });
+
+  const json = new File(['{}'], 'notes.json', { type: 'application/json' });
+  const dropOn = (target: HTMLElement, files: File[]) =>
+    fireEvent.drop(target, {
+      dataTransfer: { files, items: files.map(() => ({ kind: 'file' })) },
+    });
+
+  it('hands dropped files it does not take to onReject', () => {
+    const got: File[][] = [];
+    const refused: File[][] = [];
+    render(
+      <FilePicker
+        accept=".mid,audio/midi"
+        onFiles={(f) => got.push(f)}
+        onReject={(f) => refused.push(f)}
+        buttonTestId="drop"
+      >
+        Open
+      </FilePicker>,
+    );
+    dropOn(screen.getByTestId('drop'), [json, midi]);
+    expect(refused).toEqual([[json]]);
+    expect(got).toEqual([[midi]]);
+    expect(screen.queryByText(/can't be used here/)).not.toBeInTheDocument();
+  });
+
+  it('says so itself when nothing else hears about a refused file', () => {
+    render(
+      <FilePicker accept=".mid" onFiles={() => undefined} buttonTestId="drop">
+        Open
+      </FilePicker>,
+    );
+    dropOn(screen.getByTestId('drop'), [json]);
+    expect(screen.getByText("notes.json can't be used here.")).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+  });
+
+  it('stays highlighted while a drag crosses its own text', () => {
+    render(
+      <FilePicker onFiles={() => undefined} buttonTestId="drop">
+        <span>Open</span>
+      </FilePicker>,
+    );
+    const target = screen.getByTestId('drop');
+    fireEvent.dragOver(target, { dataTransfer: { files: [midi], items: [{ kind: 'file' }] } });
+    const ontoText = createEvent.dragLeave(target);
+    Object.defineProperty(ontoText, 'relatedTarget', { value: screen.getByText('Open') });
+    fireEvent(target, ontoText);
+    expect(target).toHaveAttribute('data-over', 'true');
+    fireEvent.dragLeave(target);
+    expect(target).not.toHaveAttribute('data-over');
   });
 });
 
