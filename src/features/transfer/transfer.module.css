@@ -67,10 +67,6 @@
   background: var(--surface-sunk);
 }
 
-.row input[type='checkbox'] {
-  accent-color: var(--ink);
-}
-
 .kind {
   font-size: 0.75rem;
   font-weight: 700;
@@ -99,48 +95,12 @@
   font-size: 0.9rem;
 }
 
-.select {
-  font: inherit;
-  font-size: 0.85rem;
-  color: var(--ink);
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-}
-
 .textarea {
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
   min-height: 12rem;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface-sunk);
-  color: var(--ink);
-}
-
-.file {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .drop[data-over] {
   outline: 2px dashed var(--ink);
   outline-offset: 6px;
   border-radius: 14px;
-}
-
-.check {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.check input {
-  accent-color: var(--ink);
 }

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { formatBytes } from '@/core/songs';
 import { download, type ExportResult } from '@/state/transfer';
 import { Button } from '@/ui/Button';
+import { Checkbox } from '@/ui/Checkbox';
 import styles from './transfer.module.css';
 
 async function copy(text: string): Promise<boolean> {
@@ -150,28 +151,21 @@ export function ExportDialog({
           <ul className={styles.list}>
             {candidates.map((c) => (
               <li key={c.key}>
-                <label className={styles.row}>
-                  <input
-                    type="checkbox"
-                    checked={chosen.has(c.key)}
-                    onChange={() => toggle(c.key)}
-                  />
+                <Checkbox
+                  className={styles.row}
+                  checked={chosen.has(c.key)}
+                  onChange={() => toggle(c.key)}
+                >
                   <span className={styles.kind}>{c.kind}</span>
                   <span className={styles.itemTitle}>{c.title}</span>
-                </label>
+                </Checkbox>
               </li>
             ))}
           </ul>
           {recBytes > 0 ? (
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={recordings}
-                onChange={(e) => setRecordings(e.target.checked)}
-                data-testid="export-recordings"
-              />
+            <Checkbox checked={recordings} onChange={setRecordings} data-testid="export-recordings">
               Include recordings ({formatBytes(recBytes)})
-            </label>
+            </Checkbox>
           ) : null}
           <div className={styles.actions}>
             <Button
