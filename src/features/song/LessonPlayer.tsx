@@ -413,6 +413,7 @@ export function LessonPlayer({
               {!practice ? (
                 <Field label={<>Tempo: {snap.tempo} bpm</>}>
                   <RangeInput
+                    size="small"
                     aria-label="Full Screen tempo"
                     data-testid="fullscreen-tempo"
                     min={lesson.tempo.min}
