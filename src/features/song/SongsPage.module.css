@@ -60,28 +60,6 @@
   margin-bottom: var(--space-4);
 }
 
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 0;
-}
-
-.select {
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ink);
-  padding: 7px 11px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  min-width: 0;
-  max-width: 100%;
-}
-
 a.title {
   color: var(--ink);
   text-decoration: none;
