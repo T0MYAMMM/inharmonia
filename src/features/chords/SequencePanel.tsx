@@ -38,7 +38,7 @@ import { nothingToSend, NOTES, sentToStudio } from '../sendTo/names';
 import { SendToMenu, type SendToItem } from '../sendTo/SendToMenu';
 import { useHere, useSend } from '../sendTo/useHandoff';
 import { BarEditor } from './BarEditor';
-import { ToProgression } from './SendSequence';
+import { ToChart, ToProgression } from './SendSequence';
 import { BarStrip } from './BarStrip';
 import { barWords, type SequenceEditor } from './useSequenceEditor';
 import type { SequencePlayback } from './useSequencePlayer';
@@ -100,7 +100,7 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
   const style = CHART_STYLES.find((s) => s.id === seq.style) ?? CHART_STYLES[0];
   const send = useSend();
   const here = useHere();
-  const [dialog, setDialog] = useState<'progression' | null>(null);
+  const [dialog, setDialog] = useState<'progression' | 'chart' | null>(null);
   const hasChords = seq.bars.some((b) => b.chords.some((c) => c.symbol !== NO_CHORD));
   const keyWords = key ? prettyAccidentals(keyName(key)) : '';
   const from = { to: here, label: 'Chords' };
@@ -137,6 +137,9 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
           onSelect: () => setDialog('progression'),
         }
       : nothingToSend('progressions'),
+    hasChords
+      ? { room: 'songs', note: NOTES.songsFromSequence, onSelect: () => setDialog('chart') }
+      : nothingToSend('songs'),
   ];
   const focusChords = () => document.getElementById(chordsId)?.focus();
   const focusBarChord = () => document.getElementById(`${idPrefix}-chord`)?.focus();
@@ -361,6 +364,8 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
           })
         }
       />
+
+      <ToChart seq={seq} open={dialog === 'chart'} onClose={() => setDialog(null)} />
 
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="sequence-status">
         {/* A space that comes and goes, so the same words twice are spoken twice. */}

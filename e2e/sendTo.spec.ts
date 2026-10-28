@@ -322,3 +322,44 @@ test.describe('Send to Progressions', () => {
     await expect(page.getByRole('textbox', { name: 'Chords' })).toHaveValue('');
   });
 });
+
+test.describe('Send to Songs', () => {
+  test('the sequence is saved as a chart in My songs, as it plays, and opens', async ({ page }) => {
+    await page.goto('chords');
+    const sequence = page.getByTestId('sequence');
+    await typeChords(page, '| C | Am | F G | Dm7 | G7 | C |');
+    await page.getByTestId('sequence-style').selectOption('block-both');
+    await sequence.getByRole('button', { name: 'Show function' }).click();
+    await sendTo(page, 'Songs', sequence);
+
+    const dialog = page.getByRole('dialog', { name: 'Send to Songs' });
+    const title = dialog.getByRole('textbox', { name: 'Title' });
+    await expect(title).toBeFocused();
+    await expect(title).toHaveValue('C Am F G Dm7');
+    await expect(dialog).toContainText('A new chart in My songs: 6 bars in C major');
+    await title.fill('  ');
+    await dialog.getByRole('button', { name: 'Save the chart' }).click();
+    await expect(title).toHaveAccessibleDescription(/Give it a title\./);
+    await title.fill('Evening loop');
+    await title.press('Enter');
+
+    await expect(page).toHaveURL(/\/songs\/charts\/mine-chart-/);
+    await expect(page.getByRole('heading', { name: 'Evening loop', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('chart-saved')).toHaveText('Saved from your chord sequence.');
+    await expect(page.getByText('C major, 4/4, 6 bars, 80 bpm')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show function' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('style')).toHaveValue('block-both');
+    await expect(
+      page.getByTestId('chart-progressions').getByRole('heading', { level: 3 }),
+    ).toHaveText('Sequence');
+    await expect(page.getByTestId('chart-found')).toHaveText(
+      'Progressions in it: I–vi–IV–V ballad, ii–V–I. By section ↓',
+    );
+
+    await page.goto('songs');
+    await expect(page.getByRole('link', { name: /Evening loop/ })).toBeVisible();
+  });
+});

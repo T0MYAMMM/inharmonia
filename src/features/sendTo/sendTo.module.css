@@ -38,6 +38,12 @@
   font-size: var(--card-title-size);
 }
 
+/* A form inside the dialog's body, spaced as the body is. */
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .note {
   margin: 0;
   color: var(--muted);
