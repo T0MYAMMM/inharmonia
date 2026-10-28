@@ -199,6 +199,16 @@
   color: var(--muted);
 }
 
+/* Roman numerals in the key the chords suggest, as the score shows them. */
+.numeral {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .empty {
   display: flex;
   flex-wrap: wrap;
@@ -296,4 +306,9 @@
 
 .style {
   max-width: 22rem;
+}
+
+/* Level with the controls under their labels. */
+.toggleCell {
+  padding-top: calc(var(--label-font-size) * 1.3 + var(--label-gap));
 }

@@ -272,6 +272,17 @@ test.describe('chord sequence', () => {
     await expect(page.getByTestId('sequence-status')).toHaveText('Moved bar 1 to bar 4.');
   });
 
+  test('Roman numerals under the chords, in the key they suggest', async ({ page }) => {
+    await page.goto('chords');
+    await typeChords(page, 'C Am F G');
+    await expect(page.locator('[data-numeral]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show function' }).click();
+    await expect(page.locator('[data-numeral]')).toHaveText(['I', 'vi', 'IV', 'V']);
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in C major');
+    await page.reload();
+    await expect(page.locator('[data-numeral]')).toHaveText(['I', 'vi', 'IV', 'V']);
+  });
+
   test('survives a reload, with its settings', async ({ page }) => {
     await page.goto('chords');
     await typeChords(page, '| C G | Am |');

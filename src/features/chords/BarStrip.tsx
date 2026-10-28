@@ -8,7 +8,7 @@ import {
 } from 'react';
 import type { ChartBar } from '@/core/charts';
 import { NO_CHORD } from '@/core/content/types';
-import { prettyChord } from '@/core/notation';
+import { prettyChord, prettyNumeral } from '@/core/notation';
 import { dropGap, dropIndex, type Box } from './barDrag';
 import { barWords } from './useSequenceEditor';
 import styles from './sequence.module.css';
@@ -17,6 +17,8 @@ export interface BarStripProps {
   bars: readonly ChartBar[];
   /** The bar playing, or null. */
   playing: number | null;
+  /** Each chord's Roman numeral, bar by bar, when they are shown. */
+  numerals?: readonly (readonly (string | null)[])[] | null;
   selected: number | null;
   onSelect: (index: number | null) => void;
   onMove: (from: number, to: number) => void;
@@ -38,6 +40,7 @@ export interface BarStripProps {
 export function BarStrip({
   bars,
   playing,
+  numerals,
   selected,
   onSelect,
   onMove,
@@ -116,7 +119,13 @@ export function BarStrip({
           role="option"
           aria-selected={selected === i}
           aria-current={playing === i ? 'true' : undefined}
-          aria-label={`Bar ${i + 1}: ${barWords(bar).replace(/ /g, ', ')}`}
+          aria-label={`Bar ${i + 1}: ${bar.chords
+            .map((c, k) => {
+              const word = barWords({ chords: [c] });
+              const numeral = numerals?.[i]?.[k];
+              return numeral ? `${word} (${prettyNumeral(numeral)})` : word;
+            })
+            .join(', ')}`}
           tabIndex={i === tabStop ? 0 : -1}
           className={styles.bar}
           data-bar={i}
@@ -169,6 +178,11 @@ export function BarStrip({
                 >
                   {c.symbol === NO_CHORD ? c.symbol : prettyChord(c.symbol)}
                 </span>
+                {numerals ? (
+                  <span className={styles.numeral} data-numeral>
+                    {numerals[i]?.[k] ? prettyNumeral(numerals[i]![k]!) : '\u00a0'}
+                  </span>
+                ) : null}
               </span>
             ))}
           </span>
