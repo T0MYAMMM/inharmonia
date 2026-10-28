@@ -1,4 +1,6 @@
 import { Link } from 'react-router';
+import { computerKeyMap } from '@/core/input';
+import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
 import { dueForReview } from '@/state/review';
 import { useSettings } from '@/state/settings';
@@ -35,6 +37,11 @@ const ROOMS = [
   },
 ];
 
+/** The computer keys' range, from the same map the keyboard uses. */
+const KEY_MAP = computerKeyMap();
+const FIRST_KEY = KEY_MAP[0]!;
+const LAST_KEY = KEY_MAP.at(-1)!;
+
 export function HomePage() {
   const dismissed = useSettings((s) => s.welcomeDismissed);
   const set = useSettings((s) => s.set);
@@ -58,9 +65,10 @@ export function HomePage() {
           <h2 id="welcome-title">New here?</h2>
           <ol className={styles.steps}>
             <li>
-              <strong>Find the keys.</strong> Tap the piano, use your computer keyboard (A to ' play
-              C4 to F5), or plug in a MIDI keyboard and press Connect MIDI. The{' '}
-              <Link to="/keyboard">keyboard page</Link> is a good place to try.
+              <strong>Find the keys.</strong> Tap the piano, use your computer keyboard (
+              {FIRST_KEY.label} to {LAST_KEY.label} play {keyName(FIRST_KEY.midi)} to{' '}
+              {keyName(LAST_KEY.midi)}), or plug in a MIDI keyboard and connect it under the piano.
+              The <Link to="/keyboard">keyboard page</Link> is a good place to try.
             </li>
             <li>
               <strong>Listen, then play.</strong>{' '}

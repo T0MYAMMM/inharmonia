@@ -9,7 +9,7 @@ export interface DismissHandlers {
 
 /**
  * Close a menu or popover when you press outside it or press Escape, while
- * `open` is true. Shared by Menu and the settings popover.
+ * `open` is true. Shared by Menu, the settings popover and How to play.
  */
 export function useDismiss(
   ref: RefObject<HTMLElement | null>,

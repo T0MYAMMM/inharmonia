@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { BASE_MIDI } from '@/core/input';
+import { BASE_MIDI, computerKeyMap, OCTAVE_KEYS } from '@/core/input';
 import { audio, lights, notes } from '@/app/services';
 import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
@@ -33,6 +33,9 @@ export function KeyboardDock({
   const shift = useComputerKeys();
   const showHints = useSettings((s) => s.showKeyHints);
   const base = BASE_MIDI + 12 * shift;
+  const keyMap = computerKeyMap(shift);
+  const first = keyMap[0]!;
+  const last = keyMap.at(-1)!;
   const dockRef = useRef<HTMLElement>(null);
   const [screenMode, setScreenMode] = useState<'normal' | 'native' | 'fallback'>('normal');
   const fullScreen = screenMode !== 'normal';
@@ -156,9 +159,10 @@ export function KeyboardDock({
               {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
             </button>
           ) : null}
-          <InputStatus />
+          <InputStatus octaveShift={shift} />
           <span className={styles.keysHint} data-testid="keys-range">
-            Keys A to ' play {keyName(base)} to {keyName(base + 17)}, Z and X shift octave
+            Keys {first.label} to {last.label} play {keyName(first.midi)} to {keyName(last.midi)},{' '}
+            {OCTAVE_KEYS.down.label} and {OCTAVE_KEYS.up.label} shift octave
           </span>
         </div>
         <div
