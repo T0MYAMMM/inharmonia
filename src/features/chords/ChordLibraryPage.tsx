@@ -15,11 +15,13 @@ import {
 } from '@/core/theory';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { buttonClass } from '@/ui/buttonClass';
 import { Card } from '@/ui/Card';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
 import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './chords.module.css';
 
 const GROUPS: { title: string; ids: string[] }[] = [
@@ -102,14 +104,20 @@ export function ChordLibraryPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Chords</h1>
-        <p className={page.lede}>
-          Pick a root and a quality. See how the chord is built, hear it, and play it back.{' '}
-          <Link to={`/chords/drill`}>Drill chords</Link> ·{' '}
-          <Link to="/chords/known">Chords you know</Link>
-        </p>
-      </div>
+      <PageHeader
+        title="Chords"
+        lede="Pick a root and a quality. See how the chord is built, hear it, and play it back."
+        actions={
+          <>
+            <Link to="/chords/drill" className={buttonClass('secondary', 'small')}>
+              Drill chords
+            </Link>
+            <Link to="/chords/known" className={buttonClass('secondary', 'small')}>
+              Chords you know
+            </Link>
+          </>
+        }
+      />
       <div className={styles.layout}>
         <div className={`${styles.side} ${styles.areaSide}`}>
           <div className={styles.group} role="group" aria-label="Root">

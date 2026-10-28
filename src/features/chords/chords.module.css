@@ -283,6 +283,11 @@
   font-weight: 700;
 }
 
+.knownRule {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .knownGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
