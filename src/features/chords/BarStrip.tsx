@@ -68,7 +68,8 @@ export function BarStrip({
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>, i: number) => {
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    // During a drag the keys are the drag's: Escape cancels it, and nothing else.
+    if (drag.state || e.altKey || e.ctrlKey || e.metaKey) return;
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
     if (step && e.shiftKey) {
       e.preventDefault();

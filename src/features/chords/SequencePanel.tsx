@@ -106,11 +106,11 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.defaultPrevented) return;
-      const key = e.key.toLowerCase();
-      if (key !== 'z' && key !== 'y') return;
+      const letter = e.key.toLowerCase();
+      if (letter !== 'z' && letter !== 'y') return;
       if (keysTakenBy(e.target)) return;
       e.preventDefault();
-      if (key === 'y' || e.shiftKey) latest.current.redo();
+      if (letter === 'y' || e.shiftKey) latest.current.redo();
       else latest.current.undo();
     };
     window.addEventListener('keydown', onKey);
