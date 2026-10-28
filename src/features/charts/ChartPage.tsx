@@ -11,8 +11,8 @@ import { buttonClass } from '@/ui/buttonClass';
 import { Toggle } from '@/ui/Toggle';
 import { PrivateBadge } from '../mysongs/PrivateBadge';
 import mine from '../mysongs/mysongs.module.css';
+import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
-import songStyles from '../song/SongPage.module.css';
 import { ExportButtons } from '../transfer/Export';
 import { LearnPanel } from './LearnPanel';
 import styles from './charts.module.css';
@@ -47,58 +47,60 @@ export function ChartPage() {
     return <p className={styles.note}>Loading…</p>;
   if (!record || !compiled)
     return (
-      <div className={songStyles.header}>
-        <h1>Chart not found</h1>
-        <p className={styles.note}>
-          It may have been deleted, or it was made in another browser. Use export and import to move
-          charts.
-        </p>
-        <p>
-          <Link to="/songs">Back to Songs</Link>
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title="Chart not found"
+        lede="It may have been deleted, or it was made in another browser. Use export and import to move charts."
+      />
     );
 
   const { chart, view } = record;
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/songs">Songs</Link>
-        </p>
-        <h1>{chart.title}</h1>
-        <span className={styles.tags}>
-          <PrivateBadge />
-          <span className={mine.badge}>Chart</span>
-        </span>
-        <p className={songStyles.meta}>
-          {prettyAccidentals(keyName(viewKey(chart, view)))}
-          {view.transpose
-            ? ` (written in ${prettyAccidentals(keyName(chart.key))}, ${shiftLabel(view.transpose)})`
-            : ''}
-          , {chart.meter.beats}/{chart.meter.unit}, {compiled.bars.length} bars, {chart.tempo} bpm
-        </p>
-        {chart.notes ? (
-          <p className={styles.userNotes} data-testid="chart-notes-view">
-            {chart.notes}
-          </p>
-        ) : null}
-        <div className={mine.actions}>
-          <Link
-            to={`/songs/charts/${record.id}/edit`}
-            className={buttonClass('secondary', 'small')}
-          >
-            Edit
-          </Link>
-          <Toggle
-            pressed={view.showFunction}
-            onChange={(v) => void saveChart({ ...record, view: { ...view, showFunction: v } })}
-          >
-            Show function
-          </Toggle>
-          <ExportButtons build={() => exportItems({ charts: [record] })} />
-        </div>
-      </div>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title={chart.title}
+        tags={
+          <>
+            <PrivateBadge />
+            <span className={mine.badge}>Chart</span>
+          </>
+        }
+        lede={
+          <>
+            <p>
+              {prettyAccidentals(keyName(viewKey(chart, view)))}
+              {view.transpose
+                ? ` (written in ${prettyAccidentals(keyName(chart.key))}, ${shiftLabel(view.transpose)})`
+                : ''}
+              , {chart.meter.beats}/{chart.meter.unit}, {compiled.bars.length} bars, {chart.tempo}{' '}
+              bpm
+            </p>
+            {chart.notes ? (
+              <p className={styles.userNotes} data-testid="chart-notes-view">
+                {chart.notes}
+              </p>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
+            <Link
+              to={`/songs/charts/${record.id}/edit`}
+              className={buttonClass('secondary', 'small')}
+            >
+              Edit
+            </Link>
+            <Toggle
+              pressed={view.showFunction}
+              onChange={(v) => void saveChart({ ...record, view: { ...view, showFunction: v } })}
+            >
+              Show function
+            </Toggle>
+            <ExportButtons build={() => exportItems({ charts: [record] })} />
+          </>
+        }
+      />
       <LearnPanel
         chart={chart}
         view={view}

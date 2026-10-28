@@ -38,8 +38,21 @@ describe('PageHeader', () => {
   });
 
   it('starts the lede with its tags', () => {
-    render(<PageHeader title="Harbour lights" tags={<span>Private</span>} lede="C major" />);
-    expect(screen.getByText('Private').closest('p')).toHaveTextContent('PrivateC major');
+    render(
+      <PageHeader
+        title="Harbour lights"
+        tags={<span>Private</span>}
+        lede={
+          <>
+            <p>C major</p>
+            <p>Slow down</p>
+          </>
+        }
+      />,
+    );
+    const first = screen.getByText('C major');
+    expect(first.previousElementSibling).toHaveTextContent('Private');
+    expect(first.parentElement!.firstElementChild).toBe(first.previousElementSibling);
   });
 
   it('takes a button for a view on the same page, named by its label alone', async () => {
