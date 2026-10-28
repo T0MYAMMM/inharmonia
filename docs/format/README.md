@@ -3,8 +3,8 @@
 Inharmonia exports and imports songs, chord charts and progressions as plain JSON. You can read
 the files, edit them by hand, and keep them in git. The schema is in
 [`inharmonia.schema.json`](inharmonia.schema.json), and there is one small example per kind in
-[`examples/`](examples), plus a song made from a MIDI file (`midi-song.json`). Every example is
-invented content.
+[`examples/`](examples), plus a song made from a MIDI file (`midi-song.json`) and a chart
+exported with its lyrics (`chart-lyrics.json`). Every example is invented content.
 
 ## The envelope
 
@@ -76,6 +76,11 @@ its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 
 
   `form` lists section ids in play order, so repeated sections are written once.
 
+  A section may have `lyrics`: the words sung over each bar, one line per bar (`""` for none),
+  up to 120 characters a bar. Lyrics are kept only on the device they were typed or pasted on,
+  so a file has them only when it was exported with **Include lyrics** ticked, and then only
+  for sections that have some.
+
 - **progression**: `mode`, `meter`, and `steps` of `numeral` and `beats` (1, 2 or 4), with an
   optional `description`. Numerals are read against the major scale of the tonic.
 
@@ -86,8 +91,9 @@ exist, and limits hold. If anything is wrong, the preview names the item and the
 example `Item 2 (My chart), chart.sections[0].bars[3]: "Hx" is not a chord`, and nothing is
 saved.
 
-- Unknown fields are dropped. No text gets in except titles, section labels and a chart's
-  `notes`.
+- Unknown fields are dropped. No text gets in except titles, section labels, a chart's `notes`
+  and, in a file exported with them, a chart's `lyrics`, which come in as text, one line a bar,
+  and stay on the device they are imported on.
 - Everything you import becomes your own private content, stored under a `mine-…` id. The
   `source` is kept as written.
 - Version 2 files are read as they are. Version 3 added a MIDI song's `midi`. A version 2 export

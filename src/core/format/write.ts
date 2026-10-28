@@ -173,13 +173,18 @@ export function songItem(input: {
   };
 }
 
-/** A chord chart as a file item: the chart exactly as entered, and how it is viewed. */
+/**
+ * A chord chart as a file item: the chart exactly as entered, and how it is
+ * viewed. Its lyrics are left out unless `lyrics` asks for them.
+ */
 export function chartItem(input: {
   id: string;
   source?: ContentSource;
   chart: ChordChart;
   view: ChartView;
   updatedAt?: number;
+  /** Include the words sung over each bar. Off unless asked: they stay on this device. */
+  lyrics?: boolean;
 }): FileItem {
   const c = input.chart;
   return {
@@ -198,6 +203,9 @@ export function chartItem(input: {
         type: s.type,
         repeat: s.repeat,
         bars: s.bars.map((b) => formatBars([b], c.meter.beats).replace(/^\| | \|$/g, '')),
+        ...(input.lyrics === true && s.bars.some((b) => b.lyric)
+          ? { lyrics: s.bars.map((b) => b.lyric ?? '') }
+          : {}),
       })),
       form: [...c.form],
       notes: c.notes,

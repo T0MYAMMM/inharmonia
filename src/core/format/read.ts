@@ -1,4 +1,5 @@
 import { chartIssues, cleanView, migrateChart } from '../charts/compile';
+import { isOneLine, withLyric } from '../charts/lyrics';
 import { SECTION_NAMES, MAX_LABEL, type SectionType } from '../charts/sections';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, LIMITS, type ChartView, type ChordChart } from '../charts/types';
@@ -394,6 +395,18 @@ function readChart(raw: unknown, viewRaw: unknown, title: string) {
       if (parsed.bars.length !== 1) fail(bf, 'should be exactly one bar');
       return parsed.bars[0]!;
     });
+    // The words over each bar, when the file was exported with them. Never quoted back.
+    if (s.lyrics !== undefined) {
+      if (!Array.isArray(s.lyrics) || s.lyrics.length !== bars.length)
+        fail(`${f}.lyrics`, 'should list one line of lyrics per bar ("" for none)');
+      (s.lyrics as unknown[]).forEach((text, li) => {
+        const lf = `${f}.lyrics[${li}]`;
+        if (typeof text !== 'string') return fail(lf, 'should be text');
+        if (text.length > LIMITS.lyric) fail(lf, `is over ${LIMITS.lyric} characters`);
+        if (!isOneLine(text)) fail(lf, 'should be one line');
+        bars[li] = withLyric(bars[li]!, text);
+      });
+    }
     return {
       id: s.id as string,
       label: (s.label as string).trim(),
