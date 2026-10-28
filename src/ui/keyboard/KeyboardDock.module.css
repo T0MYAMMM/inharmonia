@@ -42,8 +42,18 @@
   background: var(--c);
 }
 
-.spacer {
-  flex: 1;
+/*
+ * Full Screen, the input and the key hint, at the end of the legend. As one
+ * group they wrap together, and an empty spacer adds no gap that would push
+ * the input onto a line of its own on a phone.
+ */
+.legendEnd {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: inherit;
+  margin-left: auto;
 }
 
 /* Which input is in use; it opens How to play above it. */
