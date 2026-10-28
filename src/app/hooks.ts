@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { AudioSnapshot } from '@/core/audio';
-import type { MidiSnapshot } from '@/core/input';
+import { activeInput, type ActiveInput, type InputSource, type MidiSnapshot } from '@/core/input';
 import { audio, keys, midi, notes } from './services';
 
 export function useAudioState(): AudioSnapshot {
@@ -66,4 +66,26 @@ export function useMediaQuery(query: string): boolean {
     () => window.matchMedia?.(query).matches ?? false,
     () => false,
   );
+}
+
+/** A touch screen and nothing finer: no mouse or trackpad to point with, so no keyboard either. */
+export function useTouchOnly(): boolean {
+  const coarse = useMediaQuery('(pointer: coarse)');
+  const fine = useMediaQuery('(any-pointer: fine)');
+  return coarse && !fine;
+}
+
+/** The input in use (see activeInput), updated as notes arrive from each source. */
+export function useActiveInput(): ActiveInput {
+  const midiState = useMidiState();
+  const touchOnly = useTouchOnly();
+  const [last, setLast] = useState<InputSource | null>(null);
+  useEffect(
+    () =>
+      notes.subscribe((e) => {
+        if (e.type === 'on' && e.source !== 'auto') setLast(e.source);
+      }),
+    [],
+  );
+  return activeInput(last, midiState, touchOnly);
 }

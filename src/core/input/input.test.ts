@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { activeInput, inputLabel, midiDeviceName } from './active';
 import { ComputerKeys } from './computerKeys';
 import { NoteStream, type NoteInputEvent } from './noteStream';
 import { bindPointerInput } from './pointer';
-import { parseMidiMessage, WebMidiInput } from './webMidi';
+import { parseMidiMessage, WebMidiInput, type MidiSnapshot } from './webMidi';
 
 function collect(stream: NoteStream) {
   const events: NoteInputEvent[] = [];
@@ -236,5 +237,47 @@ describe('stuck-note safety', () => {
     expect(s.held()).toEqual([]);
     expect(midi.state.sustain).toBe(false);
     expect(midi.state.devices).toEqual([]);
+  });
+});
+
+describe('activeInput', () => {
+  const noMidi: MidiSnapshot = { status: 'idle', devices: [], selected: 'all', sustain: false };
+  const oneKeyboard: MidiSnapshot = {
+    status: 'ready',
+    devices: [{ id: 'a', name: 'Keystation 49' }],
+    selected: 'all',
+    sustain: false,
+  };
+  const label = (...args: Parameters<typeof activeInput>) => inputLabel(activeInput(...args));
+
+  it('starts from what the device has: MIDI, then computer keys, then the screen', () => {
+    expect(label(null, oneKeyboard, false)).toBe('MIDI: Keystation 49');
+    expect(label(null, noMidi, false)).toBe('Computer keys');
+    expect(label(null, noMidi, true)).toBe('Tap the keys');
+  });
+
+  it('follows the input the last note came from', () => {
+    expect(label('keys', oneKeyboard, false)).toBe('Computer keys');
+    expect(label('pointer', oneKeyboard, false)).toBe('Click the keys');
+    expect(label('pointer', noMidi, true)).toBe('Tap the keys');
+    expect(label('midi', { ...oneKeyboard, sustain: true }, false)).toBe(
+      'MIDI: Keystation 49, pedal down',
+    );
+  });
+
+  it('falls back when the MIDI keyboard it was using goes away', () => {
+    expect(label('midi', noMidi, false)).toBe('Computer keys');
+    expect(label('midi', noMidi, true)).toBe('Tap the keys');
+  });
+
+  it('names the chosen MIDI input, or how many there are', () => {
+    const two: MidiSnapshot = {
+      ...oneKeyboard,
+      devices: [...oneKeyboard.devices, { id: 'b', name: 'Pads' }],
+    };
+    expect(midiDeviceName(two)).toBe('2 MIDI inputs');
+    expect(midiDeviceName({ ...two, selected: 'b' })).toBe('Pads');
+    expect(midiDeviceName({ ...oneKeyboard, devices: [] })).toBeNull();
+    expect(midiDeviceName({ ...oneKeyboard, status: 'denied' })).toBeNull();
   });
 });

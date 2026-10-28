@@ -5,7 +5,7 @@ import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
 import { Keyboard } from './Keyboard';
 import { DOCK_RANGE, keyName } from './layout';
-import { MidiStatus } from './MidiStatus';
+import { InputStatus } from './InputStatus';
 import styles from './KeyboardDock.module.css';
 
 export interface KeyboardDockProps {
@@ -156,7 +156,7 @@ export function KeyboardDock({
               {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
             </button>
           ) : null}
-          <MidiStatus />
+          <InputStatus />
           <span className={styles.keysHint} data-testid="keys-range">
             Keys A to ' play {keyName(base)} to {keyName(base + 17)}, Z and X shift octave
           </span>

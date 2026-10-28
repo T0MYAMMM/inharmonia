@@ -46,20 +46,31 @@
   flex: 1;
 }
 
-.midi {
+/* Which input is in use, and the way to connect MIDI, kept together. */
+.inputLine {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.midiDot {
+/* Filled when a MIDI keyboard is the input. */
+.inputDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   border: 1.5px solid var(--muted);
 }
 
-.midiDot[data-on] {
+.inputDot[data-on] {
   background: var(--ink);
   border-color: var(--ink);
 }
