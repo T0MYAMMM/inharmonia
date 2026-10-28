@@ -147,22 +147,23 @@ export function KeyboardDock({
             Left hand
           </span>
           {extra}
-          <span className={styles.spacer} />
-          {roll ? (
-            <button
-              className={styles.fullScreenButton}
-              type="button"
-              data-testid="falling-fullscreen"
-              aria-pressed={fullScreen}
-              onClick={toggleFullScreen}
-            >
-              {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
-            </button>
-          ) : null}
-          <InputStatus octaveShift={shift} />
-          <span className={styles.keysHint} data-testid="keys-range">
-            Keys {first.label} to {last.label} play {keyName(first.midi)} to {keyName(last.midi)},{' '}
-            {OCTAVE_KEYS.down.label} and {OCTAVE_KEYS.up.label} shift octave
+          <span className={styles.legendEnd}>
+            {roll ? (
+              <button
+                className={styles.fullScreenButton}
+                type="button"
+                data-testid="falling-fullscreen"
+                aria-pressed={fullScreen}
+                onClick={toggleFullScreen}
+              >
+                {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
+              </button>
+            ) : null}
+            <InputStatus octaveShift={shift} />
+            <span className={styles.keysHint} data-testid="keys-range">
+              Keys {first.label} to {last.label} play {keyName(first.midi)} to {keyName(last.midi)},{' '}
+              {OCTAVE_KEYS.down.label} and {OCTAVE_KEYS.up.label} shift octave
+            </span>
           </span>
         </div>
         <div
