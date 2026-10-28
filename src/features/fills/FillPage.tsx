@@ -277,18 +277,19 @@ function FillTrainer({
             options={MODES}
             onChange={(m) => ctrl.setMode(m)}
           />
-          <span className={songStyles.spacer} />
-          <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
-            Chords
-          </Toggle>
-          {snap.mode !== 'listen' ? (
-            <Toggle
-              pressed={snap.match === 'exact'}
-              onChange={(v) => ctrl.setMatch(v ? 'exact' : 'any-octave')}
-            >
-              Exact octave
+          <span className={`${songStyles.group} ${songStyles.end}`}>
+            <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
+              Chords
             </Toggle>
-          ) : null}
+            {snap.mode !== 'listen' ? (
+              <Toggle
+                pressed={snap.match === 'exact'}
+                onChange={(v) => ctrl.setMatch(v ? 'exact' : 'any-octave')}
+              >
+                Exact octave
+              </Toggle>
+            ) : null}
+          </span>
         </div>
       </div>
 

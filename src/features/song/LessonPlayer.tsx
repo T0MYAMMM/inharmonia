@@ -193,51 +193,54 @@ export function LessonPlayer({
             options={progression ? PROGRESSION_MODES : SONG_MODES}
             onChange={(m) => ctrl.setMode(m)}
           />
-          <span className={styles.spacer} />
           {progression ? (
             !practice ? (
-              playAlong ? (
-                <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
-                  Backing
-                </Toggle>
-              ) : (
-                <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                  Comping
-                </Toggle>
-              )
+              <span className={`${styles.group} ${styles.end}`}>
+                {playAlong ? (
+                  <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
+                    Backing
+                  </Toggle>
+                ) : (
+                  <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
+                    Comping
+                  </Toggle>
+                )}
+              </span>
             ) : null
           ) : (
-            <>
+            <span className={`${styles.group} ${styles.end}`}>
               <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
                 Melody
               </Toggle>
               <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
                 Left hand
               </Toggle>
-            </>
+            </span>
           )}
         </div>
         <div className={styles.row}>
-          <Button
-            variant="primary"
-            onClick={() => ctrl.playPause()}
-            disabled={practice}
-            data-testid="play"
-          >
-            {playing ? (playAlong ? 'Stop' : 'Pause') : 'Play'}
-          </Button>
-          <Button onClick={() => ctrl.restart()} disabled={practice}>
-            Restart
-          </Button>
+          <span className={styles.group}>
+            <Button
+              variant="primary"
+              onClick={() => ctrl.playPause()}
+              disabled={practice}
+              data-testid="play"
+            >
+              {playing ? (playAlong ? 'Stop' : 'Pause') : 'Play'}
+            </Button>
+            <Button onClick={() => ctrl.restart()} disabled={practice}>
+              Restart
+            </Button>
+          </span>
           {practice ? (
-            <>
+            <span className={styles.group}>
               <Button variant="primary" onClick={() => ctrl.hearIt()}>
                 Hear it
               </Button>
               <Button onClick={() => ctrl.startOver()}>Start over</Button>
-            </>
+            </span>
           ) : (
-            <>
+            <span className={styles.group}>
               {!playAlong ? (
                 <Toggle pressed={snap.loop} onChange={(v) => ctrl.setLoop(v)}>
                   Loop
@@ -250,7 +253,7 @@ export function LessonPlayer({
               <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>
                 Metronome
               </Toggle>
-            </>
+            </span>
           )}
         </div>
         {practice && !progression ? (
