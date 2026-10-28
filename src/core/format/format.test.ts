@@ -6,7 +6,7 @@ import { PATTERNS } from '@/content/patterns';
 import { PROGRESSIONS } from '@/content/progressions';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
 import { parseBars } from '../charts/syntax';
-import { DEFAULT_VIEW, type ChordChart } from '../charts/types';
+import { CHART_VERSION, DEFAULT_VIEW, type ChordChart } from '../charts/types';
 import type { MidiProject } from '../midi/smf';
 import { makeUserSong, type UserRecording } from '../songs/library';
 import { midiToDraft, type SongDraft } from '../songs/draft';
@@ -79,7 +79,7 @@ const roundTrip = (text: string) =>
 // Invented content only.
 const bars = (t: string) => parseBars(t, 4).bars;
 const chart: ChordChart = {
-  version: 1,
+  version: CHART_VERSION,
   title: 'Test chart',
   key: { tonic: 'Eb', mode: 'major' },
   tempo: 72,

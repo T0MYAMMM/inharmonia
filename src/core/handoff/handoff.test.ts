@@ -90,6 +90,21 @@ describe('reading a handoff back', () => {
     expect(cleanHandoff(broken, 'chart')).toBeNull();
   });
 
+  it('never carries lyrics: a chart or chords that hold some arrive without them', () => {
+    const c = copy(good[2]!) as Extract<Handoff, { kind: 'chart' }>;
+    const sung = copy(c);
+    sung.chart.sections[0]!.bars[0]!.lyric = 'lanterns on the water';
+    (sung.chart as unknown as Record<string, unknown>).stray = 'slow boats';
+    expect(cleanHandoff(sung, 'chart')).toEqual(c);
+    const ch = copy(good[3]!) as Extract<Handoff, { kind: 'chords' }>;
+    const withWords = copy(ch);
+    withWords.bars[0]!.lyric = 'coming home';
+    expect(cleanHandoff(withWords, 'chords')).toEqual(ch);
+    expect(
+      JSON.stringify([cleanHandoff(sung, 'chart'), cleanHandoff(withWords, 'chords')]),
+    ).not.toMatch(/lanterns|boats|home/);
+  });
+
   it('keeps the playable bars of chords, and refuses none', () => {
     const c = copy(good[3]!) as Extract<Handoff, { kind: 'chords' }>;
     const mixed = { ...c, bars: [...c.bars, { chords: [{ symbol: 'Hx', beats: 4 }] }] };

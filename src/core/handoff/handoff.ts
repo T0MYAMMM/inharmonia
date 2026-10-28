@@ -1,4 +1,11 @@
-import { chartIssues, cleanSequence, LIMITS, type ChartBar, type ChordChart } from '../charts';
+import {
+  CHART_VERSION,
+  chartIssues,
+  cleanSequence,
+  LIMITS,
+  type ChartBar,
+  type ChordChart,
+} from '../charts';
 import { MAX_NAME } from '../content/progressionText';
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
 import { cleanMidiProject, type MidiProject } from '../midi/smf';
@@ -85,7 +92,11 @@ function cleanPrefill(raw: unknown): ProgressionPrefill | null {
   return { name: raw.name, mode, text: raw.text, previewKey };
 }
 
-/** A chart with every field of the right kind, so the editor can show it; then its own checks. */
+/**
+ * A chart with every field of the right kind, so the editor can show it, then
+ * its own checks. It is rebuilt from those fields alone: nothing else comes
+ * across, lyrics included, since a handoff never carries them.
+ */
 function cleanChart(raw: unknown): ChordChart | null {
   if (!isObject(raw) || !isObject(raw.key) || !isObject(raw.meter)) return null;
   if (!Array.isArray(raw.sections) || !Array.isArray(raw.form)) return null;
@@ -109,7 +120,27 @@ function cleanChart(raw: unknown): ChordChart | null {
   if (!sectionsOk || !raw.form.every((f) => typeof f === 'string')) return null;
   if (typeof raw.title !== 'string' || typeof raw.notes !== 'string') return null;
   if (typeof raw.tempo !== 'number' || typeof raw.version !== 'number') return null;
-  const chart = raw as unknown as ChordChart;
+  if (raw.version > CHART_VERSION) return null;
+  if (typeof raw.key.tonic !== 'string' || typeof raw.key.mode !== 'string') return null;
+  const sections = raw.sections as unknown as ChordChart['sections'];
+  const chart: ChordChart = {
+    version: CHART_VERSION,
+    title: raw.title,
+    key: { tonic: raw.key.tonic, mode: raw.key.mode as Mode },
+    tempo: raw.tempo,
+    meter: { beats: raw.meter.beats as 3 | 4, unit: 4 },
+    sections: sections.map((s) => ({
+      id: s.id,
+      label: s.label,
+      type: s.type,
+      repeat: s.repeat,
+      bars: s.bars.map((b) => ({
+        chords: b.chords.map((c) => ({ symbol: c.symbol, beats: c.beats })),
+      })),
+    })),
+    form: [...(raw.form as string[])],
+    notes: raw.notes,
+  };
   return chartIssues(chart).length ? null : chart;
 }
 

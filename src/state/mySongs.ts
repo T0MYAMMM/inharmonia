@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { UserChart } from '@/core/charts';
+import { migrateUserChart, type UserChart } from '@/core/charts';
 import { recordingBytes, type UserRecording, type UserSong } from '@/core/songs';
 
 /**
@@ -64,7 +64,10 @@ export async function refresh(): Promise<void> {
   try {
     const d = await db();
     const songs = newestFirst(await d.getAll('songs'));
-    const charts = newestFirst(await d.getAll('charts'));
+    // Charts are read in the current shape; one from a newer version is left out.
+    const charts = newestFirst(
+      (await d.getAll('charts')).flatMap((c) => migrateUserChart(c) ?? []),
+    );
     const recordings: Record<string, number> = {};
     for (const r of await d.getAll('recordings')) recordings[r.songId] = recordingBytes(r);
     set({ status: 'ready', songs, charts, recordings });
@@ -109,7 +112,8 @@ export async function getRecording(id: string): Promise<UserRecording | undefine
 }
 
 export async function getChart(id: string): Promise<UserChart | undefined> {
-  return (await db()).get('charts', id);
+  const c = await (await db()).get('charts', id);
+  return (c && migrateUserChart(c)) ?? undefined;
 }
 
 function askToKeep() {
