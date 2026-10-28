@@ -123,3 +123,54 @@ describe('Standard MIDI File support', () => {
     ]);
   });
 });
+
+/** A Standard MIDI File from raw track bodies: each body is the bytes of one MTrk. */
+function smf(ppq: number, tracks: number[][]): Uint8Array {
+  const be32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+  const chunk = (type: string, body: number[]) => [
+    ...[...type].map((c) => c.charCodeAt(0)),
+    ...be32(body.length),
+    ...body,
+  ];
+  return Uint8Array.from([
+    ...chunk('MThd', [0, 1, 0, tracks.length, (ppq >> 8) & 255, ppq & 255]),
+    ...tracks.flatMap((t) => chunk('MTrk', [...t, 0, 0xff, 0x2f, 0])),
+  ]);
+}
+
+describe('a MIDI file Studio opens comes back from what it saves', () => {
+  it('keeps tempo changes in the range a saved project is read back in', () => {
+    // 400 bpm (150000 µs a beat) at the start, then 10 bpm (6000000 µs) a bar later.
+    const tempo = (us: number) => [0xff, 0x51, 3, (us >> 16) & 255, (us >> 8) & 255, us & 255];
+    const bytes = smf(480, [
+      [0, ...tempo(150000), 0x83, 0x60, ...tempo(6000000)],
+      [0, 0x90, 60, 90, 0x83, 0x60, 0x80, 60, 0],
+    ]);
+    const parsed = parseMidi(bytes);
+    expect(parsed.tempos.map((t) => t.bpm)).toEqual([300, 20]);
+    expect(typeof cleanMidiProject(parsed)).toBe('object');
+  });
+
+  it('reads back a file whose channels make more than 96 tracks', () => {
+    // 7 track chunks, each playing a note on all 16 channels: 112 tracks once split.
+    const chunkOf16 = Array.from({ length: 16 }, (_, ch) => [
+      0,
+      0x90 | ch,
+      48 + ch,
+      80,
+      0x60,
+      0x80 | ch,
+      48 + ch,
+      0,
+    ]).flat();
+    const parsed = parseMidi(
+      smf(
+        480,
+        Array.from({ length: 7 }, () => chunkOf16),
+      ),
+    );
+    expect(parsed.tracks).toHaveLength(112);
+    const back = cleanMidiProject(JSON.parse(JSON.stringify(parsed)));
+    expect(typeof back === 'object' && back.tracks).toHaveLength(112);
+  });
+});

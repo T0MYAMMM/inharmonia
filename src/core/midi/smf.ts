@@ -35,8 +35,15 @@ export interface MidiProject {
 }
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_NOTES = 50000;
+/** Track chunks in a file. */
+const MAX_CHUNKS = 96;
+/** Tracks in a project: each chunk is split by channel, so up to 16 from each. */
+export const MAX_TRACKS = MAX_CHUNKS * 16;
+/** Tempos a project keeps; a file's are held to this range as it is read. */
+const MIN_BPM = 20;
+const MAX_BPM = 300;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const bpmSafe = (v: number) => clamp(Math.round(v * 100) / 100, 20, 300);
+const bpmSafe = (v: number) => clamp(Math.round(v * 100) / 100, MIN_BPM, MAX_BPM);
 class Reader {
   at = 0;
   constructor(readonly data: Uint8Array) {}
@@ -115,7 +122,8 @@ function readTrack(
       if (type === 0x03 && !name) name = new TextDecoder().decode(bytes).slice(0, 80);
       if (type === 0x51 && bytes.length === 3) {
         const us = bytes[0]! * 65536 + bytes[1]! * 256 + bytes[2]!;
-        if (us > 0) tempos.push({ beat: tick / ppq, bpm: 60000000 / us });
+        // Held to the range a saved project is read back in, as writeMidi writes it.
+        if (us > 0) tempos.push({ beat: tick / ppq, bpm: clamp(60000000 / us, MIN_BPM, MAX_BPM) });
       }
       if (type === 0x58 && bytes.length >= 2 && bytes[1]! <= 7)
         meters.push({ beat: tick / ppq, numerator: bytes[0]!, denominator: 2 ** bytes[1]! });
@@ -169,7 +177,7 @@ export function parseMidi(
   const format = r.u16(),
     count = r.u16(),
     ppq = r.u16();
-  if (format > 1 || count < 1 || count > 96 || (format === 0 && count !== 1))
+  if (format > 1 || count < 1 || count > MAX_CHUNKS || (format === 0 && count !== 1))
     throw new Error('Only MIDI format 0 and 1 are supported.');
   if (!ppq || ppq & 0x8000) throw new Error('SMPTE timing is not supported; use beat-based MIDI.');
   r.bytes(size - 6);
@@ -290,7 +298,7 @@ export function cleanMidiProject(value: unknown): MidiProject | string {
   if (
     typeof p.title !== 'string' ||
     !num(p.ppq, 24, 9600) ||
-    !num(p.tempo, 20, 300) ||
+    !num(p.tempo, MIN_BPM, MAX_BPM) ||
     !p.meter ||
     !num(p.meter.beats, 1, 16) ||
     ![2, 4, 8, 16].includes(p.meter.unit)
@@ -298,7 +306,7 @@ export function cleanMidiProject(value: unknown): MidiProject | string {
     return 'invalid MIDI metadata';
   if (
     !Array.isArray(p.tracks) ||
-    p.tracks.length > 96 ||
+    p.tracks.length > MAX_TRACKS ||
     !Array.isArray(p.tempos) ||
     !Array.isArray(p.meters) ||
     p.tempos.length > 256 ||
@@ -347,7 +355,7 @@ export function cleanMidiProject(value: unknown): MidiProject | string {
   }
   const tempos: MidiTempo[] = [];
   for (const t of p.tempos) {
-    if (!t || !num(t.beat, 0, 10000) || !num(t.bpm, 20, 300)) return 'invalid tempo event';
+    if (!t || !num(t.beat, 0, 10000) || !num(t.bpm, MIN_BPM, MAX_BPM)) return 'invalid tempo event';
     tempos.push({ beat: t.beat, bpm: t.bpm });
   }
   const meters: MidiMeter[] = [];
