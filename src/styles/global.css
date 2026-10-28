@@ -85,6 +85,15 @@ textarea {
   background: var(--dusk-soft);
 }
 
+/*
+ * A live region with nothing to say yet stays in the page, so a screen reader
+ * hears it when its text arrives, but takes no room and leaves no gap.
+ */
+[role='status']:empty,
+[role='alert']:empty {
+  position: absolute;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;

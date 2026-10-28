@@ -40,6 +40,19 @@ export function PasteSheet(props: PasteSheetProps) {
     );
   };
   const unknown = sheet?.lines.flatMap((l) => l.unknown) ?? [];
+  // What reading the sheet removed, and what it couldn't read.
+  const notice = sheet
+    ? [
+        sheet.lyricLines
+          ? `Lyrics removed from ${sheet.lyricLines} line${sheet.lyricLines === 1 ? '' : 's'}. Only chords and section names are kept.`
+          : 'No lyrics found. Only chords and section names are kept.',
+        unknown.length
+          ? `${unknown.length} chord${unknown.length === 1 ? '' : 's'} could not be read: fix ${unknown.length === 1 ? 'it' : 'them'} in the grid before saving.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : '';
 
   return (
     <section className={styles.card} aria-labelledby="paste-title">
@@ -50,6 +63,10 @@ export function PasteSheet(props: PasteSheetProps) {
         Chords over lyrics, [C]inline chords, bar lines (| C | G |) and section names (Verse, Reff,
         Bait 2, Chorus x2) all work. Lyrics are removed straight away; only chords and section names
         are kept. A pasted sheet has no timing, so each chord becomes one bar until you change it.
+      </p>
+      {/* Always here, so what was removed is said as soon as the sheet is read. */}
+      <p className={styles.notice} role="status" data-testid="lyrics-notice">
+        {notice}
       </p>
       {!sheet ? (
         <>
@@ -81,14 +98,6 @@ export function PasteSheet(props: PasteSheetProps) {
         </>
       ) : (
         <>
-          <p className={styles.notice} role="status" data-testid="lyrics-notice">
-            {sheet.lyricLines
-              ? `Lyrics removed from ${sheet.lyricLines} line${sheet.lyricLines === 1 ? '' : 's'}. Only chords and section names are kept.`
-              : 'No lyrics found. Only chords and section names are kept.'}
-            {unknown.length
-              ? ` ${unknown.length} chord${unknown.length === 1 ? '' : 's'} could not be read: fix ${unknown.length === 1 ? 'it' : 'them'} in the grid before saving.`
-              : ''}
-          </p>
           <div
             className={styles.review}
             role="table"
