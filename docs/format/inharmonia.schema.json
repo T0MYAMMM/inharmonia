@@ -559,7 +559,7 @@
         },
         "tracks": {
           "type": "array",
-          "maxItems": 96,
+          "maxItems": 1536,
           "items": {
             "type": "object",
             "required": ["id", "name", "channel", "program", "muted", "notes"],
