@@ -12,7 +12,7 @@ import { buttonClass } from '@/ui/buttonClass';
 import { exportItems } from '@/state/transfer';
 import { Checkbox } from '@/ui/Checkbox';
 import { LessonPlayer } from '../song/LessonPlayer';
-import { ExportButtons } from '../transfer/Export';
+import { ExportMenu } from '../transfer/Export';
 import { PageHeader } from '../PageHeader';
 import { PrivateBadge } from './PrivateBadge';
 import styles from './mysongs.module.css';
@@ -66,18 +66,14 @@ export function MySongPage() {
             <Link to={`/studio/edit/${song.id}`} className={buttonClass('secondary', 'small')}>
               Edit
             </Link>
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={() => downloadMidi(song.draft.midi ?? compiledToMidi(compiled))}
-              data-testid="my-song-midi-export"
-            >
-              Export .mid
-            </Button>
-            <ExportButtons
+            <ExportMenu
               build={() =>
                 exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })
               }
+              midi={{
+                download: () => downloadMidi(song.draft.midi ?? compiledToMidi(compiled)),
+                testId: 'my-song-midi-export',
+              }}
             />
             {bytes ? (
               <Checkbox className={styles.note} checked={withRecording} onChange={setWithRecording}>

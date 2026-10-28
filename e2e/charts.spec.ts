@@ -78,9 +78,10 @@ test.describe('chord charts', () => {
     );
 
     // The export is readable, keeps the view, and has no lyric text in it.
-    const { name, text } = await readDownload(page, () =>
-      page.getByTestId('export-download').click(),
-    );
+    const { name, text } = await readDownload(page, async () => {
+      await page.getByTestId('export-menu').click();
+      await page.getByTestId('export-download').click();
+    });
     expect(name).toBe('inharmonia-chart-practice-chart.json');
     const doc = JSON.parse(text);
     expect(

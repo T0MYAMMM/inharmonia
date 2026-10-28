@@ -18,7 +18,7 @@ import { Select } from '@/ui/Select';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
-import { ExportButtons } from '../transfer/Export';
+import { ExportMenu } from '../transfer/Export';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
 import styles from './SongPage.module.css';
@@ -199,15 +199,13 @@ export function SongPage() {
                 ))}
               </nav>
             ) : null}
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={() => downloadMidi(compiledToMidi(compiled))}
-              data-testid="song-midi-export"
-            >
-              Export .mid
-            </Button>
-            <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
+            <ExportMenu
+              build={() => exportItems({ builtInSongs: [lesson] })}
+              midi={{
+                download: () => downloadMidi(compiledToMidi(compiled)),
+                testId: 'song-midi-export',
+              }}
+            />
           </>
         }
       />

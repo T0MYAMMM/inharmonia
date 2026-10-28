@@ -13,7 +13,7 @@ import { PrivateBadge } from '../mysongs/PrivateBadge';
 import mine from '../mysongs/mysongs.module.css';
 import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
-import { ExportButtons } from '../transfer/Export';
+import { ExportMenu } from '../transfer/Export';
 import { LearnPanel } from './LearnPanel';
 import styles from './charts.module.css';
 
@@ -97,7 +97,7 @@ export function ChartPage() {
             >
               Show function
             </Toggle>
-            <ExportButtons build={() => exportItems({ charts: [record] })} />
+            <ExportMenu build={() => exportItems({ charts: [record] })} />
           </>
         }
       />

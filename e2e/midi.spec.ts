@@ -62,6 +62,7 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
   await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
   await expect(page.getByRole('heading', { name: 'test-arrangement', level: 1 })).toBeVisible();
+  await page.getByTestId('export-menu').click();
   await expect(page.getByTestId('my-song-midi-export')).toBeVisible();
 });
 
