@@ -162,6 +162,23 @@ function handShape(symbol: string): string {
   return symbol.replace(/\/.*$/, '');
 }
 
+/** One chord of the chart as the view plays it: transposed (spelled for the new key) and simplified. */
+export function playChord(
+  symbol: string,
+  chart: ChordChart,
+  view: ChartView = DEFAULT_VIEW,
+): Pick<PlayedChord, 'symbol' | 'original' | 'bass'> {
+  if (symbol === NO_CHORD) return { symbol: NO_CHORD };
+  const to = viewKey(chart, view).tonic;
+  const moved = transposeChord(symbol, chart.key.tonic, to, chart.key.mode);
+  const simple = simplifyChord(moved, view.simplify);
+  return {
+    symbol: simple.symbol,
+    ...(simple.symbol !== moved ? { original: moved } : {}),
+    ...(simple.bass ? { bass: simple.bass } : {}),
+  };
+}
+
 /**
  * Every chord of the written-out form as the view plays it: transposed (spelled
  * for the new key), simplified, and voiced so the right hand moves as little as
@@ -169,19 +186,8 @@ function handShape(symbol: string): string {
  */
 export function playedChords(chart: ChordChart, view: ChartView = DEFAULT_VIEW): PlayedChord[][] {
   const rows = expandForm(chart).slice(0, LIMITS.expandedBars);
-  const to = viewKey(chart, view).tonic;
   const bars = rows.map((r) =>
-    r.bar.chords.map((c) => {
-      if (c.symbol === NO_CHORD) return { symbol: NO_CHORD, beats: c.beats };
-      const moved = transposeChord(c.symbol, chart.key.tonic, to, chart.key.mode);
-      const simple = simplifyChord(moved, view.simplify);
-      return {
-        symbol: simple.symbol,
-        beats: c.beats,
-        ...(simple.symbol !== moved ? { original: moved } : {}),
-        ...(simple.bass ? { bass: simple.bass } : {}),
-      };
-    }),
+    r.bar.chords.map((c) => ({ ...playChord(c.symbol, chart, view), beats: c.beats })),
   );
   const shapes = bars
     .flat()
