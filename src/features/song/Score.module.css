@@ -61,9 +61,10 @@
   border-color: var(--muted);
 }
 
+/* Where you are: an ink ring, like a chosen bar in the chart editor. */
 .bar[aria-current='true'] {
-  border-color: var(--dusk);
-  box-shadow: 0 0 0 1px var(--dusk);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 .barNumber {
