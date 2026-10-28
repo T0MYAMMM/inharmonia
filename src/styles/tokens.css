@@ -70,6 +70,8 @@
   --control-pad-x-small: 10px;
   --control-font-size: 1rem;
   --control-font-size-small: 0.875rem;
+  /* Fixed widths, so a row of controls keeps its shape as their values change. */
+  --control-width-long: 18rem; /* a slider that leads a row, a title */
 
   /* The label above or beside a control. */
   --label-font-size: 0.85rem;
