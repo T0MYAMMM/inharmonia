@@ -182,3 +182,54 @@ test.describe('lyrics in exports', () => {
     await expect(page.locator('main img')).toHaveCount(0);
   });
 });
+
+/** Everything this tab keeps in session and local storage, where handoffs and the sequence live. */
+const stored = (page: Page) =>
+  page.evaluate(() =>
+    JSON.stringify(
+      [sessionStorage, localStorage].map((s) =>
+        Object.fromEntries(Object.keys(s).map((k) => [k, s.getItem(k)])),
+      ),
+    ),
+  );
+
+test.describe('Send to', () => {
+  test('never carries lyrics, to any room', async ({ page }) => {
+    await sungChart(page, 'Quiet harbours');
+    const chartUrl = page.url();
+    const arrive = async (heading: RegExp | string) => {
+      await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+      expect(await stored(page)).not.toContain(MARK);
+      await expect(page.locator('main')).not.toContainText(MARK);
+    };
+
+    // The chart as it plays, to Studio.
+    await page
+      .locator('header')
+      .getByRole('button', { name: /^Send to/ })
+      .click();
+    await page.getByRole('menuitem', { name: 'Studio' }).click();
+    await arrive('MIDI piano-roll editor');
+
+    // The verse's chords, to the chord sequence.
+    await page.goto(chartUrl);
+    await page.getByRole('button', { name: 'Send to the Verse' }).click();
+    await page.getByRole('menuitem', { name: 'Chords' }).click();
+    await expect(page.getByTestId('sequence-notice')).toHaveText(
+      'Put the Verse of Quiet harbours in C major in the sequence.',
+    );
+    await arrive('Chords');
+
+    // And to the progression builder.
+    await page.goto(chartUrl);
+    await page.getByRole('button', { name: 'Send to the Verse' }).click();
+    await page.getByRole('menuitem', { name: 'Progressions' }).click();
+    await arrive('New progression');
+
+    // The chart keeps them.
+    await page.goto(chartUrl);
+    await expect(page.locator('[data-score-view]').getByTestId('bar-lyric').first()).toHaveText(
+      MARK,
+    );
+  });
+});
