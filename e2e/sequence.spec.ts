@@ -198,6 +198,80 @@ test.describe('chord sequence', () => {
     await expect.poll(() => bars(page)).toEqual(['C', 'F', 'G']);
   });
 
+  test('drag a bar to a new place with the mouse; Escape cancels', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse');
+    await page.goto('chords');
+    await typeChords(page, 'C Am F G');
+    await page.evaluate(() => {
+      const strip = document.querySelector('[data-testid="sequence-bars"]')!;
+      window.scrollBy(0, strip.getBoundingClientRect().top - 200);
+    });
+    const centre = async (i: number, across = 0.5) => {
+      const b = (await page.locator(`[data-bar="${i}"]`).boundingBox())!;
+      return [b.x + b.width * across, b.y + b.height / 2] as const;
+    };
+    await page.mouse.move(...(await centre(0)));
+    await page.mouse.down();
+    await page.mouse.move(...(await centre(2, 0.75)), { steps: 8 });
+    await expect(page.locator('[data-drop]')).toHaveCount(1);
+    await expect(page.locator('[data-bar="0"]')).toHaveAttribute('data-dragging', 'true');
+    await page.mouse.up();
+    await expect.poll(() => bars(page)).toEqual(['Am', 'F', 'C', 'G']);
+    await expect(page.getByTestId('sequence-status')).toHaveText('Moved bar 1 to bar 3.');
+    await expect(page.locator('[data-bar="2"]')).toHaveAttribute('aria-selected', 'true');
+
+    await page.mouse.move(...(await centre(3)));
+    await page.mouse.down();
+    await page.mouse.move(...(await centre(0, 0.25)), { steps: 8 });
+    await page.keyboard.press('Escape');
+    await page.mouse.up();
+    await expect(page.locator('[data-drop]')).toHaveCount(0);
+    await expect.poll(() => bars(page)).toEqual(['Am', 'F', 'C', 'G']);
+  });
+
+  test('on touch, the chosen bar drags by its grip, and a bar itself does not', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'touch');
+    await page.goto('chords');
+    await typeChords(page, 'C Am F G');
+    // Both rows of bars in view, clear of the keyboard dock.
+    await page.evaluate(() => {
+      const strip = document.querySelector('[data-testid="sequence-bars"]')!;
+      window.scrollBy(0, strip.getBoundingClientRect().top - 120);
+    });
+    const cdp = await page.context().newCDPSession(page);
+    const box = async (sel: string) => (await page.locator(sel).boundingBox())!;
+    const swipe = async (from: { x: number; y: number }, to: { x: number; y: number }) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+      for (let k = 1; k <= 8; k++)
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [
+            { x: from.x + ((to.x - from.x) * k) / 8, y: from.y + ((to.y - from.y) * k) / 8 },
+          ],
+        });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    const target = await box('[data-bar="3"]');
+    const end = { x: target.x + target.width * 0.8, y: target.y + target.height / 2 };
+
+    // A bar that is not chosen has no grip: dragging over it moves nothing.
+    const first = await box('[data-bar="0"]');
+    await swipe({ x: first.x + 20, y: first.y + first.height / 2 }, end);
+    await expect.poll(() => bars(page)).toEqual(['C', 'Am', 'F', 'G']);
+
+    await page.locator('[data-bar="0"]').tap();
+    await expect(page.locator('[data-bar="0"]')).toHaveAttribute('aria-selected', 'true');
+    const grip = await box('[data-bar="0"] [data-grip]');
+    expect(grip.width).toBeGreaterThanOrEqual(44);
+    expect(grip.height).toBeGreaterThanOrEqual(44);
+    await swipe({ x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 }, end);
+    await expect.poll(() => bars(page)).toEqual(['Am', 'F', 'G', 'C']);
+    await expect(page.getByTestId('sequence-status')).toHaveText('Moved bar 1 to bar 4.');
+  });
+
   test('survives a reload, with its settings', async ({ page }) => {
     await page.goto('chords');
     await typeChords(page, '| C G | Am |');
