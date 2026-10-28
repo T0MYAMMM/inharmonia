@@ -27,8 +27,11 @@ import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { TextArea } from '@/ui/TextArea';
 import { TextInput } from '@/ui/TextInput';
+import type { Handoff } from '@/core/handoff';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { PageHeader } from '../PageHeader';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import styles from './progressions.module.css';
 
 const PALETTE: Record<Mode, string[]> = {
@@ -76,42 +79,64 @@ interface Initial {
   description: string;
   mode: Mode;
   text: string;
+  /** The key the preview plays in. */
+  previewKey: string;
 }
 
 function initialFrom(p: Progression | undefined, copy: boolean): Initial {
-  if (!p) return { name: '', description: '', mode: 'major', text: '' };
+  if (!p) return { name: '', description: '', mode: 'major', text: '', previewKey: 'C' };
   return {
     name: copy ? `${p.name} (my version)`.slice(0, MAX_NAME) : p.name,
     description: p.description ?? '',
     mode: p.mode,
     text: progressionToText(p.steps),
+    previewKey: 'C',
   };
 }
+
+type Sent = Extract<Handoff, { kind: 'progression' }>;
 
 /**
  * Write a progression as Roman numerals, hear its chords in any key, and save
  * it in this browser. Used for new progressions, copies of built-ins
- * (`?from=<id>`) and editing saved ones (`/progressions/:id/edit`).
+ * (`?from=<id>`), chords sent from a chart or the chord sequence
+ * (`?sent=<id>`) and editing saved ones (`/progressions/:id/edit`).
  */
 export function ProgressionBuilderPage() {
   const { progressionId } = useParams();
   const [params] = useSearchParams();
+  const arrival = useArrival('progression');
   const editing = useUserProgressions((s) => (progressionId ? s.get(progressionId) : undefined));
   const source = progressionId
     ? editing
     : (getProgression(params.get('from') ?? '') ??
       useUserProgressions.getState().get(params.get('from') ?? ''));
   if (progressionId && !editing) return <NotFoundPage />;
+  const sent = !progressionId && arrival.status === 'ok' ? arrival.handoff : null;
   return (
     <Builder
-      key={progressionId ?? 'new'}
-      initial={initialFrom(source, !progressionId)}
+      key={progressionId ?? arrival.id ?? 'new'}
+      initial={sent ? { ...sent.prefill, description: '' } : initialFrom(source, !progressionId)}
       editId={progressionId}
+      sent={sent}
+      problem={progressionId ? null : arrival.problem}
     />
   );
 }
 
-function Builder({ initial, editId }: { initial: Initial; editId: string | undefined }) {
+function Builder({
+  initial,
+  editId,
+  sent,
+  problem,
+}: {
+  initial: Initial;
+  editId: string | undefined;
+  /** Chords sent here from a chart or the chord sequence. */
+  sent: Sent | null;
+  /** What was sent but is not here. */
+  problem: string | null;
+}) {
   const navigate = useNavigate();
   const save = useUserProgressions((s) => s.save);
   const remove = useUserProgressions((s) => s.remove);
@@ -120,7 +145,7 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
   const [description, setDescription] = useState(initial.description);
   const [mode, setMode] = useState<Mode>(initial.mode);
   const [text, setText] = useState(initial.text);
-  const [previewKey, setPreviewKey] = useState('C');
+  const [previewKey, setPreviewKey] = useState(initial.previewKey);
   const [submitted, setSubmitted] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -188,9 +213,26 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
   return (
     <>
       <PageHeader
-        crumb={{ to: '/progressions', label: 'Progressions' }}
+        crumb={sent ? sent.from : { to: '/progressions', label: 'Progressions' }}
         title={editId ? 'Edit progression' : 'New progression'}
-        lede="Saved in this browser only."
+        lede={
+          <>
+            <p>Saved in this browser only.</p>
+            {sent ? <ArrivalNote text={sent.said} testId="sent-said" /> : null}
+            {sent?.notes.length ? (
+              <ul className={styles.sentNotes} data-testid="sent-notes">
+                {sent.notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            ) : null}
+            {problem ? (
+              <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+                {problem}
+              </p>
+            ) : null}
+          </>
+        }
       />
 
       <form className={styles.builder} onSubmit={onSubmit} noValidate>
@@ -318,7 +360,7 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
             Save
           </Button>
           <Link
-            to={editId ? `/progressions/${editId}` : '/progressions'}
+            to={editId ? `/progressions/${editId}` : (sent?.from.to ?? '/progressions')}
             className={buttonClass('ghost')}
           >
             Cancel

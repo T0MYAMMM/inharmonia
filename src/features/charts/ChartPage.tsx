@@ -5,11 +5,15 @@ import { PROGRESSIONS } from '@/content/progressions';
 import {
   CHART_STYLES,
   chartProgressions,
+  chordsToProgression,
+  playChord,
   shiftLabel,
   userChartLesson,
   viewKey,
+  type SectionHarmony,
   type UserChart,
 } from '@/core/charts';
+import { MAX_NAME } from '@/core/content/progressionText';
 import { compileLesson } from '@/core/content/compile';
 import { sentTitle } from '@/core/handoff';
 import { compiledToMidi } from '@/core/midi/adapters';
@@ -24,8 +28,8 @@ import mine from '../mysongs/mysongs.module.css';
 import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
-import { LEVEL_WORDS, NOTES, sentToStudio } from '../sendTo/names';
-import { ArrivalNote, SendToMenu } from '../sendTo/SendToMenu';
+import { LEVEL_WORDS, NOTES, nothingToSend, sentToStudio } from '../sendTo/names';
+import { ArrivalNote, SendToMenu, type SendToItem } from '../sendTo/SendToMenu';
 import { useHere, useSend } from '../sendTo/useHandoff';
 import { LearnPanel } from './LearnPanel';
 import { PANEL_ID, progressionLink, songProgressions } from './progressionWords';
@@ -92,10 +96,11 @@ export function ChartPage() {
     ? `Progressions in it: ${found.map((m) => m.name).join(', ')}.`
     : 'No library progressions in it.';
   const style = CHART_STYLES.find((x) => x.id === view.style)?.name ?? view.style;
+  const from = { to: here, label: chart.title };
   const toStudio = () =>
     send({
       kind: 'studio',
-      from: { to: here, label: chart.title },
+      from,
       project: { ...compiledToMidi(compiled), title: sentTitle(chart.title, `chart, ${key}`) },
       said: sentToStudio(
         `your chart ${chart.title}`,
@@ -103,6 +108,37 @@ export function ChartPage() {
         'the chart',
       ),
     });
+  /** A section's own Send to: its chords as written, in the key they play in. */
+  const sectionTools = (s: SectionHarmony) => {
+    const written = { ...view, simplify: 'original' as const };
+    const bars = (chart.sections.find((x) => x.id === s.id)?.bars ?? []).map((b) => ({
+      chords: b.chords.map((c) => ({ ...c, symbol: playChord(c.symbol, chart, written).symbol })),
+    }));
+    const draft = chordsToProgression(bars, chart.meter.beats, playKey);
+    const name = `${chart.title}: ${s.label}`;
+    const items: SendToItem[] = [
+      draft.text
+        ? {
+            room: 'progressions',
+            note: NOTES.progressionsFromSection(s.label),
+            onSelect: () =>
+              send({
+                kind: 'progression',
+                from,
+                prefill: {
+                  name: name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name,
+                  mode: playKey.mode,
+                  text: draft.text,
+                  previewKey: playKey.tonic,
+                },
+                said: `From the ${s.label} of ${chart.title}, read in ${key}.`,
+                notes: draft.notes,
+              }),
+          }
+        : nothingToSend('progressions'),
+    ];
+    return <SendToMenu about={`the ${s.label}`} items={items} testId="section-send-to" />;
+  };
   return (
     <>
       <PageHeader
@@ -194,7 +230,7 @@ export function ChartPage() {
           />
         }
       />
-      <ProgressionsPanel sections={sections} viewKey={playKey} />
+      <ProgressionsPanel sections={sections} viewKey={playKey} sectionTools={sectionTools} />
       <div className={mine.danger}>
         {confirm ? (
           <>

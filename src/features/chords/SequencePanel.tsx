@@ -38,6 +38,7 @@ import { nothingToSend, NOTES, sentToStudio } from '../sendTo/names';
 import { SendToMenu, type SendToItem } from '../sendTo/SendToMenu';
 import { useHere, useSend } from '../sendTo/useHandoff';
 import { BarEditor } from './BarEditor';
+import { ToProgression } from './SendSequence';
 import { BarStrip } from './BarStrip';
 import { barWords, type SequenceEditor } from './useSequenceEditor';
 import type { SequencePlayback } from './useSequencePlayer';
@@ -60,9 +61,9 @@ function issueText(issues: readonly SequenceIssue[]): string {
   return `${where}${first.message}${more}. Nothing was added.`;
 }
 
-/** Keys that belong to whatever has focus, or to an open menu, not to the sequence's undo. */
+/** Keys that belong to whatever has focus, or to an open menu or dialog, not to the sequence's undo. */
 function keysTakenBy(target: EventTarget | null): boolean {
-  if (document.querySelector('[role="menu"]')) return true;
+  if (document.querySelector('[role="menu"], dialog[open]')) return true;
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
@@ -99,6 +100,7 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
   const style = CHART_STYLES.find((s) => s.id === seq.style) ?? CHART_STYLES[0];
   const send = useSend();
   const here = useHere();
+  const [dialog, setDialog] = useState<'progression' | null>(null);
   const hasChords = seq.bars.some((b) => b.chords.some((c) => c.symbol !== NO_CHORD));
   const keyWords = key ? prettyAccidentals(keyName(key)) : '';
   const from = { to: here, label: 'Chords' };
@@ -128,6 +130,13 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
             }),
         }
       : nothingToSend('studio'),
+    hasChords
+      ? {
+          room: 'progressions',
+          note: NOTES.progressionsFromSequence,
+          onSelect: () => setDialog('progression'),
+        }
+      : nothingToSend('progressions'),
   ];
   const focusChords = () => document.getElementById(chordsId)?.focus();
   const focusBarChord = () => document.getElementById(`${idPrefix}-chord`)?.focus();
@@ -337,6 +346,21 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
           </Toggle>
         </div>
       </div>
+
+      <ToProgression
+        seq={seq}
+        open={dialog === 'progression'}
+        onClose={() => setDialog(null)}
+        onSend={(k, draft) =>
+          send({
+            kind: 'progression',
+            from,
+            prefill: { name: draft.name, mode: k.mode, text: draft.text, previewKey: k.tonic },
+            said: `From your chord sequence, read in ${prettyAccidentals(keyName(k))}.`,
+            notes: draft.notes,
+          })
+        }
+      />
 
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="sequence-status">
         {/* A space that comes and goes, so the same words twice are spoken twice. */}

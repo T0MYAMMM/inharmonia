@@ -235,3 +235,90 @@ test.describe('Progressions in this song', () => {
     await expect(page.getByRole('heading', { name: 'Progressions in this song' })).toBeInViewport();
   });
 });
+
+test.describe('Send to Progressions', () => {
+  test('the sequence goes to the builder, read in a key you choose', async ({ page }) => {
+    await page.goto('chords');
+    await typeChords(page, 'Am F C G N.C.');
+    const sequence = page.getByTestId('sequence');
+    const button = sequence.getByRole('button', { name: /^Send to/ });
+    await sendTo(page, 'Progressions', sequence);
+
+    const dialog = page.getByRole('dialog', { name: 'Send to Progressions' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByTestId('send-key')).toBeFocused();
+    // The chords suggest A minor.
+    await expect(dialog.getByTestId('send-key')).toHaveValue('A minor');
+    await expect(dialog.getByTestId('send-numerals')).toHaveText('i ♭VI ♭III ♭VII');
+    await expect(dialog.getByTestId('send-notes')).toHaveText(
+      'N.C. in bar 5 is left out: a progression has no silent bars.',
+    );
+    // The sequence's undo waits while the dialog is open.
+    await dialog.getByRole('button', { name: 'Cancel' }).focus();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.getByTestId('sequence-summary')).toHaveText('5 bars in A minor');
+    // Escape leaves it, back on Send to; it opens again where it started.
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+    await sendTo(page, 'Progressions', sequence);
+    await expect(dialog.getByTestId('send-key')).toHaveValue('A minor');
+    await expect(dialog.getByRole('button', { name: 'A minor' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await dialog.getByTestId('send-key').selectOption('C major');
+    await expect(dialog.getByTestId('send-numerals')).toHaveText('vi IV I V');
+    await dialog.getByRole('button', { name: 'Open in the builder' }).click();
+
+    await expect(page).toHaveURL(/\/progressions\/new\?sent=[a-z0-9]{6}$/);
+    await expect(page.getByRole('heading', { name: 'New progression', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('sent-said')).toHaveText(
+      'From your chord sequence, read in C major.',
+    );
+    await expect(page.getByTestId('sent-notes')).toHaveText(
+      'N.C. in bar 5 is left out: a progression has no silent bars.',
+    );
+    await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('vi–IV–I–V');
+    await expect(page.getByRole('radio', { name: 'Major' })).toBeChecked();
+    await expect(page.getByRole('textbox', { name: 'Chords' })).toHaveValue('vi IV I V');
+    await expect(page.getByTestId('preview-key')).toHaveValue('C');
+    await page.reload();
+    await expect(page.getByRole('textbox', { name: 'Chords' })).toHaveValue('vi IV I V');
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page).toHaveURL(/\/progressions\/mine-/);
+    await expect(page.getByRole('heading', { name: 'vi–IV–I–V', level: 1 })).toBeVisible();
+  });
+
+  test("a chart's section goes to the builder, with what was left out", async ({ page }) => {
+    await makeChart(page);
+    await page.getByTestId('transpose').selectOption('-5');
+    const bridge = page.getByTestId('harmony-2');
+    await expect(bridge.getByRole('button', { name: 'Send to the Bridge' })).toBeVisible();
+    await sendTo(page, 'Progressions', bridge);
+
+    await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Harbour lights: Bridge');
+    await expect(page.getByRole('textbox', { name: 'Chords' })).toHaveValue(
+      'ii7 V7 Imaj7 VI7 ii7 V7 I',
+    );
+    await expect(page.getByTestId('preview-key')).toHaveValue('G');
+    await expect(page.getByTestId('sent-said')).toHaveText(
+      'From the Bridge of Harbour lights, read in G major.',
+    );
+    await expect(page.getByTestId('sent-notes')).toHaveText(
+      'N.C. in bar 8 is left out: a progression has no silent bars.',
+    );
+    await page.getByRole('link', { name: 'Cancel' }).click();
+    await expect(page.getByRole('heading', { name: 'Harbour lights', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('transpose')).toHaveValue('-5');
+  });
+
+  test('the builder says when what was sent is gone', async ({ page }) => {
+    await page.goto('progressions/new?sent=nope00');
+    await expect(page.getByTestId('sent-problem')).toHaveText(
+      'What was sent here is no longer available: it lasts until the next thing is sent.',
+    );
+    await expect(page.getByRole('textbox', { name: 'Chords' })).toHaveValue('');
+  });
+});
