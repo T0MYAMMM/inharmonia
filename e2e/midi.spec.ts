@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { parseMidi, writeMidi, type MidiProject } from '../src/core/midi/smf';
+import { openMidiFileMenu, openMidiMore } from './studioHelpers';
 
 const sample: MidiProject = {
   title: 'MIDI Studio test',
@@ -47,6 +48,7 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   await page.getByTestId('midi-note').first().click();
   await page.getByRole('slider', { name: 'Note velocity' }).fill('55');
   const downloadPromise = page.waitForEvent('download');
+  await openMidiFileMenu(page);
   await page.getByTestId('midi-export').click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.mid$/);
@@ -55,6 +57,7 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   expect(result.tracks[0]!.notes).toHaveLength(3);
   expect(result.tracks[1]!.notes[0]!.velocity).toBe(115);
   expect(result.tracks[0]!.notes.some((n) => n.velocity === 55)).toBe(true);
+  await openMidiMore(page);
   await page.getByTestId('midi-save-song').click();
   await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
   await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
@@ -100,6 +103,55 @@ test('MIDI Studio supports composing without using the microphone', async ({ pag
   await expect(page.getByTestId('midi-track')).toHaveCount(2);
   await page.getByRole('button', { name: '← Back to Studio' }).click();
   await expect(page.getByTestId('enable-mic')).toBeVisible();
+});
+
+test('MIDI header: every control shares its row with another', async ({ page, isMobile }) => {
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  await expect(page.getByTestId('midi-play')).toBeVisible();
+  for (const width of isMobile ? [360] : [1280, 820]) {
+    if (!isMobile) await page.setViewportSize({ width, height: 900 });
+    // On a phone the settings are folded into one line.
+    for (const id of isMobile ? ['midi-header'] : ['midi-header', 'midi-settings']) {
+      const perRow = await page.getByTestId(id).evaluate((root) => {
+        const centres = [...root.querySelectorAll('button, input, select')]
+          .map((el) => el.getBoundingClientRect())
+          .filter((box) => box.width > 0)
+          .map((box) => box.top + box.height / 2)
+          .sort((a, b) => a - b);
+        // Controls whose centres are within 8px of each other share a row.
+        const rows: number[][] = [];
+        for (const c of centres) {
+          const row = rows.at(-1);
+          if (row && c - row[0]! < 8) row.push(c);
+          else rows.push([c]);
+        }
+        return rows.map((r) => r.length);
+      });
+      expect(perRow.length).toBeGreaterThan(0);
+      expect(
+        perRow.every((n) => n > 1),
+        `${id} at ${width}px has ${perRow.join(', ')} controls per row`,
+      ).toBe(true);
+    }
+  }
+});
+
+test('MIDI menus work from the keyboard', async ({ page }) => {
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  await expect(page.getByTestId('midi-play')).toBeVisible();
+  const more = page.getByTestId('midi-more');
+  const button = (await more.isVisible()) ? more : page.getByTestId('midi-file-menu');
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const items = page.getByRole('menu').getByRole('menuitem');
+  await expect(items.first()).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(items.last()).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(button).toBeFocused();
 });
 
 test('MIDI piano roll: fixed headers, zooms, box select, hover, seeking and keyboard input', async ({
@@ -154,7 +206,7 @@ test('MIDI piano roll: fixed headers, zooms, box select, hover, seeking and keyb
   // Vertical zoom makes rows taller; the pitch column and ruler stay in view when scrolling.
   const tall = async () => Number(await notes.first().getAttribute('height'));
   const short = await tall();
-  await page.getByRole('slider', { name: 'MIDI row height' }).fill('40');
+  await page.getByRole('slider', { name: 'Vertical zoom' }).fill('40');
   expect(await tall()).toBeGreaterThan(short);
   await page.getByTestId('midi-roll').evaluate((el) => {
     el.scrollLeft = 400;
