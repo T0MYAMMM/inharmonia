@@ -46,19 +46,109 @@
   flex: 1;
 }
 
-/* Which input is in use, and the way to connect MIDI, kept together. */
+/* Which input is in use; it opens How to play above it. */
 .inputLine {
+  position: relative;
   display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
 }
 
-.input {
+.inputButton {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: var(--control-height-small);
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.inputButton:hover,
+.inputButton[aria-expanded='true'] {
+  border-color: var(--muted);
+}
+
+/* How to play: the same surface as the settings menu, opening upwards from the dock. */
+.howTo {
+  position: absolute;
+  z-index: 50;
+  right: 0;
+  bottom: calc(100% + var(--space-2));
+  display: grid;
+  gap: var(--space-3);
+  width: min(24rem, calc(100vw - 2 * var(--gutter)));
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.howTo[hidden] {
+  display: none;
+}
+
+/* In Full Screen the dock fills the screen, so it opens downwards instead. */
+.dock[data-immersive] .howTo,
+.dock:fullscreen .howTo {
+  top: calc(100% + var(--space-2));
+  bottom: auto;
+}
+
+.howToTitle {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.howToPart {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.howToPart h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+/* The computer keys as they sit on the keyboard: black keys raised a little. */
+.keyMap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.25rem, 1fr));
+  gap: 4px;
+}
+
+.keyMap li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.keyMap li[data-black] {
+  background: var(--key-black);
+  color: var(--key-white);
+}
+
+.keyMap kbd {
   color: var(--ink);
 }
 

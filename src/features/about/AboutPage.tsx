@@ -1,5 +1,13 @@
+import { computerKeyMap, OCTAVE_KEYS } from '@/core/input';
+import { isBlack, keyName } from '@/ui/keyboard/layout';
 import styles from '../page.module.css';
 import { PageHeader } from '../PageHeader';
+
+/** The computer keys, from the same map the keyboard uses. */
+const KEYS = computerKeyMap();
+const first = KEYS[0]!;
+const last = KEYS.at(-1)!;
+const blacks = KEYS.filter((k) => isBlack(k.midi));
 
 export function AboutPage() {
   return (
@@ -29,9 +37,16 @@ export function AboutPage() {
         <h2>Keys and shortcuts</h2>
         <ul className={styles.list}>
           <li>
-            <kbd>A</kbd> to <kbd>&apos;</kbd> play C4 to F5, with the black keys on the row above (
-            <kbd>W</kbd>, <kbd>E</kbd>, <kbd>T</kbd>…). <kbd>Z</kbd> and <kbd>X</kbd> shift down and
-            up an octave.
+            <kbd>{first.label}</kbd> to <kbd>{last.label}</kbd> play {keyName(first.midi)} to{' '}
+            {keyName(last.midi)}, with the black keys on the row above (
+            {blacks.slice(0, 3).map((k, i) => (
+              <span key={k.label}>
+                {i ? ', ' : ''}
+                <kbd>{k.label}</kbd>
+              </span>
+            ))}
+            …). <kbd>{OCTAVE_KEYS.down.label}</kbd> and <kbd>{OCTAVE_KEYS.up.label}</kbd> shift down
+            and up an octave.
           </li>
           <li>
             <kbd>Space</kbd> plays and pauses in the song, progression and fill players.

@@ -50,6 +50,26 @@ export const KEY_HINTS: Readonly<Record<number, string>> = {
 
 export const BASE_MIDI = 60; // C4
 
+/** The keys that move the computer keys down and up an octave. */
+export const OCTAVE_KEYS = {
+  down: { code: 'KeyZ', label: 'Z' },
+  up: { code: 'KeyX', label: 'X' },
+} as const;
+
+/** One computer key and the note it plays. */
+export interface ComputerKey {
+  /** What is printed on the key, like "A" or ";". */
+  label: string;
+  midi: number;
+}
+
+/** Every note-playing computer key, lowest note first, at an octave shift. */
+export function computerKeyMap(octaveShift = 0): ComputerKey[] {
+  return Object.entries(KEY_HINTS)
+    .map(([offset, label]) => ({ label, midi: BASE_MIDI + Number(offset) + 12 * octaveShift }))
+    .sort((a, b) => a.midi - b.midi);
+}
+
 export interface ComputerKeysOptions {
   velocity?: number;
   /** Octave shift limits, in octaves relative to C4. */
@@ -112,8 +132,8 @@ export class ComputerKeys {
 
   handleKeyDown = (e: KeyboardEvent): boolean => {
     if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target)) return false;
-    if (e.code === 'KeyZ' || e.code === 'KeyX') {
-      if (!e.repeat) this.setOctaveShift(this.shift + (e.code === 'KeyZ' ? -1 : 1));
+    if (e.code === OCTAVE_KEYS.down.code || e.code === OCTAVE_KEYS.up.code) {
+      if (!e.repeat) this.setOctaveShift(this.shift + (e.code === OCTAVE_KEYS.down.code ? -1 : 1));
       e.preventDefault();
       return true;
     }
