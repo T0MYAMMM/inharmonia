@@ -98,13 +98,6 @@
   width: min(100%, var(--control-width-long));
 }
 
-/* On touch, the take's controls are full touch targets. */
-@media (pointer: coarse) {
-  .setup {
-    --control-height: 44px;
-  }
-}
-
 .row {
   display: flex;
   flex-wrap: wrap;
@@ -277,6 +270,9 @@
 }
 
 .details summary {
+  width: fit-content;
+  min-height: var(--control-height-small);
+  align-content: center;
   cursor: pointer;
   font-weight: 600;
 }

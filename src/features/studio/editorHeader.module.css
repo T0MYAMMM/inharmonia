@@ -103,7 +103,7 @@
 
 .help > summary {
   width: fit-content;
-  min-height: 32px;
+  min-height: var(--control-height-small);
   align-content: center;
   font-weight: 600;
   cursor: pointer;
@@ -119,17 +119,4 @@
   padding-left: 1.2em;
   display: grid;
   gap: var(--space-1);
-}
-
-/* On touch, the title is as tall as the buttons beside it, and a row's tools are full targets. */
-@media (pointer: coarse) {
-  .header,
-  .row {
-    --control-height: 44px;
-  }
-
-  .row > .group > button,
-  .help > summary {
-    min-height: 44px;
-  }
 }

@@ -35,6 +35,15 @@
     color 140ms var(--ease-out);
 }
 
+/* On touch an option's target reaches over the group's padding to the full 44px. */
+@media (pointer: coarse) {
+  .option::after {
+    content: '';
+    position: absolute;
+    inset: -4px -1px;
+  }
+}
+
 .option:hover {
   color: var(--ink);
 }

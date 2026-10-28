@@ -175,16 +175,6 @@ export function SongPage() {
               {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
               {lesson.covers ? `: ${lesson.covers} of the original` : ''}
             </p>
-            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
-            {lesson.source.kind === 'public-domain' ? (
-              <p className={page.small} data-testid="song-edition">
-                Notes from {lesson.source.edition}.
-              </p>
-            ) : null}
-          </>
-        }
-        actions={
-          <>
             {versions.length > 1 ? (
               <nav className={styles.levels} aria-label="Versions" data-testid="song-levels">
                 {versions.map((v) => (
@@ -199,6 +189,16 @@ export function SongPage() {
                 ))}
               </nav>
             ) : null}
+            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
+            {lesson.source.kind === 'public-domain' ? (
+              <p className={page.small} data-testid="song-edition">
+                Notes from {lesson.source.edition}.
+              </p>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
             <ExportMenu
               build={() => exportItems({ builtInSongs: [lesson] })}
               midi={{

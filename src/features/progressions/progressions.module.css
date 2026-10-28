@@ -276,10 +276,6 @@ button.previewChord:hover {
   gap: var(--space-3);
 }
 
-.cancel {
-  font-weight: 600;
-}
-
 .start {
   justify-self: start;
 }

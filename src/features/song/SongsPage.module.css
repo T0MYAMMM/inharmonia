@@ -37,6 +37,13 @@
   letter-spacing: -0.03em;
 }
 
+/* On touch the piece's name is a 44px target. */
+@media (pointer: coarse) {
+  a.title {
+    padding-block: 4px;
+  }
+}
+
 .meta {
   color: var(--muted);
   font-weight: 600;

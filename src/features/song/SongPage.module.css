@@ -64,14 +64,19 @@
   }
 }
 
+/* The versions of a piece, in the lede under its facts. */
 .levels {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  font-size: 1rem;
 }
 
 .level {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height-small);
+  padding: 0 14px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: var(--surface);
@@ -101,7 +106,7 @@
 .arrangement summary {
   cursor: pointer;
   font-weight: 700;
-  min-height: 36px;
+  min-height: var(--control-height-small);
   align-content: center;
 }
 
@@ -164,7 +169,7 @@
 
 .fullScreenArrangement .arrangement summary {
   font-size: 0.85rem;
-  min-height: 30px;
+  min-height: var(--control-height-small);
 }
 
 .fullScreenArrangement .arrangementFields {

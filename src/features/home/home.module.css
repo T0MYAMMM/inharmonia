@@ -74,6 +74,14 @@
   font-weight: 600;
 }
 
+@media (pointer: coarse) {
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-height);
+  }
+}
+
 .rooms {
   list-style: none;
   margin: 0;

@@ -65,7 +65,7 @@
 }
 
 .midiButton {
-  min-height: 28px;
+  min-height: var(--control-height-small);
   padding: 0 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
@@ -110,7 +110,7 @@
 }
 
 .fullScreenButton {
-  min-height: 36px;
+  min-height: var(--control-height-small);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--surface);
@@ -145,7 +145,7 @@
 }
 
 .immersiveControls button {
-  min-height: 40px;
+  min-height: var(--control-height);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   padding: 7px 18px;

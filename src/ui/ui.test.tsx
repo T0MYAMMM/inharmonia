@@ -179,6 +179,21 @@ describe('Toggle', () => {
     await user.click(t);
     expect(t).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('comes small, to sit beside small Buttons', () => {
+    render(
+      <>
+        <Toggle pressed={false} onChange={() => undefined}>
+          Normal
+        </Toggle>
+        <Toggle size="small" pressed={false} onChange={() => undefined}>
+          Small
+        </Toggle>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Normal' })).not.toHaveClass('small');
+    expect(screen.getByRole('button', { name: 'Small' })).toHaveClass('small');
+  });
 });
 
 describe('NoteLabel', () => {
