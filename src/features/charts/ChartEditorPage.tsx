@@ -68,7 +68,10 @@ export function ChartEditorPage() {
         title={existing ? `Edit ${existing.chart.title}` : 'New chord chart'}
         lede={
           <>
-            <p>Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept.</p>
+            <p>
+              Type the chords bar by bar, or paste a chord sheet. Lyrics are kept only if you ask,
+              and only on this device.
+            </p>
             {sent ? <ArrivalNote text={sent.said} testId="sent-said" /> : null}
             {!chartId && arrival.problem ? (
               <p className={styles.notice} role="status" data-testid="sent-problem">

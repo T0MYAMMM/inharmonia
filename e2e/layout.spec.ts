@@ -53,21 +53,24 @@ test.describe('page shell', () => {
 });
 
 /**
- * Controls under 44px on a touch screen. A Segmented counts by its group,
- * whose options reach over its padding; the crumb reaches past its line the
- * same way. Links inside text are left out, as WCAG leaves them out.
+ * Controls under 44px on a touch screen, on the page or inside `within` (a
+ * selector). A Segmented counts by its group, whose options reach over its
+ * padding; the crumb reaches past its line the same way. Links inside text
+ * are left out, as WCAG leaves them out.
  */
-async function smallTargets(page: Page) {
-  return page.evaluate(() => {
+async function smallTargets(page: Page, within = 'body') {
+  return page.evaluate((root) => {
     const visible = (el: Element) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden';
     };
     const targets = [
-      ...document.querySelectorAll<HTMLElement>(
-        'button, select, summary, input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), [role=radiogroup], header a, footer a',
-      ),
+      ...document
+        .querySelector(root)!
+        .querySelectorAll<HTMLElement>(
+          'button, select, summary, input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), [role=radiogroup], header a, footer a',
+        ),
     ]
       .filter(visible)
       .filter((el) => el.getAttribute('role') !== 'radio')
@@ -85,7 +88,7 @@ async function smallTargets(page: Page) {
       })
       .filter((t) => t.h < 44 || t.w < 44)
       .map((t) => `${t.what} ${t.w}x${t.h}`);
-  });
+  }, within);
 }
 
 /** An open menu inside the screen, 8px from each side, without the page widening or zooming out. */
@@ -127,6 +130,24 @@ test.describe('touch targets', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  });
+
+  test("the chart editor's bar, with its Lyrics field, has no control under 44px", async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    // A new section opens on its first bar.
+    await page.getByTestId('add-section').selectOption('Verse');
+    const editor = page.getByTestId('bar-editor');
+    await expect(editor.getByRole('textbox', { name: 'Lyrics' })).toBeVisible();
+    expect(await smallTargets(page, '[data-testid="bar-editor"]')).toEqual([]);
+    const field = await editor.getByRole('textbox', { name: 'Lyrics' }).evaluate((el) => {
+      const r = el.parentElement!.getBoundingClientRect();
+      return { h: Math.round(r.height), w: Math.round(r.width) };
+    });
+    expect(field.h).toBeGreaterThanOrEqual(44);
+    expect(field.w).toBeGreaterThan(200);
   });
 
   test('an open menu stays on the screen, and the page does not zoom out to fit it', async ({

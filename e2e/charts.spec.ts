@@ -147,6 +147,34 @@ test.describe('chord charts', () => {
     await expect(page.getByRole('checkbox', { name: 'Keep lyrics' })).not.toBeChecked();
   });
 
+  test('type lyrics bar by bar; they are saved with the chart', async ({ page }) => {
+    await page.goto('songs/charts/new');
+    await expect(
+      page.getByText('Lyrics are kept only if you ask, and only on this device.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('chart-title').fill('Typed words');
+    await page.getByTestId('add-section').selectOption('Verse');
+    await page.getByTestId('edit-text-0').click();
+    await page.getByTestId('bars-text').fill('| C | G | Am | F |');
+    await page.getByTestId('bars-apply').click();
+    // A new section opens on its first bar.
+    await expect(page.getByTestId('bar-0-0')).toHaveAttribute('aria-pressed', 'true');
+    const lyrics = page.getByRole('textbox', { name: 'Lyrics' });
+    await lyrics.fill('lanterns on the water');
+    await lyrics.press('Enter');
+    await expect(page.getByTestId('bar-0-1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(lyrics).toBeFocused();
+    await page.keyboard.type('slow boats');
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('heading', { name: 'Typed words', level: 1 })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Edit' }).click();
+    await expect(page.getByTestId('bar-0-0')).toContainText('lanterns on the water');
+    await expect(page.getByTestId('bar-0-1')).toContainText('slow boats');
+    await expect(page.getByTestId('bar-0-2').getByTestId('bar-lyric')).toHaveCount(0);
+  });
+
   test('type bars in chart syntax', async ({ page }) => {
     await page.goto('songs/charts/new');
     await page.getByRole('button', { name: 'Cancel' }).click();
