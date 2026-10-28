@@ -127,8 +127,8 @@ function NowPlayingCard() {
           ))}
         </div>
         <p className={styles.meta}>
-          Labels are relative to C major{angka ? ', do = C' : ''}. Change note names at the top of
-          the page.
+          Labels are relative to C major{angka ? ', do = C' : ''}. Change note names in Settings,
+          the gear at the top of the page.
         </p>
         {angka ? (
           <Toggle

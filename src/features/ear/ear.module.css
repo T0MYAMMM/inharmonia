@@ -8,7 +8,7 @@
 .card {
   display: grid;
   gap: var(--space-4);
-  max-width: 46rem;
+  max-width: var(--text-width);
   padding: var(--space-5);
   border-radius: var(--radius-card);
   border: 1px solid var(--line);

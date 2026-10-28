@@ -13,7 +13,7 @@
 
 .cardTitle {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--card-title-size);
 }
 
 /* The three ways in: alike in size and weight, side by side. */

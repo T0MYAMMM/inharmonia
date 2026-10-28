@@ -133,8 +133,7 @@
 }
 
 .saveTitle {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: var(--card-title-size);
 }
 
 .small {
