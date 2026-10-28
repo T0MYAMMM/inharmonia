@@ -16,6 +16,8 @@ import { exportItems } from '@/state/transfer';
 import { Field } from '@/ui/Field';
 import { Select } from '@/ui/Select';
 import { NotFoundPage } from '../not-found/NotFoundPage';
+import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { ExportButtons } from '../transfer/Export';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
@@ -161,50 +163,54 @@ export function SongPage() {
   );
   return (
     <>
-      <div className={styles.header}>
-        <p className={styles.meta}>
-          <Link to="/songs">Songs</Link>
-        </p>
-        <h1>{lesson.title}</h1>
-        <p className={styles.meta} data-testid="song-credit">
-          {creditLine(lesson.source)}
-        </p>
-        {versions.length > 1 ? (
-          <nav className={styles.levels} aria-label="Versions" data-testid="song-levels">
-            {versions.map((v) => (
-              <Link
-                key={v.id}
-                to={`/songs/${v.id}`}
-                className={styles.level}
-                aria-current={v.id === lesson.id ? 'page' : undefined}
-              >
-                {LEVEL_NAMES[v.level!]}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
-        {lesson.level ? <p className={styles.note}>{LEVEL_NOTES[lesson.level]}</p> : null}
-        <p className={styles.meta}>
-          {prettyAccidentals(keyName(lesson.key))}
-          {moved ? ` (written in ${prettyAccidentals(keyName(written))})` : ''},{' '}
-          {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
-          {lesson.covers ? `: ${lesson.covers} of the original` : ''}
-        </p>
-        {lesson.source.kind === 'public-domain' ? (
-          <p className={styles.note} data-testid="song-edition">
-            Notes from {lesson.source.edition}.
-          </p>
-        ) : null}
-        <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
-        <Button
-          size="small"
-          variant="ghost"
-          onClick={() => downloadMidi(compiledToMidi(compiled))}
-          data-testid="song-midi-export"
-        >
-          Export .mid
-        </Button>
-      </div>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title={lesson.title}
+        lede={
+          <>
+            <p data-testid="song-credit">{creditLine(lesson.source)}</p>
+            <p>
+              {prettyAccidentals(keyName(lesson.key))}
+              {moved ? ` (written in ${prettyAccidentals(keyName(written))})` : ''},{' '}
+              {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
+              {lesson.covers ? `: ${lesson.covers} of the original` : ''}
+            </p>
+            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
+            {lesson.source.kind === 'public-domain' ? (
+              <p className={page.small} data-testid="song-edition">
+                Notes from {lesson.source.edition}.
+              </p>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
+            {versions.length > 1 ? (
+              <nav className={styles.levels} aria-label="Versions" data-testid="song-levels">
+                {versions.map((v) => (
+                  <Link
+                    key={v.id}
+                    to={`/songs/${v.id}`}
+                    className={styles.level}
+                    aria-current={v.id === lesson.id ? 'page' : undefined}
+                  >
+                    {LEVEL_NAMES[v.level!]}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() => downloadMidi(compiledToMidi(compiled))}
+              data-testid="song-midi-export"
+            >
+              Export .mid
+            </Button>
+            <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
+          </>
+        }
+      />
       <LessonPlayer
         key={lesson.id}
         compiled={compiled}
