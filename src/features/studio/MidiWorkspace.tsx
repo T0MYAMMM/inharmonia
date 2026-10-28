@@ -417,6 +417,13 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           e.target.value = '';
         }}
       />
+      {/* Under the header, so what Save (or any change) did is in view, even on a phone. */}
+      <p className={styles.statusLine}>
+        <span role="status" data-testid="midi-status">
+          {status}
+        </span>
+        {saved ? <Link to={'/songs/mine/' + saved.id}>Open saved song in My songs →</Link> : null}
+      </p>
       {p.tempos.length > 1 || p.meters.length > 1 ? (
         <p className={styles.warning}>
           This MIDI contains tempo or meter changes. Export preserves these markers; Studio playback
@@ -698,14 +705,6 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </p>
         )}
       </div>
-      <p role="status" data-testid="midi-status" className={styles.dim}>
-        {status}
-      </p>
-      {saved ? (
-        <p className={styles.dim}>
-          <Link to={'/songs/mine/' + saved.id}>Open saved song in My songs →</Link>
-        </p>
-      ) : null}
       <p className={styles.warning}>
         Import/export preserves MIDI notes, tracks, velocities, programs and tempo/meter markers.
         Audio preview uses InHarmonia's piano sound; MIDI controller automation, sustain-pedal data
