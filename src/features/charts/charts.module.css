@@ -80,8 +80,14 @@
   list-style: none;
 }
 
+/* A row's bars are as tall as its tallest, words or not. */
+.bars > li {
+  display: grid;
+}
+
 .bar {
   display: grid;
+  align-content: start;
   gap: 2px;
   width: 100%;
   padding: 8px 10px;
@@ -123,6 +129,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.barLyric {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lyricField,
+.lyricField input {
+  width: 100%;
 }
 
 .barEditor {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { MAJOR_KEYS, MINOR_KEYS } from '@/core/content/realize';
 import {
   barOf,
@@ -14,6 +14,7 @@ import {
   SECTION_NAMES,
   sectionTypeOf,
   suggestKeys,
+  withLyric,
   type ChartBar,
   type ChartSection,
   type ChordChart,
@@ -50,6 +51,8 @@ const newSectionId = () => `s${Date.now().toString(36)}${(++ids).toString(36)}`;
 export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   const [chart, setChart] = useState<ChordChart>(initial);
   const [selected, setSelected] = useState<{ section: string; bar: number } | null>(null);
+  // Enter in a bar's lyrics moves on to the next bar's, ready to type.
+  const [typingLyrics, setTypingLyrics] = useState(false);
   const [textFor, setTextFor] = useState<string | null>(null);
   const [pasting, setPasting] = useState(initial.sections.length === 0);
   const bpb = chart.meter.beats;
@@ -138,16 +141,19 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               ]}
               onChange={(v) => {
                 const beats = Number(v) as 3 | 4;
-                // Bars keep their chords, split evenly in the new meter.
+                // Bars keep their chords, split evenly in the new meter, and their lyrics.
                 setChart((c) => ({
                   ...c,
                   meter: { beats, unit: 4 },
                   sections: c.sections.map((s) => ({
                     ...s,
                     bars: s.bars.map((b) =>
-                      barOf(
-                        b.chords.map((x) => x.symbol),
-                        beats,
+                      withLyric(
+                        barOf(
+                          b.chords.map((x) => x.symbol),
+                          beats,
+                        ),
+                        b.lyric,
                       ),
                     ),
                   })),
@@ -315,8 +321,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             <BarsText
               initial={formatBars(s.bars, bpb)}
               beatsPerBar={bpb}
+              lyricBars={s.bars.flatMap((b, i) => (b.lyric ? [i + 1] : []))}
               onApply={(bars) => {
-                setBars(s.id, () => bars);
+                // Lyrics stay with their bar number.
+                setBars(s.id, (old) => bars.map((b, i) => withLyric(b, old[i]?.lyric)));
                 setTextFor(null);
               }}
               onCancel={() => setTextFor(null)}
@@ -336,7 +344,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                         className={styles.bar}
                         aria-pressed={isSel}
                         data-invalid={bad || undefined}
-                        onClick={() => setSelected(isSel ? null : { section: s.id, bar: bi })}
+                        onClick={() => {
+                          setSelected(isSel ? null : { section: s.id, bar: bi });
+                          setTypingLyrics(false);
+                        }}
                         data-testid={`bar-${si}-${bi}`}
                       >
                         <span className={styles.barNo}>{bi + 1}</span>
@@ -347,6 +358,11 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                             </span>
                           ))}
                         </span>
+                        {b.lyric ? (
+                          <span className={styles.barLyric} data-testid="bar-lyric">
+                            {b.lyric}
+                          </span>
+                        ) : null}
                       </button>
                     </li>
                   );
@@ -358,13 +374,23 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   bar={s.bars[selected.bar]!}
                   beatsPerBar={bpb}
                   canDelete={s.bars.length > 1}
+                  focusLyrics={typingLyrics}
                   onChange={(bar) =>
                     setBars(s.id, (bars) => bars.map((b, i) => (i === selected.bar ? bar : b)))
                   }
+                  onNextLyrics={
+                    selected.bar + 1 < s.bars.length
+                      ? () => {
+                          setSelected({ section: s.id, bar: selected.bar + 1 });
+                          setTypingLyrics(true);
+                        }
+                      : undefined
+                  }
                   onInsert={() => {
+                    // A copy of the chords: the words of the next bar are rarely the same.
                     setBars(s.id, (bars) => [
                       ...bars.slice(0, selected.bar + 1),
-                      structuredClone(bars[selected.bar]!),
+                      { chords: structuredClone(bars[selected.bar]!.chords) },
                       ...bars.slice(selected.bar + 1),
                     ]);
                     setSelected({ section: s.id, bar: selected.bar + 1 });
@@ -509,7 +535,17 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
       <div className={styles.row}>
         <Button
           variant="primary"
-          onClick={() => onSave({ ...chart, title: chart.title.trim() || 'Untitled chart' })}
+          onClick={() =>
+            onSave({
+              ...chart,
+              title: chart.title.trim() || 'Untitled chart',
+              // Lyrics as typed, kept to one line with spaces evened out.
+              sections: chart.sections.map((s) => ({
+                ...s,
+                bars: s.bars.map((b) => withLyric(b, b.lyric)),
+              })),
+            })
+          }
           disabled={saving || issues.length > 0}
           data-testid="chart-save"
         >
@@ -523,31 +559,40 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   );
 }
 
-/** One bar: 1 to 4 chords, each with its length in beats. */
+/** One bar: 1 to 4 chords, each with its length in beats, and the words sung over it. */
 function BarEditor({
   bar,
   beatsPerBar,
   canDelete,
+  focusLyrics,
   onChange,
+  onNextLyrics,
   onInsert,
   onDelete,
 }: {
   bar: ChartBar;
   beatsPerBar: number;
   canDelete: boolean;
+  /** Arrived here by Enter in the bar before's lyrics: start in the lyrics. */
+  focusLyrics: boolean;
   onChange: (bar: ChartBar) => void;
+  /** Enter in the lyrics moves to the next bar's; none on the last bar. */
+  onNextLyrics?: () => void;
   onInsert: () => void;
   onDelete: () => void;
 }) {
   const [drafts, setDrafts] = useState(() => bar.chords.map((c) => c.symbol));
   const total = bar.chords.reduce((s, c) => s + c.beats, 0);
+  const noteId = useId();
+  // Every change keeps the bar's lyrics: only chords are replaced.
+  const setChords = (chords: ChartBar['chords']) => onChange({ ...bar, chords });
   const setCount = (n: number) => {
     const symbols = Array.from(
       { length: n },
       (_, i) => bar.chords[i]?.symbol ?? bar.chords.at(-1)!.symbol,
     );
     setDrafts(symbols);
-    onChange(barOf(symbols, beatsPerBar));
+    setChords(barOf(symbols, beatsPerBar).chords);
   };
   return (
     <div className={styles.barEditor} role="group" aria-label="Edit bar" data-testid="bar-editor">
@@ -574,11 +619,9 @@ function BarEditor({
                   const v = e.target.value;
                   setDrafts((d) => d.map((x, k) => (k === i ? v : x)));
                   const sym = normalizeChord(v);
-                  onChange({
-                    chords: bar.chords.map((x, k) =>
-                      k === i ? { ...x, symbol: sym ?? v.trim() } : x,
-                    ),
-                  });
+                  setChords(
+                    bar.chords.map((x, k) => (k === i ? { ...x, symbol: sym ?? v.trim() } : x)),
+                  );
                 }}
                 data-testid={`chord-input-${i}`}
               />
@@ -587,11 +630,11 @@ function BarEditor({
               <Select
                 value={c.beats}
                 onChange={(e) =>
-                  onChange({
-                    chords: bar.chords.map((x, k) =>
+                  setChords(
+                    bar.chords.map((x, k) =>
                       k === i ? { ...x, beats: Number(e.target.value) } : x,
                     ),
-                  })
+                  )
                 }
               >
                 {[
@@ -613,9 +656,7 @@ function BarEditor({
               variant="ghost"
               onClick={() => {
                 setDrafts((d) => d.map((x, k) => (k === i ? NO_CHORD : x)));
-                onChange({
-                  chords: bar.chords.map((x, k) => (k === i ? { ...x, symbol: NO_CHORD } : x)),
-                });
+                setChords(bar.chords.map((x, k) => (k === i ? { ...x, symbol: NO_CHORD } : x)));
               }}
             >
               N.C.
@@ -629,6 +670,28 @@ function BarEditor({
           These last {total} beats; the bar has {beatsPerBar}.
         </p>
       ) : null}
+      <Field label="Lyrics" className={styles.lyricField}>
+        <TextInput
+          value={bar.lyric ?? ''}
+          maxLength={LIMITS.lyric}
+          // Typed as it comes; evened out when the chart is saved.
+          onChange={(e) => {
+            const { lyric: _old, ...rest } = bar;
+            onChange(e.target.value ? { ...rest, lyric: e.target.value } : rest);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || !onNextLyrics) return;
+            e.preventDefault();
+            onNextLyrics();
+          }}
+          autoFocus={focusLyrics}
+          aria-describedby={noteId}
+          data-testid="bar-lyrics"
+        />
+      </Field>
+      <p id={noteId} className={styles.note}>
+        {onNextLyrics ? 'Enter goes to the next bar. ' : ''}Kept on this device only.
+      </p>
       <div className={styles.row}>
         <Button size="small" onClick={onInsert}>
           Copy after
@@ -641,20 +704,34 @@ function BarEditor({
   );
 }
 
-/** A section's bars as text in chart syntax, checked as you type. */
+/** "Bar 7", "Bars 7 and 8", "Bars 5, 7 and 8". */
+function barList(ns: readonly number[]): string {
+  const last = ns.at(-1)!;
+  return ns.length === 1 ? `Bar ${last}` : `Bars ${ns.slice(0, -1).join(', ')} and ${last}`;
+}
+
+/**
+ * A section's bars as text in chart syntax, checked as you type. Lyrics are
+ * not in the text: they stay with their bar number, and it says which would
+ * go with bars the text no longer has.
+ */
 function BarsText({
   initial,
   beatsPerBar,
+  lyricBars,
   onApply,
   onCancel,
 }: {
   initial: string;
   beatsPerBar: number;
+  /** 1-based numbers of the bars that hold lyrics now. */
+  lyricBars: readonly number[];
   onApply: (bars: ChartBar[]) => void;
   onCancel: () => void;
 }) {
   const [text, setText] = useState(initial);
   const { bars, issues } = parseBars(text, beatsPerBar);
+  const dropped = lyricBars.filter((n) => n > bars.length);
   return (
     <div className={styles.barsText}>
       <TextArea
@@ -670,6 +747,14 @@ function BarsText({
         <code>| C . . G |</code> dots add beats, <code>%</code> repeats the bar before,{' '}
         <code>N.C.</code> no chord, <code>x2</code> after a line plays it twice.
       </p>
+      {lyricBars.length ? (
+        <p className={styles.notice} role="status" data-testid="bars-text-lyrics">
+          Lyrics stay with their bar number.
+          {dropped.length
+            ? ` ${barList(dropped)} ${dropped.length === 1 ? 'has' : 'have'} lyrics; using ${bars.length} bar${bars.length === 1 ? '' : 's'} drops them.`
+            : ''}
+        </p>
+      ) : null}
       {issues.length ? (
         <ul className={styles.issues}>
           {issues.map((i, k) => (
