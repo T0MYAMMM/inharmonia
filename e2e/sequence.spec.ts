@@ -124,6 +124,80 @@ test.describe('chord sequence', () => {
     ).toBeVisible();
   });
 
+  test('edit a bar: beats, chords, copy, move, delete; undo and redo', async ({ page }) => {
+    await page.goto('chords');
+    await typeChords(page, '| C | Am | F G | G7 |');
+    const status = page.getByTestId('sequence-status');
+    await page.locator('[data-bar="0"]').click();
+    const editor = page.getByTestId('bar-editor');
+    await expect(editor.getByRole('heading', { name: 'Bar 1' })).toBeVisible();
+    await editor.getByRole('radio', { name: '2+2' }).click();
+    const second = editor.getByRole('textbox', { name: 'Chord 2, 2 beats' });
+    await second.fill('Em7');
+    await second.press('Enter');
+    await expect.poll(() => bars(page)).toEqual(['C Em7', 'Am', 'F G', 'G7']);
+    await expect(status).toHaveText('Bar 1 is now C Em7.');
+    await editor.getByRole('button', { name: 'Remove C from bar 1' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'F G', 'G7']);
+    await editor.getByRole('button', { name: 'Copy bar 1 after it' }).click();
+    await page.getByTestId('bar-editor').getByRole('button', { name: 'Move bar 2 right' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'Em7', 'F G', 'G7']);
+    await expect(status).toHaveText('Moved bar 2 to bar 3.');
+    await page.getByTestId('bar-editor').getByRole('button', { name: 'Delete bar 3' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'F G', 'G7']);
+    await expect(status).toHaveText('Deleted bar 3, Em7.');
+
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'Em7', 'F G', 'G7']);
+    await expect(status).toHaveText('Undone: deleted bar 3, Em7.');
+    await page.getByRole('button', { name: 'Redo' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'F G', 'G7']);
+    await page.getByRole('button', { name: 'Clear' }).click();
+    await expect(page.getByTestId('sequence-empty')).toBeVisible();
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect.poll(() => bars(page)).toEqual(['Em7', 'Am', 'F G', 'G7']);
+  });
+
+  test('new chords go after the chosen bar', async ({ page }) => {
+    await page.goto('chords?root=D&quality=m7');
+    await typeChords(page, 'C G');
+    await page.locator('[data-bar="0"]').click();
+    await page.getByTestId('add-to-sequence').click();
+    await typeChords(page, 'E7');
+    await expect.poll(() => bars(page)).toEqual(['C', 'Dm7', 'E7', 'G']);
+    await expect(page.locator('[data-bar="2"]')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('keys: arrows choose, Shift moves, Delete removes, Ctrl+Z undoes', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'keyboard shortcuts');
+    await page.goto('chords');
+    await typeChords(page, 'C Am F G');
+    const bar = (i: number) => page.locator(`[data-bar="${i}"]`);
+    await page.getByRole('listbox', { name: 'Bars' }).getByRole('option').first().focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(bar(1)).toBeFocused();
+    await expect(bar(1)).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => bars(page)).toEqual(['C', 'F', 'Am', 'G']);
+    await expect(bar(2)).toBeFocused();
+    await page.keyboard.press('Delete');
+    await expect.poll(() => bars(page)).toEqual(['C', 'F', 'G']);
+    await expect(bar(2)).toBeFocused();
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => bars(page)).toEqual(['C', 'F', 'Am', 'G']);
+    await page.keyboard.press('Control+Shift+z');
+    await expect.poll(() => bars(page)).toEqual(['C', 'F', 'G']);
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('textbox', { name: 'Chord 1, 4 beats' })).toBeFocused();
+    // In a chord field, Ctrl+Z is the field's own.
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => bars(page)).toEqual(['C', 'F', 'G']);
+  });
+
   test('survives a reload, with its settings', async ({ page }) => {
     await page.goto('chords');
     await typeChords(page, '| C G | Am |');
