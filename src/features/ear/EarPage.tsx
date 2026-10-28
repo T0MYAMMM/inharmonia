@@ -20,7 +20,7 @@ import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './ear.module.css';
 
 type Exercise = 'notes' | 'chords' | 'progressions';
@@ -89,13 +89,10 @@ export function EarPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Ear training</h1>
-        <p className={page.lede}>
-          Hear a note and name it with no reference, hear a chord and name its quality, or hear four
-          chords and name them in Roman numerals. Listen as often as you like before you answer.
-        </p>
-      </div>
+      <PageHeader
+        title="Ear training"
+        lede="Hear a note and name it with no reference, hear a chord and name its quality, or hear four chords and name them in Roman numerals. Listen as often as you like before you answer."
+      />
       <div className={styles.controls}>
         <Segmented
           label="Exercise"
