@@ -257,3 +257,91 @@ test('MIDI piano roll on touch: a tap draws a note, the keyboard toggles', async
   await page.getByTestId('midi-keyboard-toggle').click();
   await expect(page.getByTestId('midi-keyboard')).toHaveCount(0);
 });
+
+test('a song saved from a MIDI file comes back from its export with every track', async ({
+  page,
+}) => {
+  // 72 bars, more than a written song may have, played in a little unevenly.
+  const late = (i: number) => (i * 7) % 5;
+  const long: MidiProject = {
+    ...sample,
+    title: 'Evening ferry',
+    tracks: [
+      {
+        ...sample.tracks[0]!,
+        notes: Array.from({ length: 144 }, (_, i) => ({
+          id: `m${i}`,
+          midi: [72, 74, 76, 79][i % 4]!,
+          startBeat: i * 2 + late(i) / 480,
+          beats: 1.75,
+          velocity: 90,
+        })),
+      },
+      {
+        ...sample.tracks[1]!,
+        notes: Array.from({ length: 72 }, (_, i) => ({
+          id: `b${i}`,
+          midi: 48,
+          startBeat: i * 4,
+          beats: 3.9,
+          velocity: 100 + (i % 20),
+        })),
+      },
+    ],
+  };
+  await page.goto('studio');
+  await page.getByTestId('studio-import-midi').setInputFiles({
+    name: 'Evening ferry.mid',
+    mimeType: 'audio/midi',
+    buffer: Buffer.from(writeMidi(long)),
+  });
+  await expect(page.getByTestId('midi-track')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Mute Bass' }).click();
+  await openMidiMore(page);
+  await page.getByTestId('midi-save-song').click();
+  await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
+
+  await page.goto('songs');
+  await page.getByTestId('export-open').click();
+  const dialog = page.getByTestId('export-dialog');
+  const download = page.waitForEvent('download');
+  await dialog.getByTestId('export-download').click();
+  const path = (await (await download).path())!;
+  const text = await readFile(path, 'utf8');
+  const doc = JSON.parse(text);
+  expect(doc.version).toBe(3);
+  expect(doc.items[0].song.midi.tracks.map((t: { name: string }) => t.name)).toEqual([
+    'Lead',
+    'Bass',
+  ]);
+  await dialog.getByRole('button', { name: 'Close' }).click();
+
+  // Read it back as a copy beside the one already here.
+  const preview = page.getByTestId('import-preview');
+  await page.getByTestId('import-file').setInputFiles(path);
+  await expect(preview.getByTestId('import-summary')).toHaveText(
+    '1 item in this file: 0 new, 1 already here.',
+  );
+  await expect(preview.getByTestId('import-errors')).toHaveCount(0);
+  await preview.getByTestId('import-choice-1').selectOption('copy');
+  await preview.getByTestId('import-confirm').click();
+  await expect(page.getByTestId('import-result')).toHaveText('Imported: 1 added.');
+  const copies = page.getByTestId('my-songs').getByRole('link', { name: /Evening ferry/ });
+  await expect(copies).toHaveCount(2);
+
+  for (const i of [0, 1]) {
+    await page.goto('songs');
+    await copies.nth(i).click();
+    await expect(page.getByRole('heading', { name: 'Evening ferry', level: 1 })).toBeVisible();
+    await expect(page.getByText(/4\/4, 72 bars/)).toBeVisible();
+    await page.getByRole('link', { name: 'Edit in Studio' }).click();
+    await expect(page.getByTestId('midi-track')).toHaveText([
+      /Lead\s*144 notes/,
+      /Bass\s*72 notes/,
+    ]);
+    await expect(page.getByRole('button', { name: 'Unmute Bass' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+});
