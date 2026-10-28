@@ -1,10 +1,3 @@
-.hero {
-  display: grid;
-  gap: var(--space-3);
-  margin: var(--space-5) 0 var(--space-6);
-  max-width: var(--text-width);
-}
-
 /*
  * The page shell (PageHeader): the way up, the title, the lede, the actions.
  * Crumb to title 8px, title to lede 12px, lede to actions 16px.
@@ -113,6 +106,11 @@
 
 .prose h2 {
   margin-top: var(--space-5);
+}
+
+/* Right under the page header, which already leaves room. */
+.prose > h2:first-child {
+  margin-top: 0;
 }
 
 .list {

@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
 import { describeExercise, nextNew } from '../progress/catalog';
 import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
 
 const ROOMS = [
@@ -47,13 +48,10 @@ export function HomePage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>A quiet room to practice harmony.</h1>
-        <p className={page.lede}>
-          Chords, voicings, progressions, comping and fills, learned at the keys. Take your time;
-          nothing here is timed unless you ask it to be.
-        </p>
-      </div>
+      <PageHeader
+        title="A quiet room to practice harmony."
+        lede="Chords, voicings, progressions, comping and fills, learned at the keys. Take your time; nothing here is timed unless you ask it to be."
+      />
 
       {!dismissed && !practised ? (
         <section className={styles.welcome} aria-labelledby="welcome-title">
