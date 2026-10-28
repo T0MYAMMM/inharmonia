@@ -11,3 +11,4 @@ export * from './transpose';
 export * from './hints';
 export * from './known';
 export * from './easyKey';
+export * from './sequence';
