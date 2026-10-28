@@ -13,13 +13,6 @@
   display: grid;
 }
 
-/* In one column there is no row to match, so each card is as tall as it needs. */
-@media (max-width: 600px) {
-  .list {
-    grid-auto-rows: auto;
-  }
-}
-
 .card {
   display: flex;
   flex-direction: column;
