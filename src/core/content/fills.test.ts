@@ -72,7 +72,10 @@ describe('fills', () => {
     expect(hits.map((h) => h.landing)).toEqual([false, false, true]);
   });
 
-  it('every fill plays in every key on every change', () => {
+  // 4,104 exercises compiled and checked: about 1.2s on its own, past the 5s
+  // default when the whole suite shares a busy machine. The work is fixed, so
+  // the longer limit only absorbs that contention.
+  it('every fill plays in every key on every change', { timeout: 30_000 }, () => {
     for (const fill of FILLS) {
       for (const mode of ['major', 'minor'] as const) {
         for (const key of mode === 'major' ? MAJOR_KEYS : MINOR_KEYS) {
