@@ -271,6 +271,16 @@
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
 }
+/* One line kept for it, so the roll doesn't move when a message comes or goes. */
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
 .warning {
   margin: 0;
   color: var(--muted);
