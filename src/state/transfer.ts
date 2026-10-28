@@ -128,11 +128,29 @@ function existingTitle(kind: ItemKind, id: string): string | null {
   return useUserProgressions.getState().get(id)?.name ?? null;
 }
 
-/** Read a file and say what importing it would do, without saving anything. */
+const fatal = (message: string): ImportPreview => ({
+  fatal: message,
+  version: null,
+  rows: [],
+  errors: [],
+  parsed: null,
+});
+
+/**
+ * Read a file and say what importing it would do, without saving anything.
+ * Never throws: whatever stops the file being read is said in `fatal`.
+ */
 export function previewImport(text: string): ImportPreview {
+  try {
+    return preview(text);
+  } catch (e) {
+    return fatal(`This file couldn't be read: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+function preview(text: string): ImportPreview {
   const parsed = parseFile(text, IMPORT_CONTEXT);
-  if ('fatal' in parsed)
-    return { fatal: parsed.fatal, version: null, rows: [], errors: [], parsed: null };
+  if ('fatal' in parsed) return fatal(parsed.fatal);
   const rows = parsed.items.map((i) => {
     const storeId = storeIdFor(i.kind, i.id);
     return {

@@ -52,6 +52,8 @@ export interface SongDraft {
 }
 
 export const MIN_NOTE_BEATS = 0.25;
+/** A song from a MIDI file may be this long; one written in Studio stays shorter (`MAX_BARS`). */
+export const MAX_MIDI_BARS = 512;
 const EPS = 1e-6;
 
 export const lengthBeats = (d: Pick<SongDraft, 'bars' | 'meter'>) => d.bars * d.meter.beats;
@@ -107,7 +109,7 @@ export function toLesson(d: SongDraft, id: string): Lesson {
       schemaVersion: LESSON_SCHEMA_VERSION,
       kind: 'song',
       source: { kind: 'user' },
-      title: d.title,
+      title: d.title.trim() || 'Untitled',
       summary:
         'Imported MIDI. The score shows a single melody; playback and Falling Notes use all MIDI tracks.',
       key: d.key,
@@ -331,19 +333,32 @@ export function redo<T>(h: History<T>): History<T> {
 }
 
 /**
+ * Why a MIDI project can't be saved as a practice song: a meter other than
+ * 2/4, 3/4 or 4/4, or more than `MAX_MIDI_BARS` bars. Null when it can.
+ */
+export function midiSongProblem(project: MidiProject): 'meter' | 'length' | null {
+  const bpb = project.meter.beats;
+  if (![2, 3, 4].includes(bpb) || project.meter.unit !== 4) return 'meter';
+  return Math.ceil(projectEndBeat(project) / bpb) > MAX_MIDI_BARS ? 'length' : null;
+}
+
+/**
  * Bridge from a polyphonic SMF to a readable single-melody teaching score.
  * The MIDI project is retained unchanged; overlapping accompaniment and
  * velocity are NEVER thrown away for playback or .mid export.
  */
 export function midiToDraft(project: MidiProject): SongDraft {
-  const bpb = project.meter.beats;
-  if (![2, 3, 4].includes(bpb) || project.meter.unit !== 4)
+  const problem = midiSongProblem(project);
+  if (problem === 'meter')
     throw new Error(
       'Saving as a practice song currently supports 2/4, 3/4 or 4/4. Keep other meters in Studio and export MIDI.',
     );
+  if (problem === 'length')
+    throw new Error(
+      `Songs may contain at most ${MAX_MIDI_BARS} bars. Edit or export the MIDI in Studio.`,
+    );
+  const bpb = project.meter.beats;
   const bars = Math.ceil(projectEndBeat(project) / bpb);
-  if (bars > 512)
-    throw new Error('Songs may contain at most 512 bars. Edit or export the MIDI in Studio.');
   // Pick a representative melodic line. Its note list is display-only;
   // the authoritative polyphonic performance is always project.tracks.
   const ranked = [...project.tracks].sort(

@@ -1,16 +1,20 @@
 import type { ChartView } from '../charts/types';
 import type { SectionType } from '../charts/sections';
 import type { ContentSource, Meter, SongLevel } from '../content/types';
+import type { MidiProject } from '../midi/smf';
+import { MAX_MIDI_BARS } from '../songs/draft';
 import type { Mode } from '../theory';
 
 /**
- * The Inharmonia file format, version 2: one readable envelope for songs,
+ * The Inharmonia file format, version 3: one readable envelope for songs,
  * chord charts and progressions. Values are what a musician reads (note names,
  * chord symbols, Roman numerals, beats); nothing derived (timelines, cached
- * voicings, MIDI numbers) is written. See docs/format/README.md.
+ * voicings) is written. The one place MIDI numbers appear is a song made from
+ * a MIDI file, which is written as the MIDI project it is. Version 3 added
+ * that project; version 2 files are still read. See docs/format/README.md.
  */
 export const FORMAT = 'inharmonia';
-export const FORMAT_VERSION = 2;
+export const FORMAT_VERSION = 3;
 
 export type ItemKind = 'song' | 'chart' | 'progression';
 
@@ -69,6 +73,14 @@ export interface FileSong {
   bars: FileSongBar[];
 }
 
+/**
+ * A song made from a MIDI file: its whole project, every track, in the shape
+ * Studio keeps it. The practice score is rebuilt from it on import.
+ */
+export interface FileMidiSong {
+  midi: MidiProject;
+}
+
 export interface FileChartSection {
   id: string;
   label: string;
@@ -103,7 +115,7 @@ interface ItemBase {
 }
 
 export type FileItem =
-  | (ItemBase & { kind: 'song'; song: FileSong })
+  | (ItemBase & { kind: 'song'; song: FileSong | FileMidiSong })
   | (ItemBase & { kind: 'chart'; chart: FileChart; view: ChartView })
   | (ItemBase & { kind: 'progression'; progression: FileProgression });
 
@@ -136,6 +148,8 @@ export const FILE_LIMITS = {
   bytes: 64 * 1024 * 1024,
   items: 500,
   songBars: 64,
+  /** A song made from a MIDI file, once its project is laid out in bars. */
+  midiBars: MAX_MIDI_BARS,
   title: 80,
   summary: 140,
 } as const;

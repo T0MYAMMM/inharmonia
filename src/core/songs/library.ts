@@ -1,7 +1,7 @@
 import { MAJOR_KEYS, MINOR_KEYS } from '../content/realize';
 import { songMeter, type Lesson } from '../content/types';
 import { isValidChord } from '../theory';
-import { MIN_NOTE_BEATS, toLesson, type SongDraft } from './draft';
+import { MAX_MIDI_BARS, MIN_NOTE_BEATS, toLesson, type SongDraft } from './draft';
 import { cleanMidiProject } from '../midi/smf';
 
 export const USER_SONG_VERSION = 1;
@@ -78,7 +78,8 @@ export function cleanDraft(
   if (!isObj(meter) || !songMeter(meter.beats, meter.unit)) return 'unsupported meter';
   const midi = 'midi' in raw ? cleanMidiProject(raw.midi) : undefined;
   if (typeof midi === 'string') return midi;
-  if (!isNum(bars, 1, midi ? 512 : MAX_BARS) || !Number.isInteger(bars)) return 'too many bars';
+  if (!isNum(bars, 1, midi ? MAX_MIDI_BARS : MAX_BARS) || !Number.isInteger(bars))
+    return 'too many bars';
   const length = bars * (meter.beats as number);
   if (!Array.isArray(notes) || notes.length > 2000) return 'bad notes';
   const cleanNotes = [];
@@ -97,7 +98,11 @@ export function cleanDraft(
       midi: Math.round(n.midi),
     });
   }
-  if (!Array.isArray(chords) || chords.length === 0 || chords.length > (midi ? 512 : MAX_BARS) * 4)
+  if (
+    !Array.isArray(chords) ||
+    chords.length === 0 ||
+    chords.length > (midi ? MAX_MIDI_BARS : MAX_BARS) * 4
+  )
     return 'bad chords';
   const cleanChords = [];
   for (const [i, c] of chords.entries()) {

@@ -41,7 +41,15 @@ export function ImportControls({
     previewRef.current?.showModal();
   };
   const readFile = async (f: File | undefined) => {
-    if (f) show(await f.text());
+    if (!f) return;
+    let text: string;
+    try {
+      text = await f.text();
+    } catch (e) {
+      setResult(`This file couldn't be read: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    show(text);
   };
   // The whole area takes a dropped export; anything else is refused in the status.
   const { over, dropProps } = useFileDrop({

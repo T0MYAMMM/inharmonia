@@ -83,7 +83,7 @@ test.describe('progression builder', () => {
     let text = '';
     for await (const chunk of stream) text += chunk;
     const doc = JSON.parse(text);
-    expect(doc).toMatchObject({ format: 'inharmonia', version: 2 });
+    expect(doc).toMatchObject({ format: 'inharmonia', version: 3 });
     expect(doc.items.map((i: { kind: string; title: string }) => [i.kind, i.title])).toEqual([
       ['progression', 'Keep me'],
     ]);
