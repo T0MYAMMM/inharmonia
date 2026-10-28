@@ -95,7 +95,14 @@
 
 .tempo,
 .slider {
-  width: min(100%, 280px);
+  width: min(100%, var(--control-width-long));
+}
+
+/* On touch, the take's controls are full touch targets. */
+@media (pointer: coarse) {
+  .setup {
+    --control-height: 44px;
+  }
 }
 
 .row {
