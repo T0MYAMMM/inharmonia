@@ -3,6 +3,7 @@ import { suggestKeys } from './key';
 import { NO_CHORD, normalizeChord } from './symbols';
 import { parseBars } from './syntax';
 import {
+  barOf,
   CHART_STYLES,
   CHART_VERSION,
   LIMITS,
@@ -90,6 +91,11 @@ function capitalRoot(token: string): string {
   return chord(up) ? up : token;
 }
 
+/** One chord as typed, lower-case root allowed: "f#m7" → "F#m7". Null when it is not a chord. */
+export function readChord(typed: string): string | null {
+  return normalizeChord(capitalRoot(typed.trim()));
+}
+
 /**
  * The ways people type a line of chords, read as chart syntax: commas and
  * spaced dashes separate chords, and a root may be lower case. A dash inside
@@ -131,6 +137,124 @@ export function readChords(
           : `That is ${n} bars; there is room for ${room} more (a sequence holds up to ${LIMITS.barsPerSection})`,
     });
   return { bars: parsed.bars, issues };
+}
+
+// ---- edits ------------------------------------------------------------------
+// Each returns a new sequence, or the same one when there is nothing to do,
+// and keeps every bar one of the splits.
+
+/** Bars left before the sequence is full. */
+export function roomLeft(s: SequenceBars): number {
+  return LIMITS.barsPerSection - s.bars.length;
+}
+
+const copyOf = (bar: ChartBar): ChartBar => ({ chords: bar.chords.map((c) => ({ ...c })) });
+
+function replaceBar<T extends SequenceBars>(s: T, index: number, bar: ChartBar): T {
+  return { ...s, bars: s.bars.map((b, i) => (i === index ? bar : b)) };
+}
+
+/** Put bars in at `at`, 0 to the length. Nothing changes unless they all fit. */
+export function insertBars<T extends SequenceBars>(s: T, at: number, bars: readonly ChartBar[]): T {
+  if (bars.length === 0 || bars.length > roomLeft(s)) return s;
+  if (!Number.isInteger(at) || at < 0 || at > s.bars.length) return s;
+  return { ...s, bars: [...s.bars.slice(0, at), ...bars.map(copyOf), ...s.bars.slice(at)] };
+}
+
+export function removeBar<T extends SequenceBars>(s: T, index: number): T {
+  if (!s.bars[index]) return s;
+  return { ...s, bars: s.bars.filter((_, i) => i !== index) };
+}
+
+/** Move bar `from` so that it ends up at `to`. */
+export function moveBar<T extends SequenceBars>(s: T, from: number, to: number): T {
+  const bar = s.bars[from];
+  if (!bar || from === to || !Number.isInteger(to) || to < 0 || to >= s.bars.length) return s;
+  const bars = s.bars.filter((_, i) => i !== from);
+  bars.splice(to, 0, bar);
+  return { ...s, bars };
+}
+
+/** A copy of bar `index` right after it. */
+export function copyBar<T extends SequenceBars>(s: T, index: number): T {
+  const bar = s.bars[index];
+  return bar ? insertBars(s, index + 1, [bar]) : s;
+}
+
+export function clearBars<T extends SequenceBars>(s: T): T {
+  return s.bars.length ? { ...s, bars: [] } : s;
+}
+
+/**
+ * Split bar `index` another way, one of `barSplits`: more chords repeat the
+ * last one, fewer drop chords from the end.
+ */
+export function setSplit<T extends SequenceBars>(s: T, index: number, split: readonly number[]): T {
+  const bar = s.bars[index];
+  if (!bar || !isSplit(split, s.meter.beats)) return s;
+  if (bar.chords.length === split.length && bar.chords.every((c, i) => c.beats === split[i]))
+    return s;
+  const chords = split.map((beats, i) => ({
+    symbol: (bar.chords[i] ?? bar.chords.at(-1)!).symbol,
+    beats,
+  }));
+  return replaceBar(s, index, { chords });
+}
+
+/** Change one chord as typed. Nothing changes unless it reads as a chord (or N.C.). */
+export function setChord<T extends SequenceBars>(
+  s: T,
+  index: number,
+  slot: number,
+  typed: string,
+): T {
+  const bar = s.bars[index];
+  const chord = bar?.chords[slot];
+  const symbol = readChord(typed);
+  if (!bar || !chord || !symbol || symbol === chord.symbol) return s;
+  return replaceBar(s, index, {
+    chords: bar.chords.map((c, i) => (i === slot ? { ...c, symbol } : c)),
+  });
+}
+
+/**
+ * Take a chord out of a bar. Its beats go to the chord before it (or after
+ * it, for the first), so the others keep their lengths; 3/4's even four
+ * becomes three even beats. A bar's last chord stays: delete the bar instead.
+ */
+export function removeChord<T extends SequenceBars>(s: T, index: number, slot: number): T {
+  const bar = s.bars[index];
+  const gone = bar?.chords[slot];
+  if (!bar || !gone || bar.chords.length < 2) return s;
+  const left = bar.chords.filter((_, i) => i !== slot);
+  if (bar.chords.some((c) => !Number.isInteger(c.beats)))
+    return replaceBar(
+      s,
+      index,
+      barOf(
+        left.map((c) => c.symbol),
+        s.meter.beats,
+      ),
+    );
+  const to = Math.max(0, slot - 1);
+  return replaceBar(s, index, {
+    chords: left.map((c, i) => (i === to ? { ...c, beats: c.beats + gone.beats } : c)),
+  });
+}
+
+/** A new meter: every bar keeps its chords, split evenly, as the chart editor does. */
+export function setMeter<T extends SequenceBars>(s: T, beats: 3 | 4): T {
+  if (beats === s.meter.beats) return s;
+  return {
+    ...s,
+    meter: { beats, unit: 4 },
+    bars: s.bars.map((b) =>
+      barOf(
+        b.chords.map((c) => c.symbol),
+        beats,
+      ),
+    ),
+  };
 }
 
 const sectionOf = (bars: readonly ChartBar[]): ChartSection => ({
