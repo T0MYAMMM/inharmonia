@@ -63,6 +63,11 @@ export interface LessonPlayerProps {
   settings?: ReactNode;
   /** The same URL-controlled arrangement, rendered only inside Falling Notes fullscreen. */
   fullScreenSettings?: ReactNode;
+  /**
+   * Under the controls, before the score: what you can change but needn't
+   * before you press Play, like a chart's key and simplification.
+   */
+  belowControls?: ReactNode;
   /** Roman numerals under the chord symbols (default: on for progressions). */
   showNumerals?: boolean;
   /**
@@ -84,6 +89,7 @@ export function LessonPlayer({
   variant,
   settings,
   fullScreenSettings,
+  belowControls,
   showNumerals,
   voicingHints = false,
 }: LessonPlayerProps) {
@@ -344,6 +350,7 @@ export function LessonPlayer({
           {snap.announcement}
         </p>
       </div>
+      {belowControls}
 
       <Score
         compiled={compiled}
