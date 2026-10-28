@@ -25,10 +25,13 @@ export function EditorHeader({ start, tools, className, ...rest }: EditorHeaderP
   );
 }
 
-/** Tools that belong together, set off from the group before by a line. */
-export function ToolGroup({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * Tools that belong together, set off from the group before by a line. A
+ * group of one tool, like a menu button, needs no label.
+ */
+export function ToolGroup({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <div role="group" aria-label={label} className={styles.group}>
+    <div role={label ? 'group' : undefined} aria-label={label} className={styles.group}>
       {children}
     </div>
   );

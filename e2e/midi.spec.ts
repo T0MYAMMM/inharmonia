@@ -101,7 +101,7 @@ test('MIDI Studio supports composing without using the microphone', async ({ pag
   await expect(page.getByRole('button', { name: '+ Track' })).toBeVisible();
   await page.getByRole('button', { name: '+ Track' }).click();
   await expect(page.getByTestId('midi-track')).toHaveCount(2);
-  await page.getByRole('button', { name: '← Back to Studio' }).click();
+  await page.getByRole('button', { name: 'Back to Studio' }).click();
   await expect(page.getByTestId('enable-mic')).toBeVisible();
 });
 

@@ -87,3 +87,14 @@ export const ChevronDownIcon = () => <Line d="m6 9 6 6 6-6" size={16} />;
 export const ZoomTimeIcon = () => <Line d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" size={18} />;
 /** Taller or shorter pitch rows. */
 export const ZoomPitchIcon = () => <Line d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" size={18} />;
+
+/** More actions: three dots. */
+export function MoreIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="5" cy="12" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="19" cy="12" r="2" fill="currentColor" />
+    </svg>
+  );
+}
