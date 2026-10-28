@@ -1,7 +1,7 @@
 import { useId, type HTMLAttributes, type ReactNode } from 'react';
-import { Button, type ButtonProps } from '@/ui/Button';
+import { Button } from '@/ui/Button';
 import { TextInput, type TextInputProps } from '@/ui/TextInput';
-import { RedoIcon, UndoIcon } from './icons';
+import { RedoIcon, UndoIcon } from '@/ui/icons';
 import styles from './editorHeader.module.css';
 
 export interface EditorHeaderProps extends HTMLAttributes<HTMLDivElement> {
@@ -87,24 +87,6 @@ export function UndoRedo({ canUndo, canRedo, onUndo, onRedo }: UndoRedoProps) {
         <RedoIcon />
       </Button>
     </ToolGroup>
-  );
-}
-
-export interface PlayButtonProps extends Omit<ButtonProps, 'children'> {
-  playing: boolean;
-  /** What it says while playing: Pause, or Stop. */
-  stopLabel: string;
-}
-
-/** Play, as wide as its other label, so the row doesn't move when it changes. */
-export function PlayButton({ playing, stopLabel, ...rest }: PlayButtonProps) {
-  return (
-    <Button variant="primary" {...rest}>
-      <span className={styles.swap}>
-        <span>{playing ? stopLabel : 'Play'}</span>
-        <span aria-hidden="true">{playing ? 'Play' : stopLabel}</span>
-      </span>
-    </Button>
   );
 }
 

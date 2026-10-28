@@ -1,3 +1,5 @@
+import { LineIcon } from '@/ui/icons';
+
 /** Small line icons for Studio and its editors, drawn in the current text colour. */
 
 export function SpeakerIcon({ muted }: { muted: boolean }) {
@@ -65,28 +67,11 @@ export function ArrowDownIcon() {
   );
 }
 
-function Line({ d, size = 20 }: { d: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d={d}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export const UndoIcon = () => <Line d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />;
-export const RedoIcon = () => <Line d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />;
-export const ChevronDownIcon = () => <Line d="m6 9 6 6 6-6" size={16} />;
+export const ChevronDownIcon = () => <LineIcon d="m6 9 6 6 6-6" size={16} />;
 /** Wider or narrower beats. */
-export const ZoomTimeIcon = () => <Line d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" size={18} />;
+export const ZoomTimeIcon = () => <LineIcon d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" size={18} />;
 /** Taller or shorter pitch rows. */
-export const ZoomPitchIcon = () => <Line d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" size={18} />;
+export const ZoomPitchIcon = () => <LineIcon d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" size={18} />;
 
 /** More actions: three dots. */
 export function MoreIcon() {
