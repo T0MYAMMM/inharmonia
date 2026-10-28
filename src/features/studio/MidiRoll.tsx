@@ -375,7 +375,7 @@ export function MidiRoll({
                     height={row}
                     fill={
                       m === hoverMidi
-                        ? 'var(--amber-soft)'
+                        ? 'var(--key-pressed)'
                         : isBlack(m)
                           ? 'var(--key-black)'
                           : 'var(--surface)'
@@ -423,8 +423,8 @@ export function MidiRoll({
                   y={noteY(hoverMidi)}
                   width={width}
                   height={row}
-                  fill="var(--amber)"
-                  fillOpacity={0.08}
+                  fill="var(--ink)"
+                  fillOpacity={0.06}
                   pointerEvents="none"
                 />
               ) : null}
@@ -471,9 +471,9 @@ export function MidiRoll({
                   width={cellW - 2}
                   height={row - 4}
                   rx={3}
-                  fill="var(--amber)"
-                  fillOpacity={0.25}
-                  stroke="var(--amber)"
+                  fill="var(--ink)"
+                  fillOpacity={0.12}
+                  stroke="var(--ink)"
                   strokeDasharray="3 2"
                   pointerEvents="none"
                   data-testid="midi-hover-cell"
@@ -485,6 +485,8 @@ export function MidiRoll({
                     (n) => n.startBeat + n.beats >= windowBeats[0] && n.startBeat <= windowBeats[1],
                   )
                   .map((n) => {
+                    // The track being edited is amber, the notes you place and play;
+                    // the other tracks are faint dusk, the accompaniment around them.
                     const isActive = t.id === trackId;
                     const shown = (isActive && previews.get(n.id)) || n;
                     const picked = isActive && selection.has(n.id);
@@ -542,9 +544,9 @@ export function MidiRoll({
                   y={Math.min(marquee.y0, marquee.y1)}
                   width={Math.abs(marquee.x1 - marquee.x0)}
                   height={Math.abs(marquee.y1 - marquee.y0)}
-                  fill="var(--amber)"
-                  fillOpacity={0.12}
-                  stroke="var(--amber)"
+                  fill="var(--ink)"
+                  fillOpacity={0.08}
+                  stroke="var(--ink)"
                   strokeDasharray="4 3"
                   pointerEvents="none"
                   data-testid="midi-marquee"

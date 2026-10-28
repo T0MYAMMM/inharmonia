@@ -46,8 +46,9 @@
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+/* The track you are editing: an ink edge, like a Toggle that is on. */
 .track[data-active] {
-  border-color: var(--amber);
+  border-color: var(--ink);
   background: var(--surface-sunk);
 }
 .trackPick {
@@ -184,7 +185,8 @@
   color: var(--ink);
   padding: 8px 12px;
   border-radius: 10px;
-  background: var(--amber-soft);
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
 }
 .seek {
   display: grid;
@@ -234,10 +236,11 @@
 .seekTrack:hover .seekRail {
   height: 8px;
 }
+/* Where playback is, in ink: amber is for a hand or the target note. */
 .seekFill {
   height: 100%;
   width: 0;
-  background: var(--amber);
+  background: var(--ink);
 }
 .seekThumb {
   position: absolute;
@@ -247,7 +250,7 @@
   height: 14px;
   margin: -7px 0 0 -7px;
   border-radius: 50%;
-  background: var(--amber);
+  background: var(--ink);
   border: 2px solid var(--surface);
   box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
   pointer-events: none;
