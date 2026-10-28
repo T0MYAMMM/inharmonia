@@ -121,9 +121,8 @@
   cursor: pointer;
 }
 
-.fullScreenButton:hover,
-.fullScreenButton:focus-visible {
-  border-color: var(--amber);
+.fullScreenButton:hover {
+  border-color: var(--muted);
 }
 
 .immersiveWorkspace {
