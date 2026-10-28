@@ -21,6 +21,13 @@
 
   --on-amber: #1c2838;
   --on-dusk: #ffffff;
+  /*
+   * The primary action (Play, Save, Start, Hear it). Ink, not amber: amber
+   * marks the right hand and the target note, and a primary button beside
+   * a target note in practice would say the same thing as the note.
+   */
+  --primary: var(--ink);
+  --on-primary: var(--bg);
   --amber-soft: color-mix(in srgb, var(--amber) 22%, var(--surface));
   --wrong-soft: color-mix(in srgb, var(--wrong) 18%, var(--surface));
   --surface-sunk: color-mix(in srgb, var(--line) 35%, var(--surface));
@@ -117,6 +124,8 @@
     --wrong: #e0645c;
     --on-amber: #121924;
     --on-dusk: #121924;
+    --primary: var(--ink);
+    --on-primary: var(--bg);
     --key-white: #d9e0e8;
     --key-white-edge: #8e9bab;
     --key-black: #0b1018;
@@ -141,6 +150,8 @@
   --wrong: #e0645c;
   --on-amber: #121924;
   --on-dusk: #121924;
+  --primary: var(--ink);
+  --on-primary: var(--bg);
   --key-white: #d9e0e8;
   --key-white-edge: #8e9bab;
   --key-black: #0b1018;

@@ -37,13 +37,13 @@
 }
 
 .primary {
-  background: var(--amber);
-  border-color: var(--amber);
-  color: var(--on-amber);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
 }
 
 .primary:hover:not(:disabled) {
-  border-color: var(--ink);
+  background: color-mix(in srgb, var(--primary) 85%, var(--bg));
 }
 
 .ghost {
