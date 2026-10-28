@@ -7,7 +7,6 @@ function headerProps(patch: Partial<MidiHeaderProps> = {}): MidiHeaderProps {
   return {
     title: 'Tune',
     onTitle: vi.fn(),
-    onBack: vi.fn(),
     canUndo: false,
     canRedo: true,
     onUndo: vi.fn(),
@@ -111,24 +110,25 @@ describe('MidiSettings', () => {
 });
 
 describe('below 760px', () => {
-  // jsdom has no matchMedia: stand in one where only the compact query matches.
+  // jsdom has no matchMedia: stand in one for a width under 760px.
   const compact = () =>
     vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: query === '(max-width: 760px)',
+      matches: query === '(max-width: 760px)' || query === '(max-width: 960px)',
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }));
   afterEach(() => vi.unstubAllGlobals());
 
-  it('keeps Back, the title, Play and Keyboard, and puts the rest under More', async () => {
+  it('keeps the title, Play and Keyboard, and puts the rest under More', async () => {
     compact();
     const user = userEvent.setup();
     const props = headerProps({ showKeys: true });
     render(<MidiHeader {...props} />);
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(4);
-    ['Back to Studio', 'Play', 'Keyboard', 'More'].forEach((name, i) =>
+    expect(buttons).toHaveLength(3);
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Tune');
+    ['Play', 'Keyboard', 'More'].forEach((name, i) =>
       expect(buttons[i]).toHaveAccessibleName(name),
     );
     expect(screen.getByRole('button', { name: 'Keyboard' })).toHaveAttribute(

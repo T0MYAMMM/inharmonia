@@ -5,20 +5,26 @@ import { RedoIcon, UndoIcon } from './icons';
 import styles from './editorHeader.module.css';
 
 export interface EditorHeaderProps extends HTMLAttributes<HTMLDivElement> {
-  /** Back, then the title. */
+  /** The title. */
   start: ReactNode;
   /** ToolGroups. */
   tools: ReactNode;
+  /** Closer together and without the lines between groups, so a phone fits one row. */
+  dense?: boolean;
 }
 
 /**
- * The top row of a Studio editor: back and the title on the left, the tools
- * on the right. When the row is too narrow the tools move under it as one
- * block, still on the right, so they never split.
+ * The top row of a Studio editor: the title on the left, the tools on the
+ * right. When the row is too narrow the tools move under it as one block,
+ * still on the right, so they never split. The way back is the page's crumb.
  */
-export function EditorHeader({ start, tools, className, ...rest }: EditorHeaderProps) {
+export function EditorHeader({ start, tools, dense, className, ...rest }: EditorHeaderProps) {
   return (
-    <div className={[styles.header, className].filter(Boolean).join(' ')} {...rest}>
+    <div
+      className={[styles.header, className].filter(Boolean).join(' ')}
+      data-dense={dense || undefined}
+      {...rest}
+    >
       <div className={styles.start}>{start}</div>
       <div className={styles.tools}>{tools}</div>
     </div>
@@ -99,5 +105,18 @@ export function PlayButton({ playing, stopLabel, ...rest }: PlayButtonProps) {
         <span aria-hidden="true">{playing ? 'Play' : stopLabel}</span>
       </span>
     </Button>
+  );
+}
+
+/**
+ * An editor's instructions, folded to one line until you open them, so the
+ * roll starts near the top of a phone's screen.
+ */
+export function EditorHelp({ summary, children }: { summary: string; children: ReactNode }) {
+  return (
+    <details className={styles.help}>
+      <summary>{summary}</summary>
+      <div className={styles.helpBody}>{children}</div>
+    </details>
   );
 }

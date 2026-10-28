@@ -33,6 +33,7 @@ import { MidiRoll } from './MidiRoll';
 import { SpeakerIcon } from './icons';
 import { KeyRecorder, moveNotes } from './rollEdit';
 import { MIDI_ACCEPT, NOT_MIDI } from './midiFiles';
+import { EditorHelp } from './EditorHeader';
 import { MidiHeader, MidiSettings } from './MidiHeader';
 import { ROW_RANGE, ZOOM_RANGE } from './midiSettings';
 import { SeekBar } from './SeekBar';
@@ -47,11 +48,13 @@ const next = (p: MidiProject, trackId: string, fn: (notes: MidiNote[]) => MidiNo
 export interface MidiWorkspaceProps {
   initial?: MidiProject;
   song?: UserSong;
-  onBack?: () => void;
 }
 
-/** Full multitrack editor, separate from the monophonic singing/transcription tool. */
-export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
+/**
+ * Full multitrack editor, separate from the monophonic singing/transcription
+ * tool. The page around it gives it its heading and the way back.
+ */
+export function MidiWorkspace({ initial, song }: MidiWorkspaceProps) {
   const [history, setHistory] = useState(() => historyOf(initial ?? blankMidiProject()));
   const p = history.present;
   const [trackId, setTrackId] = useState(p.tracks[0]?.id ?? '');
@@ -354,18 +357,23 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       tabIndex={-1}
       onKeyDown={onKeyDown}
     >
-      <div className={styles.heading}>
-        <h2>MIDI piano-roll editor</h2>
-        <p>
-          Open a .mid file or create one from scratch. Click empty space to draw, drag notes to move
-          them and their right edge to resize them. Drag a box (or Shift-click) to select several
-          notes and move them together, with the mouse or the arrow keys. MIDI is edited locally.
-        </p>
-      </div>
+      <EditorHelp summary="How to edit">
+        <ul>
+          <li>
+            Click an empty spot to draw a note. Drag a note to move it, or its right edge to change
+            its length.
+          </li>
+          <li>Drag a box, or Shift-click, to select several notes and move them together.</li>
+          <li>
+            With the keyboard: the arrow keys move the selection (Shift for an octave), Delete
+            removes it, Ctrl+A selects the whole track, Escape clears the selection, Ctrl+Z undoes
+            and Space plays.
+          </li>
+        </ul>
+      </EditorHelp>
       <MidiHeader
         title={p.title}
         onTitle={(title) => update({ ...p, title }, 'Renamed project.')}
-        onBack={onBack}
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}
         onUndo={() => setHistory((h) => undo(h))}
@@ -705,12 +713,19 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </p>
         )}
       </div>
-      <p className={styles.warning}>
-        Import/export preserves MIDI notes, tracks, velocities, programs and tempo/meter markers.
-        Audio preview uses InHarmonia's piano sound; MIDI controller automation, sustain-pedal data
-        and pitch bends are not currently preserved. Saving as a practice Song produces a simplified
-        score, but preserves the full MIDI notes for playback and export.
-      </p>
+      <EditorHelp summary="What a .mid keeps">
+        <ul>
+          <li>
+            Notes, tracks, velocities, programs and tempo and meter markers come in and go out.
+          </li>
+          <li>Controller automation, sustain pedal and pitch bends are not kept yet.</li>
+          <li>Playback here uses Inharmonia's piano for every track.</li>
+          <li>
+            Saved to My songs, it becomes a simpler practice score, and keeps every MIDI note for
+            playing and export.
+          </li>
+        </ul>
+      </EditorHelp>
     </section>
   );
 }

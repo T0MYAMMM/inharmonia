@@ -123,24 +123,6 @@
   width: auto;
 }
 
-/* On a phone, Back is the arrow alone, as wide as it is tall. */
-@media (max-width: 600px) {
-  .back {
-    width: 44px;
-    padding: 0;
-  }
-
-  .backText {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-
 /* On touch, every control here is a full touch target. */
 @media (pointer: coarse) {
   .settings,

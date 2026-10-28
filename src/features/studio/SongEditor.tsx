@@ -39,6 +39,7 @@ import { Toggle } from '@/ui/Toggle';
 import { EditorPlayback, type EditorTakeAudio, type HearSource } from './EditorPlayback';
 import {
   EditorHeader,
+  EditorHelp,
   EditorTitle,
   PlayButton,
   ToolGroup,
@@ -343,12 +344,19 @@ export function SongEditor(props: SongEditorProps) {
           )
         }
       />
-      <p className={styles.help}>
-        Drag a note to move it, or its right edge to change its length; tap an empty spot to add
-        one. With the keyboard: arrows move the selected note, Shift with the arrows changes its
-        length or octave, [ and ] pick the previous or next note, Delete removes it, and Ctrl+Z
-        undoes.
-      </p>
+      <EditorHelp summary="How to edit">
+        <ul>
+          <li>
+            Drag a note to move it, or its right edge to change its length; tap an empty spot to add
+            one.
+          </li>
+          <li>
+            With the keyboard: the arrows move the selected note, and with Shift they change its
+            length or octave. [ and ] pick the previous or next note, Delete removes it, and Ctrl+Z
+            undoes.
+          </li>
+        </ul>
+      </EditorHelp>
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="editor-status">
         {said}
       </p>
