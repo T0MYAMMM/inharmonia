@@ -38,6 +38,29 @@
   background: var(--line);
 }
 
+/* A row of tool groups under the header. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Below 760px each group takes a line, and its buttons share it evenly. */
+@media (max-width: 760px) {
+  .row {
+    display: grid;
+  }
+
+  .row > .group > button {
+    flex: 1;
+  }
+
+  .row > .group + .group::before {
+    display: none;
+  }
+}
+
 /* At least --control-width-short, and as wide as the row lets it be. */
 .title {
   display: flex;
@@ -62,9 +85,14 @@
   visibility: hidden;
 }
 
-/* On touch, the title is as tall as the buttons beside it. */
+/* On touch, the title is as tall as the buttons beside it, and a row's tools are full targets. */
 @media (pointer: coarse) {
-  .header {
+  .header,
+  .row {
     --control-height: 44px;
+  }
+
+  .row > .group > button {
+    min-height: 44px;
   }
 }
