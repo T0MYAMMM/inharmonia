@@ -27,7 +27,7 @@ import { Select } from '@/ui/Select';
 import { TextArea } from '@/ui/TextArea';
 import { TextInput } from '@/ui/TextInput';
 import { NotFoundPage } from '../not-found/NotFoundPage';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './progressions.module.css';
 
 const PALETTE: Record<Mode, string[]> = {
@@ -186,13 +186,11 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/progressions">Progressions</Link>
-        </p>
-        <h1>{editId ? 'Edit progression' : 'New progression'}</h1>
-        <p className={songStyles.meta}>Saved in this browser only.</p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/progressions', label: 'Progressions' }}
+        title={editId ? 'Edit progression' : 'New progression'}
+        lede="Saved in this browser only."
+      />
 
       <form className={styles.builder} onSubmit={onSubmit} noValidate>
         <Field label="Name" id={ids.name}>
@@ -321,7 +319,7 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           <Link to={editId ? `/progressions/${editId}` : '/progressions'} className={styles.cancel}>
             Cancel
           </Link>
-          <span className={songStyles.spacer} />
+          <span className={styles.spacer} />
           {editId ? (
             <Button variant="ghost" onClick={onDelete} onBlur={() => setConfirmDelete(false)}>
               {confirmDelete ? 'Delete for good?' : 'Delete'}
