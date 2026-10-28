@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { formatBytes } from '@/core/songs';
 import { download, type ExportResult } from '@/state/transfer';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
-import { Menu, MenuItem, MenuSeparator } from '@/ui/Menu';
+import { Menu, MenuCheckItem, MenuItem, MenuSeparator } from '@/ui/Menu';
 import { ChevronDownIcon } from '../studio/icons';
 import styles from './transfer.module.css';
 
@@ -17,21 +17,54 @@ async function copy(text: string): Promise<boolean> {
 }
 
 const itemsWord = (n: number) => `${n} item${n === 1 ? '' : 's'}`;
+const chartsWord = (n: number) => `${n} chart${n === 1 ? '' : 's'}`;
+
+/**
+ * What happened to lyrics in a file just made, said after what was saved:
+ * for one chart "… Lyrics left out." or "…, with lyrics."; for several, how
+ * many charts. Nothing when no chart has any.
+ */
+function lyricsNote(r: ExportResult, many: boolean): string {
+  const { leftOut, included } = r.lyrics;
+  if (many)
+    return leftOut
+      ? ` Lyrics left out of ${chartsWord(leftOut)}.`
+      : included
+        ? ` Lyrics included for ${chartsWord(included)}.`
+        : '';
+  return leftOut ? '. Lyrics left out.' : included ? ', with lyrics.' : '';
+}
 
 /**
  * Export for one item (a song, chart or progression page): one menu that
- * downloads or copies its JSON and, for songs, downloads its .mid. What the
- * last choice did is said beside the button.
+ * downloads or copies its JSON and, for songs, downloads its .mid. For a
+ * chart with lyrics it has Include lyrics, unticked each time the menu
+ * opens. What the last choice did is said beside the button, lyrics left
+ * out included.
  */
 export function ExportMenu({
   build,
   midi,
+  lyrics = false,
 }: {
-  build: () => Promise<ExportResult>;
+  /** The file, with the chart's lyrics when asked for them. */
+  build: (includeLyrics: boolean) => Promise<ExportResult>;
   /** A .mid download, for songs; its test id names the page it is on. */
   midi?: { download: () => void; testId: string };
+  /** The item is a chart with lyrics: offer to include them. */
+  lyrics?: boolean;
 }) {
   const [status, setStatus] = useState('');
+  const [withLyrics, setWithLyrics] = useState(false);
+  const run = async (how: 'download' | 'copy') => {
+    const r = await build(lyrics && withLyrics);
+    const note = lyricsNote(r, false);
+    if (how === 'download') {
+      download(r.text, r.fileName);
+      setStatus(`Saved ${r.fileName}${note}`);
+    } else
+      setStatus((await copy(r.text)) ? `Copied as JSON${note}` : 'Could not reach the clipboard');
+  };
   return (
     <span className={styles.exportMenu}>
       <Menu
@@ -41,25 +74,17 @@ export function ExportMenu({
             Export <ChevronDownIcon />
           </>
         }
+        // Each time it opens, lyrics start left out.
+        onClick={() => setWithLyrics(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') setWithLyrics(false);
+        }}
         data-testid="export-menu"
       >
-        <MenuItem
-          onSelect={async () => {
-            const r = await build();
-            download(r.text, r.fileName);
-            setStatus(`Saved ${r.fileName}`);
-          }}
-          data-testid="export-download"
-        >
+        <MenuItem onSelect={() => void run('download')} data-testid="export-download">
           Download .json
         </MenuItem>
-        <MenuItem
-          onSelect={async () => {
-            const r = await build();
-            setStatus((await copy(r.text)) ? 'Copied as JSON' : 'Could not reach the clipboard');
-          }}
-          data-testid="export-copy"
-        >
+        <MenuItem onSelect={() => void run('copy')} data-testid="export-copy">
           Copy as JSON
         </MenuItem>
         {midi ? (
@@ -68,6 +93,23 @@ export function ExportMenu({
             <MenuItem onSelect={midi.download} data-testid={midi.testId}>
               Download .mid
             </MenuItem>
+          </>
+        ) : null}
+        {lyrics ? (
+          <>
+            <MenuSeparator />
+            <MenuCheckItem
+              checked={withLyrics}
+              onChange={setWithLyrics}
+              note={
+                withLyrics
+                  ? 'In the file: keep it to yourself.'
+                  : 'Left out: lyrics stay on this device.'
+              }
+              data-testid="export-lyrics"
+            >
+              Include lyrics
+            </MenuCheckItem>
           </>
         ) : null}
       </Menu>
@@ -84,11 +126,14 @@ export interface ExportCandidate {
   title: string;
   /** Size of a kept recording, for songs that have one. */
   recordingBytes?: number;
+  /** A chart with lyrics. */
+  lyrics?: boolean;
 }
 
 /**
- * Export everything or a selection: a list to tick, an optional "include
- * recordings" box (off unless asked), then download or copy.
+ * Export everything or a selection: a list to tick, optional "include
+ * recordings" and "include lyrics" boxes (off unless asked, each time it
+ * opens), then download or copy.
  */
 export function ExportDialog({
   candidates,
@@ -96,31 +141,38 @@ export function ExportDialog({
   label = 'Export',
 }: {
   candidates: readonly ExportCandidate[];
-  build: (keys: ReadonlySet<string>, includeRecordings: boolean) => Promise<ExportResult>;
+  build: (
+    keys: ReadonlySet<string>,
+    includeRecordings: boolean,
+    includeLyrics: boolean,
+  ) => Promise<ExportResult>;
   label?: string;
 }) {
   const ref = useRef<HTMLDialogElement | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [recordings, setRecordings] = useState(false);
+  const [lyrics, setLyrics] = useState(false);
   const [status, setStatus] = useState('');
+  const lyricsNoteId = useId();
   const open = () => {
     setChosen(new Set(candidates.map((c) => c.key)));
     setRecordings(false);
+    setLyrics(false);
     setStatus('');
     ref.current?.showModal();
   };
-  const recBytes = candidates
-    .filter((c) => chosen.has(c.key))
-    .reduce((s, c) => s + (c.recordingBytes ?? 0), 0);
+  const picked = candidates.filter((c) => chosen.has(c.key));
+  const recBytes = picked.reduce((s, c) => s + (c.recordingBytes ?? 0), 0);
+  const sung = picked.filter((c) => c.lyrics).length;
   const run = async (how: 'download' | 'copy') => {
-    const r = await build(chosen, recordings && recBytes > 0);
+    const r = await build(chosen, recordings && recBytes > 0, lyrics && sung > 0);
     if (how === 'download') {
       download(r.text, r.fileName);
-      setStatus(`Saved ${r.fileName}: ${itemsWord(r.items)}.`);
+      setStatus(`Saved ${r.fileName}: ${itemsWord(r.items)}.${lyricsNote(r, true)}`);
     } else
       setStatus(
         (await copy(r.text))
-          ? `Copied ${itemsWord(r.items)} as JSON.`
+          ? `Copied ${itemsWord(r.items)} as JSON.${lyricsNote(r, true)}`
           : 'Could not reach the clipboard.',
       );
   };
@@ -187,6 +239,21 @@ export function ExportDialog({
             <Checkbox checked={recordings} onChange={setRecordings} data-testid="export-recordings">
               Include recordings ({formatBytes(recBytes)})
             </Checkbox>
+          ) : null}
+          {sung > 0 ? (
+            <div className={styles.option}>
+              <Checkbox
+                checked={lyrics}
+                onChange={setLyrics}
+                aria-describedby={lyricsNoteId}
+                data-testid="export-lyrics"
+              >
+                Include lyrics ({chartsWord(sung)})
+              </Checkbox>
+              <span id={lyricsNoteId} className={styles.note}>
+                Left out unless you tick this: lyrics stay on this device.
+              </span>
+            </div>
           ) : null}
           <div className={styles.actions}>
             <Button
