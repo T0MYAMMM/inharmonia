@@ -20,7 +20,6 @@ import {
 import { BEAT_PX, describeNote, ROW_PX, type ChordOption, type EditorTrace } from './editorModel';
 import styles from './editor.module.css';
 
-const LANE_PX = 40;
 const EDGE_PX = 9;
 const MIN_ROWS = 25;
 
@@ -226,7 +225,7 @@ export function EditorRoll(props: EditorRollProps) {
   return (
     <div className={styles.rollScroll} ref={rollRef}>
       <div className={styles.rollInner} style={{ width }}>
-        <div className={styles.lane} style={{ height: LANE_PX }} role="group" aria-label="Chords">
+        <div className={styles.lane} role="group" aria-label="Chords">
           {draft.chords.map((c, i) => {
             const { suggested, others } = props.chordOptions(i);
             const all = [...suggested, ...others];

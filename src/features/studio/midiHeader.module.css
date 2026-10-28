@@ -122,11 +122,3 @@
   flex: 1;
   width: auto;
 }
-
-/* On touch, every control here is a full touch target. */
-@media (pointer: coarse) {
-  .settings,
-  .fold {
-    --control-height-small: 44px;
-  }
-}

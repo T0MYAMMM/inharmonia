@@ -92,6 +92,7 @@ export function ChartPage() {
               Edit
             </Link>
             <Toggle
+              size="small"
               pressed={view.showFunction}
               onChange={(v) => void saveChart({ ...record, view: { ...view, showFunction: v } })}
             >

@@ -21,6 +21,7 @@ import { romanToChord, voiceChord, type Mode } from '@/core/theory';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
+import { buttonClass } from '@/ui/buttonClass';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
@@ -316,7 +317,10 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           <Button type="submit" variant="primary">
             Save
           </Button>
-          <Link to={editId ? `/progressions/${editId}` : '/progressions'} className={styles.cancel}>
+          <Link
+            to={editId ? `/progressions/${editId}` : '/progressions'}
+            className={buttonClass('ghost')}
+          >
             Cancel
           </Link>
           <span className={styles.spacer} />

@@ -85,11 +85,7 @@ export function LearnPanel({
             ))}
           </Select>
         </Field>
-        <Button
-          size="small"
-          onClick={() => setOptions(easierKeys(chart, view, isKnown))}
-          data-testid="find-key"
-        >
+        <Button onClick={() => setOptions(easierKeys(chart, view, isKnown))} data-testid="find-key">
           Find an easier key
         </Button>
       </div>

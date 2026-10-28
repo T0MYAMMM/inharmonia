@@ -130,7 +130,7 @@
 }
 
 .pill {
-  min-height: 36px;
+  min-height: var(--control-height-small);
   min-width: 44px;
   padding: 0 12px;
   border-radius: var(--radius-pill);

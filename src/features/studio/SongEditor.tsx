@@ -303,24 +303,18 @@ export function SongEditor(props: SongEditorProps) {
           />
         </ToolGroup>
         <ToolGroup label="Notes">
-          <Button size="small" onClick={add} data-testid="add-note">
+          <Button onClick={add} data-testid="add-note">
             Add note
           </Button>
-          <Button size="small" onClick={remove} disabled={!selected} data-testid="delete-note">
+          <Button onClick={remove} disabled={!selected} data-testid="delete-note">
             Delete note
           </Button>
         </ToolGroup>
         <ToolGroup label="Octave">
-          <Button
-            size="small"
-            onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}
-          >
+          <Button onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}>
             Octave down
           </Button>
-          <Button
-            size="small"
-            onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}
-          >
+          <Button onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}>
             Octave up
           </Button>
         </ToolGroup>

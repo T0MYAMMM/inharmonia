@@ -281,6 +281,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               <Button
                 size="small"
                 variant="ghost"
+                icon
                 onClick={() => moveSection(s.id, -1)}
                 disabled={si === 0}
                 aria-label={`Move ${s.label} up`}
@@ -290,6 +291,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               <Button
                 size="small"
                 variant="ghost"
+                icon
                 onClick={() => moveSection(s.id, 1)}
                 disabled={si === chart.sections.length - 1}
                 aria-label={`Move ${s.label} down`}

@@ -62,7 +62,10 @@
    *   wide     960px  the nav and four-up grids give way
    */
 
-  /* Form controls (src/ui Select, TextInput, NumberInput, TextArea, FilePicker). */
+  /*
+   * Control heights: Button, Toggle, Segmented, Menu, the form controls and the
+   * pills and chips that act like them. Touch raises both to 44px (below).
+   */
   --control-height: 40px;
   --control-height-small: 32px;
   --control-radius: var(--radius-sm);
@@ -84,6 +87,18 @@
   --press-ms: 160ms;
   --wrong-ms: 260ms;
   --pulse-ms: 1.2s;
+}
+
+/*
+ * On touch every control is a full 44px target, small ones too. Anything
+ * sized from these tokens follows. A laptop with a touch screen reports a
+ * fine primary pointer and keeps the desktop sizes.
+ */
+@media (pointer: coarse) {
+  :root {
+    --control-height: 44px;
+    --control-height-small: 44px;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

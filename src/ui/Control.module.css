@@ -122,6 +122,8 @@
 
 .numberInput {
   flex: 1 1 auto;
+  /* The whole height of the box takes the tap, not only the line of digits. */
+  align-self: stretch;
   width: calc(var(--digits, 3) * 1ch + 24px);
   min-width: 0;
   padding: 0;

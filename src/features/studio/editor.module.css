@@ -22,8 +22,10 @@
   position: relative;
 }
 
+/* As tall as a small Select and 4px either side, so the chords fit on touch too. */
 .lane {
   position: relative;
+  height: calc(var(--control-height-small) + 8px);
   border-bottom: 1px solid var(--line);
 }
 
