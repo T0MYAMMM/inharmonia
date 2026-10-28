@@ -97,6 +97,33 @@ test.describe('chord sequence', () => {
     await expect(page.getByTestId('sequence-play')).toBeEnabled();
   });
 
+  test('Add to sequence adds the chord the builder shows', async ({ page }) => {
+    await page.goto('chords?root=Eb&quality=maj7');
+    await page.getByTestId('add-to-sequence').click();
+    await page.getByRole('button', { name: 'A', exact: true }).click();
+    await page.getByRole('button', { name: 'm7', exact: true }).click();
+    await page.getByTestId('add-to-sequence').click();
+    await expect.poll(() => bars(page)).toEqual(['E♭maj7', 'Am7']);
+    await expect(page.getByTestId('sequence-status')).toHaveText('Added Am7 as bar 2.');
+    await expect(page.getByTestId('sequence-summary')).toHaveText('2 bars in E♭ major');
+  });
+
+  test('a full sequence says so, and takes no more', async ({ page }) => {
+    await page.goto('chords');
+    await typeChords(page, 'C G Am F x8');
+    await expect.poll(async () => (await bars(page)).length).toBe(32);
+    await expect(page.getByTestId('sequence-full')).toHaveText(
+      'The sequence is full at 32 bars: delete one to add more.',
+    );
+    await expect(page.getByTestId('add-to-sequence')).toBeDisabled();
+    await typeChords(page, 'C');
+    await expect(
+      page.getByText('The sequence is full: it holds up to 32 bars. Nothing was added.', {
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
   test('survives a reload, with its settings', async ({ page }) => {
     await page.goto('chords');
     await typeChords(page, '| C G | Am |');

@@ -230,6 +230,13 @@ export function ChordLibraryPage() {
                 Hear it
               </Button>
               <Button onClick={() => play(true)}>Hear it broken</Button>
+              <Button
+                onClick={() => sequence.addChord(symbol)}
+                disabled={sequence.full}
+                data-testid="add-to-sequence"
+              >
+                Add to sequence
+              </Button>
             </div>
             <p
               className={styles.feedback}
