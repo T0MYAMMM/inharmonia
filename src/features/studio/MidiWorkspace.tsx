@@ -34,6 +34,7 @@ import { TextInput } from '@/ui/TextInput';
 import { MidiRoll } from './MidiRoll';
 import { PianoIcon, SpeakerIcon } from './icons';
 import { KeyRecorder, moveNotes } from './rollEdit';
+import { MIDI_ACCEPT } from './midiFiles';
 import { SeekBar } from './SeekBar';
 import styles from './midiWorkspace.module.css';
 
@@ -355,7 +356,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </Button>
         ) : null}
         <FilePicker
-          accept=".mid,.midi,audio/midi,audio/x-midi"
+          accept={MIDI_ACCEPT}
           data-testid="midi-file"
           onFiles={([file]) => void load(file)}
         >

@@ -1,4 +1,4 @@
-/** Small line icons for the MIDI editor, drawn in the current text colour. */
+/** Small line icons for Studio and its editors, drawn in the current text colour. */
 
 export function SpeakerIcon({ muted }: { muted: boolean }) {
   return (
@@ -44,6 +44,22 @@ export function PianoIcon() {
         fill="currentColor"
         stroke="currentColor"
         strokeWidth="0.5"
+      />
+    </svg>
+  );
+}
+
+/** Points down the page, at what a button leads to. */
+export function ArrowDownIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M12 4v15M5.5 12.5 12 19l6.5-6.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

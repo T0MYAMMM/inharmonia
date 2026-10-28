@@ -62,6 +62,34 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   await expect(page.getByTestId('my-song-midi-export')).toBeVisible();
 });
 
+test('Studio opens a MIDI file dropped on its card, and says when a file is not MIDI', async ({
+  page,
+}) => {
+  await page.goto('studio');
+  const card = page.getByTestId('studio-open-card');
+  const drop = async (name: string, type: string, bytes: number[]) => {
+    const dataTransfer = await page.evaluateHandle(
+      (file) => {
+        const data = new DataTransfer();
+        data.items.add(new File([new Uint8Array(file.bytes)], file.name, { type: file.type }));
+        return data;
+      },
+      { name, type, bytes },
+    );
+    await card.dispatchEvent('dragover', { dataTransfer });
+    await expect(card).toHaveAttribute('data-over', 'true');
+    await card.dispatchEvent('drop', { dataTransfer });
+  };
+  await drop('notes.json', 'application/json', [...Buffer.from('{}')]);
+  await expect(card.getByRole('status')).toHaveText(
+    "That isn't a MIDI file. Choose a .mid or .midi file.",
+  );
+  await expect(card).not.toHaveAttribute('data-over');
+  await drop('arrangement.mid', 'audio/midi', [...writeMidi(sample)]);
+  await expect(page.getByRole('heading', { name: 'MIDI piano-roll editor' })).toBeVisible();
+  await expect(page.getByTestId('midi-track')).toHaveCount(2);
+});
+
 test('MIDI Studio supports composing without using the microphone', async ({ page }) => {
   await page.goto('studio');
   await page.getByTestId('studio-new-midi').click();
