@@ -9,6 +9,8 @@ import {
 } from '@/core/charts';
 import { getChart, newChartId, saveChart } from '@/state/mySongs';
 import { PageHeader } from '../PageHeader';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import { ChartEditor } from './ChartEditor';
 import styles from './charts.module.css';
 
@@ -19,6 +21,9 @@ export function ChartEditorPage() {
   const [loaded, setLoaded] = useState<{ id: string; chart: UserChart | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState('');
+  // A new chart started from a progression: its chords to build on, and the way back.
+  const arrival = useArrival('chart');
+  const sent = !chartId && arrival.status === 'ok' ? arrival.handoff : null;
 
   useEffect(() => {
     if (!chartId) return;
@@ -58,13 +63,24 @@ export function ChartEditorPage() {
         crumb={
           existing
             ? { to: `/songs/charts/${existing.id}`, label: existing.chart.title }
-            : { to: '/songs', label: 'Songs' }
+            : (sent?.from ?? { to: '/songs', label: 'Songs' })
         }
         title={existing ? `Edit ${existing.chart.title}` : 'New chord chart'}
-        lede="Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept."
+        lede={
+          <>
+            <p>Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept.</p>
+            {sent ? <ArrivalNote text={sent.said} testId="sent-said" /> : null}
+            {!chartId && arrival.problem ? (
+              <p className={styles.notice} role="status" data-testid="sent-problem">
+                {arrival.problem}
+              </p>
+            ) : null}
+          </>
+        }
       />
       <ChartEditor
-        initial={existing?.chart ?? emptyChart('')}
+        key={sent ? arrival.id : 'blank'}
+        initial={existing?.chart ?? sent?.chart ?? emptyChart('')}
         saving={saving}
         onSave={(c) => void save(c)}
       />

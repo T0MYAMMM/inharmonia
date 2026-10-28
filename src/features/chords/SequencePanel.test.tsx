@@ -4,21 +4,24 @@ import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { memoryStore, type KeyValueStore } from '@/core/persistence/storage';
 import type { Played } from '@/core/practice';
-import { loadSequence } from '@/state/sequence';
+import { barOf } from '@/core/charts';
+import { loadBackup, loadSequence, saveBackup, saveSequence } from '@/state/sequence';
 import { SequencePanel } from './SequencePanel';
-import { useSequenceEditor } from './useSequenceEditor';
+import { useSequenceEditor, type Incoming } from './useSequenceEditor';
 import type { SequencePlayback } from './useSequencePlayer';
 
 function Harness({
   store,
   playback,
   played = null,
+  incoming,
 }: {
   store: KeyValueStore;
   playback: SequencePlayback;
   played?: Played | null;
+  incoming?: Incoming;
 }) {
-  const editor = useSequenceEditor(store);
+  const editor = useSequenceEditor(store, incoming);
   return <SequencePanel editor={editor} playback={playback} played={played} />;
 }
 
@@ -355,5 +358,99 @@ describe('SequencePanel: playing a chord', () => {
       'Not a chord I can name: hold three or more notes of one chord together.',
     );
     expect(screen.getByTestId('sequence-add-played')).toBeDisabled();
+  });
+});
+
+describe('SequencePanel: chords sent from another page', () => {
+  const four = (symbols: string[]) => symbols.map((x) => barOf([x], 4));
+  const iiVI: Incoming = {
+    meter: { beats: 4, unit: 4 },
+    bars: four(['Am7', 'D7', 'Gmaj7', 'Gmaj7']),
+    what: 'ii–V–I in G major',
+  };
+  const playback: SequencePlayback = { playing: false, bar: null, play: vi.fn(), stop: vi.fn() };
+  const mine = {
+    meter: { beats: 3 as const, unit: 4 as const },
+    bars: [barOf(['C'], 3), barOf(['Am', 'F'], 3)],
+  };
+  const barNames = () =>
+    within(screen.getByRole('listbox', { name: 'Bars' }))
+      .getAllByRole('option')
+      .map((o) => o.getAttribute('aria-label')!);
+  const previous = () =>
+    screen.queryByRole('button', { name: /^Bring back the previous sequence/ });
+
+  function withSaved() {
+    const store = memoryStore();
+    saveSequence({ ...loadSequence(store), ...mine }, store);
+    return store;
+  }
+
+  it('replace it as one step; Undo brings it back, and the previous one is kept', async () => {
+    const user = userEvent.setup();
+    const store = withSaved();
+    render(routed(<Harness store={store} playback={playback} incoming={iiVI} />));
+    expect(barNames()).toEqual(['Bar 1: Am7', 'Bar 2: D7', 'Bar 3: Gmaj7', 'Bar 4: Gmaj7']);
+    expect(screen.getByTestId('sequence-notice')).toHaveTextContent(
+      'Replaced 2 bars with ii–V–I in G major.',
+    );
+    expect(loadSequence(store).meter.beats).toBe(4);
+    expect(loadBackup(store)).toEqual(mine);
+    expect(previous()).toHaveTextContent('Bring back the previous sequence (2 bars: C Am F)');
+
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(barNames()).toEqual(['Bar 1: C', 'Bar 2: Am, F']);
+    expect(screen.getByTestId('sequence-status')).toHaveTextContent(
+      'Undone: replaced 2 bars with ii–V–I in G major.',
+    );
+    // Nothing to bring back while it is what is here, or to say about what arrived.
+    expect(previous()).toBeNull();
+    expect(screen.queryByTestId('sequence-notice')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(previous()).not.toBeNull();
+  });
+
+  it('offers the previous sequence after a reload, until it is brought back', async () => {
+    const user = userEvent.setup();
+    const store = withSaved();
+    const first = render(routed(<Harness store={store} playback={playback} incoming={iiVI} />));
+    first.unmount();
+
+    render(routed(<Harness store={store} playback={playback} />));
+    expect(barNames()).toHaveLength(4);
+    expect(screen.queryByTestId('sequence-notice')).toBeNull();
+    await user.click(previous()!);
+    expect(barNames()).toEqual(['Bar 1: C', 'Bar 2: Am, F']);
+    expect(screen.getByTestId('sequence-status')).toHaveTextContent(
+      'Brought back the previous sequence: 2 bars.',
+    );
+    expect(loadBackup(store)).toBeNull();
+    expect(previous()).toBeNull();
+    // And it is one undo step too.
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(barNames()).toHaveLength(4);
+  });
+
+  it('forgets the previous sequence when asked', async () => {
+    const user = userEvent.setup();
+    const store = withSaved();
+    render(routed(<Harness store={store} playback={playback} incoming={iiVI} />));
+    await user.click(screen.getByRole('button', { name: 'Forget the previous sequence' }));
+    expect(previous()).toBeNull();
+    expect(loadBackup(store)).toBeNull();
+    expect(screen.getByTestId('sequence-status')).toHaveTextContent(
+      'The previous sequence is forgotten.',
+    );
+  });
+
+  it('fills an empty sequence, and keeps an older previous one as it was', () => {
+    const store = memoryStore();
+    saveBackup(mine, store);
+    render(routed(<Harness store={store} playback={playback} incoming={iiVI} />));
+    expect(screen.getByTestId('sequence-notice')).toHaveTextContent(
+      'Put ii–V–I in G major in the sequence.',
+    );
+    expect(loadBackup(store)).toEqual(mine);
+    expect(previous()).toHaveTextContent('(2 bars: C Am F)');
   });
 });

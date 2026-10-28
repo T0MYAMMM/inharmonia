@@ -18,6 +18,7 @@ import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
 import { exportItems } from '@/state/transfer';
+import { progressionBars, progressionChart } from '@/core/charts';
 import { sentTitle } from '@/core/handoff';
 import { compiledToMidi } from '@/core/midi/adapters';
 import { NOTES, sentToStudio } from '../sendTo/names';
@@ -178,6 +179,29 @@ export function ProgressionPage() {
               .join(', '),
             'the progression',
           ),
+        }),
+    },
+    {
+      room: 'chords',
+      note: NOTES.chordsInKey(inKey),
+      onSelect: () =>
+        send({
+          kind: 'chords',
+          from,
+          meter: { beats: 4, unit: 4 },
+          bars: progressionBars(progression.steps, key, progression.mode),
+          what: `${progression.name} in ${inKey}`,
+        }),
+    },
+    {
+      room: 'songs',
+      note: NOTES.songsInKey(inKey),
+      onSelect: () =>
+        send({
+          kind: 'chart',
+          from,
+          chart: progressionChart(progression, key),
+          said: `Started from ${progression.name} in ${inKey}: one verse to build a song on.`,
         }),
     },
   ];

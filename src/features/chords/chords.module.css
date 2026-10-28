@@ -395,3 +395,9 @@
 .knownStatus {
   font-weight: 600;
 }
+
+/* What was sent here and could not be applied. */
+.sentProblem {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
+  font-weight: 600;
+}

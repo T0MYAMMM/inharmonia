@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
 import { audio, lights } from '@/app/services';
@@ -13,6 +13,7 @@ import {
   voiceChord,
   type VoicingStyle,
 } from '@/core/theory';
+import { storage } from '@/core/persistence/storage';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
@@ -20,7 +21,9 @@ import { Card } from '@/ui/Card';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
+import { markUsed } from '@/state/handoff';
 import { PageHeader } from '../PageHeader';
+import { useArrival } from '../sendTo/useHandoff';
 import { SequencePanel } from './SequencePanel';
 import { useSequenceEditor } from './useSequenceEditor';
 import { usePlayedChord } from './usePlayedChord';
@@ -72,7 +75,31 @@ export function ChordLibraryPage() {
   const key: KeyContext = { tonic: root, mode: 'major' };
   const angka = notation === 'angka';
 
-  const sequence = useSequenceEditor();
+  // Chords sent here from a progression or a chart's section, applied once:
+  // a reload keeps the way back and does not apply them again.
+  const arrival = useArrival('chords');
+  const [incoming] = useState(() =>
+    arrival.status === 'ok' && !arrival.used
+      ? { meter: arrival.handoff.meter, bars: arrival.handoff.bars, what: arrival.handoff.what }
+      : undefined,
+  );
+  const sequence = useSequenceEditor(storage, incoming);
+  useEffect(() => {
+    if (!incoming || !arrival.id) return;
+    markUsed('chords', arrival.id);
+    // After the page has moved to its top: to the sequence, ready to play.
+    const t = window.setTimeout(() => {
+      if (sequence.arrived) sequence.announce(sequence.arrived);
+      const card = document.querySelector<HTMLElement>('[data-testid="sequence"]');
+      card?.scrollIntoView({ block: 'start' });
+      card?.querySelector<HTMLElement>('[data-testid="sequence-play"]')?.focus({
+        preventScroll: true,
+      });
+    }, 0);
+    return () => window.clearTimeout(t);
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const playback = useSequencePlayer(sequence.sequence);
   const played = usePlayedChord();
 
@@ -114,6 +141,9 @@ export function ChordLibraryPage() {
   return (
     <>
       <PageHeader
+        crumb={
+          arrival.status === 'ok' ? { ...arrival.handoff.from, testId: 'sent-back' } : undefined
+        }
         title="Chords"
         lede="Pick a root and a quality. See how the chord is built, hear it, and play it back. Put chords in a line to hear them played."
         actions={
@@ -127,6 +157,11 @@ export function ChordLibraryPage() {
           </>
         }
       />
+      {arrival.problem ? (
+        <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+          {arrival.problem}
+        </p>
+      ) : null}
       <div className={styles.layout}>
         <div className={`${styles.side} ${styles.areaSide}`}>
           <div className={styles.group} role="group" aria-label="Root">

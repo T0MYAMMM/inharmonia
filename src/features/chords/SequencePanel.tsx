@@ -259,6 +259,34 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
         </div>
       ) : null}
 
+      {editor.arrived || editor.previous ? (
+        <div className={styles.arrived}>
+          {editor.arrived ? (
+            <p className={styles.notice} data-testid="sequence-notice">
+              {editor.arrived}
+            </p>
+          ) : null}
+          {editor.previous ? (
+            <div className={styles.previous} data-testid="sequence-previous">
+              <Button size="small" className={styles.wraps} onClick={editor.bringBack}>
+                Bring back the previous sequence ({editor.previous.bars.length} bar
+                {editor.previous.bars.length === 1 ? '' : 's'}:{' '}
+                {editor.previous.bars.slice(0, 4).map(barWords).join(' ')}
+                {editor.previous.bars.length > 4 ? ' …' : ''})
+              </Button>
+              <Button
+                size="small"
+                variant="ghost"
+                onClick={editor.forgetPrevious}
+                aria-label="Forget the previous sequence"
+              >
+                Forget it
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {n ? (
         <>
           <BarStrip

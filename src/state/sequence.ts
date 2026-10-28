@@ -1,4 +1,10 @@
-import { cleanSequence, EMPTY_SEQUENCE, SEQUENCE_VERSION, type ChordSequence } from '@/core/charts';
+import {
+  cleanSequence,
+  EMPTY_SEQUENCE,
+  SEQUENCE_VERSION,
+  type ChordSequence,
+  type SequenceBars,
+} from '@/core/charts';
 import {
   readVersioned,
   storage,
@@ -25,4 +31,33 @@ export function loadSequence(store: KeyValueStore = storage): ChordSequence {
 
 export function saveSequence(seq: ChordSequence, store: KeyValueStore = storage): void {
   writeVersioned(store, KEY, SEQUENCE_VERSION, seq);
+}
+
+/**
+ * The sequence that chords sent from another page took the place of, kept
+ * on this device until it is brought back, put aside, or another one takes
+ * its place: one, and only its chords and meter.
+ */
+const BACKUP_KEY = 'chord-sequence-before';
+
+/** The sequence last replaced, cleaned; null when there is none, or none with bars. */
+export function loadBackup(store: KeyValueStore = storage): SequenceBars | null {
+  const raw = readVersioned<unknown>(store, BACKUP_KEY, {
+    version: SEQUENCE_VERSION,
+    fallback: null,
+    validate: (x): x is unknown => x !== null,
+  });
+  const seq = cleanSequence(raw);
+  return seq?.bars.length ? { meter: seq.meter, bars: seq.bars } : null;
+}
+
+export function saveBackup(seq: SequenceBars, store: KeyValueStore = storage): void {
+  writeVersioned<SequenceBars>(store, BACKUP_KEY, SEQUENCE_VERSION, {
+    meter: seq.meter,
+    bars: seq.bars,
+  });
+}
+
+export function clearBackup(store: KeyValueStore = storage): void {
+  store.remove(BACKUP_KEY);
 }
