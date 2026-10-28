@@ -85,6 +85,32 @@
   white-space: normal;
 }
 
+/* A menu item's tick box: an ink outline, filled ink with a tick when ticked. */
+.box {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+}
+
+[aria-checked='true'] > .box {
+  background: var(--ink);
+}
+
+[aria-checked='true'] > .box::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0.5px;
+  width: 4px;
+  height: 9px;
+  border: solid var(--surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 .separator {
   height: 1px;
   margin: var(--space-1) calc(-1 * var(--space-2));
