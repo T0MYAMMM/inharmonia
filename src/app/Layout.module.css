@@ -190,11 +190,14 @@
   font-weight: 600;
 }
 
-/* On touch the footer's links are full targets. */
+/* On touch the brand and the footer's links are full targets. */
 @media (pointer: coarse) {
+  .brand,
   .footerNav a {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: var(--control-height);
     min-height: var(--control-height);
   }
 }
