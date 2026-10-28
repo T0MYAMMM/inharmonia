@@ -3,8 +3,9 @@
   grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
   grid-template-areas:
     'side head'
-    'side voicing';
-  grid-template-rows: auto 1fr;
+    'side voicing'
+    'sequence sequence';
+  grid-template-rows: auto 1fr auto;
   gap: var(--space-5);
   align-items: start;
 }
@@ -92,6 +93,11 @@
   grid-area: voicing;
 }
 
+.areaSequence {
+  grid-area: sequence;
+  min-width: 0;
+}
+
 .voicingBody {
   display: grid;
   gap: var(--space-3);
@@ -106,7 +112,7 @@
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'head' 'side' 'voicing';
+    grid-template-areas: 'head' 'side' 'voicing' 'sequence';
     grid-template-rows: none;
     gap: var(--space-4);
   }
