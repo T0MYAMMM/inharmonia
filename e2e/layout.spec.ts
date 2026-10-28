@@ -103,3 +103,39 @@ test.describe('touch targets', () => {
     expect(await smallTargets(page)).toEqual([]);
   });
 });
+
+test.describe('input', () => {
+  test('the dock says which input is in use, and How to play explains each', async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto('keyboard');
+    const status = page.getByTestId('input-status');
+    const howTo = page.getByTestId('how-to-play');
+    if (isMobile) {
+      await expect(status).toHaveText(/Tap the keys/);
+      await status.click();
+      await expect(howTo).toBeVisible();
+      await expect(howTo).toContainText('Tap the keys.');
+      // No computer keys on a device that has none.
+      await expect(howTo.getByRole('list')).toHaveCount(0);
+      await expect(howTo.getByRole('heading', { name: 'MIDI keyboard' })).toBeVisible();
+    } else {
+      await expect(status).toHaveText(/Computer keys/);
+      const key = page.locator('[data-midi="64"]');
+      const box = (await key.boundingBox())!;
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height - 20);
+      await expect(status).toHaveText(/Click the keys/);
+      await page.keyboard.press('a');
+      await expect(status).toHaveText(/Computer keys/);
+      await status.click();
+      const keys = howTo.getByRole('list', { name: 'Computer keys and their notes' });
+      await expect(keys.getByRole('listitem')).toHaveCount(18);
+      await expect(keys.getByRole('listitem').first()).toHaveText('AC4');
+      await expect(howTo.getByRole('heading', { name: 'MIDI keyboard' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(howTo).toBeHidden();
+      await expect(status).toBeFocused();
+    }
+  });
+});
