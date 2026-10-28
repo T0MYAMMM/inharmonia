@@ -77,6 +77,11 @@
   .header {
     margin: var(--space-2) 0 var(--space-5);
   }
+
+  /* Beside a phone's smaller h1, the lede at body size, so the page gets to Play sooner. */
+  .lede {
+    font-size: 1rem;
+  }
 }
 
 /* A short note under the lede: a version's arrangement, an edition. */
