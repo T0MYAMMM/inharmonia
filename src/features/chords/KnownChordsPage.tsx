@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
 import { audio, lights, notes } from '@/app/services';
 import { chordId, isKnownEntry, KNOWN_RULE, knownProgress, type KnownEntry } from '@/core/charts';
@@ -11,7 +11,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { KnownCheck, type CheckStatus } from './KnownCheck';
 import styles from './chords.module.css';
 
@@ -86,15 +86,11 @@ export function KnownChordsPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Chords you know</h1>
-        <p className={page.lede}>
-          Mark the chords you can already play, or play them here. A chord counts as known after{' '}
-          {KNOWN_RULE.plays} clean plays on at least {KNOWN_RULE.days} different days; chord drills
-          count too. Your marks always win. Chord charts use this to find an easier key.{' '}
-          <Link to="/chords">Chord library</Link>
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/chords', label: 'Chords' }}
+        title="Chords you know"
+        lede="Mark the chords you can already play, or play them here. Chord charts use this to find an easier key."
+      />
       <div className={styles.knownLayout}>
         <div className={styles.side}>
           <p className={styles.knownCount} data-testid="known-count">
@@ -137,6 +133,10 @@ export function KnownChordsPage() {
               );
             })}
           </div>
+          <p className={styles.knownRule}>
+            A chord counts as known after {KNOWN_RULE.plays} clean plays on at least{' '}
+            {KNOWN_RULE.days} different days; chord drills count too. Your marks always win.
+          </p>
         </div>
 
         <Card className={styles.knownDetail}>
