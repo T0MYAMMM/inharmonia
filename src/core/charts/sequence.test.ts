@@ -3,10 +3,21 @@ import { NO_CHORD } from '../content/types';
 import { chartIssues, chartToLesson } from './compile';
 import {
   barSplits,
+  clearBars,
   cleanSequence,
+  copyBar,
   EMPTY_SEQUENCE,
+  insertBars,
   isSplit,
+  moveBar,
+  readChord,
   readChords,
+  removeBar,
+  removeChord,
+  roomLeft,
+  setChord,
+  setMeter,
+  setSplit,
   sequenceChart,
   sequenceKey,
   sequenceNumerals,
@@ -102,6 +113,17 @@ describe('reading typed chords', () => {
   it('reads nothing from blank text, separators or empty bar lines', () => {
     for (const text of ['', '   ', ' , ', ' - ', '| |'])
       expect(read(text), JSON.stringify(text)).toEqual({ bars: [], issues: [] });
+  });
+});
+
+describe('reading one typed chord', () => {
+  it('normalizes it, lower-case root allowed', () => {
+    expect(readChord(' f#m7 ')).toBe('F#m7');
+    expect(readChord('C△7')).toBe('Cmaj7');
+    expect(readChord('C-7')).toBe('C-7');
+    expect(readChord('n.c.')).toBe(NO_CHORD);
+    expect(readChord('Hm')).toBeNull();
+    expect(readChord('')).toBeNull();
   });
 });
 
@@ -266,5 +288,118 @@ describe('a stored sequence', () => {
   it('keeps no more bars than a sequence holds', () => {
     const bars = Array.from({ length: 40 }, () => ({ chords: [{ symbol: 'C', beats: 4 }] }));
     expect(cleanSequence({ bars })!.bars).toHaveLength(LIMITS.barsPerSection);
+  });
+});
+
+describe('editing a sequence', () => {
+  const s = seqOf(['C', 'Am', 'F G', 'G7']);
+  const bars = (t: string) => readChords(t, 4, 32).bars;
+
+  it('puts bars in anywhere, all or none', () => {
+    expect(show(insertBars(s, 4, bars('Dm G')).bars)).toEqual([
+      'C:4',
+      'Am:4',
+      'F:2 G:2',
+      'G7:4',
+      'Dm:4',
+      'G:4',
+    ]);
+    expect(show(insertBars(s, 1, bars('E7')).bars)).toEqual([
+      'C:4',
+      'E7:4',
+      'Am:4',
+      'F:2 G:2',
+      'G7:4',
+    ]);
+    expect(show(insertBars(EMPTY_SEQUENCE, 0, bars('C')).bars)).toEqual(['C:4']);
+    const full = seqOf(Array.from({ length: 31 }, () => 'C'));
+    expect(roomLeft(full)).toBe(1);
+    expect(insertBars(full, 31, bars('F G'))).toBe(full);
+    expect(insertBars(full, 31, bars('F')).bars).toHaveLength(32);
+    expect(insertBars(s, 5, bars('C'))).toBe(s);
+    expect(insertBars(s, -1, bars('C'))).toBe(s);
+    expect(insertBars(s, 0, [])).toBe(s);
+  });
+
+  it('does not share bars with what was inserted', () => {
+    const added = bars('C');
+    const next = insertBars(EMPTY_SEQUENCE, 0, added);
+    added[0]!.chords[0]!.symbol = 'F';
+    expect(show(next.bars)).toEqual(['C:4']);
+  });
+
+  it('removes, moves, copies and clears bars', () => {
+    expect(show(removeBar(s, 2).bars)).toEqual(['C:4', 'Am:4', 'G7:4']);
+    expect(removeBar(s, 4)).toBe(s);
+    expect(show(moveBar(s, 0, 3).bars)).toEqual(['Am:4', 'F:2 G:2', 'G7:4', 'C:4']);
+    expect(show(moveBar(s, 3, 1).bars)).toEqual(['C:4', 'G7:4', 'Am:4', 'F:2 G:2']);
+    expect(moveBar(s, 1, 1)).toBe(s);
+    expect(moveBar(s, 1, 4)).toBe(s);
+    expect(show(copyBar(s, 2).bars)).toEqual(['C:4', 'Am:4', 'F:2 G:2', 'F:2 G:2', 'G7:4']);
+    const copied = copyBar(s, 2);
+    expect(copied.bars[3]).not.toBe(copied.bars[2]);
+    expect(copyBar(seqOf(Array.from({ length: 32 }, () => 'C')), 0).bars).toHaveLength(32);
+    expect(clearBars(s).bars).toEqual([]);
+    expect(clearBars(EMPTY_SEQUENCE)).toBe(EMPTY_SEQUENCE);
+  });
+
+  it('splits a bar another way, repeating or dropping chords', () => {
+    expect(show(setSplit(s, 0, [2, 2]).bars)[0]).toBe('C:2 C:2');
+    expect(show(setSplit(s, 2, [3, 1]).bars)[2]).toBe('F:3 G:1');
+    expect(show(setSplit(s, 2, [1, 1, 1, 1]).bars)[2]).toBe('F:1 G:1 G:1 G:1');
+    expect(show(setSplit(s, 2, [4]).bars)[2]).toBe('F:4');
+    expect(setSplit(s, 2, [2, 2])).toBe(s);
+    expect(setSplit(s, 2, [2, 1])).toBe(s); // not a 4/4 split
+    expect(setSplit(s, 9, [4])).toBe(s);
+  });
+
+  it('changes a chord as typed, and only to a chord', () => {
+    expect(show(setChord(s, 2, 1, 'G7').bars)[2]).toBe('F:2 G7:2');
+    expect(show(setChord(s, 2, 1, ' g7 ').bars)[2]).toBe('F:2 G7:2');
+    expect(show(setChord(s, 0, 0, 'C△7').bars)[0]).toBe('Cmaj7:4');
+    expect(show(setChord(s, 0, 0, 'nc').bars)[0]).toBe(`${NO_CHORD}:4`);
+    expect(setChord(s, 0, 0, 'Hm')).toBe(s);
+    expect(setChord(s, 0, 0, 'C')).toBe(s);
+    expect(setChord(s, 0, 1, 'D')).toBe(s);
+  });
+
+  it('removes a chord, giving its beats to its neighbour', () => {
+    const bar = (text: string, beats: 3 | 4 = 4) => ({
+      ...EMPTY_SEQUENCE,
+      meter: { beats, unit: 4 as const },
+      bars: readChords(text, beats, 32).bars,
+    });
+    expect(show(removeChord(bar('| C . G A |'), 0, 1).bars)).toEqual(['C:3 A:1']);
+    expect(show(removeChord(bar('| C . G A |'), 0, 0).bars)).toEqual(['G:3 A:1']);
+    expect(show(removeChord(bar('| C G A B |'), 0, 3).bars)).toEqual(['C:1 G:1 A:2']);
+    expect(show(removeChord(bar('| C G A B |', 3), 0, 1).bars)).toEqual(['C:1 A:1 B:1']);
+    const one = bar('C');
+    expect(removeChord(one, 0, 0)).toBe(one);
+    expect(removeChord(s, 2, 5)).toBe(s);
+  });
+
+  it('every edit leaves every bar a split', () => {
+    let x = seqOf(['C', 'Am', 'F G', 'G7']);
+    x = setSplit(x, 0, [1, 2, 1]);
+    x = removeChord(x, 0, 1);
+    x = setMeter(x, 3);
+    x = setSplit(x, 3, [1, 1, 0.5, 0.5]);
+    x = removeChord(x, 3, 0);
+    x = copyBar(x, 3);
+    x = setMeter(x, 4);
+    for (const b of x.bars)
+      expect(
+        isSplit(
+          b.chords.map((c) => c.beats),
+          x.meter.beats,
+        ),
+      ).toBe(true);
+  });
+
+  it('changes the meter, splitting every bar evenly', () => {
+    const waltz = setMeter({ ...EMPTY_SEQUENCE, bars: bars('| C . . G | Am F G | D |') }, 3);
+    expect(waltz.meter).toEqual({ beats: 3, unit: 4 });
+    expect(show(waltz.bars)).toEqual(['C:2 G:1', 'Am:1 F:1 G:1', 'D:3']);
+    expect(setMeter(s, 4)).toBe(s);
   });
 });
