@@ -192,11 +192,6 @@ export function SongPage() {
               </nav>
             ) : null}
             {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
-            {lesson.source.kind === 'public-domain' ? (
-              <p className={page.small} data-testid="song-edition">
-                Notes from {lesson.source.edition}.
-              </p>
-            ) : null}
           </>
         }
         actions={
@@ -219,6 +214,12 @@ export function SongPage() {
         settings={arrangementControls(false)}
         fullScreenSettings={arrangementControls(true)}
       />
+      {/* Attribution, not something to read before playing: at the end of the page. */}
+      {lesson.source.kind === 'public-domain' ? (
+        <p className={styles.source} data-testid="song-edition">
+          Source: {lesson.source.edition}.
+        </p>
+      ) : null}
     </>
   );
 }
