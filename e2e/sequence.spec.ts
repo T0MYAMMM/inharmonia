@@ -228,6 +228,8 @@ test.describe('chord sequence', () => {
     await page.mouse.up();
     await expect(page.locator('[data-drop]')).toHaveCount(0);
     await expect.poll(() => bars(page)).toEqual(['Am', 'F', 'C', 'G']);
+    // Escape put the drag away, not the choice of bar.
+    await expect(page.locator('[data-bar="2"]')).toHaveAttribute('aria-selected', 'true');
   });
 
   test('on touch, the chosen bar drags by its grip, and a bar itself does not', async ({
