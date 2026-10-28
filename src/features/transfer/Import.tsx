@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   applyImport,
   previewImport,
@@ -10,9 +10,11 @@ import { Field } from '@/ui/Field';
 import { FilePicker } from '@/ui/FilePicker';
 import { Select } from '@/ui/Select';
 import { TextArea } from '@/ui/TextArea';
+import { useFileDrop } from '@/ui/useFileDrop';
 import styles from './transfer.module.css';
 
 const KIND = { song: 'Song', chart: 'Chart', progression: 'Progression' } as const;
+const ACCEPT = 'application/json,.json';
 
 /**
  * Bring songs, charts and progressions in from a file: pick one, drop one on
@@ -31,7 +33,6 @@ export function ImportControls({
   const [choices, setChoices] = useState<Record<number, DuplicateChoice>>({});
   const [pasted, setPasted] = useState('');
   const [result, setResult] = useState('');
-  const [over, setOver] = useState(false);
 
   const show = (text: string) => {
     setPreview(previewImport(text));
@@ -42,11 +43,12 @@ export function ImportControls({
   const readFile = async (f: File | undefined) => {
     if (f) show(await f.text());
   };
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setOver(false);
-    void readFile(e.dataTransfer.files[0]);
-  };
+  // The whole area takes a dropped export; anything else is refused in the status.
+  const { over, dropProps } = useFileDrop({
+    accept: ACCEPT,
+    onFiles: ([file]) => void readFile(file),
+    onReject: () => setResult("That isn't an Inharmonia export. Choose a .json file."),
+  });
   const doImport = async () => {
     if (!preview) return;
     try {
@@ -69,23 +71,12 @@ export function ImportControls({
     !preview || !!preview.fatal || preview.errors.length > 0 || preview.rows.length === 0;
 
   return (
-    <div
-      className={styles.drop}
-      data-over={over || undefined}
-      onDragOver={(e) => {
-        if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) {
-          e.preventDefault();
-          setOver(true);
-        }
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-    >
+    <div className={styles.drop} data-over={over || undefined} {...dropProps}>
       {children(
         <span className={styles.actions}>
           <FilePicker
             size="small"
-            accept="application/json,.json"
+            accept={ACCEPT}
             acceptDrop={false}
             onFiles={([file]) => void readFile(file)}
             data-testid="import-file"
