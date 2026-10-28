@@ -19,6 +19,15 @@ test.describe('studio', () => {
     ).toHaveAttribute('aria-current', 'page');
   });
 
+  test('offers three ways in, and "Set up the take" moves to the take setup', async ({ page }) => {
+    await page.goto('studio');
+    for (const name of ['Sing a take', 'Compose in MIDI', 'Edit a MIDI file'])
+      await expect(page.getByRole('region', { name })).toBeVisible();
+    await page.getByRole('button', { name: 'Set up the take' }).click();
+    await expect(page.getByRole('heading', { name: 'Set up the take' })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Set up the take' })).toBeInViewport();
+  });
+
   test('explains a blocked microphone', async ({ page }) => {
     await refuseMic(page, 'NotAllowedError');
     await page.goto('studio');

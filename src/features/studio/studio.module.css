@@ -7,11 +7,82 @@
   border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+  /* Scrolled to, as by "Set up the take", a card keeps a little room above it. */
+  scroll-margin-top: var(--space-4);
 }
 
 .cardTitle {
   margin: 0;
   font-size: 1.25rem;
+}
+
+/* The three ways in: alike in size and weight, side by side. */
+.ways {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* Each card's action sits on its bottom edge, level with the others'. */
+.way {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+/* A file dragged over the card that takes it. */
+.way[data-over] {
+  outline: 2px dashed var(--ink);
+  outline-offset: 4px;
+}
+
+.wayText {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Margins, not a gap: the empty live region for a refused file takes no room. */
+.way > [role='alert'],
+.way > [role='status']:not(:empty) {
+  margin-top: var(--space-3);
+}
+
+/* Said like a Field's error. */
+.refused {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.refused:not(:empty)::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--wrong);
+  vertical-align: 0.1em;
+}
+
+.wayAction {
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+@media (max-width: 760px) {
+  .ways {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
 }
 
 .setup,

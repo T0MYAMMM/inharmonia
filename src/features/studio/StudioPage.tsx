@@ -25,7 +25,6 @@ import { useSettings } from '@/state/settings';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
-import { FilePicker } from '@/ui/FilePicker';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
@@ -44,8 +43,9 @@ import type { EditorTrace } from './editorModel';
 import { SongEditor } from './SongEditor';
 import { MidiWorkspace } from './MidiWorkspace';
 import { blankMidiProject } from '@/core/midi/adapters';
-import { parseMidi, type MidiProject } from '@/core/midi/smf';
+import type { MidiProject } from '@/core/midi/smf';
 import { TakeView } from './TakeView';
+import { WaysIn } from './WaysIn';
 import styles from './studio.module.css';
 
 const METERS = [
@@ -96,20 +96,16 @@ export function StudioPage() {
   const [midiSession, setMidiSession] = useState<{ key: number; project: MidiProject } | null>(
     null,
   );
-  const [midiError, setMidiError] = useState('');
   const openMidi = (project: MidiProject) => {
     ctrl.disable();
     setMidiSession({ key: Date.now(), project });
-    setMidiError('');
     window.scrollTo?.(0, 0);
   };
-  const importMidi = async (file?: File) => {
-    if (!file) return;
-    try {
-      openMidi(parseMidi(await file.arrayBuffer(), file.name));
-    } catch (error) {
-      setMidiError(error instanceof Error ? error.message : 'Invalid MIDI file.');
-    }
+  /** Bring the take setup into view and move focus to it. */
+  const toTake = () => {
+    const title = document.getElementById('setup-title');
+    title?.closest('section')?.scrollIntoView({ block: 'start' });
+    title?.focus({ preventScroll: true });
   };
 
   const tryDraft = (lesson: Lesson) => {
@@ -188,44 +184,15 @@ export function StudioPage() {
             Studio <BetaBadge />
           </h1>
           <p className={page.lede}>
-            Create music by singing, open an existing MIDI file, or compose in the new multitrack
-            piano-roll editor. MIDI stays on this device until you choose to export it.
+            Three ways to make a song: sing it, compose it on a piano roll, or bring in a MIDI file.
+            Everything stays on this device until you export it.
           </p>
         </div>
 
-        <section className={styles.card} aria-labelledby="midi-studio-title">
-          <h2 id="midi-studio-title" className={styles.cardTitle}>
-            MIDI editor
-          </h2>
-          <p className={styles.note}>
-            Import .mid or .midi from a converter or DAW, draw and resize notes on a multitrack
-            piano roll, adjust velocity and timing, preview, and export MIDI again.
-          </p>
-          <div className={styles.row}>
-            <Button
-              variant="primary"
-              onClick={() => openMidi(blankMidiProject())}
-              data-testid="studio-new-midi"
-            >
-              New MIDI
-            </Button>
-            <FilePicker
-              accept=".mid,.midi,audio/midi,audio/x-midi"
-              data-testid="studio-import-midi"
-              onFiles={([file]) => void importMidi(file)}
-            >
-              Open MIDI file
-            </FilePicker>
-          </div>
-          {midiError ? (
-            <p role="alert" className={styles.problem}>
-              {midiError}
-            </p>
-          ) : null}
-        </section>
+        <WaysIn onSing={toTake} onNew={() => openMidi(blankMidiProject())} onOpen={openMidi} />
 
         <section className={styles.card} aria-labelledby="setup-title">
-          <h2 id="setup-title" className={styles.cardTitle}>
+          <h2 id="setup-title" className={styles.cardTitle} tabIndex={-1}>
             Set up the take
           </h2>
           <div className={styles.setup}>
