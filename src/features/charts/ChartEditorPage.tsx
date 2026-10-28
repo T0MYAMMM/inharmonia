@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import {
   DEFAULT_VIEW,
   emptyChart,
@@ -8,7 +8,7 @@ import {
   type UserChart,
 } from '@/core/charts';
 import { getChart, newChartId, saveChart } from '@/state/mySongs';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
 import { ChartEditor } from './ChartEditor';
 import styles from './charts.module.css';
 
@@ -34,14 +34,7 @@ export function ChartEditorPage() {
   const existing = chartId && loaded?.id === chartId ? loaded.chart : null;
   if (chartId && (!loaded || loaded.id !== chartId)) return <p className={styles.note}>Loading…</p>;
   if (chartId && !existing)
-    return (
-      <div className={songStyles.header}>
-        <h1>Chart not found</h1>
-        <p>
-          <Link to="/songs">Back to Songs</Link>
-        </p>
-      </div>
-    );
+    return <PageHeader crumb={{ to: '/songs', label: 'Songs' }} title="Chart not found" />;
 
   const save = async (chart: ChordChart) => {
     setSaving(true);
@@ -61,17 +54,15 @@ export function ChartEditorPage() {
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to={existing ? `/songs/charts/${existing.id}` : '/songs'}>
-            {existing ? '← Back to the chart' : 'Songs'}
-          </Link>
-        </p>
-        <h1>{existing ? `Edit ${existing.chart.title}` : 'New chord chart'}</h1>
-        <p className={songStyles.meta}>
-          Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept.
-        </p>
-      </div>
+      <PageHeader
+        crumb={
+          existing
+            ? { to: `/songs/charts/${existing.id}`, label: existing.chart.title }
+            : { to: '/songs', label: 'Songs' }
+        }
+        title={existing ? `Edit ${existing.chart.title}` : 'New chord chart'}
+        lede="Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept."
+      />
       <ChartEditor
         initial={existing?.chart ?? emptyChart('')}
         saving={saving}

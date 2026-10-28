@@ -14,9 +14,9 @@ export interface PageHeaderProps {
   crumb?: Crumb;
   /** The page's one h1. */
   title: ReactNode;
-  /** Badges that start the lede, like Private and Chart. */
+  /** Badges at the start of the lede's first line, like Private and Chart. */
   tags?: ReactNode;
-  /** What the page is for, or the facts of what is on it. A string is one paragraph. */
+  /** What the page is for, or the facts of what is on it: a string, or paragraphs. */
   lede?: ReactNode;
   /** What you can do here, in one row that wraps. */
   actions?: ReactNode;
@@ -28,7 +28,6 @@ export interface PageHeaderProps {
  * don't set their own.
  */
 export function PageHeader({ crumb, title, tags, lede, actions }: PageHeaderProps) {
-  const tagLine = tags ? <span className={styles.tags}>{tags}</span> : null;
   return (
     <header className={styles.header}>
       {crumb ? (
@@ -39,17 +38,8 @@ export function PageHeader({ crumb, title, tags, lede, actions }: PageHeaderProp
       <h1>{title}</h1>
       {tags || lede ? (
         <div className={styles.lede}>
-          {typeof lede === 'string' || !lede ? (
-            <p>
-              {tagLine}
-              {lede}
-            </p>
-          ) : (
-            <>
-              {tagLine ? <p>{tagLine}</p> : null}
-              {lede}
-            </>
-          )}
+          {tags ? <span className={styles.tags}>{tags}</span> : null}
+          {typeof lede === 'string' ? <p>{lede}</p> : lede}
         </div>
       ) : null}
       {actions ? <div className={styles.actions}>{actions}</div> : null}
