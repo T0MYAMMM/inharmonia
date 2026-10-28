@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { audio, getTransport, lights, notes } from '@/app/services';
-import { useMediaQuery } from '@/app/hooks';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { FILL_CATEGORIES, getFill } from '@/content/fills';
 import {
   changeKey,
@@ -87,7 +87,7 @@ export function FillPage() {
   };
 
   const exercise = fill && change ? exerciseFor(fill, key, mode, change) : null;
-  const small = useMediaQuery('(max-width: 600px)');
+  const small = useMediaQuery(BREAKPOINTS.compact);
   if (!fill || !exercise) return <NotFoundPage />;
 
   const keyLabel = (k: string) => `${prettyAccidentals(k)}${mode === 'minor' ? ' minor' : ''}`;
@@ -193,7 +193,7 @@ function FillTrainer({
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
   const notation = useSettings((s) => s.notation);
   const accidentalStyle = useSettings((s) => s.accidentalStyle);
-  const small = useMediaQuery('(max-width: 600px)');
+  const small = useMediaQuery(BREAKPOINTS.compact);
 
   useEffect(() => {
     ctrl.attach();

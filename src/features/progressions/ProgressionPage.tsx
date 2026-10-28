@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useMediaQuery } from '@/app/hooks';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { PATTERN_LIST, PATTERNS, ARPEGGIO_8THS } from '@/content/patterns';
 import { getProgression } from '@/content/progressions';
@@ -67,7 +67,7 @@ export function ProgressionPage() {
     const f = fillId ? getFill(fillId) : undefined;
     return f ? withFills(base, f, { tonic: key, mode: progression.mode }) : base;
   }, [progression, key, style, smooth, pattern, fillId]);
-  const small = useMediaQuery('(max-width: 600px)');
+  const small = useMediaQuery(BREAKPOINTS.compact);
   if (!progression || !compiled) return <NotFoundPage />;
 
   const keyLabel = (k: string) =>

@@ -42,6 +42,20 @@ export function usePrefersReducedMotion(): boolean {
   return useMediaQuery('(prefers-reduced-motion: reduce)');
 }
 
+/**
+ * The breakpoints in tokens.css, as media queries for useMediaQuery. CSS
+ * can't read custom properties in a media query, so the widths are repeated
+ * here once rather than in each component.
+ */
+export const BREAKPOINTS = {
+  /** Phones: rows stack, settings fold away. */
+  compact: '(max-width: 600px)',
+  /** Small tablets: side-by-side panels become one column. */
+  medium: '(max-width: 760px)',
+  /** The nav and four-up grids give way. */
+  wide: '(max-width: 960px)',
+} as const;
+
 export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
     (cb) => {

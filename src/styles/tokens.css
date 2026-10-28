@@ -60,6 +60,7 @@
    *   compact  600px  phones: stack rows, fold settings away
    *   medium   760px  small tablets: side-by-side panels become one column
    *   wide     960px  the nav and four-up grids give way
+   * In TypeScript they are BREAKPOINTS in src/app/hooks.ts.
    */
 
   /*

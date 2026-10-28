@@ -92,11 +92,11 @@ export function KnownChordsPage() {
         lede="Mark the chords you can already play, or play them here. Chord charts use this to find an easier key."
       />
       <div className={styles.knownLayout}>
-        <div className={styles.side}>
+        <div className={`${styles.side} ${styles.knownSide}`}>
           <p className={styles.knownCount} data-testid="known-count">
             {known === 1 ? '1 chord known' : `${known} chords known`}
           </p>
-          <div className={styles.pills} role="group" aria-label="Chord kind">
+          <div className={styles.kinds} role="group" aria-label="Chord kind">
             {KINDS.map((k) => (
               <button
                 key={k.id}

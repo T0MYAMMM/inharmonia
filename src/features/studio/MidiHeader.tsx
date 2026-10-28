@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { useMediaQuery } from '@/app/hooks';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { Menu, MenuItem, MenuSeparator } from '@/ui/Menu';
@@ -12,15 +12,6 @@ import { ChevronDownIcon, MoreIcon, PianoIcon, ZoomPitchIcon, ZoomTimeIcon } fro
 import { MIDI_ACCEPT } from './midiFiles';
 import { ROW_RANGE, SNAPS, ZOOM_RANGE } from './midiSettings';
 import styles from './midiHeader.module.css';
-
-/** The medium breakpoint: below it the header folds its tools into More. */
-const COMPACT = '(max-width: 760px)';
-/**
- * The wide breakpoint: below it Keyboard is its icon and the groups sit
- * closer, so the title shares the row with the tools instead of taking one
- * of its own.
- */
-const NARROW = '(max-width: 960px)';
 
 export interface MidiHeaderProps {
   title: string;
@@ -51,8 +42,10 @@ export interface MidiHeaderProps {
  * is the page's crumb.
  */
 export function MidiHeader(props: MidiHeaderProps) {
-  const compact = useMediaQuery(COMPACT);
-  const narrow = useMediaQuery(NARROW);
+  // Below the medium breakpoint the tools fold into More; below the wide one
+  // Keyboard is its icon and the groups sit closer, so the title shares a row.
+  const compact = useMediaQuery(BREAKPOINTS.medium);
+  const narrow = useMediaQuery(BREAKPOINTS.wide);
   const { over, dropProps } = useFileDrop({
     accept: MIDI_ACCEPT,
     onFiles: ([file]) => file && props.onDropFile(file),
@@ -181,7 +174,7 @@ export interface MidiSettingsProps {
  * Below 760px they fold into one line that opens.
  */
 export function MidiSettings(props: MidiSettingsProps) {
-  const compact = useMediaQuery(COMPACT);
+  const compact = useMediaQuery(BREAKPOINTS.medium);
   const viewId = useId();
   const count = `${props.meter} · ${props.notes} note${props.notes === 1 ? '' : 's'}`;
   const snap = SNAPS.find((s) => s.beats === props.step)?.label ?? '';
