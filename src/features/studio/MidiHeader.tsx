@@ -1,16 +1,20 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
+import { useMediaQuery } from '@/app/hooks';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
-import { Menu, MenuItem } from '@/ui/Menu';
+import { Menu, MenuItem, MenuSeparator } from '@/ui/Menu';
 import { NumberInput } from '@/ui/NumberInput';
 import { RangeInput } from '@/ui/RangeInput';
 import { Select } from '@/ui/Select';
 import { useFileDrop } from '@/ui/useFileDrop';
 import { EditorHeader, EditorTitle, PlayButton, ToolGroup, UndoRedo } from './EditorHeader';
-import { ChevronDownIcon, PianoIcon, ZoomPitchIcon, ZoomTimeIcon } from './icons';
+import { ChevronDownIcon, MoreIcon, PianoIcon, ZoomPitchIcon, ZoomTimeIcon } from './icons';
 import { MIDI_ACCEPT } from './midiFiles';
 import { ROW_RANGE, SNAPS, ZOOM_RANGE } from './midiSettings';
 import styles from './midiHeader.module.css';
+
+/** The medium breakpoint: below it the header folds its tools into More. */
+const COMPACT = '(max-width: 760px)';
 
 export interface MidiHeaderProps {
   title: string;
@@ -36,81 +40,127 @@ export interface MidiHeaderProps {
   onSave: () => void;
 }
 
-/** The workspace's top row: back and the title, then history, playback, file and save. */
+/**
+ * The workspace's top row: back and the title, then history, playback, file
+ * and save. Below 760px it keeps back, the title, Play and Keyboard, and puts
+ * the rest under More (⋯).
+ */
 export function MidiHeader(props: MidiHeaderProps) {
+  const compact = useMediaQuery(COMPACT);
   const { over, dropProps } = useFileDrop({
     accept: MIDI_ACCEPT,
     onFiles: ([file]) => file && props.onDropFile(file),
     onReject: props.onRefuse,
   });
+
+  const fileItems = (
+    <>
+      <MenuItem onSelect={props.onNew} data-testid="midi-new">
+        New MIDI
+      </MenuItem>
+      <MenuItem onSelect={props.onOpen} data-testid="midi-open">
+        Open MIDI file
+      </MenuItem>
+      <MenuItem onSelect={props.onExport} data-testid="midi-export">
+        Export .mid
+      </MenuItem>
+    </>
+  );
+  const playback = (
+    <ToolGroup label="Playback">
+      <PlayButton
+        playing={props.playing}
+        stopLabel="Pause"
+        onClick={props.onPlay}
+        data-testid="midi-play"
+      />
+      <Button
+        icon={compact}
+        className={styles.pressed}
+        aria-label={compact ? 'Keyboard' : undefined}
+        aria-pressed={props.showKeys}
+        onClick={() => props.onShowKeys(!props.showKeys)}
+        title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
+        data-testid="midi-keyboard-toggle"
+      >
+        <PianoIcon />
+        {compact ? null : 'Keyboard'}
+      </Button>
+    </ToolGroup>
+  );
+
+  let tools: ReactNode;
+  if (compact) {
+    tools = (
+      <>
+        {playback}
+        <ToolGroup>
+          <Menu label={<MoreIcon />} aria-label="More" icon align="end" data-testid="midi-more">
+            <MenuItem onSelect={props.onUndo} disabled={!props.canUndo}>
+              Undo
+            </MenuItem>
+            <MenuItem onSelect={props.onRedo} disabled={!props.canRedo}>
+              Redo
+            </MenuItem>
+            <MenuSeparator />
+            {fileItems}
+            <MenuSeparator />
+            <MenuItem onSelect={props.onSave} data-testid="midi-save-song">
+              Save to My songs
+            </MenuItem>
+          </Menu>
+        </ToolGroup>
+      </>
+    );
+  } else {
+    tools = (
+      <>
+        <UndoRedo
+          canUndo={props.canUndo}
+          canRedo={props.canRedo}
+          onUndo={props.onUndo}
+          onRedo={props.onRedo}
+        />
+        {playback}
+        <ToolGroup label="File">
+          <Menu
+            label={
+              <>
+                File <ChevronDownIcon />
+              </>
+            }
+            align="end"
+            className={styles.fileMenu}
+            data-over={over || undefined}
+            data-testid="midi-file-menu"
+            {...dropProps}
+          >
+            {fileItems}
+          </Menu>
+          <Button onClick={props.onSave} data-testid="midi-save-song">
+            Save to My songs
+          </Button>
+        </ToolGroup>
+      </>
+    );
+  }
+
   return (
     <EditorHeader
       data-testid="midi-header"
       start={
         <>
           {props.onBack ? (
-            <Button variant="ghost" onClick={props.onBack}>
-              ← Back to Studio
+            // The words hide on a phone; the arrow alone is the button there.
+            <Button variant="ghost" className={styles.back} onClick={props.onBack}>
+              <span aria-hidden="true">←</span>
+              <span className={styles.backText}>Back to Studio</span>
             </Button>
           ) : null}
           <EditorTitle value={props.title} onChange={(e) => props.onTitle(e.target.value)} />
         </>
       }
-      tools={
-        <>
-          <UndoRedo
-            canUndo={props.canUndo}
-            canRedo={props.canRedo}
-            onUndo={props.onUndo}
-            onRedo={props.onRedo}
-          />
-          <ToolGroup label="Playback">
-            <PlayButton
-              playing={props.playing}
-              stopLabel="Pause"
-              onClick={props.onPlay}
-              data-testid="midi-play"
-            />
-            <Button
-              className={styles.pressed}
-              aria-pressed={props.showKeys}
-              onClick={() => props.onShowKeys(!props.showKeys)}
-              title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
-              data-testid="midi-keyboard-toggle"
-            >
-              <PianoIcon />
-              Keyboard
-            </Button>
-          </ToolGroup>
-          <ToolGroup label="File">
-            <Menu
-              label={
-                <>
-                  File <ChevronDownIcon />
-                </>
-              }
-              align="end"
-              className={styles.fileMenu}
-              data-over={over || undefined}
-              data-testid="midi-file-menu"
-              {...dropProps}
-            >
-              <MenuItem onSelect={props.onNew} data-testid="midi-new">
-                New MIDI
-              </MenuItem>
-              <MenuItem onSelect={props.onOpen} data-testid="midi-open">
-                Open MIDI file
-              </MenuItem>
-              <MenuItem onSelect={props.onExport} data-testid="midi-export">
-                Export .mid
-              </MenuItem>
-            </Menu>
-            <Button onClick={props.onSave} data-testid="midi-save-song">
-              Save to My songs
-            </Button>
-          </ToolGroup>
-        </>
-      }
+      tools={tools}
     />
   );
 }
@@ -130,11 +180,17 @@ export interface MidiSettingsProps {
   notes: number;
 }
 
-/** The second row: the song's settings on the left, the view on the right. */
+/**
+ * The second row: the song's settings on the left, the view on the right.
+ * Below 760px they fold into one line that opens.
+ */
 export function MidiSettings(props: MidiSettingsProps) {
+  const compact = useMediaQuery(COMPACT);
   const viewId = useId();
-  return (
-    <div className={styles.settings} data-testid="midi-settings">
+  const count = `${props.meter} · ${props.notes} note${props.notes === 1 ? '' : 's'}`;
+  const snap = SNAPS.find((s) => s.beats === props.step)?.label ?? '';
+  const fields = (
+    <>
       <div role="group" aria-label="Song settings" className={styles.song}>
         <Field label="Tempo" inline>
           <NumberInput
@@ -158,9 +214,8 @@ export function MidiSettings(props: MidiSettingsProps) {
             ))}
           </Select>
         </Field>
-        <span className={styles.count}>
-          {props.meter} · {props.notes} note{props.notes === 1 ? '' : 's'}
-        </span>
+        {/* Folded, the summary says it. */}
+        {compact ? null : <span className={styles.count}>{count}</span>}
       </div>
       <div role="group" aria-labelledby={viewId} className={styles.view}>
         <span id={viewId} className={styles.viewLabel}>
@@ -193,6 +248,24 @@ export function MidiSettings(props: MidiSettingsProps) {
           />
         </label>
       </div>
+    </>
+  );
+
+  if (compact)
+    return (
+      <details className={styles.fold} data-testid="midi-settings">
+        <summary className={styles.summary}>
+          <span className={styles.summaryText}>
+            Tempo {props.tempo} · Snap {snap} · {count}
+          </span>
+          <ChevronDownIcon />
+        </summary>
+        <div className={styles.foldBody}>{fields}</div>
+      </details>
+    );
+  return (
+    <div className={styles.settings} data-testid="midi-settings">
+      {fields}
     </div>
   );
 }
