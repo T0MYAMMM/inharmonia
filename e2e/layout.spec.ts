@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { writeMidi } from '../src/core/midi/smf';
+import { openMidiMore } from './studioHelpers';
 
 /** Every route, and the not-found states of the pages that load a saved item. */
 const ROUTES = [
@@ -137,5 +139,103 @@ test.describe('input', () => {
       await expect(howTo).toBeHidden();
       await expect(status).toBeFocused();
     }
+  });
+});
+
+/** A chord chart with sections and a note, as a player would have one. */
+async function makeChart(page: Page) {
+  await page.goto('songs/charts/new');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByTestId('chart-title').fill('Harbour lights');
+  await page.getByTestId('chart-notes').fill('Slow down in the last chorus.');
+  await page.getByTestId('add-section').selectOption('Verse');
+  await page.getByTestId('edit-text-0').click();
+  await page.getByTestId('bars-text').fill('| C | G | Am | F |\n| C | G | F | C |');
+  await page.getByTestId('bars-apply').click();
+  await page.getByTestId('chart-save').click();
+  await expect(page.getByRole('heading', { name: 'Harbour lights', level: 1 })).toBeVisible();
+}
+
+/** A song of your own, from a MIDI file opened in Studio and saved. */
+async function makeMySong(page: Page) {
+  await page.goto('studio');
+  await page.getByTestId('studio-import-midi').setInputFiles({
+    name: 'Evening tune.mid',
+    mimeType: 'audio/midi',
+    buffer: Buffer.from(
+      writeMidi({
+        title: 'Evening tune',
+        ppq: 480,
+        tempo: 90,
+        meter: { beats: 4, unit: 4 },
+        tempos: [{ beat: 0, bpm: 90 }],
+        meters: [{ beat: 0, numerator: 4, denominator: 4 }],
+        tracks: [
+          {
+            id: 'melody',
+            name: 'Melody',
+            channel: 0,
+            program: 0,
+            muted: false,
+            notes: [60, 64, 67, 72, 67, 64, 65, 69].map((midi, i) => ({
+              id: `n${i}`,
+              midi,
+              startBeat: i,
+              beats: 1,
+              velocity: 90,
+            })),
+          },
+        ],
+      }),
+    ),
+  });
+  await openMidiMore(page);
+  await page.getByTestId('midi-save-song').click();
+  await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
+  await expect(page.getByRole('heading', { name: 'Evening tune', level: 1 })).toBeVisible();
+}
+
+test.describe('Play on a phone', () => {
+  test.skip(({ isMobile }) => !isMobile, 'a 360x780 phone is the mobile project');
+
+  /** Play's whole button inside the first screen, once the page has settled. */
+  async function playInFirstScreen(page: Page) {
+    const play = page.getByTestId('play');
+    await expect(play).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    // Long enough for anything that would scroll the page on load to have done it.
+    await page.waitForTimeout(1500);
+    const box = await play.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom, height: window.innerHeight, scrolled: window.scrollY };
+    });
+    expect(box.scrolled, 'the page scrolled by itself').toBe(0);
+    expect(box.top, 'Play is above the screen').toBeGreaterThanOrEqual(0);
+    expect(box.bottom, `Play ends ${Math.round(box.bottom)}px down`).toBeLessThanOrEqual(
+      box.height,
+    );
+  }
+
+  for (const [name, route] of [
+    ['a song', 'songs/minuet-in-g-easy'],
+    ['a fill', 'fills/step-up'],
+    ['a progression', 'progressions/ii-v-i'],
+  ] as const) {
+    test(`on ${name}, Play is in the first screen`, async ({ page }) => {
+      await page.goto(route);
+      await playInFirstScreen(page);
+    });
+  }
+
+  test('on a chord chart, Play is in the first screen', async ({ page }) => {
+    await makeChart(page);
+    await page.reload();
+    await playInFirstScreen(page);
+  });
+
+  test('on a song of your own, Play is in the first screen', async ({ page }) => {
+    await makeMySong(page);
+    await page.reload();
+    await playInFirstScreen(page);
   });
 });
