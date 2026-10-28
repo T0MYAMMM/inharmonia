@@ -65,6 +65,11 @@
     flex: 1;
   }
 
+  /* A Segmented keeps its options on one line; the buttons beside it share the rest. */
+  .row > .group > [role='radiogroup'] {
+    flex: none;
+  }
+
   .row > .group + .group::before {
     display: none;
   }

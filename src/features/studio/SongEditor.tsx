@@ -265,33 +265,30 @@ export function SongEditor(props: SongEditorProps) {
                 onClick={play}
                 data-testid="editor-play"
               />
+              <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)} tone="dusk">
+                Chords
+              </Toggle>
             </ToolGroup>
           </>
         }
       />
 
-      <ToolRow>
-        {props.take ? (
-          <ToolGroup>
+      {/* With a take: which to hear, and its pitch line. Without one there is neither. */}
+      {props.take ? (
+        <ToolRow>
+          <ToolGroup label="Your take">
             <Segmented
               label="Hear"
               value={playback.source}
               options={HEAR}
               onChange={(v) => playback.setSource(v)}
             />
-          </ToolGroup>
-        ) : null}
-        <ToolGroup label="Listen and look">
-          <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)}>
-            Play chords
-          </Toggle>
-          {props.take ? (
             <Toggle pressed={showTrace} onChange={setShowTrace}>
               Pitch line
             </Toggle>
-          ) : null}
-        </ToolGroup>
-      </ToolRow>
+          </ToolGroup>
+        </ToolRow>
+      ) : null}
 
       <ToolRow>
         <ToolGroup>
