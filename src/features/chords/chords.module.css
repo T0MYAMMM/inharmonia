@@ -92,6 +92,11 @@
   grid-area: voicing;
 }
 
+.voicingBody {
+  display: grid;
+  gap: var(--space-3);
+}
+
 /* On narrow screens the chord comes first, then the pickers, then the details. */
 @media (max-width: 860px) {
   .layout {
