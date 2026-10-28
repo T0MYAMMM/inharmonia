@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { PROGRESSIONS } from '@/content/progressions';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { withLyric } from '../charts/lyrics';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, DEFAULT_VIEW, type ChordChart } from '../charts/types';
 import type { MidiProject } from '../midi/smf';
@@ -48,7 +49,10 @@ function parsed(text: string): ParsedFile {
   return p;
 }
 
-/** Back to a file item, the way the app exports what it imported. */
+/**
+ * Back to a file item, the way the app exports what it imported, Include
+ * lyrics ticked: a chart without lyrics is written the same either way.
+ */
 function reexport(i: ImportedItem): FileItem {
   const v = i.value;
   const updatedAt = i.updatedAt ?? undefined;
@@ -67,6 +71,7 @@ function reexport(i: ImportedItem): FileItem {
       chart: v.chart,
       view: v.view,
       ...(updatedAt ? { updatedAt } : {}),
+      lyrics: true,
     });
   return progressionItem(v.progression);
 }
@@ -134,7 +139,7 @@ const draft: SongDraft = {
 };
 
 describe('example files', () => {
-  it.each(['song', 'chart', 'progression', 'midi-song'])(
+  it.each(['song', 'chart', 'progression', 'midi-song', 'chart-lyrics'])(
     '%s.json matches the schema and round-trips byte for byte',
     (name) => {
       const text = readFileSync(resolve(ROOT, `docs/format/examples/${name}.json`), 'utf8');
@@ -285,6 +290,88 @@ describe('exports', () => {
         at,
       ),
     ).toBe('inharmonia-export-2026-01-01.json');
+  });
+});
+
+describe('a chart with lyrics', () => {
+  // Invented words on the first section's bars.
+  const sung = (): ChordChart => ({
+    ...chart,
+    sections: chart.sections.map((s, si) =>
+      si === 0
+        ? {
+            ...s,
+            bars: s.bars.map((b, i) =>
+              withLyric(b, ['lanterns on the', 'water', undefined, 'home'][i]),
+            ),
+          }
+        : s,
+    ),
+  });
+  const file = (lyrics?: boolean) =>
+    stringifyFile(
+      buildFile(
+        [
+          chartItem({
+            id: 'mine-chart-1',
+            chart: sung(),
+            view,
+            updatedAt: at.getTime(),
+            ...(lyrics === undefined ? {} : { lyrics }),
+          }),
+        ],
+        [],
+        at,
+      ),
+    );
+
+  it('is exported without them unless asked, and imports as the chart without them', () => {
+    const text = file();
+    expect(file(false)).toBe(text);
+    expectSchema(text);
+    expect(text).not.toMatch(/"lyrics"|lanterns|water|home/);
+    expect(parsed(text).items[0]!.value).toEqual({ kind: 'chart', chart, view });
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it('is exported with them when asked: a line per bar, only for sections that have some', () => {
+    const text = file(true);
+    expectSchema(text);
+    const sections = JSON.parse(text).items[0].chart.sections;
+    expect(sections[0].lyrics).toEqual(['lanterns on the', 'water', '', 'home']);
+    expect(sections[1]).not.toHaveProperty('lyrics');
+    expect(parsed(text).items[0]!.value).toEqual({ kind: 'chart', chart: sung(), view });
+    // Imported, then exported with them again: the same bytes.
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it('are checked by bar on the way in, and the words are never quoted back', () => {
+    const bad = (patch: (lyrics: unknown[]) => unknown) => {
+      const doc = JSON.parse(file(true));
+      doc.items[0].chart.sections[0].lyrics = patch(doc.items[0].chart.sections[0].lyrics);
+      const p = parseFile(JSON.stringify(doc), ctx);
+      if ('fatal' in p) throw new Error(p.fatal);
+      return p.errors.map(describeError);
+    };
+    expect(bad((l) => l.slice(1))).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics: should list one line of lyrics per bar ("" for none)',
+    ]);
+    expect(bad((l) => [l[0], 'water\nmore water', l[2], l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[1]: should be one line',
+    ]);
+    expect(bad((l) => [l[0], l[1], 'la '.repeat(41), l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[2]: is over 120 characters',
+    ]);
+    expect(bad((l) => [l[0], 7, l[2], l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[1]: should be text',
+    ]);
+    // Spaces are evened out, and an empty line is no lyrics.
+    const doc = JSON.parse(file(true));
+    doc.items[0].chart.sections[0].lyrics = ['  lanterns   on the ', ' ', '', 'home'];
+    const back = parsed(JSON.stringify(doc)).items[0]!.value;
+    expect(
+      back.kind === 'chart' && back.chart.sections[0]!.bars.map((b) => b.lyric ?? null),
+    ).toEqual(['lanterns on the', null, null, 'home']);
   });
 });
 

@@ -88,6 +88,11 @@ export interface FileChartSection {
   repeat: number;
   /** One bar per string in chart syntax: "C", "Am F", "C . . G", "N.C.". */
   bars: string[];
+  /**
+   * The words sung over each bar, one line per bar ("" for none). Only in a
+   * file exported with Include lyrics, and only for a section that has some.
+   */
+  lyrics?: string[];
 }
 
 export interface FileChart {

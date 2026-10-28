@@ -721,6 +721,16 @@
                       "type": "string",
                       "pattern": "^[^|\\n]{1,80}$"
                     }
+                  },
+                  "lyrics": {
+                    "type": "array",
+                    "description": "The words sung over each bar, one line per bar, \"\" for none. Only in a file exported with Include lyrics, and only for a section that has some.",
+                    "maxItems": 32,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "pattern": "^[^\\n\\r]*$"
+                    }
                   }
                 }
               }
