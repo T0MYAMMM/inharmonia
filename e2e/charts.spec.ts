@@ -114,6 +114,39 @@ test.describe('chord charts', () => {
     ).toHaveCount(2);
   });
 
+  test('keep lyrics when pasting: kept on this device, and unticked every time', async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    const keep = page.getByRole('checkbox', { name: 'Keep lyrics' });
+    await expect(keep).not.toBeChecked();
+    await page.getByTestId('paste-text').fill(SHEET);
+    await keep.check();
+    await page.getByTestId('paste-read').click();
+    await expect(page.getByTestId('lyrics-notice')).toHaveText(
+      'Lyrics kept from 2 lines, on this device only. 1 line left out: lyrics are kept only right under their chords. 1 chord could not be read: fix it in the grid before saving.',
+    );
+    const review = page.getByTestId('paste-review');
+    await expect(review.getByRole('row').filter({ hasText: 'Lyrics kept' })).toHaveText([
+      /la la la lyric line here\s*Lyrics kept: la la \| la lyric \| line \| here/,
+      /lyric line here la la\s*Lyrics kept: lyric \| line \| here \| la la/,
+    ]);
+    await expect(review.getByRole('row').filter({ hasText: 'Left out' })).toHaveText(
+      /la la la la\s*Left out: no chords right above it/,
+    );
+    // Unticked, it reads as it always has.
+    await keep.uncheck();
+    await expect(page.getByTestId('lyrics-notice')).toHaveText(
+      /^Lyrics removed from 3 lines\. Only chords and section names are kept\./,
+    );
+    // Back to the text and out: the next paste starts unticked.
+    await page.getByRole('button', { name: 'Back to the text' }).click();
+    await keep.check();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('paste-open').click();
+    await expect(page.getByRole('checkbox', { name: 'Keep lyrics' })).not.toBeChecked();
+  });
+
   test('type bars in chart syntax', async ({ page }) => {
     await page.goto('songs/charts/new');
     await page.getByRole('button', { name: 'Cancel' }).click();

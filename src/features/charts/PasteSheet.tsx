@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
+  barWords,
+  LIMITS,
   NO_CHORD,
   parseSheet,
   sheetToChart,
@@ -23,14 +25,20 @@ export interface PasteSheetProps {
 
 /**
  * Paste a chord sheet and review what was read, line by line, next to what you
- * pasted. Lyrics are dropped on the spot; only chords and section names are kept.
- * The pasted text lives only on this screen and is never saved.
+ * pasted. Lyrics are dropped on the spot, and only chords and section names are
+ * kept, unless you tick Keep lyrics: then each lyric line goes on the bars it
+ * sat under, on this device. The box starts unticked every time. The pasted
+ * text lives only on this screen and is never saved.
  */
 export function PasteSheet(props: PasteSheetProps) {
   const [text, setText] = useState('');
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
   const [two, setTwo] = useState<Set<number>>(new Set());
+  const [keep, setKeep] = useState(false);
+  const noteId = useId();
   const pasted = text.split(/\r?\n/);
+  const read = (keepLyrics: boolean) =>
+    setSheet(parseSheet(text, props.beatsPerBar, { keepLyrics }));
 
   const use = (mode: 'replace' | 'add') => {
     if (!sheet) return;
@@ -40,12 +48,10 @@ export function PasteSheet(props: PasteSheetProps) {
     );
   };
   const unknown = sheet?.lines.flatMap((l) => l.unknown) ?? [];
-  // What reading the sheet removed, and what it couldn't read.
+  // What reading the sheet removed or kept, and what it couldn't read.
   const notice = sheet
     ? [
-        sheet.lyricLines
-          ? `Lyrics removed from ${sheet.lyricLines} line${sheet.lyricLines === 1 ? '' : 's'}. Only chords and section names are kept.`
-          : 'No lyrics found. Only chords and section names are kept.',
+        keep ? keptNotice(sheet) : removedNotice(sheet),
         unknown.length
           ? `${unknown.length} chord${unknown.length === 1 ? '' : 's'} could not be read: fix ${unknown.length === 1 ? 'it' : 'them'} in the grid before saving.`
           : '',
@@ -61,9 +67,25 @@ export function PasteSheet(props: PasteSheetProps) {
       </h2>
       <p className={styles.note}>
         Chords over lyrics, [C]inline chords, bar lines (| C | G |) and section names (Verse, Reff,
-        Bait 2, Chorus x2) all work. Lyrics are removed straight away; only chords and section names
-        are kept. A pasted sheet has no timing, so each chord becomes one bar until you change it.
+        Bait 2, Chorus x2) all work. Lyrics are removed straight away unless you keep them. A pasted
+        sheet has no timing, so each chord becomes one bar until you change it.
       </p>
+      <div className={styles.keepLyrics}>
+        <Checkbox
+          checked={keep}
+          onChange={(v) => {
+            setKeep(v);
+            if (sheet) read(v);
+          }}
+          aria-describedby={noteId}
+          data-testid="keep-lyrics"
+        >
+          Keep lyrics
+        </Checkbox>
+        <span id={noteId} className={styles.checkNote}>
+          With the bars they sit under, on this device only.
+        </span>
+      </div>
       {/* Always here, so what was removed is said as soon as the sheet is read. */}
       <p className={styles.notice} role="status" data-testid="lyrics-notice">
         {notice}
@@ -84,7 +106,7 @@ export function PasteSheet(props: PasteSheetProps) {
               variant="primary"
               disabled={!text.trim()}
               onClick={() => {
-                setSheet(parseSheet(text, props.beatsPerBar));
+                read(keep);
                 setTwo(new Set());
               }}
               data-testid="paste-read"
@@ -113,14 +135,14 @@ export function PasteSheet(props: PasteSheetProps) {
               .map((l) => (
                 <div role="row" key={l.n} className={styles.reviewRow} data-kind={l.kind}>
                   <span role="cell" className={styles.pasted}>
-                    {l.kind === 'lyric' ? (
+                    {l.kind === 'lyric' && l.under === undefined ? (
                       <span className={styles.struck}>{pasted[l.n - 1]}</span>
                     ) : (
                       pasted[l.n - 1]
                     )}
                   </span>
                   <span role="cell" className={styles.detected}>
-                    {describeLine(l, sheet)}
+                    {describeLine(l, sheet, keep, two)}
                     {l.unknown.length ? (
                       <span className={styles.unknown}> Can't read: {l.unknown.join(', ')}</span>
                     ) : null}
@@ -170,8 +192,41 @@ export function PasteSheet(props: PasteSheetProps) {
   );
 }
 
-function describeLine(l: ParsedSheet['lines'][number], sheet: ParsedSheet): string {
+const lines = (n: number) => `${n} line${n === 1 ? '' : 's'}`;
+
+/** Lyrics not kept: exactly what it has always said. */
+function removedNotice(sheet: ParsedSheet): string {
+  return sheet.lyricLines
+    ? `Lyrics removed from ${lines(sheet.lyricLines)}. Only chords and section names are kept.`
+    : 'No lyrics found. Only chords and section names are kept.';
+}
+
+/** Lyrics kept: how many lines, where they are kept, and what was left out. */
+function keptNotice(sheet: ParsedSheet): string {
+  const { keptLines: kept, lyricLines: left } = sheet;
+  return [
+    kept ? `Lyrics kept from ${lines(kept)}, on this device only.` : '',
+    left ? `${lines(left)} left out: lyrics are kept only right under their chords.` : '',
+    !kept && !left ? 'No lyrics found.' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+const CUT = ` (cut to ${LIMITS.lyric} characters a bar)`;
+
+function describeLine(
+  l: ParsedSheet['lines'][number],
+  sheet: ParsedSheet,
+  keep: boolean,
+  two: ReadonlySet<number>,
+): string {
   const chords = (cs: string[]) => cs.map((c) => (c === NO_CHORD ? c : prettyChord(c))).join(' ');
+  /** A line's kept words, bar by bar, as they will sit in the chart. */
+  const kept = (line: ParsedSheet['lines'][number]) =>
+    barWords(line, two.has(line.n) ? 2 : 1)
+      .map((w) => w ?? '–')
+      .join(' | ');
   switch (l.kind) {
     case 'header': {
       const s = l.section !== null ? sheet.sections[l.section] : null;
@@ -182,9 +237,13 @@ function describeLine(l: ParsedSheet['lines'][number], sheet: ParsedSheet): stri
     case 'bars':
       return `Chords: ${chords(l.chords)}`;
     case 'inline':
+      if (l.words) return `Chords: ${chords(l.chords)}. Lyrics kept: ${kept(l)}${l.cut ? CUT : ''}`;
       return `Chords: ${chords(l.chords)}${l.lyricsRemoved ? ' (lyrics removed)' : ''}`;
-    case 'lyric':
-      return 'Lyrics removed';
+    case 'lyric': {
+      const above = sheet.lines.find((x) => x.n === l.under);
+      if (above) return `Lyrics kept: ${kept(above)}${above.cut ? CUT : ''}`;
+      return keep ? 'Left out: no chords right above it' : 'Lyrics removed';
+    }
     default:
       return '';
   }

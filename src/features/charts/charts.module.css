@@ -212,6 +212,18 @@
   font-weight: 400;
 }
 
+.keepLyrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-3);
+}
+
+.checkNote {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .inlineCheck {
   display: inline-flex;
   gap: 6px;
