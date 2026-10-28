@@ -1,0 +1,63 @@
+/* On, like a Toggle: an ink edge. Amber would mean a hand or the target note. */
+.pressed[aria-pressed='true'],
+.pressed[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--surface-sunk);
+}
+
+/* A MIDI file dragged over the File button. */
+.fileMenu[data-over] {
+  border-style: dashed;
+  border-color: var(--ink);
+}
+
+/* The song's settings on the left, the view on the right; each wraps as one block. */
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+}
+
+.song,
+.view {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.view {
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.count {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.viewLabel {
+  color: var(--label-color);
+  font-size: var(--label-font-size);
+  font-weight: var(--label-font-weight);
+}
+
+.zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--muted);
+}
+
+.zoomRange {
+  width: var(--control-width-short);
+}
+
+/* On touch, every control here is a full touch target. */
+@media (pointer: coarse) {
+  .settings {
+    --control-height-small: 44px;
+  }
+}

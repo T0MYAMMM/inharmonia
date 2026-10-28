@@ -1,0 +1,198 @@
+import { useId } from 'react';
+import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { Menu, MenuItem } from '@/ui/Menu';
+import { NumberInput } from '@/ui/NumberInput';
+import { RangeInput } from '@/ui/RangeInput';
+import { Select } from '@/ui/Select';
+import { useFileDrop } from '@/ui/useFileDrop';
+import { EditorHeader, EditorTitle, PlayButton, ToolGroup, UndoRedo } from './EditorHeader';
+import { ChevronDownIcon, PianoIcon, ZoomPitchIcon, ZoomTimeIcon } from './icons';
+import { MIDI_ACCEPT } from './midiFiles';
+import { ROW_RANGE, SNAPS, ZOOM_RANGE } from './midiSettings';
+import styles from './midiHeader.module.css';
+
+export interface MidiHeaderProps {
+  title: string;
+  onTitle: (title: string) => void;
+  /** Back to the Studio landing; left out where the page has its own way back. */
+  onBack?: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  playing: boolean;
+  onPlay: () => void;
+  showKeys: boolean;
+  onShowKeys: (show: boolean) => void;
+  onNew: () => void;
+  /** Open the file chooser. */
+  onOpen: () => void;
+  /** A MIDI file dropped on the File button. */
+  onDropFile: (file: File) => void;
+  /** A file dropped on the File button that isn't MIDI. */
+  onRefuse: () => void;
+  onExport: () => void;
+  onSave: () => void;
+}
+
+/** The workspace's top row: back and the title, then history, playback, file and save. */
+export function MidiHeader(props: MidiHeaderProps) {
+  const { over, dropProps } = useFileDrop({
+    accept: MIDI_ACCEPT,
+    onFiles: ([file]) => file && props.onDropFile(file),
+    onReject: props.onRefuse,
+  });
+  return (
+    <EditorHeader
+      data-testid="midi-header"
+      start={
+        <>
+          {props.onBack ? (
+            <Button variant="ghost" onClick={props.onBack}>
+              ← Back to Studio
+            </Button>
+          ) : null}
+          <EditorTitle value={props.title} onChange={(e) => props.onTitle(e.target.value)} />
+        </>
+      }
+      tools={
+        <>
+          <UndoRedo
+            canUndo={props.canUndo}
+            canRedo={props.canRedo}
+            onUndo={props.onUndo}
+            onRedo={props.onRedo}
+          />
+          <ToolGroup label="Playback">
+            <PlayButton
+              playing={props.playing}
+              stopLabel="Pause"
+              onClick={props.onPlay}
+              data-testid="midi-play"
+            />
+            <Button
+              className={styles.pressed}
+              aria-pressed={props.showKeys}
+              onClick={() => props.onShowKeys(!props.showKeys)}
+              title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
+              data-testid="midi-keyboard-toggle"
+            >
+              <PianoIcon />
+              Keyboard
+            </Button>
+          </ToolGroup>
+          <ToolGroup label="File">
+            <Menu
+              label={
+                <>
+                  File <ChevronDownIcon />
+                </>
+              }
+              align="end"
+              className={styles.fileMenu}
+              data-over={over || undefined}
+              data-testid="midi-file-menu"
+              {...dropProps}
+            >
+              <MenuItem onSelect={props.onNew} data-testid="midi-new">
+                New MIDI
+              </MenuItem>
+              <MenuItem onSelect={props.onOpen} data-testid="midi-open">
+                Open MIDI file
+              </MenuItem>
+              <MenuItem onSelect={props.onExport} data-testid="midi-export">
+                Export .mid
+              </MenuItem>
+            </Menu>
+            <Button onClick={props.onSave} data-testid="midi-save-song">
+              Save to My songs
+            </Button>
+          </ToolGroup>
+        </>
+      }
+    />
+  );
+}
+
+export interface MidiSettingsProps {
+  tempo: number;
+  onTempo: (bpm: number) => void;
+  /** Snap, in beats; 0 is off. */
+  step: number;
+  onStep: (beats: number) => void;
+  zoom: number;
+  onZoom: (px: number) => void;
+  row: number;
+  onRow: (px: number) => void;
+  /** Like "4/4". */
+  meter: string;
+  notes: number;
+}
+
+/** The second row: the song's settings on the left, the view on the right. */
+export function MidiSettings(props: MidiSettingsProps) {
+  const viewId = useId();
+  return (
+    <div className={styles.settings} data-testid="midi-settings">
+      <div role="group" aria-label="Song settings" className={styles.song}>
+        <Field label="Tempo" inline>
+          <NumberInput
+            size="small"
+            min={20}
+            max={300}
+            value={props.tempo}
+            onChange={props.onTempo}
+          />
+        </Field>
+        <Field label="Snap" inline>
+          <Select
+            size="small"
+            value={props.step}
+            onChange={(e) => props.onStep(Number(e.target.value))}
+          >
+            {SNAPS.map((s) => (
+              <option key={s.beats} value={s.beats}>
+                {s.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <span className={styles.count}>
+          {props.meter} · {props.notes} note{props.notes === 1 ? '' : 's'}
+        </span>
+      </div>
+      <div role="group" aria-labelledby={viewId} className={styles.view}>
+        <span id={viewId} className={styles.viewLabel}>
+          View
+        </span>
+        <label className={styles.zoom} title="Horizontal zoom">
+          <ZoomTimeIcon />
+          <RangeInput
+            size="small"
+            className={styles.zoomRange}
+            min={ZOOM_RANGE.min}
+            max={ZOOM_RANGE.max}
+            step={4}
+            value={props.zoom}
+            aria-label="Horizontal zoom"
+            onChange={props.onZoom}
+          />
+        </label>
+        <label className={styles.zoom} title="Vertical zoom">
+          <ZoomPitchIcon />
+          <RangeInput
+            size="small"
+            className={styles.zoomRange}
+            min={ROW_RANGE.min}
+            max={ROW_RANGE.max}
+            step={2}
+            value={props.row}
+            aria-label="Vertical zoom"
+            onChange={props.onRow}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}

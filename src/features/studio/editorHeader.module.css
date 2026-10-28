@@ -1,0 +1,70 @@
+/* Back and the title on the left; the tools on the right, or under them as one block. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.start {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-left: auto;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A short line between groups, with the same room on both sides. */
+.group + .group::before {
+  content: '';
+  width: 1px;
+  height: var(--space-5);
+  margin-right: var(--space-1);
+  background: var(--line);
+}
+
+/* At least --control-width-short, and as wide as the row lets it be. */
+.title {
+  display: flex;
+  flex: 1 0 auto;
+  width: var(--control-width-short);
+}
+
+.title > input {
+  width: 100%;
+}
+
+/* Both labels in one cell: the hidden one holds the width. */
+.swap {
+  display: inline-grid;
+}
+
+.swap > * {
+  grid-area: 1 / 1;
+}
+
+.swap > [aria-hidden] {
+  visibility: hidden;
+}
+
+/* On touch, the title is as tall as the buttons beside it. */
+@media (pointer: coarse) {
+  .header {
+    --control-height: 44px;
+  }
+}
