@@ -145,7 +145,7 @@
 .builder {
   display: grid;
   gap: var(--space-4);
-  max-width: 46rem;
+  max-width: var(--text-width);
 }
 
 /* Numerals read at a glance. */
@@ -203,7 +203,7 @@
 
 .previewTitle {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--card-title-size);
 }
 
 .previewBars {

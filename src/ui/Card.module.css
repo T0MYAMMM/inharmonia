@@ -9,4 +9,5 @@
 
 .title {
   margin-bottom: var(--space-3);
+  font-size: var(--card-title-size);
 }

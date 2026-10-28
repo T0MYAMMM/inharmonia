@@ -58,8 +58,10 @@
   --space-7: 48px;
   --gutter: clamp(16px, 4vw, 32px);
   --content-max: 1120px;
-  /* The measure for running text: heroes, ledes and prose. */
+  /* The measure for running text and single-column forms and cards: ledes, prose, the builder. */
   --text-width: 44rem;
+  /* A card's title, wherever the card is: Card, Studio's cards, the chart editor's. */
+  --card-title-size: 1.25rem;
 
   /*
    * Breakpoints. CSS can't read custom properties in media queries, so these
