@@ -574,6 +574,29 @@ describe('Menu', () => {
     expect(screen.getByRole('menu', { name: 'More' })).toContainElement(item('Save'));
   });
 
+  it('names an item by its words, and describes it by its note', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    render(
+      <Menu label="Send to">
+        <MenuItem onSelect={() => ran.push('studio')} note="Edit it on a piano roll">
+          Studio
+        </MenuItem>
+        <MenuItem onSelect={() => ran.push('chords')} note="Every bar is N.C." disabled>
+          Chords
+        </MenuItem>
+      </Menu>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Send to' }));
+    expect(item('Studio')).toHaveAccessibleDescription('Edit it on a piano roll');
+    expect(item('Chords')).toHaveAccessibleDescription('Every bar is N.C.');
+    expect(item('Chords')).toHaveAttribute('aria-disabled', 'true');
+    await user.keyboard('{End}{Enter}');
+    expect(ran).toEqual([]);
+    await user.keyboard('{Home}{Enter}');
+    expect(ran).toEqual(['studio']);
+  });
+
   it('keeps the keys pressed in it from the page around it', async () => {
     const user = userEvent.setup();
     const keys: string[] = [];

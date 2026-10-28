@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -15,6 +16,9 @@ import styles from './Menu.module.css';
 
 /** Lets a chosen item close its menu. */
 const CloseMenu = createContext<() => void>(() => undefined);
+
+/** Room kept between an open menu and the edge of the screen, px. */
+const EDGE = 8;
 
 const itemsIn = (list: HTMLElement | null) => [
   ...(list?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
@@ -70,12 +74,34 @@ export function Menu({
     buttonRef.current?.focus();
   };
 
-  // Once open, focus the first or the last item.
+  // Where the list goes, from its own edge: measured first where it can't
+  // widen the page (fixed, unseen), then lined up with its button's edge, or
+  // its other edge when that one runs off the screen, or else just inside
+  // the screen. Placed before it shows, it never makes a phone zoom out to fit it.
+  // Null while measuring; 'edge' where nothing is laid out to measure.
+  const [left, setLeft] = useState<number | 'edge' | null>(null);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const root = rootRef.current;
+    if (!open || !list || !root) return;
+    const width = list.getBoundingClientRect().width;
+    const at = root.getBoundingClientRect();
+    const screen = document.documentElement.clientWidth;
+    // Its own edge first, then the other edge of the button, then just inside the screen.
+    const edges = align === 'end' ? [at.right - width, at.left] : [at.left, at.right - width];
+    const wanted = edges.find((x) => x >= EDGE && x + width <= screen - EDGE) ?? edges[0]!;
+    const placed = Math.max(EDGE, Math.min(wanted, screen - EDGE - width));
+    setLeft(width ? Math.round(placed - at.left) : 'edge');
+    return () => setLeft(null);
+  }, [open, align]);
+  const measuring = open && left === null;
+
+  // Once open and placed, focus the first or the last item.
   useEffect(() => {
-    if (!open) return;
+    if (!open || measuring) return;
     const items = itemsIn(listRef.current);
     items[from === 'last' ? items.length - 1 : 0]?.focus();
-  }, [open, from]);
+  }, [open, from, measuring]);
 
   // A press outside closes the menu and leaves focus where it lands. Escape
   // is the menu's own key (below), so it can put focus back on the button.
@@ -149,6 +175,8 @@ export function Menu({
           aria-labelledby={buttonId}
           className={styles.list}
           data-align={align}
+          data-measuring={measuring || undefined}
+          style={typeof left === 'number' ? { left, right: 'auto' } : undefined}
           ref={listRef}
           onKeyDown={onMenuKey}
         >
@@ -166,17 +194,32 @@ export interface MenuItemProps extends Omit<
   onSelect: () => void;
   /** Shown and reachable with the arrow keys, but does nothing. */
   disabled?: boolean;
+  /**
+   * A line under the item saying what it will do here, or why it can't.
+   * The item is named by its own words; the note describes it.
+   */
+  note?: ReactNode;
 }
 
 /** One action in a Menu. Choosing it closes the menu first. */
-export function MenuItem({ onSelect, disabled, className, ...rest }: MenuItemProps) {
+export function MenuItem({
+  onSelect,
+  disabled,
+  note,
+  className,
+  children,
+  ...rest
+}: MenuItemProps) {
   const close = useContext(CloseMenu);
+  const id = useId();
   return (
     <button
       type="button"
       role="menuitem"
       tabIndex={-1}
       aria-disabled={disabled || undefined}
+      aria-labelledby={note ? `${id}-label` : undefined}
+      aria-describedby={note ? `${id}-note` : undefined}
       className={[styles.item, className].filter(Boolean).join(' ')}
       onClick={() => {
         if (disabled) return;
@@ -184,7 +227,18 @@ export function MenuItem({ onSelect, disabled, className, ...rest }: MenuItemPro
         onSelect();
       }}
       {...rest}
-    />
+    >
+      {note ? (
+        <span className={styles.itemText}>
+          <span id={`${id}-label`}>{children}</span>
+          <span id={`${id}-note`} className={styles.itemNote}>
+            {note}
+          </span>
+        </span>
+      ) : (
+        children
+      )}
+    </button>
   );
 }
 

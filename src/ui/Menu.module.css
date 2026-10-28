@@ -10,8 +10,10 @@
   top: calc(100% + var(--space-2));
   left: 0;
   display: grid;
+  /* As wide as its longest item, up to the screen; a note wraps beyond that. */
+  width: max-content;
   min-width: 14rem;
-  max-width: calc(100vw - 2 * var(--gutter));
+  max-width: min(24rem, calc(100vw - 2 * var(--gutter)));
   padding: var(--space-2);
   border-radius: var(--radius-card);
   border: 1px solid var(--line);
@@ -22,6 +24,15 @@
 .list[data-align='end'] {
   left: auto;
   right: 0;
+}
+
+/* Measured before it is placed: out of the page's flow, so it can't widen it. */
+.list[data-measuring] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  visibility: hidden;
 }
 
 /* A full touch target at every width. */
@@ -57,6 +68,21 @@
   color: var(--muted);
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* An item with a note: its words, and under them what it will do. */
+.itemText {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) 0;
+}
+
+.itemNote {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .separator {
