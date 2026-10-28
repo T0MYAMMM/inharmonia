@@ -123,11 +123,14 @@ export function readChords(
   const relaxed = relax(text).trim();
   if (!relaxed || /^[\s|]*$/.test(relaxed)) return { bars: [], issues: [] };
   const parsed = parseBars(relaxed, beatsPerBar);
-  const issues: SequenceIssue[] = parsed.issues.map((i) => ({
-    ...(i.bar ? { bar: i.bar } : {}),
-    ...(i.token ? { token: i.token } : {}),
-    message: i.message,
-  }));
+  // Each problem once, where it first shows: "C . . G" has two stray dots, one mistake.
+  const issues: SequenceIssue[] = parsed.issues
+    .filter((i, k, all) => all.findIndex((x) => x.message === i.message) === k)
+    .map((i) => ({
+      ...(i.bar ? { bar: i.bar } : {}),
+      ...(i.token ? { token: i.token } : {}),
+      message: i.message,
+    }));
   const n = parsed.bars.length;
   if (n > room)
     issues.push({

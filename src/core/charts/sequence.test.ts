@@ -97,7 +97,21 @@ describe('reading typed chords', () => {
     expect(read('| C . . . . G |').issues.map((i) => i.message)).toEqual([
       'This bar lasts 6 beats, not 4',
     ]);
-    expect(read('C . . G').issues.map((i) => i.token)).toEqual(['.', '.']);
+  });
+
+  it('says each problem once, where it first shows', () => {
+    expect(read('C . . G').issues).toEqual([
+      {
+        bar: 2,
+        token: '.',
+        message: 'Dots add beats to the chord before them, inside a bar: | C . . G |',
+      },
+    ]);
+    expect(read('C Hm F Hm').issues).toEqual([
+      { bar: 2, token: 'Hm', message: '"Hm" is not a chord' },
+    ]);
+    // Different problems are each said.
+    expect(read('C Hm F Xm').issues.map((i) => i.token)).toEqual(['Hm', 'Xm']);
   });
 
   it('reports more bars than there is room for', () => {
