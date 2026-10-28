@@ -63,12 +63,9 @@ export function WaysIn({ onSing, onNew, onOpen }: WaysInProps) {
         title="Edit a MIDI file"
         text="Bring in a .mid from a DAW or a converter, or drop it on this card."
         note={
+          // Both regions are always there; only their text comes and goes.
           <>
-            {error ? (
-              <p role="alert" className={styles.problem}>
-                {error}
-              </p>
-            ) : null}
+            <div role="alert">{error ? <p className={styles.problem}>{error}</p> : null}</div>
             <p role="status" className={styles.refused}>
               {refused}
             </p>

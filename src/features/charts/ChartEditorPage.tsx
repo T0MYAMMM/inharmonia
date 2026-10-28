@@ -68,11 +68,7 @@ export function ChartEditorPage() {
         saving={saving}
         onSave={(c) => void save(c)}
       />
-      {problem ? (
-        <p className={styles.issues} role="alert">
-          {problem}
-        </p>
-      ) : null}
+      <div role="alert">{problem ? <p className={styles.issues}>{problem}</p> : null}</div>
     </>
   );
 }

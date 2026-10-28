@@ -48,8 +48,8 @@
   line-height: 1.45;
 }
 
-/* Margins, not a gap: the empty live region for a refused file takes no room. */
-.way > [role='alert'],
+/* Margins, not a gap: an empty live region takes no room. */
+.way > [role='alert']:not(:empty),
 .way > [role='status']:not(:empty) {
   margin-top: var(--space-3);
 }

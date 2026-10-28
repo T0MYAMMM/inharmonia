@@ -237,8 +237,14 @@ export function StudioPage() {
           </p>
         </section>
 
+        {/* Said when calibration starts; the card below shows the same. */}
+        <p className="visually-hidden" role="status">
+          {snap.phase === 'calibrating'
+            ? `Calibrating: clap once on each of ${CALIBRATION_CLICKS} clicks.`
+            : ''}
+        </p>
         {snap.phase === 'calibrating' ? (
-          <section className={styles.card} aria-live="polite">
+          <section className={styles.card}>
             <h2 className={styles.cardTitle}>Clap on the click</h2>
             <p>
               You'll hear {CALIBRATION_CLICKS} clicks. Clap once, sharply, exactly on each one,
@@ -301,21 +307,26 @@ export function StudioPage() {
               </div>
             </>
           )}
-          {problem ? (
-            <div className={styles.problem} role="alert" data-testid="problem">
-              <strong>{problem.title}</strong>
-              <ul>
-                {problem.steps.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {warning && !problem ? (
-            <div className={styles.warning} role="status">
-              <strong>{warning.title}</strong> {warning.steps[0]}
-            </div>
-          ) : null}
+          {/* The regions stay; what they say comes and goes. */}
+          <div role="alert">
+            {problem ? (
+              <div className={styles.problem} data-testid="problem">
+                <strong>{problem.title}</strong>
+                <ul>
+                  {problem.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          <div role="status">
+            {warning && !problem ? (
+              <div className={styles.warning}>
+                <strong>{warning.title}</strong> {warning.steps[0]}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         {snap.take && !snap.problem ? (
