@@ -1,7 +1,7 @@
 import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { useRef, useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { NoteStream } from '@/core/input';
 import { formatNote } from '@/core/notation';
 import { spelled } from '@/core/theory';
@@ -20,6 +20,7 @@ import { Select } from './Select';
 import { TextArea } from './TextArea';
 import { TextInput } from './TextInput';
 import { Toggle } from './Toggle';
+import { useDismiss } from './useDismiss';
 
 describe('keyboard layout', () => {
   it('lays out F#1 to G5 with a half-key lead-in', () => {
@@ -623,5 +624,52 @@ describe('Checkbox and Radio', () => {
     expect(screen.getByTestId('card-b')).toContainElement(
       screen.getByRole('radio', { name: 'Option b' }),
     );
+  });
+});
+
+describe('useDismiss', () => {
+  function Popover({
+    open,
+    onOutside,
+    onEscape,
+  }: {
+    open: boolean;
+    onOutside: () => void;
+    onEscape?: () => void;
+  }) {
+    const ref = useRef<HTMLDivElement>(null);
+    useDismiss(ref, open, { onOutside, ...(onEscape ? { onEscape } : {}) });
+    return (
+      <>
+        <div ref={ref}>
+          <button type="button">Inside</button>
+        </div>
+        <button type="button">Outside</button>
+      </>
+    );
+  }
+
+  it('closes on a press outside, not inside', () => {
+    const onOutside = vi.fn();
+    render(<Popover open onOutside={onOutside} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Inside' }));
+    expect(onOutside).not.toHaveBeenCalled();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }));
+    expect(onOutside).toHaveBeenCalledOnce();
+  });
+
+  it('closes on Escape only when asked to, and does nothing while closed', () => {
+    const onOutside = vi.fn();
+    const onEscape = vi.fn();
+    const { rerender } = render(<Popover open onOutside={onOutside} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    rerender(<Popover open onOutside={onOutside} onEscape={onEscape} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onEscape).toHaveBeenCalledOnce();
+    rerender(<Popover open={false} onOutside={onOutside} onEscape={onEscape} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }));
+    expect(onEscape).toHaveBeenCalledOnce();
+    expect(onOutside).not.toHaveBeenCalled();
   });
 });

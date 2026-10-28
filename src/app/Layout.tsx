@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useEffect, useId, useRef, useState } from 'react';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Segmented } from '@/ui/Segmented';
+import { useDismiss } from '@/ui/useDismiss';
 import { VolumeSlider } from '@/ui/VolumeSlider';
 import { useSettings, type ThemeChoice } from '@/state/settings';
 import { useOfflineReady } from './pwa';
@@ -43,23 +44,13 @@ export function Layout() {
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // The settings menu closes on Escape, on a click elsewhere, and on navigation.
-  useEffect(() => {
-    if (!settingsOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+  useDismiss(settingsRef, settingsOpen, {
+    onOutside: () => setSettingsOpen(false),
+    onEscape: () => {
       setSettingsOpen(false);
       settingsRef.current?.querySelector('button')?.focus();
-    };
-    const onDown = (e: PointerEvent) => {
-      if (!settingsRef.current?.contains(e.target as Node)) setSettingsOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('pointerdown', onDown);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('pointerdown', onDown);
-    };
-  }, [settingsOpen]);
+    },
+  });
   const [openedAt, setOpenedAt] = useState(pathname);
   if (openedAt !== pathname) {
     setOpenedAt(pathname);
