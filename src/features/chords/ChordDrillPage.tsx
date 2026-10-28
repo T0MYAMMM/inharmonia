@@ -172,13 +172,15 @@ export function ChordDrillPage() {
               {snap.showing ? 'Hide' : 'Show me'}
             </Button>
             <Button onClick={() => ctrl.skip()}>Skip</Button>
-            <Button variant="ghost" onClick={() => ctrl.stop()}>
-              Change chords
-            </Button>
           </div>
           <p className={styles.stats}>
             <span>{snap.clean} clean so far</span>
           </p>
+          <div>
+            <Button variant="ghost" onClick={() => ctrl.stop()}>
+              Change chords
+            </Button>
+          </div>
         </div>
       )}
       <p className="visually-hidden" role="status" aria-live="polite">
