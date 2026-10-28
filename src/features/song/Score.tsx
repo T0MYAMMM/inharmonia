@@ -491,16 +491,21 @@ function groupSections(bars: CompiledBar[]) {
 }
 
 /**
- * Keep the current bar visible: if it is off-screen, under the sticky controls
- * or behind the keyboard dock, scroll it to the middle of the visible area
- * (smoothly unless reduced motion).
+ * Keep the current bar visible: when it moves, or the view changes, and it is
+ * off-screen, under the sticky controls or behind the keyboard dock, scroll it
+ * to the middle of the visible area (smoothly unless reduced motion). Not when
+ * the score first appears: the page opens at its top, where Play is.
  */
 function useScrollIntoView(
   ref: React.RefObject<HTMLDivElement | null>,
   bar: number,
   view: ScoreView,
 ) {
+  const shown = useRef<{ bar: number; view: ScoreView } | null>(null);
   useEffect(() => {
+    const before = shown.current;
+    shown.current = { bar, view };
+    if (!before || (before.bar === bar && before.view === view)) return;
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
