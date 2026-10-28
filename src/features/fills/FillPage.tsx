@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { useMediaQuery } from '@/app/hooks';
 import { FILL_CATEGORIES, getFill } from '@/content/fills';
@@ -24,6 +24,7 @@ import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { KeyboardDock } from '@/ui/keyboard';
 import { NotFoundPage } from '../not-found/NotFoundPage';
+import { PageHeader } from '../PageHeader';
 import songStyles from '../song/SongPage.module.css';
 import progStyles from '../progressions/progressions.module.css';
 import { FillController, type FillMode } from './FillController';
@@ -129,16 +130,18 @@ export function FillPage() {
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/fills">Fills</Link>
-        </p>
-        <h1>{fill.name}</h1>
-        <p className={songStyles.meta}>
-          {category}, level {fill.level}, {fill.hand === 'rh' ? 'right hand' : 'left hand'}.{' '}
-          {fill.description}
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/fills', label: 'Fills' }}
+        title={fill.name}
+        lede={
+          <>
+            <p>
+              {category}, level {fill.level}, {fill.hand === 'rh' ? 'right hand' : 'left hand'}
+            </p>
+            <p>{fill.description}</p>
+          </>
+        }
+      />
       <FillTrainer
         key={fill.id}
         exerciseId={fill.id}
