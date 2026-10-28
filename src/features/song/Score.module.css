@@ -307,7 +307,7 @@
   left: calc(var(--bar-pad) * -1);
 }
 
-@media (max-width: 400px) {
+@media (max-width: 600px) {
   .bar {
     --bar-pad: 8px;
     padding: 10px 8px;

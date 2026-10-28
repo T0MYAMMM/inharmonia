@@ -297,14 +297,14 @@
   .sectionHead > :first-child input {
     width: 100%;
   }
-}
 
-@media (max-width: 480px) {
+  /* The paste review reads as one column: what was read, under what was pasted. */
   .reviewHead,
   .reviewRow {
     grid-template-columns: 1fr;
     gap: 2px;
   }
+
   .reviewHead span:first-child {
     display: none;
   }
