@@ -1,8 +1,11 @@
 import type { Mode } from '../theory';
 import type { SectionType } from './sections';
 
-/** Stored chart shape. Bump it and add a step to `migrateChart` when the shape changes. */
-export const CHART_VERSION = 1;
+/**
+ * Stored chart shape. Bump it and add a step to `migrateChart` when the shape
+ * changes. 2: a bar may hold its lyrics.
+ */
+export const CHART_VERSION = 2;
 
 export const LIMITS = {
   title: 80,
@@ -14,6 +17,8 @@ export const LIMITS = {
   expandedBars: 400,
   chordsPerBar: 4,
   repeat: 8,
+  /** Characters of lyrics in one bar. */
+  lyric: 120,
 } as const;
 
 /** A chord in a bar, or N.C. (no chord), lasting `beats`. */
@@ -25,6 +30,12 @@ export interface ChartChord {
 export interface ChartBar {
   /** 1 to 4 chords whose beats add up to the bar. */
   chords: ChartChord[];
+  /**
+   * The words sung over this bar, one line, kept only when you ask, on this
+   * device. Only a chart's own sections hold them: sequences, handoffs and
+   * exports (unless lyrics are included) are made without them.
+   */
+  lyric?: string;
 }
 
 export interface ChartSection {
@@ -40,8 +51,9 @@ export interface ChartSection {
 
 /**
  * A song as a chord chart: sections entered once, a form that orders them, and
- * the key, tempo and meter. Never holds lyrics: only chord symbols, section
- * labels, structure and the user's own notes.
+ * the key, tempo and meter: chord symbols, section labels, structure and your
+ * own notes. Lyrics are there only if you chose to keep them, a line per bar
+ * (`ChartBar.lyric`); they stay on this device.
  */
 export interface ChordChart {
   version: number;

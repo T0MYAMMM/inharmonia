@@ -14,3 +14,4 @@ export * from './easyKey';
 export * from './sequence';
 export * from './progressionsIn';
 export * from './numerals';
+export * from './lyrics';

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { PATTERNS } from '@/content/patterns';
 import { compileLesson, validateLesson } from '../content/compile';
+import { compiledToMidi } from '../midi/adapters';
 import {
   chartIssues,
   chartToLesson,
@@ -7,8 +9,13 @@ import {
   emptyChart,
   expandForm,
   formatBars,
+  hasLyrics,
   isChordLine,
   migrateChart,
+  playedLyrics,
+  tidyLyric,
+  withLyric,
+  withoutLyrics,
   NO_CHORD,
   normalizeChord,
   parseBars,
@@ -493,5 +500,75 @@ describe('charts as lessons', () => {
       notes: '',
     });
     expect(() => migrateChart({ ...chart(), version: CHART_VERSION + 1 })).toThrow('newer version');
+  });
+
+  it('reads a version 1 chart as version 2 with no lyrics, and nothing else changed', () => {
+    expect(CHART_VERSION).toBe(2);
+    const v1 = { ...chart(), version: 1 };
+    expect(migrateChart(v1)).toEqual({ ...chart(), version: 2 });
+    expect(hasLyrics(migrateChart(v1))).toBe(false);
+  });
+});
+
+// Invented words, for these tests only.
+const WORDS = ['lanterns on the water', 'slow boats', undefined, 'coming home'];
+const sung = (): ChordChart => {
+  const c = chart();
+  c.sections[0]!.bars = c.sections[0]!.bars.map((b, i) => withLyric(b, WORDS[i]));
+  return c;
+};
+
+describe('lyrics in a chart', () => {
+  it('sit on their bars, one line each, and are followed in play order', () => {
+    const c = sung();
+    expect(hasLyrics(c)).toBe(true);
+    expect(hasLyrics(chart())).toBe(false);
+    expect(chartIssues(c)).toEqual([]);
+    // Form v c v c, the chorus twice each time: the verse's words come round with it.
+    expect(playedLyrics(c)).toEqual([
+      ...WORDS,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ...WORDS,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(playedLyrics(c)).toHaveLength(expandForm(c).length);
+    expect(withoutLyrics(c)).toEqual(chart());
+  });
+
+  it('are tidied to one line, and an empty one is none', () => {
+    expect(tidyLyric('  slow\tboats\n coming   home ')).toBe('slow boats coming home');
+    expect(tidyLyric(' \n ')).toBeUndefined();
+    expect(withLyric({ chords: [], lyric: 'old' }, '  ')).toEqual({ chords: [] });
+    expect(withLyric({ chords: [] }, 'a\u2028b')).toEqual({ chords: [], lyric: 'a b' });
+  });
+
+  it('are checked for length and line breaks, named by bar and never quoted', () => {
+    const c = sung();
+    c.sections[0]!.bars[0]!.lyric = 'la '.repeat(41);
+    c.sections[0]!.bars[1]!.lyric = 'two\nlines';
+    c.sections[1]!.bars[0]!.lyric = 7 as unknown as string;
+    const issues = chartIssues(c);
+    expect(issues).toEqual([
+      { section: 'Verse', bar: 1, message: 'Lyrics are over 120 characters' },
+      { section: 'Verse', bar: 2, message: 'Lyrics are one line a bar' },
+      { section: 'Reff', bar: 1, message: 'Lyrics must be text' },
+    ]);
+    expect(JSON.stringify(issues)).not.toMatch(/la la|lines/);
+    c.sections[0]!.bars[0]!.lyric = 'la '.repeat(40).trim();
+    expect(chartIssues(c).map((i) => i.bar)).toEqual([2, 1]);
+  });
+
+  it('never reach what plays: the lesson and its MIDI are the same without them', () => {
+    const lesson = chartToLesson('mine-chart-1', sung());
+    expect(lesson).toEqual(chartToLesson('mine-chart-1', chart()));
+    expect(JSON.stringify(lesson)).not.toMatch(/lanterns|boats|home/);
+    const midi = compiledToMidi(compileLesson(lesson, PATTERNS));
+    expect(JSON.stringify(midi)).not.toMatch(/lanterns|boats|home/);
   });
 });

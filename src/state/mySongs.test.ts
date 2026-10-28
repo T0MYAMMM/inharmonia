@@ -3,7 +3,15 @@ import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
-import { DEFAULT_VIEW, emptyChart, makeUserChart, parseBars, type ChordChart } from '@/core/charts';
+import {
+  CHART_VERSION,
+  DEFAULT_VIEW,
+  emptyChart,
+  makeUserChart,
+  parseBars,
+  withLyric,
+  type ChordChart,
+} from '@/core/charts';
 import { makeUserSong, type SongDraft, type UserRecording } from '@/core/songs';
 import {
   DB_NAME,
@@ -80,6 +88,40 @@ describe('my songs', () => {
     expect(mySongs.snapshot.songs).toHaveLength(2);
     expect(mySongs.snapshot.charts[0]!.id).toMatch(/^mine-chart-/);
     expect((await getSong('user-a'))!.lesson.source).toEqual({ kind: 'user' });
+  });
+
+  it('reads a version 1 chart in the current shape, and leaves out one from a newer version', async () => {
+    await saveChart(
+      makeUserChart('mine-chart-old', { ...chart('Old'), version: 1 }, DEFAULT_VIEW, 1),
+    );
+    await saveChart(
+      makeUserChart(
+        'mine-chart-new',
+        { ...chart('New'), version: CHART_VERSION + 1 },
+        DEFAULT_VIEW,
+        2,
+      ),
+    );
+    resetForTests();
+    await refresh();
+    expect(mySongs.snapshot.status).toBe('ready');
+    expect(mySongs.snapshot.charts.map((c) => [c.chart.title, c.chart.version])).toEqual([
+      ['Old', CHART_VERSION],
+    ]);
+    expect((await getChart('mine-chart-old'))!.chart).toEqual(chart('Old'));
+    expect(await getChart('mine-chart-new')).toBeUndefined();
+  });
+
+  it("keeps a chart's lyrics on its bars, through a reload", async () => {
+    const sung = chart('Sung');
+    sung.sections[0]!.bars[1] = withLyric(sung.sections[0]!.bars[1]!, 'slow boats coming home');
+    await saveChart(makeUserChart('mine-chart-sung', sung, DEFAULT_VIEW, 1));
+    resetForTests();
+    await refresh();
+    expect(mySongs.snapshot.charts[0]!.chart).toEqual(sung);
+    expect((await getChart('mine-chart-sung'))!.chart.sections[0]!.bars[1]!.lyric).toBe(
+      'slow boats coming home',
+    );
   });
 
   it('upgrades a version 1 database, keeping its songs and recordings', async () => {

@@ -13,6 +13,7 @@ import {
   voiceLeadProgression,
   type SpelledNote,
 } from '../theory';
+import { isOneLine } from './lyrics';
 import { MAX_LABEL, SECTION_NAMES, type SectionType } from './sections';
 import { simplifyChord } from './simplify';
 import { transposeChord, transposeKey, type Key } from './transpose';
@@ -89,6 +90,13 @@ export function chartIssues(chart: ChordChart): ChartIssue[] {
       }
       if (Math.abs(total - chart.meter.beats) > 1e-9)
         out.push({ ...where, message: `Chords last ${total} beats, not ${chart.meter.beats}` });
+      // The words themselves are never quoted: only where they are and what's wrong.
+      if (b.lyric !== undefined) {
+        if (typeof b.lyric !== 'string') out.push({ ...where, message: 'Lyrics must be text' });
+        else if (b.lyric.length > LIMITS.lyric)
+          out.push({ ...where, message: `Lyrics are over ${LIMITS.lyric} characters` });
+        else if (!isOneLine(b.lyric)) out.push({ ...where, message: 'Lyrics are one line a bar' });
+      }
     });
   }
   if (chart.form.length === 0) out.push({ message: 'The form is empty: add a section to it' });
@@ -104,12 +112,15 @@ export function chartIssues(chart: ChordChart): ChartIssue[] {
   return out;
 }
 
-/** Read a stored chart of any version into the current shape. */
+/**
+ * Read a stored chart of any version into the current shape, one step at a
+ * time. 1 → 2: a bar may hold lyrics; a version 1 chart has none, so it is
+ * a version 2 chart as it is.
+ */
 export function migrateChart(raw: { version?: unknown } & Record<string, unknown>): ChordChart {
   const version = typeof raw.version === 'number' ? raw.version : 1;
   if (version > CHART_VERSION)
     throw new Error('This chart was made by a newer version of Inharmonia.');
-  // Version 1 is current. Older shapes would be upgraded here, one step at a time.
   return {
     ...(raw as unknown as ChordChart),
     version: CHART_VERSION,
