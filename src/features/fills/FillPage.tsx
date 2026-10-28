@@ -96,13 +96,15 @@ export function FillPage() {
   const category = FILL_CATEGORIES.find((c) => c.id === fill.category)!.name;
 
   const fields = (
-    <div className={progStyles.settings}>
-      <Segmented
-        label="Key mode"
-        value={mode}
-        options={KEY_MODES}
-        onChange={(m) => update({ mode: m, key: null, change: null })}
-      />
+    <div className={progStyles.settingsRow}>
+      <Field label="Key mode" group>
+        <Segmented
+          label="Key mode"
+          value={mode}
+          options={KEY_MODES}
+          onChange={(m) => update({ mode: m, key: null, change: null })}
+        />
+      </Field>
       <Field label="Key">
         <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
           {keys.map((k) => (

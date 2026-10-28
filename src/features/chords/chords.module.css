@@ -129,6 +129,18 @@
   gap: 6px;
 }
 
+/* Six to a row, so twelve roots and each group of six qualities fill their rows. */
+.pillGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pillGrid > .pill {
+  min-width: 0;
+  padding: 0 4px;
+}
+
 .pill {
   min-height: var(--control-height-small);
   min-width: 44px;

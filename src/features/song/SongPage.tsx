@@ -151,14 +151,16 @@ export function SongPage() {
             ))}
           </Select>
         </Field>
-        <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
+      </div>
+      <div className={styles.arrangementFoot}>
+        <p className={styles.note}>
+          These settings affect playback and practice only; the original song stays unchanged.
+          Fill-ins play only where they do not overlap the melody.
+        </p>
+        <Button size="small" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
           Reset arrangement
         </Button>
       </div>
-      <p className={styles.note}>
-        These settings affect playback and practice only; the original song stays unchanged.
-        Fill-ins play only where they do not overlap the melody.
-      </p>
     </details>
   );
   return (

@@ -282,6 +282,23 @@
   white-space: pre-line;
 }
 
+/*
+ * On a phone the title and a section's name take the whole width of their
+ * card, and the suggested keys share a line under their label.
+ */
+@media (max-width: 600px) {
+  .fields > :first-child,
+  .sectionHead > :first-child,
+  .keySuggest > :first-child {
+    flex-basis: 100%;
+  }
+
+  .fields > :first-child input,
+  .sectionHead > :first-child input {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .reviewHead,
   .reviewRow {

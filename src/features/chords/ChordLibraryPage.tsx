@@ -121,7 +121,7 @@ export function ChordLibraryPage() {
         <div className={`${styles.side} ${styles.areaSide}`}>
           <div className={styles.group} role="group" aria-label="Root">
             <span className={styles.groupTitle}>Root</span>
-            <div className={styles.pills}>
+            <div className={styles.pillGrid}>
               {ALL_ROOTS.map((r) => (
                 <button
                   key={r}
@@ -138,7 +138,7 @@ export function ChordLibraryPage() {
           {GROUPS.map((g) => (
             <div key={g.title} className={styles.group} role="group" aria-label={g.title}>
               <span className={styles.groupTitle}>{g.title}</span>
-              <div className={styles.pills}>
+              <div className={styles.pillGrid}>
                 {g.ids.map((id) => {
                   const q = CHORD_QUALITIES.find((x) => x.id === id)!;
                   return (

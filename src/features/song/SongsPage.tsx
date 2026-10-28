@@ -80,15 +80,17 @@ export function SongsPage() {
         }
       />
       <div className={styles.filters}>
-        <Segmented<LevelFilter>
-          label="Level"
-          value={level}
-          options={[
-            { value: 'all', label: 'All' },
-            ...SONG_LEVELS.map((l) => ({ value: l, label: LEVEL_NAMES[l] })),
-          ]}
-          onChange={(v) => set('level', v === 'all' ? '' : v)}
-        />
+        <Field label="Level" group>
+          <Segmented<LevelFilter>
+            label="Level"
+            value={level}
+            options={[
+              { value: 'all', label: 'All' },
+              ...SONG_LEVELS.map((l) => ({ value: l, label: LEVEL_NAMES[l] })),
+            ]}
+            onChange={(v) => set('level', v === 'all' ? '' : v)}
+          />
+        </Field>
         <Field label="Composer">
           <Select
             value={composer}

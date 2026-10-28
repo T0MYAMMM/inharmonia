@@ -40,7 +40,13 @@
   color: var(--muted);
 }
 
+/* Key, pattern and fill on one row; voicing and voice leading on the next. */
 .settings {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settingsRow {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -48,7 +54,6 @@
 }
 
 .patternNote {
-  flex-basis: 100%;
   color: var(--muted);
   font-size: 0.875rem;
 }
@@ -86,6 +91,14 @@
 
 .sectionHead h2 {
   margin: 0;
+}
+
+/* A section's actions stay together: beside the title, or on the line under it. */
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .sectionHead:first-of-type {
@@ -146,9 +159,10 @@
   font-size: 0.875rem;
 }
 
+/* Columns of equal width, so the last row never holds one numeral alone. */
 .palette {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
   gap: var(--space-2);
 }
 
