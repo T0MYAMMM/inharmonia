@@ -1,14 +1,17 @@
 import { Link } from 'react-router';
-import styles from '../page.module.css';
+import { buttonClass } from '@/ui/buttonClass';
+import { PageHeader } from '../PageHeader';
 
 export function NotFoundPage() {
   return (
-    <div className={styles.hero}>
-      <h1>Nothing here.</h1>
-      <p className={styles.lede}>That page does not exist, or it has moved.</p>
-      <p>
-        <Link to="/">Back to the practice room</Link>
-      </p>
-    </div>
+    <PageHeader
+      title="Nothing here."
+      lede="That page does not exist, or it has moved."
+      actions={
+        <Link to="/" className={buttonClass('secondary', 'small')}>
+          Back to the practice room
+        </Link>
+      }
+    />
   );
 }

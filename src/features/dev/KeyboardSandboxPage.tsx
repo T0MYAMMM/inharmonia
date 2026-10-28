@@ -20,6 +20,7 @@ import { VolumeSlider } from '@/ui/VolumeSlider';
 import { KeyboardDock } from '@/ui/keyboard';
 import { buildDemo, DEMO_BEATS_PER_BAR, DEMO_CHORDS, DEMO_KEY, DEMO_LENGTH } from './demo';
 import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './KeyboardSandboxPage.module.css';
 
 const STATUS_TEXT = {
@@ -35,13 +36,10 @@ const ms = (s: number) => `${Math.round(s * 1000)} ms`;
 export function KeyboardSandboxPage() {
   return (
     <>
-      <div className={page.hero}>
-        <h1>Keyboard sandbox</h1>
-        <p className={page.lede}>
-          Play with the mouse, a touch screen, your computer keyboard or a MIDI keyboard. The sound
-          starts on your first press.
-        </p>
-      </div>
+      <PageHeader
+        title="Keyboard sandbox"
+        lede="Play with the mouse, a touch screen, your computer keyboard or a MIDI keyboard. The sound starts on your first press."
+      />
       <div className={page.grid}>
         <SoundCard />
         <NowPlayingCard />
