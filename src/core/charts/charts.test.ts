@@ -209,6 +209,31 @@ describe('bar syntax', () => {
     expect(bars[1]!.chords[0]!.symbol).toBe('Hx');
   });
 
+  it('reports dots with no chord before them instead of reading an empty bar', () => {
+    // Without bar lines each token is a bar, so the dots stand alone.
+    const loose = parseBars('C . . G', 4);
+    expect(loose.bars.map((b) => b.chords.map((c) => `${c.symbol}:${c.beats}`).join(' '))).toEqual([
+      'C:4',
+      'G:4',
+    ]);
+    expect(loose.issues).toEqual([
+      {
+        line: 1,
+        bar: 2,
+        token: '.',
+        message: 'Dots add beats to the chord before them, inside a bar: | C . . G |',
+      },
+      {
+        line: 1,
+        bar: 3,
+        token: '.',
+        message: 'Dots add beats to the chord before them, inside a bar: | C . . G |',
+      },
+    ]);
+    expect(parseBars('| . . C G |', 4).issues.map((i) => i.token)).toEqual(['.', '.']);
+    expect(parseBars('| . . C G |', 4).bars[0]!.chords.map((c) => c.beats)).toEqual([2, 2]);
+  });
+
   it('round-trips through text, uneven splits included', () => {
     const bars = parseBars('| C . . G | Am | F G | C |\n| N.C. |', 4).bars;
     const text = formatBars(bars, 4);
