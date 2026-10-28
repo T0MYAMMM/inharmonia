@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import {
   CHART_STYLES,
+  LIMITS,
   readChords,
   roomLeft,
   SEQUENCE_TEMPO,
@@ -104,7 +105,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
         <BarStrip bars={seq.bars} playing={playback.playing ? playback.bar : null} />
       ) : (
         <div className={styles.empty} data-testid="sequence-empty">
-          <p>No chords yet. Type some below, or try these.</p>
+          <p>No chords yet. Type some below, add the chord above, or try these.</p>
           <Button
             onClick={() => editor.addBars(readChords(EXAMPLE, seq.meter.beats, roomLeft(seq)).bars)}
           >
@@ -112,6 +113,12 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
           </Button>
         </div>
       )}
+
+      {editor.full ? (
+        <p className={styles.note} data-testid="sequence-full">
+          The sequence is full at {LIMITS.barsPerSection} bars: delete one to add more.
+        </p>
+      ) : null}
 
       <ChordEntry editor={editor} />
 
