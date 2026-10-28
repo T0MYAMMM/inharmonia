@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { holdChord } from './helpers';
 
 const lit = (page: Page, layer: string) =>
   page.$$eval(`[data-layers~="${layer}"]`, (els) =>
@@ -281,6 +282,57 @@ test.describe('chord sequence', () => {
     await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in C major');
     await page.reload();
     await expect(page.locator('[data-numeral]')).toHaveText(['I', 'vi', 'IV', 'V']);
+  });
+
+  test('play a chord on the computer keys, then add it', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'computer keyboard input');
+    await page.goto('chords');
+    const played = page.getByTestId('sequence-played');
+    await expect(played).toHaveText('Nothing played yet.');
+    await expect(page.getByTestId('sequence-add-played')).toBeDisabled();
+    const release = await holdChord(page, [62, 65, 69, 72]); // Dm7
+    await expect(played).toHaveText('You played Dm7.');
+    await release();
+    // Let go, and it is still there to add.
+    await expect(page.getByTestId('sequence-add-played')).toHaveAccessibleName('Add Dm7');
+    await page.getByTestId('sequence-add-played').click();
+    await expect.poll(() => bars(page)).toEqual(['Dm7']);
+    await expect(page.getByTestId('sequence-status')).toHaveText('Added Dm7 as bar 1.');
+    const two = await holdChord(page, [60, 61]);
+    await two();
+    await expect(played).toHaveText(
+      'Not a chord I can name: hold three or more notes of one chord together.',
+    );
+  });
+
+  test('on a touch screen, hold the keys on screen together, then add it', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'touch');
+    await page.goto('chords');
+    await expect(page.getByText('hold the notes together with two fingers')).toBeVisible();
+    // The dock scrolls its keys into range as the page opens: wait for them to settle.
+    let before = '';
+    await expect
+      .poll(async () => {
+        const now = JSON.stringify(await page.locator('[data-midi="60"]').boundingBox());
+        const settled = now === before;
+        before = now;
+        return settled;
+      })
+      .toBe(true);
+    const key = async (midi: number) => {
+      const b = (await page.locator(`[data-midi="${midi}"]`).boundingBox())!;
+      return { x: b.x + b.width / 2, y: b.y + b.height - 12 };
+    };
+    const points = [await key(60), await key(64), await key(67)].map((p, id) => ({ ...p, id }));
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points });
+    await expect(page.getByTestId('sequence-played')).toHaveText('You played C.');
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.getByTestId('sequence-add-played').click();
+    await expect.poll(() => bars(page)).toEqual(['C']);
   });
 
   test('survives a reload, with its settings', async ({ page }) => {

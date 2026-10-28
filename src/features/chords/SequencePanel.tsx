@@ -14,7 +14,8 @@ import {
   type ChartStyle,
   type SequenceIssue,
 } from '@/core/charts';
-import { keyName, prettyAccidentals } from '@/core/notation';
+import { keyName, prettyAccidentals, prettyChord } from '@/core/notation';
+import type { Played } from '@/core/practice';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Field } from '@/ui/Field';
@@ -66,13 +67,15 @@ const KEYS_HINT =
 export interface SequencePanelProps {
   editor: SequenceEditor;
   playback: SequencePlayback;
+  /** The chord being played on the keyboard, or the last one played. */
+  played: Played | null;
 }
 
 /**
  * The chord sequence: put chords in a line, by typing them or from the chord
  * above, and hear them played at a tempo, in a style, looped or once.
  */
-export function SequencePanel({ editor, playback }: SequencePanelProps) {
+export function SequencePanel({ editor, playback, played }: SequencePanelProps) {
   const titleId = useId();
   const idPrefix = useId();
   const keysId = `${idPrefix}-keys`;
@@ -239,7 +242,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
         </>
       ) : (
         <div className={styles.empty} data-testid="sequence-empty">
-          <p>No chords yet. Type some below, add the chord above, or try these.</p>
+          <p>No chords yet. Type them, add the chord above, play one, or try these.</p>
           <Button
             onClick={() => editor.addBars(readChords(EXAMPLE, seq.meter.beats, roomLeft(seq)).bars)}
           >
@@ -255,6 +258,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
       ) : null}
 
       <ChordEntry editor={editor} id={chordsId} />
+      <PlayedEntry editor={editor} played={played} touchOnly={touchOnly} />
 
       <div className={styles.settings}>
         <Field label="Meter" group>
@@ -350,6 +354,53 @@ function ChordEntry({ editor, id }: { editor: SequenceEditor; id: string }) {
         />
         <Button onClick={add} disabled={!text.trim()} data-testid="sequence-add-text">
           Add
+        </Button>
+      </div>
+    </Field>
+  );
+}
+
+/**
+ * The chord last played on any input, named, ready to add after the chosen
+ * bar or at the end. On a touch screen the keys on screen need the notes
+ * held together, with two fingers.
+ */
+function PlayedEntry({
+  editor,
+  played,
+  touchOnly,
+}: {
+  editor: SequenceEditor;
+  played: Played | null;
+  touchOnly: boolean;
+}) {
+  const symbol = played?.symbol ?? null;
+  const said = !played
+    ? 'Nothing played yet.'
+    : symbol
+      ? `You played ${prettyChord(symbol)}.`
+      : 'Not a chord I can name: hold three or more notes of one chord together.';
+  return (
+    <Field
+      label="Play a chord"
+      group
+      hint={
+        touchOnly
+          ? 'Any octave, any inversion. On the keys on screen, hold the notes together with two fingers.'
+          : 'Any octave, any inversion, on a MIDI keyboard or the computer keys.'
+      }
+      className={styles.entry}
+    >
+      <div className={styles.playedRow}>
+        <span className={styles.played} data-testid="sequence-played">
+          {said}
+        </span>
+        <Button
+          onClick={() => symbol && editor.addChord(symbol)}
+          disabled={!symbol || editor.full}
+          data-testid="sequence-add-played"
+        >
+          {symbol ? `Add ${prettyChord(symbol)}` : 'Add it'}
         </Button>
       </div>
     </Field>

@@ -23,6 +23,7 @@ import { KeyboardDock } from '@/ui/keyboard';
 import { PageHeader } from '../PageHeader';
 import { SequencePanel } from './SequencePanel';
 import { useSequenceEditor } from './useSequenceEditor';
+import { usePlayedChord } from './usePlayedChord';
 import { useSequencePlayer } from './useSequencePlayer';
 import styles from './chords.module.css';
 
@@ -73,6 +74,7 @@ export function ChordLibraryPage() {
 
   const sequence = useSequenceEditor();
   const playback = useSequencePlayer(sequence.sequence);
+  const played = usePlayedChord();
 
   // Light the voicing in dusk (chord tones), unless the sequence is playing
   // and lighting its own.
@@ -250,7 +252,7 @@ export function ChordLibraryPage() {
         </Card>
 
         <div className={styles.areaSequence}>
-          <SequencePanel editor={sequence} playback={playback} />
+          <SequencePanel editor={sequence} playback={playback} played={played} />
         </div>
       </div>
       <KeyboardDock focus={[voicing[0]!.midi, voicing.at(-1)!.midi]} />
