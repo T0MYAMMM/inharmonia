@@ -77,6 +77,14 @@
   }
 }
 
+/* Where the notes come from, at the end of the page. */
+.source {
+  max-width: var(--text-width);
+  margin-top: var(--space-6);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 /* The versions of a piece, in the lede under its facts. */
 .levels {
   display: flex;
