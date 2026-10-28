@@ -169,3 +169,69 @@ test.describe('Send to Studio', () => {
     await expect(page.locator('main img')).toHaveCount(0);
   });
 });
+
+test.describe('Progressions in this song', () => {
+  test('a chart pasted and saved says which progressions it has, and links to them', async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    await page.getByTestId('chart-title').fill('Night bus');
+    await page
+      .getByTestId('paste-text')
+      .fill(['[Verse]', 'Am F C G', 'Am F C G', '', '[Chorus]', 'F G C C', 'Dm G C'].join('\n'));
+    await page.getByTestId('paste-read').click();
+    await page.getByTestId('paste-use').click();
+    await page.getByTestId('chart-save').click();
+
+    await expect(page.getByRole('heading', { name: 'Night bus', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('chart-saved')).toHaveText('Saved.');
+    await expect(page.getByTestId('chart-found')).toHaveText(
+      'Progressions in it: vi–IV–I–V, ii–V–I. By section ↓',
+    );
+    const panel = page.getByTestId('chart-progressions');
+    await expect(panel.getByRole('heading', { level: 3 })).toHaveText(['Verse', 'Chorus']);
+    await expect(page.getByTestId('harmony-0').getByTestId('harmony-matches')).toHaveText(
+      /vi–IV–I–V the whole section, twice\s*I–V–vi–IV the whole section, twice, started on vi/,
+    );
+    await expect(page.getByTestId('harmony-1').getByTestId('harmony-matches')).toHaveText(
+      'ii–V–I bars 5–7',
+    );
+
+    // Said once: not again after a reload.
+    await page.reload();
+    await expect(page.getByTestId('chart-found')).toBeVisible();
+    await expect(page.getByTestId('chart-saved')).toHaveCount(0);
+
+    await page.getByTestId('chart-found').getByRole('link', { name: 'vi–IV–I–V' }).click();
+    await expect(page).toHaveURL(/\/progressions\/vi-iv-i-v\?key=C$/);
+    await expect(page.getByRole('heading', { name: 'vi–IV–I–V', level: 1 })).toBeVisible();
+  });
+
+  test('each section in numerals, in the key it plays in, with what was found', async ({
+    page,
+  }) => {
+    await makeChart(page);
+    await page.getByTestId('transpose').selectOption('-5');
+    const panel = page.getByTestId('chart-progressions');
+    await expect(panel.getByText('Roman numerals in G major', { exact: false })).toBeVisible();
+    const verse = page.getByRole('list', { name: 'Verse, 8 bars' }).getByRole('listitem');
+    await expect(verse).toHaveCount(8);
+    await expect(verse.first()).toHaveAccessibleName('Bar 1: G (I)');
+    const bridge = page.getByTestId('harmony-2');
+    const bridgeBars = bridge.getByRole('list', { name: 'Bridge, 8 bars' }).getByRole('listitem');
+    await expect(bridgeBars).toHaveCount(8);
+    await expect(bridgeBars.nth(3)).toHaveAccessibleName('Bar 4: E7 (VI7)');
+    await expect(bridgeBars.nth(7)).toHaveAccessibleName('Bar 8: N.C.');
+    await expect(bridge.getByTestId('harmony-matches')).toHaveText('ii–V–I bars 1–3 and 5–7');
+    await bridge.getByRole('link', { name: 'ii–V–I' }).click();
+    await expect(page).toHaveURL(/\/progressions\/ii-v-i\?key=G$/);
+    await expect(page.getByTestId('key')).toHaveValue('G');
+  });
+
+  test('By section goes to the panel', async ({ page }) => {
+    await makeChart(page);
+    await page.getByTestId('chart-found').getByRole('link', { name: 'By section' }).click();
+    await expect(page.getByTestId('chart-progressions')).toBeInViewport();
+    await expect(page.getByRole('heading', { name: 'Progressions in this song' })).toBeInViewport();
+  });
+});

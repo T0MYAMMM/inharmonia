@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { PATTERNS } from '@/content/patterns';
-import { CHART_STYLES, shiftLabel, userChartLesson, viewKey, type UserChart } from '@/core/charts';
+import { PROGRESSIONS } from '@/content/progressions';
+import {
+  CHART_STYLES,
+  chartProgressions,
+  shiftLabel,
+  userChartLesson,
+  viewKey,
+  type UserChart,
+} from '@/core/charts';
 import { compileLesson } from '@/core/content/compile';
 import { sentTitle } from '@/core/handoff';
 import { compiledToMidi } from '@/core/midi/adapters';
@@ -17,9 +25,11 @@ import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
 import { LEVEL_WORDS, NOTES, sentToStudio } from '../sendTo/names';
-import { SendToMenu } from '../sendTo/SendToMenu';
+import { ArrivalNote, SendToMenu } from '../sendTo/SendToMenu';
 import { useHere, useSend } from '../sendTo/useHandoff';
 import { LearnPanel } from './LearnPanel';
+import { PANEL_ID, progressionLink, songProgressions } from './progressionWords';
+import { ProgressionsPanel } from './ProgressionsPanel';
 import styles from './charts.module.css';
 
 /** A chord chart of yours in the player, with its notes, edit, export and delete. */
@@ -32,6 +42,14 @@ export function ChartPage() {
   const navigate = useNavigate();
   const send = useSend();
   const here = useHere();
+  // Said once on arriving from a save ("Saved."), not again on a reload.
+  const location = useLocation();
+  const [saved] = useState(() => (location.state as { saved?: string } | null)?.saved ?? null);
+  useEffect(() => {
+    if (saved) void navigate(here, { replace: true, state: null });
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (listed) return;
@@ -49,6 +67,10 @@ export function ChartPage() {
     () => (record ? compileLesson(userChartLesson(record), PATTERNS) : null),
     [record],
   );
+  const sections = useMemo(
+    () => (record ? chartProgressions(record.chart, record.view, PROGRESSIONS) : []),
+    [record],
+  );
 
   if (record === undefined && status !== 'unavailable')
     return <p className={styles.note}>Loading…</p>;
@@ -62,7 +84,13 @@ export function ChartPage() {
     );
 
   const { chart, view } = record;
-  const key = prettyAccidentals(keyName(viewKey(chart, view)));
+  const playKey = viewKey(chart, view);
+  const key = prettyAccidentals(keyName(playKey));
+  const found = songProgressions(sections);
+  const named = found.slice(0, found.length > 4 ? 3 : 4);
+  const foundWords = found.length
+    ? `Progressions in it: ${found.map((m) => m.name).join(', ')}.`
+    : 'No library progressions in it.';
   const style = CHART_STYLES.find((x) => x.id === view.style)?.name ?? view.style;
   const toStudio = () =>
     send({
@@ -101,6 +129,34 @@ export function ChartPage() {
                 {chart.notes}
               </p>
             ) : null}
+            <p className={styles.found} data-testid="chart-found">
+              {named.length ? (
+                <>
+                  Progressions in it:{' '}
+                  {named.map((m, i) => (
+                    <Fragment key={m.id}>
+                      {i ? ', ' : ''}
+                      <Link to={progressionLink(m, playKey)}>{m.name}</Link>
+                    </Fragment>
+                  ))}
+                  {found.length > named.length ? ` and ${found.length - named.length} more` : ''}
+                  .{' '}
+                </>
+              ) : (
+                'No library progressions in it. '
+              )}
+              <a href={`#${PANEL_ID}`}>
+                By section<span aria-hidden="true"> ↓</span>
+              </a>
+            </p>
+            {saved ? (
+              <ArrivalNote
+                text={saved}
+                spoken={`${saved} ${foundWords}`}
+                className={styles.saved}
+                testId="chart-saved"
+              />
+            ) : null}
           </>
         }
         actions={
@@ -138,6 +194,7 @@ export function ChartPage() {
           />
         }
       />
+      <ProgressionsPanel sections={sections} viewKey={playKey} />
       <div className={mine.danger}>
         {confirm ? (
           <>

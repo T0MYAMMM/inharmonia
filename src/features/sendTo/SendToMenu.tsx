@@ -65,18 +65,21 @@ export function SendToMenu({
  */
 export function ArrivalNote({
   text,
+  spoken = text,
   className,
   testId,
 }: {
   text: string;
+  /** What a screen reader hears, when it is more than what is shown. */
+  spoken?: string;
   className?: string;
   testId?: string;
 }) {
   const [said, setSaid] = useState('');
   useEffect(() => {
-    const t = window.setTimeout(() => setSaid(text), 150);
+    const t = window.setTimeout(() => setSaid(spoken), 150);
     return () => window.clearTimeout(t);
-  }, [text]);
+  }, [spoken]);
   return (
     <>
       <p className={className} data-testid={testId}>

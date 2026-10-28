@@ -160,16 +160,27 @@ test.describe('input', () => {
   });
 });
 
-/** A chord chart with sections and a note, as a player would have one. */
+/**
+ * A chord chart with three sections and a note, as a player would have one:
+ * enough progressions in it that their line in the header runs to two lines
+ * on a phone.
+ */
 async function makeChart(page: Page) {
   await page.goto('songs/charts/new');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByTestId('chart-title').fill('Harbour lights');
   await page.getByTestId('chart-notes').fill('Slow down in the last chorus.');
-  await page.getByTestId('add-section').selectOption('Verse');
-  await page.getByTestId('edit-text-0').click();
-  await page.getByTestId('bars-text').fill('| C | G | Am | F |\n| C | G | F | C |');
-  await page.getByTestId('bars-apply').click();
+  const sections = [
+    ['Verse', '| C | G | Am | F |\n| C | G | Am | F |'],
+    ['Chorus', '| Am | F | C | G |'],
+    ['Bridge', '| Dm7 | G7 | Cmaj7 | A7 |\n| Dm7 | G7 | C | N.C. |'],
+  ] as const;
+  for (const [i, [label, bars]] of sections.entries()) {
+    await page.getByTestId('add-section').selectOption(label);
+    await page.getByTestId(`edit-text-${i}`).click();
+    await page.getByTestId('bars-text').fill(bars);
+    await page.getByTestId('bars-apply').click();
+  }
   await page.getByTestId('chart-save').click();
   await expect(page.getByRole('heading', { name: 'Harbour lights', level: 1 })).toBeVisible();
 }
@@ -248,6 +259,16 @@ test.describe('Play on a phone', () => {
   test('on a chord chart, Play is in the first screen', async ({ page }) => {
     await makeChart(page);
     await page.reload();
+    // The progressions found take two lines here; Play is still in view.
+    await expect(page.getByTestId('chart-found')).toHaveText(
+      'Progressions in it: I–V–vi–IV, vi–IV–I–V, ii–V–I. By section ↓',
+    );
+    const lines = await page.getByTestId('chart-found').evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return new Set([...range.getClientRects()].map((r) => Math.round(r.bottom))).size;
+    });
+    expect(lines).toBe(2);
     await playInFirstScreen(page);
   });
 
