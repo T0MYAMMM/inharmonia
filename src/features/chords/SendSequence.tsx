@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router';
 import {
   chordsToProgression,
+  LIMITS,
+  makeUserChart,
   sequenceChart,
   sequenceKey,
+  sequenceView,
   suggestKeys,
   type ChordSequence,
   type Key,
@@ -10,11 +14,14 @@ import {
 } from '@/core/charts';
 import { MAJOR_KEYS, MINOR_KEYS } from '@/core/content/realize';
 import { keyName, prettyAccidentals, prettyNumeral } from '@/core/notation';
+import { newChartId, saveChart } from '@/state/mySongs';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { Select } from '@/ui/Select';
+import { TextInput } from '@/ui/TextInput';
 import { SendDialog } from '../sendTo/SendDialog';
 import dialog from '../sendTo/sendTo.module.css';
+import { barWords } from './useSequenceEditor';
 
 const KEYS: Key[] = [
   ...MAJOR_KEYS.map((tonic) => ({ tonic, mode: 'major' as const })),
@@ -119,5 +126,90 @@ export function ToProgression({
         </Button>
       </div>
     </SendDialog>
+  );
+}
+
+/**
+ * Before the sequence is saved as a chart in My songs: its title, ready
+ * with its first chords, so Enter is enough. Saved as the sequence plays,
+ * its style and Show function kept, then the chart opens.
+ */
+export function ToChart({
+  seq,
+  open,
+  onClose,
+}: {
+  seq: ChordSequence;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <SendDialog open={open} title="Send to Songs" onClose={onClose} testId="send-chart">
+      <ChartForm seq={seq} onClose={onClose} />
+    </SendDialog>
+  );
+}
+
+/** The sequence as a chart of yours, as it plays: its style and Show function kept. */
+const newSequenceChart = (seq: ChordSequence, title: string) =>
+  makeUserChart(newChartId(), sequenceChart(seq, title), sequenceView(seq), Date.now());
+
+function ChartForm({ seq, onClose }: { seq: ChordSequence; onClose: () => void }) {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState(() =>
+    seq.bars.slice(0, 4).map(barWords).join(' ').slice(0, LIMITS.title),
+  );
+  const [tried, setTried] = useState(false);
+  const [problem, setProblem] = useState('');
+  const [saving, setSaving] = useState(false);
+  const key = sequenceChart(seq).key;
+  const missing = tried && !title.trim();
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setTried(true);
+    if (!title.trim() || saving) return;
+    setSaving(true);
+    setProblem('');
+    try {
+      const record = newSequenceChart(seq, title.trim());
+      await saveChart(record);
+      void navigate(`/songs/charts/${record.id}`, {
+        state: { saved: 'Saved from your chord sequence.' },
+      });
+    } catch {
+      setProblem('Could not save: this browser is not letting Inharmonia store data.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form className={dialog.form} onSubmit={(e) => void save(e)} noValidate>
+      <p className={dialog.note}>
+        A new chart in My songs: {seq.bars.length} bar{seq.bars.length === 1 ? '' : 's'} in{' '}
+        {keyWords(key)}, played as the sequence plays.
+      </p>
+      <Field label="Title" error={missing ? 'Give it a title.' : undefined}>
+        <TextInput
+          value={title}
+          maxLength={LIMITS.title}
+          onChange={(e) => setTitle(e.target.value)}
+          onFocus={(e) => e.target.select()}
+          autoComplete="off"
+          data-testid="send-title"
+        />
+      </Field>
+      <div className={dialog.actions}>
+        <Button type="submit" variant="primary" disabled={saving} data-testid="send-save-chart">
+          {saving ? 'Saving…' : 'Save the chart'}
+        </Button>
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+      <p className={dialog.problem} role="alert">
+        {problem}
+      </p>
+    </form>
   );
 }
