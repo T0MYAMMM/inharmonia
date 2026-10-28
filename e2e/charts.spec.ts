@@ -66,7 +66,7 @@ test.describe('chord charts', () => {
     await expect(page.getByText('Private', { exact: true })).toBeVisible();
     await expect(page.getByText('C major, 4/4, 24 bars, 80 bpm')).toBeVisible();
     await expect(page.getByTestId('chart-notes-view')).toHaveText('Slow down in the last chorus.');
-    await expect(page.getByRole('heading', { name: 'Bait' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bait', level: 2 })).toBeVisible();
     await page.getByRole('button', { name: 'Show function' }).click();
     await expect(page.locator('[data-bar="2"]')).toContainText('vi');
 

@@ -45,7 +45,7 @@ export function ChartEditorPage() {
         ? { ...existing, updatedAt: now, chart }
         : makeUserChart(newChartId(), chart, DEFAULT_VIEW, now);
       await saveChart(record);
-      navigate(`/songs/charts/${record.id}`);
+      navigate(`/songs/charts/${record.id}`, { state: { saved: 'Saved.' } });
     } catch {
       setProblem('Could not save: this browser is not letting Inharmonia store data.');
       setSaving(false);
