@@ -230,6 +230,7 @@ describe('a sequence as a chart', () => {
       simplify: 'original',
       style: 'arpeggio-8ths',
       showFunction: true,
+      showLyrics: true,
     });
     const lesson = chartToLesson('seq', sequenceChart(seq), sequenceView(seq));
     expect(lesson.bars.map((b) => b.chords.map((c) => c.symbol).join(' '))).toEqual([

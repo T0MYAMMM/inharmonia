@@ -133,6 +133,20 @@
   color: var(--muted);
 }
 
+/* A bar's lyrics, under its chords: muted, and ink in the bar that is playing. */
+.lyric {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.bar[aria-current='true'] .lyric {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 /* Let the target ring show outside the chord's text box. */
 .chord[data-state='target'] {
   overflow: visible;

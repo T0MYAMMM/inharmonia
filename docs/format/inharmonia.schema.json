@@ -741,7 +741,7 @@
         },
         "view": {
           "type": "object",
-          "required": ["transpose", "simplify", "style", "showFunction"],
+          "required": ["transpose", "simplify", "style", "showFunction", "showLyrics"],
           "additionalProperties": false,
           "properties": {
             "transpose": {
@@ -757,6 +757,10 @@
             },
             "showFunction": {
               "type": "boolean"
+            },
+            "showLyrics": {
+              "type": "boolean",
+              "description": "Show each bar's lyrics under it, when the chart has any."
             }
           }
         }

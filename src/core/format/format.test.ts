@@ -108,6 +108,7 @@ const view = {
   simplify: 'simplified' as const,
   style: 'triad-root',
   showFunction: true,
+  showLyrics: false,
 };
 
 const draft: SongDraft = {

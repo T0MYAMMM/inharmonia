@@ -41,6 +41,11 @@ export interface ScoreProps {
   onFallingChange?: (options: FallingViewOptions | null) => void;
   /** Controlled preferences so edits in Full Screen update the score toolbar. */
   fallingSelected?: FallingViewOptions | null;
+  /**
+   * The words sung over each bar, by bar index (a chart's kept lyrics), shown
+   * under its chords. Only the chart page passes them; they never enter the lesson.
+   */
+  lyrics?: readonly (string | undefined)[];
 }
 
 export interface FallingViewOptions {
@@ -112,6 +117,7 @@ export function Score(props: ScoreProps) {
         onSelect={props.onSelectBar}
         follow={follow}
         zoom={zoom}
+        lyric={props.lyrics?.[bar.index]}
       />
     );
   };
@@ -256,6 +262,8 @@ interface BarCardProps {
   onSelect: (index: number) => void;
   follow: boolean;
   zoom: number;
+  /** The words sung over this bar, as plain text. */
+  lyric?: string;
 }
 
 const BarCard = memo(
@@ -277,6 +285,7 @@ const BarCard = memo(
       onSelect,
       follow,
       zoom,
+      lyric,
     }: BarCardProps,
     ref,
   ) {
@@ -330,6 +339,7 @@ const BarCard = memo(
         <span className="visually-hidden">
           Bar {bar.index + 1} of {barCount}, {chordText}.
           {noteCount > 0 ? ` ${noteCount} melody notes.` : ''}
+          {lyric ? ` Lyrics: ${lyric}.` : ''}
           {ACTION[mode]}
         </span>
         <span className={styles.barNumber} aria-hidden="true">
@@ -362,6 +372,11 @@ const BarCard = memo(
             </span>
           ))}
         </div>
+        {lyric ? (
+          <p className={styles.lyric} aria-hidden="true" data-testid="bar-lyric">
+            {lyric}
+          </p>
+        ) : null}
         {!follow && density === 'dense' ? (
           <div className={styles.denseSummary} data-testid="dense-summary" aria-hidden="true">
             <strong>{noteCount} notes</strong>

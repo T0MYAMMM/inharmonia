@@ -76,7 +76,8 @@
         "transpose": 0,
         "simplify": "original",
         "style": "triad-root",
-        "showFunction": false
+        "showFunction": false,
+        "showLyrics": true
       }
     }
   ]

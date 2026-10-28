@@ -70,6 +70,8 @@ export interface LessonPlayerProps {
   belowControls?: ReactNode;
   /** Roman numerals under the chord symbols (default: on for progressions). */
   showNumerals?: boolean;
+  /** Words under each bar of the score, by bar index (a chart's kept lyrics). */
+  lyrics?: readonly (string | undefined)[];
   /**
    * Say how the hand moves into the current chord ("keep C and E, move G up 2
    * semitones to A") and mark it on the keyboard: a dot on notes that stay, a
@@ -91,6 +93,7 @@ export function LessonPlayer({
   fullScreenSettings,
   belowControls,
   showNumerals,
+  lyrics,
   voicingHints = false,
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
@@ -367,6 +370,7 @@ export function LessonPlayer({
         onFallingChange={setFallingOptions}
         fallingSelected={fallingOptions}
         onSelectBar={(i) => ctrl.selectBar(i)}
+        {...(lyrics ? { lyrics } : {})}
       />
       <KeyboardDock
         fullScreenControls={{

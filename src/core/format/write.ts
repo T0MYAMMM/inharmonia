@@ -207,6 +207,7 @@ export function chartItem(input: {
       simplify: input.view.simplify,
       style: input.view.style,
       showFunction: input.view.showFunction,
+      showLyrics: input.view.showLyrics,
     },
   };
 }

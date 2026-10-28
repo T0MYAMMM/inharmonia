@@ -137,6 +137,8 @@ export function cleanView(raw: Partial<ChartView> | undefined): ChartView {
     simplify: levels.includes(v.simplify) ? v.simplify : 'original',
     style: CHART_STYLES.some((x) => x.id === v.style) ? v.style : DEFAULT_VIEW.style,
     showFunction: v.showFunction === true,
+    // On unless turned off: lyrics are kept to be seen.
+    showLyrics: v.showLyrics !== false,
   };
 }
 

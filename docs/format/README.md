@@ -66,7 +66,7 @@ its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
   `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),
   `style` (`triad-root`, `block-both`, `root-fifth`, `arpeggio-8ths` or `held` for right hand
-  only) and `showFunction`. The chart itself is always stored as written; the view only changes
+  only), `showFunction` and `showLyrics`. The chart itself is always stored as written; the view only changes
   how it is shown and played. Importing restores exactly what you saw. Each section has an `id`, the `label` as you wrote it ("Bait 2"), a `type` used for logic
   (`verse`, `chorus`, …), `repeat`, and `bars`. Each bar is one string in chart syntax:
   - `"C"`: one chord for the whole bar

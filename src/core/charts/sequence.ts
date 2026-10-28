@@ -6,6 +6,7 @@ import {
   barOf,
   CHART_STYLES,
   CHART_VERSION,
+  DEFAULT_VIEW,
   LIMITS,
   type ChartBar,
   type ChartSection,
@@ -310,7 +311,13 @@ export function sequenceChart(seq: ChordSequence, title = ''): ChordChart {
 
 /** How the chart plays: as written, in the sequence's style. */
 export function sequenceView(seq: ChordSequence): ChartView {
-  return { transpose: 0, simplify: 'original', style: seq.style, showFunction: seq.showFunction };
+  return {
+    transpose: 0,
+    simplify: 'original',
+    style: seq.style,
+    showFunction: seq.showFunction,
+    showLyrics: DEFAULT_VIEW.showLyrics,
+  };
 }
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
