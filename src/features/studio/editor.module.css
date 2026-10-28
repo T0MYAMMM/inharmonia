@@ -3,10 +3,6 @@
   gap: var(--space-3);
 }
 
-.title {
-  max-width: 28rem;
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;

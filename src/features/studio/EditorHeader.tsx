@@ -37,6 +37,14 @@ export function ToolGroup({ label, children }: { label?: string; children: React
   );
 }
 
+/**
+ * A row of ToolGroups under the header. Below 760px each group takes a line
+ * of its own and its buttons share it evenly.
+ */
+export function ToolRow({ children }: { children: ReactNode }) {
+  return <div className={styles.row}>{children}</div>;
+}
+
 /** The document's name. Its label is for screen readers; the box shows what it is. */
 export function EditorTitle(props: Omit<TextInputProps, 'id'>) {
   const id = useId();

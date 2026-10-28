@@ -35,9 +35,16 @@ import { Checkbox } from '@/ui/Checkbox';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
-import { TextInput } from '@/ui/TextInput';
 import { Toggle } from '@/ui/Toggle';
 import { EditorPlayback, type EditorTakeAudio, type HearSource } from './EditorPlayback';
+import {
+  EditorHeader,
+  EditorTitle,
+  PlayButton,
+  ToolGroup,
+  ToolRow,
+  UndoRedo,
+} from './EditorHeader';
 import { EditorRoll } from './EditorRoll';
 import { BEAT_PX, describeNote, type ChordOption, type EditorTrace } from './editorModel';
 import { patternIdsFor } from './patternChoices';
@@ -232,71 +239,91 @@ export function SongEditor(props: SongEditorProps) {
 
   return (
     <div className={styles.editor} onKeyDown={onKeyDown}>
-      <Field label="Title" className={styles.title}>
-        <TextInput
-          value={draft.title}
-          maxLength={80}
-          onChange={(e) =>
-            setHistory((h) => ({ ...h, present: { ...h.present, title: e.target.value } }))
-          }
-          data-testid="song-title"
-        />
-      </Field>
-
-      <div className={styles.toolbar} role="toolbar" aria-label="Edit">
-        <Button size="small" onClick={() => setHistory(undo)} disabled={!history.past.length}>
-          Undo
-        </Button>
-        <Button size="small" onClick={() => setHistory(redo)} disabled={!history.future.length}>
-          Redo
-        </Button>
-        <Segmented
-          label="Grid"
-          value={String(step) as '1' | '0.5' | '0.25'}
-          options={STEPS}
-          onChange={(v) => setStep(Number(v))}
-        />
-        <Button size="small" onClick={add} data-testid="add-note">
-          Add note
-        </Button>
-        <Button size="small" onClick={remove} disabled={!selected} data-testid="delete-note">
-          Delete note
-        </Button>
-        <Button
-          size="small"
-          onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}
-        >
-          Octave down
-        </Button>
-        <Button
-          size="small"
-          onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}
-        >
-          Octave up
-        </Button>
-      </div>
-
-      <div className={styles.toolbar}>
-        <Button variant="primary" onClick={play} data-testid="editor-play">
-          {playback.playing ? 'Stop' : 'Play'}
-        </Button>
-        {props.take ? (
-          <Segmented
-            label="Hear"
-            value={playback.source}
-            options={HEAR}
-            onChange={(v) => playback.setSource(v)}
+      <EditorHeader
+        start={
+          <EditorTitle
+            value={draft.title}
+            onChange={(e) =>
+              setHistory((h) => ({ ...h, present: { ...h.present, title: e.target.value } }))
+            }
+            data-testid="song-title"
           />
-        ) : null}
-        <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)}>
-          Play chords
-        </Toggle>
+        }
+        tools={
+          <>
+            <UndoRedo
+              canUndo={history.past.length > 0}
+              canRedo={history.future.length > 0}
+              onUndo={() => setHistory(undo)}
+              onRedo={() => setHistory(redo)}
+            />
+            <ToolGroup label="Playback">
+              <PlayButton
+                playing={playback.playing}
+                stopLabel="Stop"
+                onClick={play}
+                data-testid="editor-play"
+              />
+            </ToolGroup>
+          </>
+        }
+      />
+
+      <ToolRow>
         {props.take ? (
-          <Toggle pressed={showTrace} onChange={setShowTrace}>
-            Pitch line
-          </Toggle>
+          <ToolGroup>
+            <Segmented
+              label="Hear"
+              value={playback.source}
+              options={HEAR}
+              onChange={(v) => playback.setSource(v)}
+            />
+          </ToolGroup>
         ) : null}
-      </div>
+        <ToolGroup label="Listen and look">
+          <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)}>
+            Play chords
+          </Toggle>
+          {props.take ? (
+            <Toggle pressed={showTrace} onChange={setShowTrace}>
+              Pitch line
+            </Toggle>
+          ) : null}
+        </ToolGroup>
+      </ToolRow>
+
+      <ToolRow>
+        <ToolGroup>
+          <Segmented
+            label="Grid"
+            value={String(step) as '1' | '0.5' | '0.25'}
+            options={STEPS}
+            onChange={(v) => setStep(Number(v))}
+          />
+        </ToolGroup>
+        <ToolGroup label="Notes">
+          <Button size="small" onClick={add} data-testid="add-note">
+            Add note
+          </Button>
+          <Button size="small" onClick={remove} disabled={!selected} data-testid="delete-note">
+            Delete note
+          </Button>
+        </ToolGroup>
+        <ToolGroup label="Octave">
+          <Button
+            size="small"
+            onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}
+          >
+            Octave down
+          </Button>
+          <Button
+            size="small"
+            onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}
+          >
+            Octave up
+          </Button>
+        </ToolGroup>
+      </ToolRow>
 
       <EditorRoll
         draft={draft}
