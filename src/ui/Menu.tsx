@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { buttonClass, type ButtonSize, type ButtonVariant } from './buttonClass';
+import { useDismiss } from './useDismiss';
 import styles from './Menu.module.css';
 
 /** Lets a chosen item close its menu. */
@@ -76,15 +77,9 @@ export function Menu({
     items[from === 'last' ? items.length - 1 : 0]?.focus();
   }, [open, from]);
 
-  // A press outside closes the menu and leaves focus where it lands.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener('pointerdown', onDown);
-    return () => window.removeEventListener('pointerdown', onDown);
-  }, [open]);
+  // A press outside closes the menu and leaves focus where it lands. Escape
+  // is the menu's own key (below), so it can put focus back on the button.
+  useDismiss(rootRef, open, { onOutside: () => setOpen(false) });
 
   const onButtonKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     onKeyDown?.(e);
