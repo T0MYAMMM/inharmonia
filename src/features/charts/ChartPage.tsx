@@ -6,7 +6,9 @@ import {
   CHART_STYLES,
   chartProgressions,
   chordsToProgression,
+  hasLyrics,
   playChord,
+  playedLyrics,
   shiftLabel,
   userChartLesson,
   viewKey,
@@ -73,6 +75,11 @@ export function ChartPage() {
   );
   const sections = useMemo(
     () => (record ? chartProgressions(record.chart, record.view, PROGRESSIONS) : []),
+    [record],
+  );
+  // Each played bar's words, when the chart has any (null when it has none).
+  const lyrics = useMemo(
+    () => (record && hasLyrics(record.chart) ? playedLyrics(record.chart) : null),
     [record],
   );
 
@@ -209,6 +216,7 @@ export function ChartPage() {
           </>
         }
         actions={
+          // What you can do with the chart, then how it is shown: two rows on a phone.
           <>
             <Link
               to={`/songs/charts/${record.id}/edit`}
@@ -216,6 +224,8 @@ export function ChartPage() {
             >
               Edit
             </Link>
+            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
+            <ExportMenu build={() => exportItems({ charts: [record] })} />
             <Toggle
               size="small"
               pressed={view.showFunction}
@@ -223,8 +233,15 @@ export function ChartPage() {
             >
               Show function
             </Toggle>
-            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
-            <ExportMenu build={() => exportItems({ charts: [record] })} />
+            {lyrics ? (
+              <Toggle
+                size="small"
+                pressed={view.showLyrics}
+                onChange={(v) => void saveChart({ ...record, view: { ...view, showLyrics: v } })}
+              >
+                Show lyrics
+              </Toggle>
+            ) : null}
           </>
         }
       />
@@ -233,6 +250,7 @@ export function ChartPage() {
         compiled={compiled}
         variant="progression"
         showNumerals={view.showFunction}
+        {...(lyrics && view.showLyrics ? { lyrics } : {})}
         voicingHints
         belowControls={
           // The key and how simple: worth setting, not needed before Play.

@@ -7,6 +7,7 @@ import {
   chartIssues,
   chartToLesson,
   CHART_VERSION,
+  cleanView,
   emptyChart,
   expandForm,
   formatBars,
@@ -681,6 +682,13 @@ describe('lyrics in a chart', () => {
     expect(JSON.stringify(issues)).not.toMatch(/la la|lines/);
     c.sections[0]!.bars[0]!.lyric = 'la '.repeat(40).trim();
     expect(chartIssues(c).map((i) => i.bar)).toEqual([2, 1]);
+  });
+
+  it('show by default: only a view that turned them off hides them', () => {
+    expect(cleanView(undefined).showLyrics).toBe(true);
+    expect(cleanView({ showFunction: true }).showLyrics).toBe(true);
+    expect(cleanView({ showLyrics: false }).showLyrics).toBe(false);
+    expect(cleanView({ showLyrics: 'no' as unknown as boolean }).showLyrics).toBe(true);
   });
 
   it('never reach what plays: the lesson and its MIDI are the same without them', () => {

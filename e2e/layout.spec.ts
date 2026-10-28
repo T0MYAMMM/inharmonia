@@ -222,7 +222,7 @@ test.describe('input', () => {
  * enough progressions in it that their line in the header runs to two lines
  * on a phone.
  */
-async function makeChart(page: Page) {
+async function makeChart(page: Page, lyrics: readonly string[] = []) {
   await page.goto('songs/charts/new');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByTestId('chart-title').fill('Harbour lights');
@@ -237,6 +237,14 @@ async function makeChart(page: Page) {
     await page.getByTestId(`edit-text-${i}`).click();
     await page.getByTestId('bars-text').fill(bars);
     await page.getByTestId('bars-apply').click();
+  }
+  // Words on the verse's bars, typed bar by bar.
+  if (lyrics.length) {
+    await page.getByTestId('bar-0-0').click();
+    for (const words of lyrics) {
+      await page.getByRole('textbox', { name: 'Lyrics' }).fill(words);
+      await page.getByRole('textbox', { name: 'Lyrics' }).press('Enter');
+    }
   }
   await page.getByTestId('chart-save').click();
   await expect(page.getByRole('heading', { name: 'Harbour lights', level: 1 })).toBeVisible();
@@ -327,6 +335,31 @@ test.describe('Play on a phone', () => {
     });
     expect(lines).toBe(2);
     await playInFirstScreen(page);
+  });
+
+  test('on a chord chart with lyrics shown, Play is in the first screen', async ({ page }) => {
+    // Invented words, one long run of letters among them, on all eight bars of the verse.
+    await makeChart(page, [
+      'lanterns on the water',
+      'slow boats coming home',
+      'every window golden',
+      'harbourlightsharbourlightsharbourlightsharbourlightsharbourlights',
+      'hold the evening',
+      'hold it for a while',
+      'ferry bells',
+      'and the gulls go home',
+    ]);
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Show lyrics' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.locator('[data-score-view]').getByTestId('bar-lyric')).toHaveCount(8);
+    await expect(page.getByTestId('chart-found')).toHaveText(
+      'Progressions in it: I–V–vi–IV, vi–IV–I–V, ii–V–I. By section ↓',
+    );
+    await playInFirstScreen(page);
+    await shell(page);
   });
 
   test('on a song of your own, Play is in the first screen', async ({ page }) => {

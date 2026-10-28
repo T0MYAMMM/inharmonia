@@ -82,6 +82,8 @@ export interface ChartView {
   style: string;
   /** Show Roman numerals under the chord symbols. */
   showFunction: boolean;
+  /** Show each bar's lyrics under it, when the chart has any. */
+  showLyrics: boolean;
 }
 
 /** Accompaniment styles for singing while playing, each a left-hand pattern applied to the chart. */
@@ -100,6 +102,7 @@ export const DEFAULT_VIEW: ChartView = {
   simplify: 'original',
   style: 'triad-root',
   showFunction: false,
+  showLyrics: true,
 };
 
 /** Even splits of a bar: 4/4 as 4, 2+2, 2+1+1, 1+1+1+1; 3/4 as 3, 2+1, 1+1+1, 1+1+½+½. */

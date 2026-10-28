@@ -86,6 +86,7 @@ test.describe('making a chart playable', () => {
       simplify: 'original',
       style: 'held',
       showFunction: false,
+      showLyrics: true,
     });
   });
 

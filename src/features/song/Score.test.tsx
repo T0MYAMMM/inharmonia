@@ -146,3 +146,32 @@ describe('following the current bar', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('lyrics under the bars', () => {
+  it("shows each bar's words as text, never markup, and marks the playing bar", () => {
+    const markup = '<img src=x onerror="window.pwned=1">';
+    const p = props('easy');
+    const { container, rerender } = render(
+      <Score {...p} lyrics={['lanterns on the water', undefined, markup]} />,
+    );
+    const words = screen.getAllByTestId('bar-lyric');
+    expect(words.map((w) => w.textContent)).toEqual(['lanterns on the water', markup]);
+    expect(container.querySelector('img')).toBeNull();
+    expect((window as unknown as { pwned?: number }).pwned).toBeUndefined();
+    expect(container.querySelector('[data-bar="1"] [data-testid="bar-lyric"]')).toBeNull();
+    // The bar's name says its words, so they are heard as well as seen.
+    expect(screen.getByRole('button', { name: /^Bar 1 of 3, C\./ })).toHaveAccessibleName(
+      'Bar 1 of 3, C. 4 melody notes. Lyrics: lanterns on the water. Play from here',
+    );
+    expect(container.querySelector('[aria-current="true"]')).toHaveTextContent(
+      'lanterns on the water',
+    );
+    rerender(<Score {...p} currentBar={2} lyrics={['lanterns on the water', undefined, markup]} />);
+    expect(container.querySelector('[aria-current="true"]')).toHaveTextContent(markup);
+  });
+
+  it('shows none without lyrics', () => {
+    render(<Score {...props('easy')} />);
+    expect(screen.queryByTestId('bar-lyric')).toBeNull();
+  });
+});
