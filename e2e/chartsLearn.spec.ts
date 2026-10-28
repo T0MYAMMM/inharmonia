@@ -73,6 +73,7 @@ test.describe('making a chart playable', () => {
 
     // The export keeps the chart as entered and the view beside it.
     const download = page.waitForEvent('download');
+    await page.getByTestId('export-menu').click();
     await page.getByTestId('export-download').click();
     const file = await download;
     let text = '';

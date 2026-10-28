@@ -16,7 +16,7 @@ import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
-import { ExportButtons } from '../transfer/Export';
+import { ExportMenu } from '../transfer/Export';
 import { exportItems } from '@/state/transfer';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { PageHeader } from '../PageHeader';
@@ -174,7 +174,7 @@ export function ProgressionPage() {
                 Make a copy to edit
               </Link>
             )}
-            <ExportButtons build={() => exportItems({ progressions: [progression] })} />
+            <ExportMenu build={() => exportItems({ progressions: [progression] })} />
           </>
         }
       />

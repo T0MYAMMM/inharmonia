@@ -3,6 +3,8 @@ import { formatBytes } from '@/core/songs';
 import { download, type ExportResult } from '@/state/transfer';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
+import { Menu, MenuItem, MenuSeparator } from '@/ui/Menu';
+import { ChevronDownIcon } from '../studio/icons';
 import styles from './transfer.module.css';
 
 async function copy(text: string): Promise<boolean> {
@@ -16,40 +18,59 @@ async function copy(text: string): Promise<boolean> {
 
 const itemsWord = (n: number) => `${n} item${n === 1 ? '' : 's'}`;
 
-/** Download and copy buttons for one item (a song, chart or progression page). */
-export function ExportButtons({
+/**
+ * Export for one item (a song, chart or progression page): one menu that
+ * downloads or copies its JSON and, for songs, downloads its .mid. What the
+ * last choice did is said beside the button.
+ */
+export function ExportMenu({
   build,
-  label = 'Export',
+  midi,
 }: {
   build: () => Promise<ExportResult>;
-  label?: string;
+  /** A .mid download, for songs; its test id names the page it is on. */
+  midi?: { download: () => void; testId: string };
 }) {
   const [status, setStatus] = useState('');
   return (
-    <span className={styles.actions} role="group" aria-label={label}>
-      <Button
+    <span className={styles.exportMenu}>
+      <Menu
         size="small"
-        variant="ghost"
-        onClick={async () => {
-          const r = await build();
-          download(r.text, r.fileName);
-          setStatus(`Saved ${r.fileName}`);
-        }}
-        data-testid="export-download"
+        label={
+          <>
+            Export <ChevronDownIcon />
+          </>
+        }
+        data-testid="export-menu"
       >
-        Download .json
-      </Button>
-      <Button
-        size="small"
-        variant="ghost"
-        onClick={async () => {
-          const r = await build();
-          setStatus((await copy(r.text)) ? 'Copied as JSON' : 'Could not reach the clipboard');
-        }}
-        data-testid="export-copy"
-      >
-        Copy as JSON
-      </Button>
+        <MenuItem
+          onSelect={async () => {
+            const r = await build();
+            download(r.text, r.fileName);
+            setStatus(`Saved ${r.fileName}`);
+          }}
+          data-testid="export-download"
+        >
+          Download .json
+        </MenuItem>
+        <MenuItem
+          onSelect={async () => {
+            const r = await build();
+            setStatus((await copy(r.text)) ? 'Copied as JSON' : 'Could not reach the clipboard');
+          }}
+          data-testid="export-copy"
+        >
+          Copy as JSON
+        </MenuItem>
+        {midi ? (
+          <>
+            <MenuSeparator />
+            <MenuItem onSelect={midi.download} data-testid={midi.testId}>
+              Download .mid
+            </MenuItem>
+          </>
+        ) : null}
+      </Menu>
       <span className={styles.note} role="status">
         {status}
       </span>
