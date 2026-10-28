@@ -186,6 +186,18 @@ export function ImportControls({
                     <span className={styles.itemTitle}>
                       {r.title}
                       {r.recording ? ' (with its recording)' : ''}
+                      {r.lyrics ? ' (with its lyrics)' : ''}
+                      {r.existing &&
+                      r.existingLyrics &&
+                      !r.lyrics &&
+                      choices[r.index] === 'replace' ? (
+                        <span
+                          className={styles.warn}
+                          data-testid={`import-drops-lyrics-${r.index}`}
+                        >
+                          Replacing drops the lyrics kept here.
+                        </span>
+                      ) : null}
                     </span>
                     {r.existing ? (
                       <Field label="Already here:" inline>

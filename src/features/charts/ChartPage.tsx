@@ -225,7 +225,10 @@ export function ChartPage() {
               Edit
             </Link>
             <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
-            <ExportMenu build={() => exportItems({ charts: [record] })} />
+            <ExportMenu
+              lyrics={!!lyrics}
+              build={(includeLyrics) => exportItems({ charts: [record], includeLyrics })}
+            />
             <Toggle
               size="small"
               pressed={view.showFunction}

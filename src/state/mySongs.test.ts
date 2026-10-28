@@ -7,6 +7,7 @@ import {
   CHART_VERSION,
   DEFAULT_VIEW,
   emptyChart,
+  hasLyrics,
   makeUserChart,
   parseBars,
   withLyric,
@@ -234,6 +235,38 @@ describe('moving things between devices', () => {
     expect(preview.rows[0]!.recording).toBe(true);
     await applyImport(preview);
     expect(mySongs.snapshot.recordings).toHaveProperty('user-a');
+  });
+
+  it("leaves a chart's lyrics out of an export unless asked, and says how many", async () => {
+    const sung = chart('Sung');
+    sung.sections[0]!.bars[0] = withLyric(sung.sections[0]!.bars[0]!, 'lanterns on the water');
+    await saveChart(makeUserChart('mine-chart-sung', sung, DEFAULT_VIEW, 1));
+    await saveChart(makeUserChart('mine-chart-plain', chart('Plain'), DEFAULT_VIEW, 2));
+    const charts = mySongs.snapshot.charts;
+    const without = await exportItems({ charts });
+    expect(without.lyrics).toEqual({ included: 0, leftOut: 1 });
+    expect(without.text).not.toMatch(/lanterns|"lyrics"/);
+    const withThem = await exportItems({ charts, includeLyrics: true });
+    expect(withThem.lyrics).toEqual({ included: 1, leftOut: 0 });
+    expect(withThem.text).toContain('"lanterns on the water"');
+
+    // Read back here: the file's rows say which hold lyrics, and which charts here have some.
+    const rows = (text: string) =>
+      previewImport(text).rows.map((r) => [r.title, r.lyrics, r.existingLyrics]);
+    expect(rows(withThem.text)).toEqual([
+      ['Plain', false, false],
+      ['Sung', true, true],
+    ]);
+    expect(rows(without.text)).toEqual([
+      ['Plain', false, false],
+      ['Sung', false, true],
+    ]);
+    // Kept both, the copy has them; replaced from a file without, the chart here loses them.
+    const preview = previewImport(withThem.text);
+    await applyImport(preview, { 1: 'skip', 2: 'copy' });
+    expect(mySongs.snapshot.charts.filter((c) => hasLyrics(c.chart))).toHaveLength(2);
+    await applyImport(previewImport(without.text), { 1: 'skip', 2: 'replace' });
+    expect(hasLyrics((await getChart('mine-chart-sung'))!.chart)).toBe(false);
   });
 
   it('skips, replaces or keeps both when something is already here', async () => {

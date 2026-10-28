@@ -1,5 +1,5 @@
 import { PATTERNS } from '@/content/patterns';
-import { makeUserChart, type UserChart } from '@/core/charts';
+import { hasLyrics, makeUserChart, type UserChart } from '@/core/charts';
 import type { Lesson, Progression } from '@/core/content/types';
 import {
   buildFile,
@@ -30,6 +30,8 @@ export interface ExportSelection {
   builtInSongs?: readonly Lesson[];
   /** Kept Studio recordings of the chosen songs, at the end of the file. */
   includeRecordings?: boolean;
+  /** The chosen charts' lyrics. Off unless asked: lyrics stay on this device. */
+  includeLyrics?: boolean;
 }
 
 export interface ExportResult {
@@ -37,6 +39,8 @@ export interface ExportResult {
   fileName: string;
   items: number;
   recordings: number;
+  /** Charts with lyrics, by whether their lyrics went into the file. */
+  lyrics: { included: number; leftOut: number };
 }
 
 /** One readable file for the chosen songs, charts and progressions. */
@@ -61,6 +65,7 @@ export async function exportItems(sel: ExportSelection, now = new Date()): Promi
         chart: c.chart,
         view: c.view,
         updatedAt: c.updatedAt,
+        lyrics: sel.includeLyrics === true,
       }),
     ),
     ...(sel.progressions ?? []).map(progressionItem),
@@ -70,11 +75,13 @@ export async function exportItems(sel: ExportSelection, now = new Date()): Promi
       ? await getRecordings(sel.songs.map((s) => s.id))
       : [];
   const text = stringifyFile(buildFile(items, recordings.map(recordingAsset), now));
+  const sung = (sel.charts ?? []).filter((c) => hasLyrics(c.chart)).length;
   return {
     text,
     fileName: exportFileName(items, now),
     items: items.length,
     recordings: recordings.length,
+    lyrics: sel.includeLyrics ? { included: sung, leftOut: 0 } : { included: 0, leftOut: sung },
   };
 }
 
@@ -100,6 +107,10 @@ export interface PreviewRow {
   existing: string | null;
   /** The file holds a recording for it. */
   recording: boolean;
+  /** A chart whose lyrics are in the file. */
+  lyrics: boolean;
+  /** What is already saved under that id is a chart with lyrics. */
+  existingLyrics: boolean;
 }
 
 export interface ImportPreview {
@@ -126,6 +137,12 @@ function existingTitle(kind: ItemKind, id: string): string | null {
   if (kind === 'song') return songs.find((s) => s.id === id)?.lesson.title ?? null;
   if (kind === 'chart') return charts.find((c) => c.id === id)?.chart.title ?? null;
   return useUserProgressions.getState().get(id)?.name ?? null;
+}
+
+function existingLyrics(kind: ItemKind, id: string): boolean {
+  if (kind !== 'chart') return false;
+  const chart = mySongs.snapshot.charts.find((c) => c.id === id)?.chart;
+  return !!chart && hasLyrics(chart);
 }
 
 const fatal = (message: string): ImportPreview => ({
@@ -160,6 +177,8 @@ function preview(text: string): ImportPreview {
       storeId,
       existing: existingTitle(i.kind, storeId),
       recording: i.kind === 'song' && parsed.recordings.has(i.id),
+      lyrics: i.value.kind === 'chart' && hasLyrics(i.value.chart),
+      existingLyrics: existingLyrics(i.kind, storeId),
     };
   });
   return {
