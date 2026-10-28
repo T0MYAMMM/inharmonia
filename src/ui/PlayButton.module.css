@@ -1,0 +1,12 @@
+/* Both labels in one cell: the hidden one holds the width. */
+.swap {
+  display: inline-grid;
+}
+
+.swap > * {
+  grid-area: 1 / 1;
+}
+
+.swap > [aria-hidden] {
+  visibility: hidden;
+}

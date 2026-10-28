@@ -35,13 +35,13 @@ import { Checkbox } from '@/ui/Checkbox';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
+import { PlayButton } from '@/ui/PlayButton';
 import { Toggle } from '@/ui/Toggle';
 import { EditorPlayback, type EditorTakeAudio, type HearSource } from './EditorPlayback';
 import {
   EditorHeader,
   EditorHelp,
   EditorTitle,
-  PlayButton,
   ToolGroup,
   ToolRow,
   UndoRedo,

@@ -86,19 +86,6 @@
   width: 100%;
 }
 
-/* Both labels in one cell: the hidden one holds the width. */
-.swap {
-  display: inline-grid;
-}
-
-.swap > * {
-  grid-area: 1 / 1;
-}
-
-.swap > [aria-hidden] {
-  visibility: hidden;
-}
-
 /* An editor's folded instructions: a line of muted text that opens to a list. */
 .help {
   color: var(--muted);
