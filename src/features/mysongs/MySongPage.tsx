@@ -14,6 +14,7 @@ import { Checkbox } from '@/ui/Checkbox';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
 import { PageHeader } from '../PageHeader';
+import { EDIT_IN_STUDIO } from '../sendTo/names';
 import { PrivateBadge } from './PrivateBadge';
 import styles from './mysongs.module.css';
 
@@ -64,7 +65,7 @@ export function MySongPage() {
         actions={
           <>
             <Link to={`/studio/edit/${song.id}`} className={buttonClass('secondary', 'small')}>
-              Edit
+              {EDIT_IN_STUDIO}
             </Link>
             <ExportMenu
               build={() =>

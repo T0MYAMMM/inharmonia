@@ -18,6 +18,12 @@ export const ROOMS = {
 
 export type Room = keyof typeof ROOMS;
 
+/**
+ * A song of your own already has its way into Studio, to edit it in
+ * place; it says where it goes in the same words, and has no Send to.
+ */
+export const EDIT_IN_STUDIO = `Edit in ${ROOMS.studio}`;
+
 /** The notes under the items. */
 export const NOTES = {
   studio: 'Edit it on a piano roll, as it plays now',

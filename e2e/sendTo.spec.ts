@@ -1,4 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { writeMidi } from '../src/core/midi/smf';
+import { openMidiMore } from './studioHelpers';
 
 /**
  * Send to: what plays on one page, sent to another room, and the way back.
@@ -474,5 +476,51 @@ test.describe('Send to Chords, and a new chart from a progression', () => {
       'What was sent here is no longer available: it lasts until the next thing is sent.',
     );
     await expect(page.getByTestId('chart-title')).toHaveValue('');
+  });
+});
+
+test.describe('A song of your own', () => {
+  test('goes to Studio by Edit in Studio, and has no Send to', async ({ page }) => {
+    await page.goto('studio');
+    await page.getByTestId('studio-import-midi').setInputFiles({
+      name: 'Evening tune.mid',
+      mimeType: 'audio/midi',
+      buffer: Buffer.from(
+        writeMidi({
+          title: 'Evening tune',
+          ppq: 480,
+          tempo: 90,
+          meter: { beats: 4, unit: 4 },
+          tempos: [{ beat: 0, bpm: 90 }],
+          meters: [{ beat: 0, numerator: 4, denominator: 4 }],
+          tracks: [
+            {
+              id: 'melody',
+              name: 'Melody',
+              channel: 0,
+              program: 0,
+              muted: false,
+              notes: [60, 64, 67, 72].map((midi, i) => ({
+                id: `n${i}`,
+                midi,
+                startBeat: i,
+                beats: 1,
+                velocity: 90,
+              })),
+            },
+          ],
+        }),
+      ),
+    });
+    await openMidiMore(page);
+    await page.getByTestId('midi-save-song').click();
+    await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
+    await expect(page.getByRole('heading', { name: 'Evening tune', level: 1 })).toBeVisible();
+
+    const header = page.locator('header').filter({ has: page.getByRole('heading', { level: 1 }) });
+    await expect(header.getByRole('button', { name: /^Send to/ })).toHaveCount(0);
+    await header.getByRole('link', { name: 'Edit in Studio' }).click();
+    await expect(page).toHaveURL(/\/studio\/edit\/mine-song-/);
+    await expect(page.getByRole('heading', { name: 'Edit Evening tune', level: 1 })).toBeVisible();
   });
 });
