@@ -363,3 +363,116 @@ test.describe('Send to Songs', () => {
     await expect(page.getByRole('link', { name: /Evening loop/ })).toBeVisible();
   });
 });
+
+test.describe('Send to Chords, and a new chart from a progression', () => {
+  const barNames = (page: Page) =>
+    page
+      .getByRole('listbox', { name: 'Bars' })
+      .getByRole('option')
+      .evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+
+  test('a progression replaces the chord sequence; Undo, and after a reload Bring back, restore it', async ({
+    page,
+  }) => {
+    await page.goto('chords');
+    await typeChords(page, 'C Am F G');
+    await page.goto('progressions/ii-v-i?key=G');
+    await sendTo(page, 'Chords');
+
+    await expect(page).toHaveURL(/\/chords\?sent=[a-z0-9]{6}$/);
+    await expect(page.getByTestId('sent-back')).toHaveText('← ii–V–I');
+    await expect(page.getByTestId('sequence-notice')).toHaveText(
+      'Replaced 4 bars with ii–V–I in G major.',
+    );
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in G major');
+    expect(await barNames(page)).toEqual([
+      'Bar 1: Am7',
+      'Bar 2: D7',
+      'Bar 3: Gmaj7',
+      'Bar 4: Gmaj7',
+    ]);
+    await expect(page.getByTestId('sequence-play')).toBeFocused();
+    await expect(page.getByTestId('sequence')).toBeInViewport();
+    const previous = page.getByRole('button', { name: /^Bring back the previous sequence/ });
+    await expect(previous).toHaveText('Bring back the previous sequence (4 bars: C Am F G)');
+
+    const sequence = page.getByTestId('sequence');
+    await sequence.getByRole('button', { name: 'Undo' }).click();
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in C major');
+    await expect(previous).toHaveCount(0);
+    await sequence.getByRole('button', { name: 'Redo' }).click();
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in G major');
+
+    // A reload applies nothing again, keeps the way back, and still offers the previous.
+    await page.reload();
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in G major');
+    await expect(page.getByTestId('sequence-notice')).toHaveCount(0);
+    await expect(page.getByTestId('sent-back')).toHaveText('← ii–V–I');
+    await previous.click();
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in C major');
+    expect(await barNames(page)).toEqual(['Bar 1: C', 'Bar 2: Am', 'Bar 3: F', 'Bar 4: G']);
+    await page.reload();
+    await expect(page.getByTestId('sequence-summary')).toHaveText('4 bars in C major');
+    await expect(previous).toHaveCount(0);
+
+    await page.getByTestId('sent-back').click();
+    await expect(page).toHaveURL(/\/progressions\/ii-v-i\?key=G$/);
+  });
+
+  test("a chart's section goes to the chord sequence in the key it plays in", async ({ page }) => {
+    await makeChart(page);
+    await page.getByTestId('transpose').selectOption('-5');
+    await sendTo(page, 'Chords', page.getByTestId('harmony-2'));
+    await expect(page.getByTestId('sequence-notice')).toHaveText(
+      'Put the Bridge of Harbour lights in G major in the sequence.',
+    );
+    expect(await barNames(page)).toEqual([
+      'Bar 1: Am7',
+      'Bar 2: D7',
+      'Bar 3: Gmaj7',
+      'Bar 4: E7',
+      'Bar 5: Am7',
+      'Bar 6: D7',
+      'Bar 7: G',
+      'Bar 8: N.C.',
+    ]);
+    await page.getByTestId('sent-back').click();
+    await expect(page.getByRole('heading', { name: 'Harbour lights', level: 1 })).toBeVisible();
+  });
+
+  test('a progression starts a new chart in its key, saved from the editor', async ({ page }) => {
+    await page.goto('progressions/minor-descent?key=E');
+    await sendTo(page, 'Songs');
+    await expect(page).toHaveURL(/\/songs\/charts\/new\?sent=[a-z0-9]{6}$/);
+    await expect(page.getByRole('heading', { name: 'New chord chart', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('sent-said')).toHaveText(
+      'Started from i–♭VII–♭VI–V in E minor: one verse to build a song on.',
+    );
+    await expect(page.getByTestId('chart-title')).toHaveValue('i–♭VII–♭VI–V');
+    await expect(page.getByTestId('chart-key')).toHaveValue('E minor');
+    await expect(page.getByTestId('section-label-0')).toHaveValue('Verse');
+    await expect(page.getByTestId('bar-0-3')).toContainText('B7');
+    await page.reload();
+    await expect(page.getByTestId('chart-title')).toHaveValue('i–♭VII–♭VI–V');
+
+    await page.getByTestId('chart-title').fill('Rain on the river');
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('heading', { name: 'Rain on the river', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('chart-saved')).toHaveText('Saved.');
+    await expect(page.getByTestId('chart-found')).toHaveText(
+      'Progressions in it: i–♭VII–♭VI–V. By section ↓',
+    );
+  });
+
+  test('Chords and the chart editor say when what was sent is gone', async ({ page }) => {
+    await page.goto('chords?sent=nope00');
+    await expect(page.getByTestId('sent-problem')).toHaveText(
+      'What was sent here is no longer available: it lasts until the next thing is sent.',
+    );
+    await page.goto('songs/charts/new?sent=nope00');
+    await expect(page.getByTestId('sent-problem')).toHaveText(
+      'What was sent here is no longer available: it lasts until the next thing is sent.',
+    );
+    await expect(page.getByTestId('chart-title')).toHaveValue('');
+  });
+});

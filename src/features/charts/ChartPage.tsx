@@ -116,9 +116,22 @@ export function ChartPage() {
     }));
     const draft = chordsToProgression(bars, chart.meter.beats, playKey);
     const name = `${chart.title}: ${s.label}`;
-    const items: SendToItem[] = [
-      draft.text
-        ? {
+    // In the rooms' own order: Chords, then Progressions.
+    const items: SendToItem[] = draft.text
+      ? [
+          {
+            room: 'chords',
+            note: NOTES.chordsFromSection(s.label),
+            onSelect: () =>
+              send({
+                kind: 'chords',
+                from,
+                meter: chart.meter,
+                bars,
+                what: `the ${s.label} of ${chart.title} in ${key}`,
+              }),
+          },
+          {
             room: 'progressions',
             note: NOTES.progressionsFromSection(s.label),
             onSelect: () =>
@@ -134,9 +147,9 @@ export function ChartPage() {
                 said: `From the ${s.label} of ${chart.title}, read in ${key}.`,
                 notes: draft.notes,
               }),
-          }
-        : nothingToSend('progressions'),
-    ];
+          },
+        ]
+      : [nothingToSend('chords'), nothingToSend('progressions')];
     return <SendToMenu about={`the ${s.label}`} items={items} testId="section-send-to" />;
   };
   return (

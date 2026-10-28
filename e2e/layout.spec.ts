@@ -88,6 +88,19 @@ async function smallTargets(page: Page) {
   });
 }
 
+/** An open menu inside the screen, 8px from each side, without the page widening or zooming out. */
+async function menuFits(page: Page) {
+  return page.getByRole('menu').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const width = document.documentElement.clientWidth;
+    return {
+      inner: window.innerWidth,
+      sideways: document.documentElement.scrollWidth - width,
+      inside: r.left >= 8 && r.right <= width - 8,
+    };
+  });
+}
+
 test.describe('touch targets', () => {
   test.skip(({ isMobile }) => !isMobile, 'pointer: coarse is the phone project');
 
@@ -114,6 +127,29 @@ test.describe('touch targets', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  });
+
+  test('an open menu stays on the screen, and the page does not zoom out to fit it', async ({
+    page,
+  }) => {
+    // Send to sits at the right of its row here, and its notes make it wide.
+    await page.goto('progressions/ii-v-i');
+    await page
+      .locator('header')
+      .getByRole('button', { name: /^Send to/ })
+      .click();
+    await expect(page.getByRole('menu')).toBeVisible();
+    expect(await menuFits(page)).toEqual({ inner: 360, sideways: 0, inside: true });
+    expect(await smallTargets(page)).toEqual([]);
+    await page.keyboard.press('Escape');
+
+    // And a section's, at the right of its heading, low on a long page.
+    await makeChart(page);
+    await page.getByRole('button', { name: 'Send to the Bridge' }).click();
+    await expect(page.getByRole('menu')).toBeVisible();
+    expect(await menuFits(page)).toEqual({ inner: 360, sideways: 0, inside: true });
+    await page.getByRole('menuitem', { name: 'Progressions' }).click();
+    await expect(page.getByRole('heading', { name: 'New progression', level: 1 })).toBeVisible();
   });
 
   test('the MIDI editor has no control under 44px', async ({ page }) => {

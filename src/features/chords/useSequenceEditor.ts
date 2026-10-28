@@ -13,7 +13,7 @@ import {
 import { prettyChord } from '@/core/notation';
 import { storage, type KeyValueStore } from '@/core/persistence/storage';
 import { commit, historyOf, redo as redoStep, undo as undoStep, type History } from '@/core/songs';
-import { loadSequence, saveSequence } from '@/state/sequence';
+import { clearBackup, loadBackup, loadSequence, saveBackup, saveSequence } from '@/state/sequence';
 
 /** A state of the bars, and what made it: "Added Am as bar 3." */
 interface Step extends SequenceBars {
@@ -21,6 +21,14 @@ interface Step extends SequenceBars {
 }
 
 type Settings = Pick<ChordSequence, 'tempo' | 'style' | 'loop' | 'showFunction'>;
+
+/** Chords sent from another page to take the sequence's place: "ii–V–I in G major". */
+export interface Incoming extends SequenceBars {
+  what: string;
+}
+
+const sameBars = (a: SequenceBars, b: SequenceBars) =>
+  a.meter.beats === b.meter.beats && JSON.stringify(a.bars) === JSON.stringify(b.bars);
 
 export interface SequenceEditor {
   sequence: ChordSequence;
@@ -31,6 +39,12 @@ export interface SequenceEditor {
   canUndo: boolean;
   canRedo: boolean;
   full: boolean;
+  /** What chords sent from another page did on arriving, for this visit: "Replaced 6 bars with…". */
+  arrived: string | null;
+  /** The sequence those chords took the place of, kept until brought back or forgotten; not shown while it is what is here. */
+  previous: SequenceBars | null;
+  bringBack: () => void;
+  forgetPrevious: () => void;
   select: (index: number | null) => void;
   announce: (text: string) => void;
   /** Add bars after the chosen bar, or at the end. False when they do not fit. */
@@ -53,12 +67,40 @@ const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 /**
  * The chord sequence on the Chords page: its bars with undo and redo, its
  * settings, the chosen bar and what to announce. Saved on every change.
+ *
+ * Chords sent from another page replace it as one step, so Undo brings it
+ * back on this visit; the sequence they replaced is kept on the device too,
+ * one, until it is brought back, forgotten, or another replace takes its
+ * place. Replacing an empty sequence keeps nothing, and leaves an older one
+ * kept as it was.
  */
-export function useSequenceEditor(store: KeyValueStore = storage): SequenceEditor {
+export function useSequenceEditor(
+  store: KeyValueStore = storage,
+  incoming?: Incoming,
+): SequenceEditor {
   const [initial] = useState(() => loadSequence(store));
-  const [history, setHistory] = useState<History<Step>>(() =>
-    historyOf({ meter: initial.meter, bars: initial.bars, did: '' }),
+  const [arrival] = useState(() => {
+    if (!incoming) return null;
+    const n = initial.bars.length;
+    return {
+      did: n
+        ? `Replaced ${n} bar${n === 1 ? '' : 's'} with ${incoming.what}.`
+        : `Put ${incoming.what} in the sequence.`,
+      replaced: n ? { meter: initial.meter, bars: initial.bars } : null,
+    };
+  });
+  const [history, setHistory] = useState<History<Step>>(() => {
+    const start = historyOf<Step>({ meter: initial.meter, bars: initial.bars, did: '' });
+    return incoming && arrival
+      ? commit(start, { meter: incoming.meter, bars: incoming.bars, did: arrival.did })
+      : start;
+  });
+  const [kept, setKept] = useState<SequenceBars | null>(
+    () => arrival?.replaced ?? loadBackup(store),
   );
+  useEffect(() => {
+    if (arrival?.replaced) saveBackup(arrival.replaced, store);
+  }, [arrival, store]);
   const [settings, setSettingsState] = useState<Settings>(() => ({
     tempo: initial.tempo,
     style: initial.style,
@@ -116,6 +158,24 @@ export function useSequenceEditor(store: KeyValueStore = storage): SequenceEdito
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     full: roomLeft(present) <= 0,
+    // Said while the sequence is still what arrived.
+    arrived: arrival && present.did === arrival.did ? arrival.did : null,
+    previous: kept && !sameBars(kept, present) ? kept : null,
+    bringBack: () => {
+      if (!kept) return;
+      change(
+        { meter: kept.meter, bars: kept.bars },
+        `Brought back the previous sequence: ${kept.bars.length} bar${kept.bars.length === 1 ? '' : 's'}.`,
+        null,
+      );
+      clearBackup(store);
+      setKept(null);
+    },
+    forgetPrevious: () => {
+      clearBackup(store);
+      setKept(null);
+      announce('The previous sequence is forgotten.');
+    },
     select: setChosen,
     announce,
     addBars,
