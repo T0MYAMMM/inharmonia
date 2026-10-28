@@ -2,20 +2,32 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { memoryStore, type KeyValueStore } from '@/core/persistence/storage';
+import type { Played } from '@/core/practice';
 import { loadSequence } from '@/state/sequence';
 import { SequencePanel } from './SequencePanel';
 import { useSequenceEditor } from './useSequenceEditor';
 import type { SequencePlayback } from './useSequencePlayer';
 
-function Harness({ store, playback }: { store: KeyValueStore; playback: SequencePlayback }) {
+function Harness({
+  store,
+  playback,
+  played = null,
+}: {
+  store: KeyValueStore;
+  playback: SequencePlayback;
+  played?: Played | null;
+}) {
   const editor = useSequenceEditor(store);
-  return <SequencePanel editor={editor} playback={playback} />;
+  return <SequencePanel editor={editor} playback={playback} played={played} />;
 }
 
 function setup(store: KeyValueStore = memoryStore()) {
   const playback: SequencePlayback = { playing: false, bar: null, play: vi.fn(), stop: vi.fn() };
   const user = userEvent.setup();
   const view = render(<Harness store={store} playback={playback} />);
+  /** Play a chord on the keyboard, as the page's hook would report it. */
+  const play = (played: Played | null) =>
+    view.rerender(<Harness store={store} playback={playback} played={played} />);
   const field = screen.getByRole('textbox', { name: 'Type chords' });
   /** Each bar's name, as "Bar 1: C", "Bar 3: F, G". */
   const bars = () =>
@@ -25,7 +37,7 @@ function setup(store: KeyValueStore = memoryStore()) {
           .map((o) => o.getAttribute('aria-label')!)
       : [];
   const status = () => screen.getByTestId('sequence-status').textContent!.trim();
-  return { store, playback, user, view, field, bars, status };
+  return { store, playback, user, view, field, bars, status, play };
 }
 
 describe('SequencePanel: typing chords', () => {
@@ -311,5 +323,31 @@ describe('SequencePanel: Roman numerals', () => {
     ]);
     view.unmount();
     expect(setup(store).bars()[0]).toBe('Bar 1: Am (i)');
+  });
+});
+
+describe('SequencePanel: playing a chord', () => {
+  it('names the chord last played and adds it after the chosen bar', async () => {
+    const { user, field, bars, status, play } = setup();
+    const add = () => screen.getByTestId('sequence-add-played');
+    expect(screen.getByTestId('sequence-played')).toHaveTextContent('Nothing played yet.');
+    expect(add()).toBeDisabled();
+    await user.type(field, 'C G{Enter}');
+    play({ symbol: 'Am7', notes: [57, 60, 64, 67] });
+    expect(screen.getByTestId('sequence-played')).toHaveTextContent('You played Am7.');
+    await user.click(screen.getAllByRole('option')[0]!);
+    await user.click(add());
+    expect(add()).toHaveAccessibleName('Add Am7');
+    expect(bars()).toEqual(['Bar 1: C', 'Bar 2: Am7', 'Bar 3: G']);
+    expect(status()).toBe('Added Am7 as bar 2.');
+  });
+
+  it('says when what was played is no chord it can name', () => {
+    const { play } = setup();
+    play({ symbol: null, notes: [60, 61, 62] });
+    expect(screen.getByTestId('sequence-played')).toHaveTextContent(
+      'Not a chord I can name: hold three or more notes of one chord together.',
+    );
+    expect(screen.getByTestId('sequence-add-played')).toBeDisabled();
   });
 });
