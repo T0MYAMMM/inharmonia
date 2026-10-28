@@ -294,3 +294,22 @@ describe('SequencePanel: editing bars', () => {
     expect(bars()).toEqual([]);
   });
 });
+
+describe('SequencePanel: Roman numerals', () => {
+  it("shows each chord's numeral in the key the chords suggest, and keeps the choice", async () => {
+    const store = memoryStore();
+    const { user, field, bars, view } = setup(store);
+    await user.type(field, '| Am | F | C | G E7 |{Enter}');
+    expect(screen.getByTestId('sequence-summary')).toHaveTextContent('4 bars in A minor');
+    expect(bars()[3]).toBe('Bar 4: G, E7');
+    await user.click(screen.getByRole('button', { name: 'Show function' }));
+    expect(bars()).toEqual([
+      'Bar 1: Am (i)',
+      'Bar 2: F (♭VI)',
+      'Bar 3: C (♭III)',
+      'Bar 4: G (♭VII), E7 (V7)',
+    ]);
+    view.unmount();
+    expect(setup(store).bars()[0]).toBe('Bar 1: Am (i)');
+  });
+});

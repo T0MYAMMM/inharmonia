@@ -10,6 +10,7 @@ import {
   roomLeft,
   SEQUENCE_TEMPO,
   sequenceKey,
+  sequenceNumerals,
   type ChartStyle,
   type SequenceIssue,
 } from '@/core/charts';
@@ -80,6 +81,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
   const { sequence: seq, selected } = editor;
   const n = seq.bars.length;
   const key = sequenceKey(seq.bars);
+  const numerals = seq.showFunction && key ? sequenceNumerals(seq.bars, key) : null;
   const style = CHART_STYLES.find((s) => s.id === seq.style) ?? CHART_STYLES[0];
   const focusChords = () => document.getElementById(chordsId)?.focus();
   const focusBarChord = () => document.getElementById(`${idPrefix}-chord`)?.focus();
@@ -201,6 +203,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
           <BarStrip
             bars={seq.bars}
             playing={playback.playing ? playback.bar : null}
+            numerals={numerals}
             selected={selected}
             describedBy={keysId}
             onSelect={editor.select}
@@ -275,6 +278,14 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
             ))}
           </Select>
         </Field>
+        <div className={styles.toggleCell}>
+          <Toggle
+            pressed={seq.showFunction}
+            onChange={(showFunction) => editor.setSettings({ showFunction })}
+          >
+            Show function
+          </Toggle>
+        </div>
       </div>
 
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="sequence-status">
