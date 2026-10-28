@@ -21,6 +21,9 @@ import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
 import { PageHeader } from '../PageHeader';
+import { SequencePanel } from './SequencePanel';
+import { useSequenceEditor } from './useSequenceEditor';
+import { useSequencePlayer } from './useSequencePlayer';
 import styles from './chords.module.css';
 
 const GROUPS: { title: string; ids: string[] }[] = [
@@ -68,11 +71,16 @@ export function ChordLibraryPage() {
   const key: KeyContext = { tonic: root, mode: 'major' };
   const angka = notation === 'angka';
 
-  // Light the voicing in dusk (chord tones).
+  const sequence = useSequenceEditor();
+  const playback = useSequencePlayer(sequence.sequence);
+
+  // Light the voicing in dusk (chord tones), unless the sequence is playing
+  // and lighting its own.
   useEffect(() => {
+    if (playback.playing) return;
     lights.setExactly('lh', voicingKey.split(',').map(Number));
     return () => lights.clear('lh');
-  }, [voicingKey]);
+  }, [voicingKey, playback.playing]);
 
   const held = useHeldNotes();
   const target = chordTarget(voicing);
@@ -105,7 +113,7 @@ export function ChordLibraryPage() {
     <>
       <PageHeader
         title="Chords"
-        lede="Pick a root and a quality. See how the chord is built, hear it, and play it back."
+        lede="Pick a root and a quality. See how the chord is built, hear it, and play it back. Put chords in a line to hear them played."
         actions={
           <>
             <Link to="/chords/drill" className={buttonClass('secondary', 'small')}>
@@ -233,6 +241,10 @@ export function ChordLibraryPage() {
             </p>
           </div>
         </Card>
+
+        <div className={styles.areaSequence}>
+          <SequencePanel editor={sequence} playback={playback} />
+        </div>
       </div>
       <KeyboardDock focus={[voicing[0]!.midi, voicing.at(-1)!.midi]} />
     </>

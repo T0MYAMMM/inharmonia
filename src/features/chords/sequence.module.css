@@ -1,0 +1,170 @@
+/* ---- the sequence card ---- */
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* The title, then Play and Loop, then the tempo; on a phone they stack. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+}
+
+.title {
+  font-size: var(--card-title-size);
+  align-self: center;
+  margin-right: auto;
+}
+
+.transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tempo {
+  flex: 0 1 var(--control-width-long);
+  min-width: 12rem;
+}
+
+@media (max-width: 600px) {
+  .title {
+    flex-basis: 100%;
+  }
+
+  .tempo {
+    flex: 1 1 100%;
+  }
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-3);
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the bars ---- */
+
+/* Four bars to a line, as a lead sheet writes them; two on a phone. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 600px) {
+  .strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bar {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 8px 12px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+}
+
+/* Playing: lifted, with an ink line along the top. Never amber or dusk. */
+.bar[aria-current='true'] {
+  background: var(--surface);
+  box-shadow: inset 0 3px 0 var(--ink);
+}
+
+.barNo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Each chord as wide as its beats. */
+.chords {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chord {
+  display: grid;
+  flex-basis: 0;
+  min-width: 0;
+}
+
+.symbol {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dusk-text);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.symbol[data-nc] {
+  color: var(--muted);
+}
+
+.empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-4);
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+}
+
+.empty p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ---- typing chords ---- */
+
+.entry {
+  max-width: var(--text-width);
+}
+
+.entryRow {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Takes the room the Add button leaves, however narrow, never its own width. */
+.entryInput {
+  flex: 1 1 0;
+  width: 0;
+}
+
+/* ---- settings ---- */
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-5);
+}
+
+.style {
+  max-width: 22rem;
+}
