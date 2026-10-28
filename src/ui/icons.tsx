@@ -16,3 +16,6 @@ export function LineIcon({ d, size = 20 }: { d: string; size?: number }) {
 
 export const UndoIcon = () => <LineIcon d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />;
 export const RedoIcon = () => <LineIcon d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />;
+export const ChevronLeftIcon = () => <LineIcon d="m15 6-6 6 6 6" size={18} />;
+export const ChevronRightIcon = () => <LineIcon d="m9 6 6 6-6 6" size={18} />;
+export const CloseIcon = () => <LineIcon d="M6 6l12 12M18 6 6 18" size={16} />;

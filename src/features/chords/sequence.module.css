@@ -41,6 +41,21 @@
   }
 }
 
+/* The bars' count and key, and the edits that apply to all of them. */
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .summary {
   display: flex;
   flex-wrap: wrap;
@@ -80,12 +95,33 @@
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface-sunk);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Only where there is a pointer that hovers: on touch, hover sticks after a tap. */
+@media (hover: hover) {
+  .bar:hover {
+    border-color: var(--muted);
+  }
+}
+
+/* Chosen: ringed in ink, as the chart editor rings a bar. */
+.bar[aria-selected='true'] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 /* Playing: lifted, with an ink line along the top. Never amber or dusk. */
 .bar[aria-current='true'] {
   background: var(--surface);
   box-shadow: inset 0 3px 0 var(--ink);
+}
+
+.bar[aria-current='true'][aria-selected='true'] {
+  box-shadow:
+    inset 0 3px 0 var(--ink),
+    0 0 0 1px var(--ink);
 }
 
 .barNo {
@@ -136,6 +172,53 @@
 .empty p {
   margin: 0;
   color: var(--muted);
+}
+
+/* ---- the chosen bar ---- */
+
+.editor {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+}
+
+.editorHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.editorTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.editorTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.slotRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slotInput {
+  width: 8rem;
 }
 
 .note {

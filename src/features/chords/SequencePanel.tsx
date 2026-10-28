@@ -1,8 +1,12 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useTouchOnly } from '@/app/hooks';
 import {
   CHART_STYLES,
+  clearBars,
   LIMITS,
+  moveBar,
   readChords,
+  removeBar,
   roomLeft,
   SEQUENCE_TEMPO,
   sequenceKey,
@@ -13,14 +17,16 @@ import { keyName, prettyAccidentals } from '@/core/notation';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Field } from '@/ui/Field';
+import { RedoIcon, UndoIcon } from '@/ui/icons';
 import { PlayButton } from '@/ui/PlayButton';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { TextInput } from '@/ui/TextInput';
 import { Toggle } from '@/ui/Toggle';
+import { BarEditor } from './BarEditor';
 import { BarStrip } from './BarStrip';
-import type { SequenceEditor } from './useSequenceEditor';
+import { barWords, type SequenceEditor } from './useSequenceEditor';
 import type { SequencePlayback } from './useSequencePlayer';
 import styles from './sequence.module.css';
 
@@ -41,6 +47,21 @@ function issueText(issues: readonly SequenceIssue[]): string {
   return `${where}${first.message}${more}. Nothing was added.`;
 }
 
+/** Keys that belong to whatever has focus, or to an open menu, not to the sequence's undo. */
+function keysTakenBy(target: EventTarget | null): boolean {
+  if (document.querySelector('[role="menu"]')) return true;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
+  return (
+    target instanceof HTMLInputElement &&
+    !['range', 'checkbox', 'radio', 'button', 'submit'].includes(target.type)
+  );
+}
+
+const KEYS_HINT =
+  'Keys: ← and → choose a bar, Shift with ← or → moves it, Delete takes it out, Ctrl+Z undoes.';
+
 export interface SequencePanelProps {
   editor: SequenceEditor;
   playback: SequencePlayback;
@@ -52,10 +73,44 @@ export interface SequencePanelProps {
  */
 export function SequencePanel({ editor, playback }: SequencePanelProps) {
   const titleId = useId();
-  const { sequence: seq } = editor;
+  const idPrefix = useId();
+  const keysId = `${idPrefix}-keys`;
+  const chordsId = `${idPrefix}-chords`;
+  const touchOnly = useTouchOnly();
+  const { sequence: seq, selected } = editor;
   const n = seq.bars.length;
   const key = sequenceKey(seq.bars);
   const style = CHART_STYLES.find((s) => s.id === seq.style) ?? CHART_STYLES[0];
+  const focusChords = () => document.getElementById(chordsId)?.focus();
+  const focusBarChord = () => document.getElementById(`${idPrefix}-chord`)?.focus();
+
+  // Enter on a bar that was not chosen yet: its chords appear on the next render.
+  const openChosen = useRef(false);
+  useLayoutEffect(() => {
+    if (!openChosen.current || selected === null) return;
+    openChosen.current = false;
+    focusBarChord();
+  });
+
+  // Undo and redo from anywhere on the page, but not from a text field, a
+  // select or an open menu, which have their own.
+  const latest = useRef(editor);
+  useEffect(() => {
+    latest.current = editor;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.defaultPrevented) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'z' && key !== 'y') return;
+      if (keysTakenBy(e.target)) return;
+      e.preventDefault();
+      if (key === 'y' || e.shiftKey) latest.current.redo();
+      else latest.current.undo();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <Card className={styles.panel} aria-labelledby={titleId} data-testid="sequence">
@@ -87,22 +142,98 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
         </div>
       </div>
 
-      {n ? (
-        <p className={styles.summary}>
-          <span data-testid="sequence-summary">
-            {n} bar{n === 1 ? '' : 's'}
-            {key ? ` in ${prettyAccidentals(keyName(key))}` : ''}
-          </span>
-          {playback.playing && playback.bar !== null ? (
-            <span data-testid="sequence-position">
-              Bar {playback.bar + 1} of {n}
-            </span>
-          ) : null}
-        </p>
+      {n || editor.canUndo || editor.canRedo ? (
+        <div className={styles.status}>
+          <p className={styles.summary}>
+            {n ? (
+              <span data-testid="sequence-summary">
+                {n} bar{n === 1 ? '' : 's'}
+                {key ? ` in ${prettyAccidentals(keyName(key))}` : ''}
+              </span>
+            ) : null}
+            {playback.playing && playback.bar !== null ? (
+              <span data-testid="sequence-position">
+                Bar {playback.bar + 1} of {n}
+              </span>
+            ) : null}
+          </p>
+          <div className={styles.tools} role="group" aria-label="Edits">
+            <Button
+              size="small"
+              icon
+              aria-label="Undo"
+              title="Undo (Ctrl+Z)"
+              onClick={editor.undo}
+              disabled={!editor.canUndo}
+            >
+              <UndoIcon />
+            </Button>
+            <Button
+              size="small"
+              icon
+              aria-label="Redo"
+              title="Redo (Ctrl+Shift+Z)"
+              onClick={editor.redo}
+              disabled={!editor.canRedo}
+            >
+              <RedoIcon />
+            </Button>
+            <Button
+              size="small"
+              variant="ghost"
+              disabled={n === 0}
+              onClick={() =>
+                editor.change(
+                  clearBars(seq),
+                  `Cleared ${n} bar${n === 1 ? '' : 's'}. Undo brings them back.`,
+                  null,
+                )
+              }
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
       ) : null}
 
       {n ? (
-        <BarStrip bars={seq.bars} playing={playback.playing ? playback.bar : null} />
+        <>
+          <BarStrip
+            bars={seq.bars}
+            playing={playback.playing ? playback.bar : null}
+            selected={selected}
+            describedBy={keysId}
+            onSelect={editor.select}
+            onMove={(from, to) =>
+              editor.change(moveBar(seq, from, to), `Moved bar ${from + 1} to bar ${to + 1}.`, to)
+            }
+            onDelete={(i) => {
+              const next = removeBar(seq, i);
+              editor.change(
+                next,
+                `Deleted bar ${i + 1}, ${barWords(seq.bars[i]!)}.`,
+                next.bars.length ? Math.min(i, next.bars.length - 1) : null,
+              );
+              if (!next.bars.length) focusChords();
+            }}
+            onOpen={(i) => {
+              if (selected === i) focusBarChord();
+              else openChosen.current = true;
+            }}
+          />
+          <p id={keysId} className="visually-hidden">
+            {KEYS_HINT}
+          </p>
+          {selected !== null ? (
+            <BarEditor
+              editor={editor}
+              index={selected}
+              idPrefix={idPrefix}
+              keysHint={touchOnly ? undefined : KEYS_HINT}
+              onEmpty={focusChords}
+            />
+          ) : null}
+        </>
       ) : (
         <div className={styles.empty} data-testid="sequence-empty">
           <p>No chords yet. Type some below, add the chord above, or try these.</p>
@@ -120,7 +251,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
         </p>
       ) : null}
 
-      <ChordEntry editor={editor} />
+      <ChordEntry editor={editor} id={chordsId} />
 
       <div className={styles.settings}>
         <Field label="Meter" group>
@@ -149,7 +280,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="sequence-status">
         {/* A space that comes and goes, so the same words twice are spoken twice. */}
         {editor.announcement.text}
-        {editor.announcement.n % 2 ? ' ' : ''}
+        {editor.announcement.n % 2 ? '\u00a0' : ''}
       </p>
     </Card>
   );
@@ -159,7 +290,7 @@ export function SequencePanel({ editor, playback }: SequencePanelProps) {
  * Chords typed in a line, added after the chosen bar or at the end. Problems
  * show once you try to add, and update as you fix them.
  */
-function ChordEntry({ editor }: { editor: SequenceEditor }) {
+function ChordEntry({ editor, id }: { editor: SequenceEditor; id: string }) {
   const [text, setText] = useState('');
   const [tried, setTried] = useState(false);
   const { meter } = editor.sequence;
@@ -184,6 +315,7 @@ function ChordEntry({ editor }: { editor: SequenceEditor }) {
       label="Type chords"
       hint="A bar each: C Am F G. Two in a bar: | F G |. Commas, dashes and lower case work too."
       error={error || undefined}
+      id={id}
       className={styles.entry}
     >
       <div className={styles.entryRow}>

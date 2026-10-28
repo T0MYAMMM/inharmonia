@@ -98,6 +98,24 @@ test.describe('touch targets', () => {
     });
   }
 
+  test('/chords with a sequence and a bar chosen has no control under 44px', async ({ page }) => {
+    await page.goto('chords');
+    const field = page.getByRole('textbox', { name: 'Type chords' });
+    await field.fill('| C | Am | F G | G7 |');
+    await field.press('Enter');
+    await page.locator('[data-bar="2"]').click();
+    await expect(page.getByTestId('bar-editor')).toBeVisible();
+    expect(await smallTargets(page)).toEqual([]);
+    const bars = await page
+      .locator('[data-bar]')
+      .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+    expect(Math.min(...bars)).toBeGreaterThanOrEqual(44);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  });
+
   test('the MIDI editor has no control under 44px', async ({ page }) => {
     await page.goto('studio');
     await page.getByTestId('studio-new-midi').click();
