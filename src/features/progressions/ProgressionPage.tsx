@@ -10,6 +10,7 @@ import { MAJOR_KEYS, MINOR_KEYS, realizeProgression } from '@/core/content/reali
 import { prettyAccidentals, prettyNumerals } from '@/core/notation';
 import { VOICING_STYLES, type VoicingStyle } from '@/core/theory';
 import { useUserProgressions } from '@/state/userProgressions';
+import { buttonClass } from '@/ui/buttonClass';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
@@ -18,7 +19,7 @@ import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportButtons } from '../transfer/Export';
 import { exportItems } from '@/state/transfer';
 import { NotFoundPage } from '../not-found/NotFoundPage';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './progressions.module.css';
 
 /** Right-hand fills, which sit over the comping. */
@@ -147,23 +148,36 @@ export function ProgressionPage() {
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/progressions">Progressions</Link>
-          {' · '}
-          {saved ? (
-            <Link to={`/progressions/${progression.id}/edit`}>Edit</Link>
-          ) : (
-            <Link to={`/progressions/new?from=${progression.id}`}>Make a copy to edit</Link>
-          )}{' '}
-          <ExportButtons build={() => exportItems({ progressions: [progression] })} />
-        </p>
-        <h1>{progression.name}</h1>
-        <p className={songStyles.meta}>
-          {prettyNumerals(progression.steps)}
-          {progression.description ? `. ${progression.description}` : ''}
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/progressions', label: 'Progressions' }}
+        title={progression.name}
+        lede={
+          <>
+            <p className={styles.numerals}>{prettyNumerals(progression.steps)}</p>
+            {progression.description ? <p>{progression.description}</p> : null}
+          </>
+        }
+        actions={
+          <>
+            {saved ? (
+              <Link
+                to={`/progressions/${progression.id}/edit`}
+                className={buttonClass('secondary', 'small')}
+              >
+                Edit
+              </Link>
+            ) : (
+              <Link
+                to={`/progressions/new?from=${progression.id}`}
+                className={buttonClass('secondary', 'small')}
+              >
+                Make a copy to edit
+              </Link>
+            )}
+            <ExportButtons build={() => exportItems({ progressions: [progression] })} />
+          </>
+        }
+      />
       <LessonPlayer
         key={progression.id}
         compiled={compiled}
