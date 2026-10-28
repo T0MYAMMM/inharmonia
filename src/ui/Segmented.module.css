@@ -44,6 +44,18 @@
   }
 }
 
+/*
+ * On a phone the options sit closer, so more groups fit on one line; when
+ * they still wrap, each line's options share its width, so a lone option on
+ * the second line reads as a row of the group rather than a stray.
+ */
+@media (max-width: 600px) {
+  .option {
+    flex: 1 1 auto;
+    padding: 0 10px;
+  }
+}
+
 .option:hover {
   color: var(--ink);
 }

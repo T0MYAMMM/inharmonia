@@ -24,19 +24,22 @@ export function ProgressionsPage() {
           <>
             <div className={styles.sectionHead}>
               <h2>Yours</h2>
-              <Link to="/progressions/new" className={buttonClass('primary', 'small')}>
-                New progression
-              </Link>
-              <span className={styles.spacer} />
-              <ExportDialog
-                candidates={mine.map((p) => ({
-                  key: p.id,
-                  kind: 'progression' as const,
-                  title: p.name,
-                }))}
-                build={(keys) => exportItems({ progressions: mine.filter((p) => keys.has(p.id)) })}
-              />
-              {importButtons}
+              <div className={styles.sectionActions}>
+                <Link to="/progressions/new" className={buttonClass('primary', 'small')}>
+                  New progression
+                </Link>
+                <ExportDialog
+                  candidates={mine.map((p) => ({
+                    key: p.id,
+                    kind: 'progression' as const,
+                    title: p.name,
+                  }))}
+                  build={(keys) =>
+                    exportItems({ progressions: mine.filter((p) => keys.has(p.id)) })
+                  }
+                />
+                {importButtons}
+              </div>
             </div>
             {mine.length ? (
               <ProgressionList items={mine} />

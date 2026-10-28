@@ -450,6 +450,19 @@ function TakeResult({
               )}
             </Select>
           </Field>
+          <Field label="Octave" group>
+            <Segmented
+              label="Octave"
+              value={String(draft.octaveShift)}
+              options={[-1, 0, 1, 2].map((k) => ({
+                value: String(k),
+                label: k > 0 ? `+${k}` : String(k),
+              }))}
+              onChange={(v) => setOctave(Number(v))}
+            />
+          </Field>
+        </div>
+        <div className={styles.controls}>
           <Field label="Grid" group>
             <Segmented
               label="Grid"
@@ -472,17 +485,6 @@ function TakeResult({
               format={(v) => `${v}% of a step`}
             />
           </div>
-          <Field label="Octave" group>
-            <Segmented
-              label="Octave"
-              value={String(draft.octaveShift)}
-              options={[-1, 0, 1, 2].map((k) => ({
-                value: String(k),
-                label: k > 0 ? `+${k}` : String(k),
-              }))}
-              onChange={(v) => setOctave(Number(v))}
-            />
-          </Field>
         </div>
 
         <TakeView

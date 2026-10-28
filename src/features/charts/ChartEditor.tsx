@@ -167,23 +167,25 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           </div>
         </div>
         {chart.sections.length && suggestions[0] ? (
-          <p className={styles.note} data-testid="key-suggestion">
-            The chords suggest{' '}
-            {suggestions.map((k, i) => (
-              <span key={keyId(k)}>
-                {i > 0 ? ' or ' : ''}
-                <Button
-                  size="small"
-                  variant={keyId(k) === keyId(chart.key) ? 'secondary' : 'ghost'}
-                  onClick={() => patch({ key: { tonic: k.tonic, mode: k.mode } })}
-                  aria-pressed={keyId(k) === keyId(chart.key)}
-                >
-                  {prettyAccidentals(keyName(k))}
-                </Button>
-              </span>
+          <div
+            className={`${styles.row} ${styles.keySuggest}`}
+            role="group"
+            aria-label="Suggested keys"
+            data-testid="key-suggestion"
+          >
+            <span className={styles.note}>The chords suggest</span>
+            {suggestions.map((k) => (
+              <Button
+                key={keyId(k)}
+                size="small"
+                variant={keyId(k) === keyId(chart.key) ? 'secondary' : 'ghost'}
+                onClick={() => patch({ key: { tonic: k.tonic, mode: k.mode } })}
+                aria-pressed={keyId(k) === keyId(chart.key)}
+              >
+                {prettyAccidentals(keyName(k))}
+              </Button>
             ))}
-            .
-          </p>
+          </div>
         ) : null}
         <Field label="Notes for yourself" className={styles.start}>
           <TextArea

@@ -85,51 +85,57 @@ export function ProgressionPage() {
 
   const fields = (
     <div className={styles.settings}>
-      <Field label="Key">
-        <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
-          {keys.map((k) => (
-            <option key={k} value={k}>
-              {keyLabel(k)}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Pattern">
-        <Select
-          value={pattern.id}
-          onChange={(e) => update({ pattern: e.target.value })}
-          data-testid="pattern"
-        >
-          {PATTERN_LIST.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Fill">
-        <Select
-          value={fillId}
-          onChange={(e) => update({ fill: e.target.value })}
-          data-testid="fill"
-        >
-          <option value="">None</option>
-          {RH_FILLS.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Segmented
-        label="Voicing"
-        value={style}
-        options={VOICING_STYLES.map((v) => ({ value: v.id, label: v.name }))}
-        onChange={(v) => update({ voicing: v })}
-      />
-      <Toggle pressed={smooth} onChange={(v) => update({ smooth: v ? '1' : '0' })}>
-        Smooth voice leading
-      </Toggle>
+      <div className={styles.settingsRow}>
+        <Field label="Key">
+          <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
+            {keys.map((k) => (
+              <option key={k} value={k}>
+                {keyLabel(k)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Pattern">
+          <Select
+            value={pattern.id}
+            onChange={(e) => update({ pattern: e.target.value })}
+            data-testid="pattern"
+          >
+            {PATTERN_LIST.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Fill">
+          <Select
+            value={fillId}
+            onChange={(e) => update({ fill: e.target.value })}
+            data-testid="fill"
+          >
+            <option value="">None</option>
+            {RH_FILLS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <div className={styles.settingsRow}>
+        <Field label="Voicing" group>
+          <Segmented
+            label="Voicing"
+            value={style}
+            options={VOICING_STYLES.map((v) => ({ value: v.id, label: v.name }))}
+            onChange={(v) => update({ voicing: v })}
+          />
+        </Field>
+        <Toggle pressed={smooth} onChange={(v) => update({ smooth: v ? '1' : '0' })}>
+          Smooth voice leading
+        </Toggle>
+      </div>
       {pattern.description ? (
         <span className={styles.patternNote}>{pattern.description}</span>
       ) : null}

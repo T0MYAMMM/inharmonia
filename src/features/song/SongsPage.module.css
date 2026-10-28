@@ -67,6 +67,13 @@
   margin-bottom: var(--space-4);
 }
 
+/* Under 960px the level has a line of its own and the other two share the next. */
+@media (max-width: 960px) {
+  .filters > :first-child {
+    flex-basis: 100%;
+  }
+}
+
 a.title {
   color: var(--ink);
   text-decoration: none;
@@ -76,9 +83,11 @@ a.title:hover {
   text-decoration: underline;
 }
 
+/* The versions side by side, equal widths, whatever their numbers say. */
 .levels {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 6px;
   margin-top: 4px;
 }
