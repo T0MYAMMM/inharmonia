@@ -102,17 +102,20 @@ export function ChartPage() {
           </>
         }
       />
-      <LearnPanel
-        chart={chart}
-        view={view}
-        onChange={(v) => void saveChart({ ...record, view: v })}
-      />
       <LessonPlayer
         key={record.id}
         compiled={compiled}
         variant="progression"
         showNumerals={view.showFunction}
         voicingHints
+        belowControls={
+          // The key and how simple: worth setting, not needed before Play.
+          <LearnPanel
+            chart={chart}
+            view={view}
+            onChange={(v) => void saveChart({ ...record, view: v })}
+          />
+        }
       />
       <div className={mine.danger}>
         {confirm ? (
