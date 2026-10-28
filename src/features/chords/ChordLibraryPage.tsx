@@ -20,7 +20,6 @@ import { Card } from '@/ui/Card';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
-import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './chords.module.css';
 
@@ -198,7 +197,7 @@ export function ChordLibraryPage() {
         </div>
 
         <Card title="Voicing" className={styles.areaVoicing}>
-          <div className={page.prose} style={{ gap: 'var(--space-3)', maxWidth: 'none' }}>
+          <div className={styles.voicingBody}>
             <Segmented
               label="Voicing style"
               value={style}

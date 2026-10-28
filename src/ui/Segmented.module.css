@@ -1,13 +1,19 @@
+/*
+ * As wide as its options, in a grid or a flex column as much as in a row.
+ * When they don't fit they wrap instead of scrolling out of sight: the
+ * corners are half the control's height, so one line is a pill and two
+ * lines are a rounded box.
+ */
 .group {
   display: inline-flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
   padding: 3px;
   gap: 2px;
-  border-radius: var(--radius-pill);
+  border-radius: calc(var(--control-height) / 2);
   background: var(--surface-sunk);
   border: 1px solid var(--line);
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
 /* As tall as the other controls: the group's padding and border take 8px. */
