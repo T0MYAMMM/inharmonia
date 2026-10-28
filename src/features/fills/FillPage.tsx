@@ -135,19 +135,13 @@ export function FillPage() {
       <PageHeader
         crumb={{ to: '/fills', label: 'Fills' }}
         title={fill.name}
-        lede={
-          <>
-            <p>
-              {category}, level {fill.level}, {fill.hand === 'rh' ? 'right hand' : 'left hand'}
-            </p>
-            <p>{fill.description}</p>
-          </>
-        }
+        lede={`${category}, level ${fill.level}, ${fill.hand === 'rh' ? 'right hand' : 'left hand'}`}
       />
       <FillTrainer
         key={fill.id}
         exerciseId={fill.id}
         exercise={exercise}
+        about={fill.description}
         settings={
           small ? (
             <details className={progStyles.details}>
@@ -169,10 +163,13 @@ function FillTrainer({
   exercise,
   exerciseId,
   settings,
+  about,
 }: {
   exercise: FillExercise;
   exerciseId: string;
   settings: React.ReactNode;
+  /** What the fill does, in a sentence or two: under the controls, not needed before Play. */
+  about: string;
 }) {
   const [ctrl] = useState(
     () =>
@@ -402,6 +399,7 @@ function FillTrainer({
           {snap.announcement}
         </p>
       </div>
+      <p className={styles.about}>{about}</p>
       <KeyboardDock focus={exercise.range} showTarget={practice || speed} />
     </>
   );

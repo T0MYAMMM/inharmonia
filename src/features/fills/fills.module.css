@@ -25,6 +25,13 @@
   margin-top: var(--space-4);
 }
 
+/* What the fill does, under the controls: worth reading, not needed before Play. */
+.about {
+  max-width: var(--text-width);
+  margin-top: var(--space-5);
+  color: var(--muted);
+}
+
 .strip {
   display: grid;
   gap: var(--space-4);
