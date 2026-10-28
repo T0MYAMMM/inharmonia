@@ -11,7 +11,7 @@ import { Field } from './Field';
 import { FilePicker } from './FilePicker';
 import { Keyboard } from './keyboard/Keyboard';
 import { DOCK_RANGE, dockRangeFor, isBlack, layoutKeys } from './keyboard/layout';
-import { Menu, MenuItem, MenuSeparator } from './Menu';
+import { Menu, MenuCheckItem, MenuItem, MenuSeparator } from './Menu';
 import { NoteLabel } from './NoteLabel';
 import { NumberInput } from './NumberInput';
 import { RangeInput } from './RangeInput';
@@ -541,6 +541,44 @@ describe('Menu', () => {
     expect(ran).toEqual(['new']);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(button).toHaveFocus();
+  });
+
+  it('ticks a check item with a click, Space or Enter, and stays open', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    function ExportMenu() {
+      const [lyrics, setLyrics] = useState(false);
+      return (
+        <Menu label="Export">
+          <MenuItem onSelect={() => ran.push(lyrics ? 'with' : 'without')}>Download</MenuItem>
+          <MenuSeparator />
+          <MenuCheckItem checked={lyrics} onChange={setLyrics} note="Left out unless ticked.">
+            Include lyrics
+          </MenuCheckItem>
+        </Menu>
+      );
+    }
+    render(<ExportMenu />);
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    const check = screen.getByRole('menuitemcheckbox', { name: 'Include lyrics' });
+    expect(check).toHaveAttribute('aria-checked', 'false');
+    expect(check).toHaveAccessibleDescription('Left out unless ticked.');
+    // The arrow keys reach it like any item.
+    await user.keyboard('{ArrowDown}');
+    expect(check).toHaveFocus();
+    await user.keyboard(' ');
+    expect(check).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(check).toHaveAttribute('aria-checked', 'false');
+    await user.click(check);
+    expect(check).toHaveAttribute('aria-checked', 'true');
+    expect(check).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(item('Download')).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(ran).toEqual(['with']);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('closes on a press outside and on Tab', async () => {

@@ -21,7 +21,7 @@ const CloseMenu = createContext<() => void>(() => undefined);
 const EDGE = 8;
 
 const itemsIn = (list: HTMLElement | null) => [
-  ...(list?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+  ...(list?.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"]') ?? []),
 ];
 
 export interface MenuProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
@@ -238,6 +238,55 @@ export function MenuItem({
       ) : (
         children
       )}
+    </button>
+  );
+}
+
+export interface MenuCheckItemProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange'
+> {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  /** A line under the item saying what being ticked means, like MenuItem's. */
+  note?: ReactNode;
+}
+
+/**
+ * A choice in a Menu that is ticked or not (the WAI-ARIA menuitemcheckbox).
+ * A click, Space or Enter ticks or unticks it and the menu stays open, so the
+ * items after it run with the choice made. Its box is ink, never a hand's colour.
+ */
+export function MenuCheckItem({
+  checked,
+  onChange,
+  note,
+  className,
+  children,
+  ...rest
+}: MenuCheckItemProps) {
+  const id = useId();
+  return (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      tabIndex={-1}
+      aria-labelledby={`${id}-label`}
+      aria-describedby={note ? `${id}-note` : undefined}
+      className={[styles.item, className].filter(Boolean).join(' ')}
+      onClick={() => onChange(!checked)}
+      {...rest}
+    >
+      <span className={styles.box} aria-hidden="true" />
+      <span className={styles.itemText}>
+        <span id={`${id}-label`}>{children}</span>
+        {note ? (
+          <span id={`${id}-note`} className={styles.itemNote}>
+            {note}
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }
