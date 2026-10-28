@@ -19,6 +19,10 @@ import { NotFoundPage } from '../not-found/NotFoundPage';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import { ExportMenu } from '../transfer/Export';
+import { sentTitle } from '@/core/handoff';
+import { NOTES, sentToStudio } from '../sendTo/names';
+import { SendToMenu } from '../sendTo/SendToMenu';
+import { useHere, useSend } from '../sendTo/useHandoff';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
 import styles from './SongPage.module.css';
@@ -30,6 +34,8 @@ export function SongPage() {
   const { songId = '' } = useParams();
   const lesson = getSong(songId);
   const [params, setParams] = useSearchParams();
+  const send = useSend();
+  const here = useHere();
   const option = (name: string) => params.get(name) ?? '';
   const pattern = option('pattern');
   const octave = Number(option('octave'));
@@ -163,6 +169,29 @@ export function SongPage() {
       </div>
     </details>
   );
+  const level = lesson.level ? LEVEL_NAMES[lesson.level] : null;
+  // The arrangement settings are in the address only when changed.
+  const arranged = ['pattern', 'octave', 'voicing', 'inversion', 'fill'].some((k) => params.has(k));
+  const toStudio = () =>
+    send({
+      kind: 'studio',
+      from: { to: here, label: lesson.title },
+      project: {
+        ...compiledToMidi(compiled),
+        title: sentTitle(lesson.title, level ? `song, ${level}` : 'song'),
+      },
+      said: sentToStudio(
+        `the song ${lesson.title}`,
+        [
+          prettyAccidentals(keyName(lesson.key)),
+          level ? `the ${level} version` : null,
+          arranged ? 'with the arrangement chosen here' : 'with its own arrangement',
+        ]
+          .filter(Boolean)
+          .join(', '),
+        'the song',
+      ),
+    });
   return (
     <>
       <PageHeader
@@ -196,6 +225,7 @@ export function SongPage() {
         }
         actions={
           <>
+            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
             <ExportMenu
               build={() => exportItems({ builtInSongs: [lesson] })}
               midi={{

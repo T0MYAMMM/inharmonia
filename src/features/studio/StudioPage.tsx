@@ -43,6 +43,9 @@ import { SongEditor } from './SongEditor';
 import { MidiWorkspace } from './MidiWorkspace';
 import { blankMidiProject } from '@/core/midi/adapters';
 import type { MidiProject } from '@/core/midi/smf';
+import type { HandoffFrom } from '@/core/handoff';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import { TakeView } from './TakeView';
 import { WaysIn } from './WaysIn';
 import styles from './studio.module.css';
@@ -92,8 +95,17 @@ export function StudioPage() {
   const warning = snap.warning ? problemMessage(snap.warning) : null;
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [editing, setEditing] = useState<EditorInput | null>(null);
-  const [midiSession, setMidiSession] = useState<{ key: number; project: MidiProject } | null>(
-    null,
+  // Sent from another room: opened in the MIDI editor, with the way back to where it came from.
+  const arrival = useArrival('studio');
+  const [midiSession, setMidiSession] = useState<MidiSession | null>(() =>
+    arrival.status === 'ok'
+      ? {
+          key: 0,
+          project: arrival.handoff.project,
+          from: arrival.handoff.from,
+          said: arrival.handoff.said,
+        }
+      : null,
   );
   const openMidi = (project: MidiProject) => {
     ctrl.disable();
@@ -162,9 +174,19 @@ export function StudioPage() {
       {midiSession ? (
         <div hidden={draft !== null || editing !== null}>
           <PageHeader
-            crumb={{ onClick: () => setMidiSession(null), label: 'Back to Studio' }}
+            crumb={
+              midiSession.from
+                ? { ...midiSession.from, testId: 'sent-back' }
+                : { onClick: () => setMidiSession(null), label: 'Back to Studio' }
+            }
             title="MIDI piano-roll editor"
-            lede="Open a .mid file or start from nothing, then edit every track on a piano roll. It stays on this device."
+            lede={
+              midiSession.said ? (
+                <ArrivalNote text={midiSession.said} testId="sent-said" />
+              ) : (
+                'Open a .mid file or start from nothing, then edit every track on a piano roll. It stays on this device.'
+              )
+            }
           />
           <MidiWorkspace key={midiSession.key} initial={midiSession.project} />
         </div>
@@ -178,6 +200,11 @@ export function StudioPage() {
           }
           lede="Three ways to make a song: sing it, compose it on a piano roll, or bring in a MIDI file. Everything stays on this device until you export it."
         />
+        {arrival.problem ? (
+          <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+            {arrival.problem}
+          </p>
+        ) : null}
 
         <WaysIn onSing={toTake} onNew={() => openMidi(blankMidiProject())} onOpen={openMidi} />
 
@@ -335,6 +362,15 @@ export function StudioPage() {
       </div>
     </>
   );
+}
+
+/** A project open in the MIDI editor; one sent from another room knows the way back. */
+interface MidiSession {
+  key: number;
+  project: MidiProject;
+  from?: HandoffFrom;
+  /** What was sent, said on arrival. */
+  said?: string;
 }
 
 /** The draft in the song player: listen and practise it before saving. */

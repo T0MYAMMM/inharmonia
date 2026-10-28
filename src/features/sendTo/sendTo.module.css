@@ -1,0 +1,12 @@
+/* The Send to menu and what it last could not do; the empty status takes no room. */
+.sendTo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.status:not(:empty) {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
