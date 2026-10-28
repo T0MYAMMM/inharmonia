@@ -10,10 +10,11 @@ export interface KeyScore {
   score: number;
 }
 
-type Quality = 'maj' | 'min' | 'dim' | 'aug' | 'other';
+/** A chord's triad: sus counts as major, sevenths and extensions don't count. */
+export type TriadQuality = 'maj' | 'min' | 'dim' | 'aug' | 'other';
 
 /** Triad quality of each scale degree; minor allows the major V and vii° of harmonic minor. */
-const MAJOR_DEGREES: [number, Quality[]][] = [
+const MAJOR_DEGREES: [number, TriadQuality[]][] = [
   [0, ['maj']],
   [2, ['min']],
   [4, ['min']],
@@ -22,7 +23,7 @@ const MAJOR_DEGREES: [number, Quality[]][] = [
   [9, ['min']],
   [11, ['dim']],
 ];
-const MINOR_DEGREES: [number, Quality[]][] = [
+const MINOR_DEGREES: [number, TriadQuality[]][] = [
   [0, ['min']],
   [2, ['dim']],
   [3, ['maj']],
@@ -33,10 +34,11 @@ const MINOR_DEGREES: [number, Quality[]][] = [
   [11, ['dim']],
 ];
 
-function qualityOf(symbol: string): { root: number; quality: Quality } {
+/** A chord's root (pitch class) and triad. Throws on a symbol that is not a chord. */
+export function triadOf(symbol: string): { root: number; quality: TriadQuality } {
   const info = parseChord(symbol);
   const has = (iv: string) => info.intervals.includes(iv);
-  const quality: Quality =
+  const quality: TriadQuality =
     info.family === 'diminished' || (has('3m') && has('5d'))
       ? 'dim'
       : info.family === 'augmented'
@@ -50,7 +52,7 @@ function qualityOf(symbol: string): { root: number; quality: Quality } {
 }
 
 /** How well one chord sits in a key: 1 diatonic, 0.4 root in the scale but another quality, 0 outside. */
-function fit(chord: { root: number; quality: Quality }, tonic: number, mode: Mode): number {
+function fit(chord: { root: number; quality: TriadQuality }, tonic: number, mode: Mode): number {
   const degrees = mode === 'major' ? MAJOR_DEGREES : MINOR_DEGREES;
   const step = (chord.root - tonic + 12) % 12;
   const deg = degrees.find(([s]) => s === step);
@@ -65,14 +67,17 @@ function fit(chord: { root: number; quality: Quality }, tonic: number, mode: Mod
  * sections at home. That also tells a major key from its relative minor.
  */
 export function suggestKeys(sections: readonly ChartSection[]): KeyScore[] {
-  const weighted: { chord: { root: number; quality: Quality }; weight: number; edge: boolean }[] =
-    [];
+  const weighted: {
+    chord: { root: number; quality: TriadQuality };
+    weight: number;
+    edge: boolean;
+  }[] = [];
   for (const s of sections) {
     const chords = s.bars.flatMap((b) => b.chords).filter((c) => c.symbol !== NO_CHORD);
     chords.forEach((c, i) => {
       try {
         const edge = i === 0 || i === chords.length - 1;
-        weighted.push({ chord: qualityOf(c.symbol), weight: (edge ? 3 : 1) * c.beats, edge });
+        weighted.push({ chord: triadOf(c.symbol), weight: (edge ? 3 : 1) * c.beats, edge });
       } catch {
         /* unknown chords don't vote */
       }
