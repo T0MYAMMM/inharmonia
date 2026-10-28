@@ -4,14 +4,6 @@
   min-width: 0;
   padding: var(--space-3) 0;
 }
-.heading h2 {
-  margin: 0 0 6px;
-}
-.heading p {
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.5;
-}
 .toolbar {
   display: flex;
   gap: 10px;

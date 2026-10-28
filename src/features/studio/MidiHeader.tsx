@@ -15,12 +15,16 @@ import styles from './midiHeader.module.css';
 
 /** The medium breakpoint: below it the header folds its tools into More. */
 const COMPACT = '(max-width: 760px)';
+/**
+ * The wide breakpoint: below it Keyboard is its icon and the groups sit
+ * closer, so the title shares the row with the tools instead of taking one
+ * of its own.
+ */
+const NARROW = '(max-width: 960px)';
 
 export interface MidiHeaderProps {
   title: string;
   onTitle: (title: string) => void;
-  /** Back to the Studio landing; left out where the page has its own way back. */
-  onBack?: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -41,12 +45,14 @@ export interface MidiHeaderProps {
 }
 
 /**
- * The workspace's top row: back and the title, then history, playback, file
- * and save. Below 760px it keeps back, the title, Play and Keyboard, and puts
- * the rest under More (⋯).
+ * The workspace's top row: the title, then history, playback, file and save.
+ * Below 960px Keyboard is its icon; below 760px the row keeps the title,
+ * Play and Keyboard, and puts the rest under More (⋯). The way back to Studio
+ * is the page's crumb.
  */
 export function MidiHeader(props: MidiHeaderProps) {
   const compact = useMediaQuery(COMPACT);
+  const narrow = useMediaQuery(NARROW);
   const { over, dropProps } = useFileDrop({
     accept: MIDI_ACCEPT,
     onFiles: ([file]) => file && props.onDropFile(file),
@@ -75,16 +81,16 @@ export function MidiHeader(props: MidiHeaderProps) {
         data-testid="midi-play"
       />
       <Button
-        icon={compact}
+        icon={narrow}
         className={styles.pressed}
-        aria-label={compact ? 'Keyboard' : undefined}
+        aria-label={narrow ? 'Keyboard' : undefined}
         aria-pressed={props.showKeys}
         onClick={() => props.onShowKeys(!props.showKeys)}
         title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
         data-testid="midi-keyboard-toggle"
       >
         <PianoIcon />
-        {compact ? null : 'Keyboard'}
+        {narrow ? null : 'Keyboard'}
       </Button>
     </ToolGroup>
   );
@@ -148,18 +154,8 @@ export function MidiHeader(props: MidiHeaderProps) {
   return (
     <EditorHeader
       data-testid="midi-header"
-      start={
-        <>
-          {props.onBack ? (
-            // The words hide on a phone; the arrow alone is the button there.
-            <Button variant="ghost" className={styles.back} onClick={props.onBack}>
-              <span aria-hidden="true">←</span>
-              <span className={styles.backText}>Back to Studio</span>
-            </Button>
-          ) : null}
-          <EditorTitle value={props.title} onChange={(e) => props.onTitle(e.target.value)} />
-        </>
-      }
+      dense={narrow}
+      start={<EditorTitle value={props.title} onChange={(e) => props.onTitle(e.target.value)} />}
       tools={tools}
     />
   );

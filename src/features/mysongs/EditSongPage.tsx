@@ -1,9 +1,9 @@
 import { MidiWorkspace } from '../studio/MidiWorkspace';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { recordingBytes, recordingSamples, type UserRecording, type UserSong } from '@/core/songs';
 import { getRecording, getSong } from '@/state/mySongs';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
 import { SongEditor } from '../studio/SongEditor';
 import styles from './mysongs.module.css';
 
@@ -29,15 +29,7 @@ export function EditSongPage() {
 
   if (!loaded || loaded.id !== songId) return <p className={styles.note}>Loading…</p>;
   const { song, recording } = loaded;
-  if (!song)
-    return (
-      <div className={songStyles.header}>
-        <h1>Song not found</h1>
-        <p>
-          <Link to="/songs">Back to Songs</Link>
-        </p>
-      </div>
-    );
+  if (!song) return <PageHeader crumb={{ to: '/songs', label: 'Songs' }} title="Song not found" />;
   const take = recording
     ? {
         audio: {
@@ -57,12 +49,10 @@ export function EditSongPage() {
     : null;
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to={`/songs/mine/${song.id}`}>← Back to the song</Link>
-        </p>
-        <h1>Edit {song.lesson.title}</h1>
-      </div>
+      <PageHeader
+        crumb={{ to: `/songs/mine/${song.id}`, label: song.lesson.title }}
+        title={`Edit ${song.lesson.title}`}
+      />
       {song.draft.midi ? (
         <MidiWorkspace key={song.id} initial={song.draft.midi} song={song} />
       ) : (

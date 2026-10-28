@@ -29,9 +29,8 @@ import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
-import song from '../song/SongPage.module.css';
 import { createWorkerAnalyzer } from './capture/analysis';
 import { Microphone } from './capture/microphone';
 import { ChordSuggestions } from './ChordSuggestions';
@@ -143,19 +142,10 @@ export function StudioPage() {
       ) : null}
       {editing ? (
         <div hidden={draft !== null}>
-          <div className={song.header}>
-            <p className={song.meta}>
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={backFromEdit}
-                data-testid="back-to-take"
-              >
-                ← Back to the take
-              </Button>
-            </p>
-            <h1>Edit your song</h1>
-          </div>
+          <PageHeader
+            crumb={{ onClick: backFromEdit, label: 'Back to the take', testId: 'back-to-take' }}
+            title="Edit your song"
+          />
           <SongEditor
             key={editing.key}
             initial={editing.initial}
@@ -171,23 +161,23 @@ export function StudioPage() {
       ) : null}
       {midiSession ? (
         <div hidden={draft !== null || editing !== null}>
-          <MidiWorkspace
-            key={midiSession.key}
-            initial={midiSession.project}
-            onBack={() => setMidiSession(null)}
+          <PageHeader
+            crumb={{ onClick: () => setMidiSession(null), label: 'Back to Studio' }}
+            title="MIDI piano-roll editor"
+            lede="Open a .mid file or start from nothing, then edit every track on a piano roll. It stays on this device."
           />
+          <MidiWorkspace key={midiSession.key} initial={midiSession.project} />
         </div>
       ) : null}
       <div hidden={draft !== null || editing !== null || midiSession !== null}>
-        <div className={page.hero}>
-          <h1>
-            Studio <BetaBadge />
-          </h1>
-          <p className={page.lede}>
-            Three ways to make a song: sing it, compose it on a piano roll, or bring in a MIDI file.
-            Everything stays on this device until you export it.
-          </p>
-        </div>
+        <PageHeader
+          title={
+            <>
+              Studio <BetaBadge />
+            </>
+          }
+          lede="Three ways to make a song: sing it, compose it on a piano roll, or bring in a MIDI file. Everything stays on this device until you export it."
+        />
 
         <WaysIn onSing={toTake} onNew={() => openMidi(blankMidiProject())} onOpen={openMidi} />
 
@@ -360,18 +350,11 @@ function DraftView({
   const compiled = useMemo(() => compileLesson(lesson, PATTERNS), [lesson]);
   return (
     <>
-      <div className={song.header}>
-        <p className={song.meta}>
-          <Button variant="ghost" size="small" onClick={onBack} data-testid="back-from-try">
-            ← {backLabel}
-          </Button>
-        </p>
-        <h1>{lesson.title}</h1>
-        <p className={song.meta}>
-          {keyName(lesson.key)}, {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length}{' '}
-          bars. Not saved yet: save it from the editor to keep it.
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ onClick: onBack, label: backLabel, testId: 'back-from-try' }}
+        title={lesson.title}
+        lede={`${keyName(lesson.key)}, ${lesson.meter.beats}/${lesson.meter.unit}, ${lesson.bars.length} bars. Not saved yet: save it from the editor to keep it.`}
+      />
       <LessonPlayer key={lesson.id} compiled={compiled} variant="song" />
     </>
   );

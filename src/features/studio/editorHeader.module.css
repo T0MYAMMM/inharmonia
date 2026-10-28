@@ -38,6 +38,15 @@
   background: var(--line);
 }
 
+/* Dense: the title and a few tools share one row on a phone. */
+.header[data-dense] {
+  column-gap: var(--space-2);
+}
+
+.header[data-dense] .group + .group::before {
+  display: none;
+}
+
 /* A row of tool groups under the header. */
 .row {
   display: flex;
@@ -85,6 +94,33 @@
   visibility: hidden;
 }
 
+/* An editor's folded instructions: a line of muted text that opens to a list. */
+.help {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.help > summary {
+  width: fit-content;
+  min-height: 32px;
+  align-content: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.helpBody {
+  max-width: var(--text-width);
+  padding-bottom: var(--space-2);
+}
+
+.helpBody ul {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--space-1);
+}
+
 /* On touch, the title is as tall as the buttons beside it, and a row's tools are full targets. */
 @media (pointer: coarse) {
   .header,
@@ -92,7 +128,8 @@
     --control-height: 44px;
   }
 
-  .row > .group > button {
+  .row > .group > button,
+  .help > summary {
     min-height: 44px;
   }
 }
