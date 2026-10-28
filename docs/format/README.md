@@ -3,14 +3,15 @@
 Inharmonia exports and imports songs, chord charts and progressions as plain JSON. You can read
 the files, edit them by hand, and keep them in git. The schema is in
 [`inharmonia.schema.json`](inharmonia.schema.json), and there is one small example per kind in
-[`examples/`](examples). Every example is invented content.
+[`examples/`](examples), plus a song made from a MIDI file (`midi-song.json`). Every example is
+invented content.
 
 ## The envelope
 
 ```json
 {
   "format": "inharmonia",
-  "version": 2,
+  "version": 3,
   "exportedAt": "2026-01-01T00:00:00.000Z",
   "items": [],
   "assets": []
@@ -37,6 +38,10 @@ beats as numbers, and keys as `{ "tonic": "D", "mode": "major" }`. Nothing deriv
 no MIDI numbers, compiled timelines or cached voicings. Explicit `voicing` lists appear only on
 songs whose voicings were chosen by hand.
 
+The one exception is a song made from a MIDI file. It is written as the MIDI project it is, so
+its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 1 to 127,
+`channel` 0 to 15 and `program` the General MIDI instrument, 0 to 127.
+
 ## Kinds
 
 - **song**: key, meter (2/4, 3/4, 4/4 or 3/8), tempo (`default`, `min`, `max`), left-hand pattern
@@ -50,6 +55,14 @@ songs whose voicings were chosen by hand.
   figure, as `name`, `cycleBeats` and `steps` (`at`, `dur` in beats or `"chord"`, `voices`,
   optional `accent`). Library pieces are written in the compact [source format](source.md) and
   generated into this format.
+
+  A song made from a MIDI file has only `midi`: the whole project, every track and note, as
+  Studio keeps it. `title`, `ppq`, `tempo` (20 to 300 bpm), `meter`, `tempos` and `meters`
+  (changes, by beat), and `tracks`, each with `id`, `name`, `channel`, `program`, `muted` and
+  `notes` (`id`, `startBeat`, `beats`, `midi`, `velocity`). Beats are quarter notes from the
+  start. The practice score is not written: it is rebuilt from the project on import, the way
+  Studio's **Save to My songs** builds it. Such a song is 2/4, 3/4 or 4/4 and up to 512 bars.
+
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
   `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),
   `style` (`triad-root`, `block-both`, `root-fifth`, `arpeggio-8ths` or `held` for right hand
@@ -77,5 +90,8 @@ saved.
   `notes`.
 - Everything you import becomes your own private content, stored under a `mine-…` id. The
   `source` is kept as written.
+- Version 2 files are read as they are. Version 3 added a MIDI song's `midi`. A version 2 export
+  of a song made from a MIDI file left its tracks out, so it is refused with a message saying
+  so: export it again from where it was made.
 - Version 1 files (the old progressions export and the old Studio songs export) are upgraded as
   they are read.
