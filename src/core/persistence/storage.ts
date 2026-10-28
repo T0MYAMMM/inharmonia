@@ -10,24 +10,34 @@ export interface KeyValueStore {
 
 export const NAMESPACE = 'inharmonia:';
 
-class SafeLocalStorage implements KeyValueStore {
+/**
+ * Web storage that never throws. A copy is kept in memory, so what was
+ * written reads back for the life of the page even when the browser refused
+ * to store it, rather than an older value it still holds.
+ */
+class SafeWebStorage implements KeyValueStore {
   private memory = new Map<string, string>();
+  /** Keys whose last write the browser refused: memory holds the newer value. */
+  private refused = new Set<string>();
+
+  constructor(private readonly area: 'localStorage' | 'sessionStorage') {}
 
   private get ls(): Storage | null {
     try {
-      return typeof window !== 'undefined' ? window.localStorage : null;
+      return typeof window !== 'undefined' ? window[this.area] : null;
     } catch {
       return null;
     }
   }
 
   get(key: string): string | null {
-    try {
-      const v = this.ls?.getItem(NAMESPACE + key);
-      if (v !== null && v !== undefined) return v;
-    } catch {
-      /* fall through to memory */
-    }
+    if (!this.refused.has(key))
+      try {
+        const v = this.ls?.getItem(NAMESPACE + key);
+        if (v !== null && v !== undefined) return v;
+      } catch {
+        /* fall through to memory */
+      }
     return this.memory.get(key) ?? null;
   }
 
@@ -35,14 +45,17 @@ class SafeLocalStorage implements KeyValueStore {
     this.memory.set(key, value);
     try {
       this.ls?.setItem(NAMESPACE + key, value);
+      this.refused.delete(key);
       return true;
     } catch {
+      this.refused.add(key);
       return false;
     }
   }
 
   remove(key: string): void {
     this.memory.delete(key);
+    this.refused.delete(key);
     try {
       this.ls?.removeItem(NAMESPACE + key);
     } catch {
@@ -51,7 +64,10 @@ class SafeLocalStorage implements KeyValueStore {
   }
 }
 
-export const storage: KeyValueStore = new SafeLocalStorage();
+export const storage: KeyValueStore = new SafeWebStorage('localStorage');
+
+/** The same for this tab only: kept through a reload, gone with the tab. */
+export const sessionStore: KeyValueStore = new SafeWebStorage('sessionStorage');
 
 /** In-memory store for tests. */
 export function memoryStore(): KeyValueStore {

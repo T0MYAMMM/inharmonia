@@ -4,6 +4,9 @@ import { parseMidi, writeMidi, cleanMidiProject, type MidiProject } from './smf'
 import { compiledToMidi, midiEvents } from './adapters';
 import { compileLesson } from '../content/compile';
 import { PATTERNS } from '@/content/patterns';
+import { PROGRESSIONS } from '@/content/progressions';
+import { getSong } from '@/content/lessons';
+import { chartToLesson, DEFAULT_VIEW, progressionChart } from '../charts';
 import { midiToDraft, toLesson } from '../songs/draft';
 
 const project: MidiProject = {
@@ -105,5 +108,18 @@ describe('Standard MIDI File support', () => {
     expect(compiled.events.find((n) => n.midi === 36)?.channel).toBe('lh');
     expect(midiEvents(project)).toHaveLength(4);
     expect(compiledToMidi(compiled).tracks).toHaveLength(2);
+  });
+
+  it("names a chart's one part Chords, and a song's two by hand", () => {
+    const chart = compileLesson(
+      chartToLesson('c', progressionChart(PROGRESSIONS[0]!, 'G'), DEFAULT_VIEW),
+      PATTERNS,
+    );
+    expect(compiledToMidi(chart).tracks.map((t) => t.name)).toEqual(['Chords']);
+    const song = compileLesson(getSong('minuet-in-g-easy')!, PATTERNS);
+    expect(compiledToMidi(song).tracks.map((t) => t.name)).toEqual([
+      'Right hand · melody',
+      'Left hand · accompaniment',
+    ]);
   });
 });

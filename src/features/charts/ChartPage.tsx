@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { PATTERNS } from '@/content/patterns';
-import { shiftLabel, userChartLesson, viewKey, type UserChart } from '@/core/charts';
+import { CHART_STYLES, shiftLabel, userChartLesson, viewKey, type UserChart } from '@/core/charts';
 import { compileLesson } from '@/core/content/compile';
+import { sentTitle } from '@/core/handoff';
+import { compiledToMidi } from '@/core/midi/adapters';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { deleteChart, getChart, saveChart, useMySongs } from '@/state/mySongs';
 import { exportItems } from '@/state/transfer';
@@ -14,6 +16,9 @@ import mine from '../mysongs/mysongs.module.css';
 import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
+import { LEVEL_WORDS, NOTES, sentToStudio } from '../sendTo/names';
+import { SendToMenu } from '../sendTo/SendToMenu';
+import { useHere, useSend } from '../sendTo/useHandoff';
 import { LearnPanel } from './LearnPanel';
 import styles from './charts.module.css';
 
@@ -25,6 +30,8 @@ export function ChartPage() {
   const [loaded, setLoaded] = useState<{ id: string; chart: UserChart | null } | null>(null);
   const [confirm, setConfirm] = useState(false);
   const navigate = useNavigate();
+  const send = useSend();
+  const here = useHere();
 
   useEffect(() => {
     if (listed) return;
@@ -55,6 +62,19 @@ export function ChartPage() {
     );
 
   const { chart, view } = record;
+  const key = prettyAccidentals(keyName(viewKey(chart, view)));
+  const style = CHART_STYLES.find((x) => x.id === view.style)?.name ?? view.style;
+  const toStudio = () =>
+    send({
+      kind: 'studio',
+      from: { to: here, label: chart.title },
+      project: { ...compiledToMidi(compiled), title: sentTitle(chart.title, `chart, ${key}`) },
+      said: sentToStudio(
+        `your chart ${chart.title}`,
+        `${key}, ${LEVEL_WORDS[view.simplify]}, the ${style} accompaniment`,
+        'the chart',
+      ),
+    });
   return (
     <>
       <PageHeader
@@ -98,6 +118,7 @@ export function ChartPage() {
             >
               Show function
             </Toggle>
+            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
             <ExportMenu build={() => exportItems({ charts: [record] })} />
           </>
         }

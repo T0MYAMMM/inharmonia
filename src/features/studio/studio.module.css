@@ -365,3 +365,9 @@
     transition: none;
   }
 }
+
+/* What was sent here and could not be opened, above the ways in. */
+.sentProblem {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
+  font-weight: 600;
+}

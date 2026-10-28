@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { memoryStore, type KeyValueStore } from '@/core/persistence/storage';
 import type { Played } from '@/core/practice';
@@ -21,13 +22,18 @@ function Harness({
   return <SequencePanel editor={editor} playback={playback} played={played} />;
 }
 
+/** On a page, where Send to can go somewhere. */
+const routed = (harness: React.ReactElement) => (
+  <MemoryRouter initialEntries={['/chords']}>{harness}</MemoryRouter>
+);
+
 function setup(store: KeyValueStore = memoryStore()) {
   const playback: SequencePlayback = { playing: false, bar: null, play: vi.fn(), stop: vi.fn() };
   const user = userEvent.setup();
-  const view = render(<Harness store={store} playback={playback} />);
+  const view = render(routed(<Harness store={store} playback={playback} />));
   /** Play a chord on the keyboard, as the page's hook would report it. */
   const play = (played: Played | null) =>
-    view.rerender(<Harness store={store} playback={playback} played={played} />);
+    view.rerender(routed(<Harness store={store} playback={playback} played={played} />));
   const field = screen.getByRole('textbox', { name: 'Type chords' });
   /** Each bar's name, as "Bar 1: C", "Bar 3: F, G". */
   const bars = () =>
@@ -119,7 +125,7 @@ describe('SequencePanel: playing and settings', () => {
     first.view.unmount();
 
     const playing: SequencePlayback = { playing: true, bar: 2, play: vi.fn(), stop: vi.fn() };
-    render(<Harness store={store} playback={playing} />);
+    render(routed(<Harness store={store} playback={playing} />));
     expect(screen.getByTestId('sequence-play')).toHaveAccessibleName('Stop');
     expect(screen.getByTestId('sequence-position')).toHaveTextContent('Bar 3 of 4');
     const current = screen.getAllByRole('option')[2]!;

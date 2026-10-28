@@ -1,19 +1,27 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTouchOnly } from '@/app/hooks';
+import { PATTERNS } from '@/content/patterns';
 import {
   CHART_STYLES,
+  chartToLesson,
   clearBars,
   LIMITS,
   moveBar,
   readChords,
   removeBar,
   roomLeft,
+  NO_CHORD,
   SEQUENCE_TEMPO,
+  sequenceChart,
   sequenceKey,
   sequenceNumerals,
+  sequenceView,
   type ChartStyle,
   type SequenceIssue,
 } from '@/core/charts';
+import { compileLesson } from '@/core/content/compile';
+import { sentTitle } from '@/core/handoff';
+import { compiledToMidi } from '@/core/midi/adapters';
 import { keyName, prettyAccidentals, prettyChord } from '@/core/notation';
 import type { Played } from '@/core/practice';
 import { Button } from '@/ui/Button';
@@ -26,6 +34,9 @@ import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { TextInput } from '@/ui/TextInput';
 import { Toggle } from '@/ui/Toggle';
+import { nothingToSend, NOTES, sentToStudio } from '../sendTo/names';
+import { SendToMenu, type SendToItem } from '../sendTo/SendToMenu';
+import { useHere, useSend } from '../sendTo/useHandoff';
 import { BarEditor } from './BarEditor';
 import { BarStrip } from './BarStrip';
 import { barWords, type SequenceEditor } from './useSequenceEditor';
@@ -86,6 +97,38 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
   const key = sequenceKey(seq.bars);
   const numerals = seq.showFunction && key ? sequenceNumerals(seq.bars, key) : null;
   const style = CHART_STYLES.find((s) => s.id === seq.style) ?? CHART_STYLES[0];
+  const send = useSend();
+  const here = useHere();
+  const hasChords = seq.bars.some((b) => b.chords.some((c) => c.symbol !== NO_CHORD));
+  const keyWords = key ? prettyAccidentals(keyName(key)) : '';
+  const from = { to: here, label: 'Chords' };
+  const sendTo: SendToItem[] = [
+    hasChords
+      ? {
+          room: 'studio',
+          note: NOTES.studio,
+          onSelect: () =>
+            send({
+              kind: 'studio',
+              from,
+              project: {
+                ...compiledToMidi(
+                  compileLesson(
+                    chartToLesson('chord-sequence', sequenceChart(seq), sequenceView(seq)),
+                    PATTERNS,
+                  ),
+                ),
+                title: sentTitle('Chord sequence', keyWords),
+              },
+              said: sentToStudio(
+                'your chord sequence',
+                `${n} bar${n === 1 ? '' : 's'} in ${keyWords}, the ${style.name} accompaniment, once through`,
+                'your sequence',
+              ),
+            }),
+        }
+      : nothingToSend('studio'),
+  ];
   const focusChords = () => document.getElementById(chordsId)?.focus();
   const focusBarChord = () => document.getElementById(`${idPrefix}-chord`)?.focus();
 
@@ -162,41 +205,44 @@ export function SequencePanel({ editor, playback, played }: SequencePanelProps) 
               </span>
             ) : null}
           </p>
-          <div className={styles.tools} role="group" aria-label="Edits">
-            <Button
-              size="small"
-              icon
-              aria-label="Undo"
-              title="Undo (Ctrl+Z)"
-              onClick={editor.undo}
-              disabled={!editor.canUndo}
-            >
-              <UndoIcon />
-            </Button>
-            <Button
-              size="small"
-              icon
-              aria-label="Redo"
-              title="Redo (Ctrl+Shift+Z)"
-              onClick={editor.redo}
-              disabled={!editor.canRedo}
-            >
-              <RedoIcon />
-            </Button>
-            <Button
-              size="small"
-              variant="ghost"
-              disabled={n === 0}
-              onClick={() =>
-                editor.change(
-                  clearBars(seq),
-                  `Cleared ${n} bar${n === 1 ? '' : 's'}. Undo brings them back.`,
-                  null,
-                )
-              }
-            >
-              Clear
-            </Button>
+          <div className={styles.actions}>
+            <div className={styles.tools} role="group" aria-label="Edits">
+              <Button
+                size="small"
+                icon
+                aria-label="Undo"
+                title="Undo (Ctrl+Z)"
+                onClick={editor.undo}
+                disabled={!editor.canUndo}
+              >
+                <UndoIcon />
+              </Button>
+              <Button
+                size="small"
+                icon
+                aria-label="Redo"
+                title="Redo (Ctrl+Shift+Z)"
+                onClick={editor.redo}
+                disabled={!editor.canRedo}
+              >
+                <RedoIcon />
+              </Button>
+              <Button
+                size="small"
+                variant="ghost"
+                disabled={n === 0}
+                onClick={() =>
+                  editor.change(
+                    clearBars(seq),
+                    `Cleared ${n} bar${n === 1 ? '' : 's'}. Undo brings them back.`,
+                    null,
+                  )
+                }
+              >
+                Clear
+              </Button>
+            </div>
+            {n ? <SendToMenu items={sendTo} /> : null}
           </div>
         </div>
       ) : null}

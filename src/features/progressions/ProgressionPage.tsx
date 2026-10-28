@@ -18,6 +18,11 @@ import { Toggle } from '@/ui/Toggle';
 import { LessonPlayer } from '../song/LessonPlayer';
 import { ExportMenu } from '../transfer/Export';
 import { exportItems } from '@/state/transfer';
+import { sentTitle } from '@/core/handoff';
+import { compiledToMidi } from '@/core/midi/adapters';
+import { NOTES, sentToStudio } from '../sendTo/names';
+import { SendToMenu, type SendToItem } from '../sendTo/SendToMenu';
+import { useHere, useSend } from '../sendTo/useHandoff';
 import { NotFoundPage } from '../not-found/NotFoundPage';
 import { PageHeader } from '../PageHeader';
 import styles from './progressions.module.css';
@@ -35,6 +40,8 @@ export function ProgressionPage() {
   const saved = useUserProgressions((s) => s.get(progressionId));
   const progression = getProgression(progressionId) ?? saved;
   const [params, setParams] = useSearchParams();
+  const send = useSend();
+  const here = useHere();
 
   const keys = progression?.mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
   const key = (keys as readonly string[]).includes(params.get('key') ?? '')
@@ -72,6 +79,8 @@ export function ProgressionPage() {
 
   const keyLabel = (k: string) =>
     `${prettyAccidentals(k)}${progression.mode === 'minor' ? ' minor' : ''}`;
+  /** The key it plays in, in full: "G major". */
+  const inKey = `${prettyAccidentals(key)} ${progression.mode}`;
 
   const summary = [
     keyLabel(key),
@@ -142,6 +151,37 @@ export function ProgressionPage() {
     </div>
   );
 
+  const from = { to: here, label: progression.name };
+  const sendTo: SendToItem[] = [
+    {
+      room: 'studio',
+      note: NOTES.studio,
+      onSelect: () =>
+        send({
+          kind: 'studio',
+          from,
+          project: {
+            ...compiledToMidi(compiled),
+            title: sentTitle(progression.name, `progression, ${inKey}`),
+          },
+          said: sentToStudio(
+            `the progression ${progression.name}`,
+            [
+              inKey,
+              `the ${pattern.name} pattern`,
+              `${VOICING_STYLES.find((v) => v.id === style)!.name} voicing`,
+              smooth ? 'smooth voice leading' : null,
+              fill ? `the ${fill.name} fill` : null,
+              'twice through',
+            ]
+              .filter(Boolean)
+              .join(', '),
+            'the progression',
+          ),
+        }),
+    },
+  ];
+
   // On phones the settings fold into one line so the player stays in view.
   const settings = small ? (
     <details className={styles.details}>
@@ -180,6 +220,7 @@ export function ProgressionPage() {
                 Make a copy to edit
               </Link>
             )}
+            <SendToMenu items={sendTo} />
             <ExportMenu build={() => exportItems({ progressions: [progression] })} />
           </>
         }
