@@ -4,12 +4,13 @@ import { SONGS } from '@/content/lessons';
 import { SONG_LEVELS, type Lesson, type SongLevel } from '@/core/content/types';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { loadProgress } from '@/state/progress';
+import { buttonClass } from '@/ui/buttonClass';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { Select } from '@/ui/Select';
 import { TextInput } from '@/ui/TextInput';
 import { MySongsSection } from '../mysongs/MySongsSection';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { composerOf, creditLine, LEVEL_NAMES } from './credit';
 import { paginate } from './paginate';
 import styles from './SongsPage.module.css';
@@ -69,17 +70,15 @@ export function SongsPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Songs</h1>
-        <p className={page.lede}>
-          Listen through a piece, then practice it note by note at your own pace. Library pieces
-          come in Easy, Medium and Advanced versions.
-        </p>
-        <p>
-          <Link to="/studio">Make your own in Studio</Link>: import or edit .mid files, compose on a
-          piano roll, or sing a melody and let InHarmonia write it down.
-        </p>
-      </div>
+      <PageHeader
+        title="Songs"
+        lede="Listen through a piece, then practice it note by note at your own pace. Library pieces come in Easy, Medium and Advanced versions."
+        actions={
+          <Link to="/studio" className={buttonClass('secondary', 'small')}>
+            Make your own in Studio
+          </Link>
+        }
+      />
       <div className={styles.filters}>
         <Segmented<LevelFilter>
           label="Level"
