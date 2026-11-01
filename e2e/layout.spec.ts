@@ -290,7 +290,7 @@ async function makeMySong(page: Page) {
   });
   await openMidiMore(page);
   await page.getByTestId('midi-save-song').click();
-  await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
+  await page.getByRole('link', { name: /Open saved song in Your songs/ }).click();
   await expect(page.getByRole('heading', { name: 'Evening tune', level: 1 })).toBeVisible();
 }
 

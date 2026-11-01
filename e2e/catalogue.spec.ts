@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { downloadSong } from './helpers';
 
@@ -119,6 +120,166 @@ test.describe('catalogue songs', () => {
   });
 });
 
+test.describe('the catalogue on the Songs page', () => {
+  test.use({ serviceWorkers: 'block' });
+
+  test('a card downloads its piece into Your songs, and says it is on this device', async ({
+    page,
+  }) => {
+    await page.goto('songs');
+    const card = page.getByTestId('songs').getByTestId('piece-minuet-in-g');
+    await card.getByRole('button', { name: 'Download Minuet in G' }).click();
+    await expect(card.getByTestId('on-device')).toHaveText('On this device');
+    await expect(card.getByRole('link', { name: 'Minuet in G', exact: true })).toBeFocused();
+    await expect(page.getByTestId('songs-status')).toHaveText(
+      'Minuet in G is on this device now, in Your songs.',
+    );
+    const yours = page.getByTestId('your-songs');
+    await expect(yours.getByRole('article')).toHaveCount(4);
+    await yours
+      .getByTestId('piece-minuet-in-g')
+      .getByRole('link', { name: /^Advanced/ })
+      .click();
+    await expect(page.getByTestId('play')).toBeVisible();
+  });
+
+  test('a card says why a download failed, in its own alert', async ({ page }) => {
+    await page.route('**/library/canon-in-d.json', (route) => route.abort('internetdisconnected'));
+    await page.goto('songs');
+    const card = page.getByTestId('songs').getByTestId('piece-canon-in-d');
+    await card.getByRole('button', { name: 'Download Canon in D' }).click();
+    await expect(card.getByRole('alert')).toHaveText(
+      "Inharmonia couldn't be reached. Check your connection, then try again.",
+    );
+    await expect(page.getByTestId('your-songs').getByRole('article')).toHaveCount(3);
+  });
+
+  test('Update when the catalogue has a newer file; Remove asks first and keeps progress', async ({
+    page,
+  }) => {
+    await downloadSong(page, 'minuet-in-g-easy');
+    // Practised, so Progress has it.
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'inharmonia:progress',
+        JSON.stringify({
+          version: 1,
+          state: {
+            exercises: {
+              'minuet-in-g-easy': {
+                attempts: 1,
+                bestAccuracy: 0.9,
+                bestTempo: null,
+                lastPracticed: new Date().toISOString(),
+              },
+            },
+            days: [],
+          },
+        }),
+      );
+    });
+
+    // A newer Minuet in the catalogue: a new date in the file, and its hash in the index.
+    const original = await (await page.request.get('library/minuet-in-g.json')).text();
+    const newer = original.replace(
+      /"exportedAt": "[^"]+"/,
+      '"exportedAt": "2026-11-01T00:00:00.000Z"',
+    );
+    const sha256 = createHash('sha256').update(newer, 'utf8').digest('hex');
+    await page.route('**/library/minuet-in-g.json', (route) => route.fulfill({ body: newer }));
+    await page.route('**/library/index.json', async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        /("piece":"minuet-in-g","file":"minuet-in-g.json","bytes":)\d+,"sha256":"[0-9a-f]+"/,
+        `$1${Buffer.byteLength(newer, 'utf8')},"sha256":"${sha256}"`,
+      );
+      await route.fulfill({ response, body });
+    });
+
+    await page.goto('songs');
+    const kept = page.getByTestId('your-songs').getByTestId('piece-minuet-in-g');
+    await expect(kept).toContainText('Easy16 bars, best 90%');
+    await expect(
+      page.getByTestId('songs').getByRole('button', { name: 'Update Minuet in G' }),
+    ).toBeVisible();
+    await kept.getByRole('button', { name: 'Update Minuet in G' }).click();
+    await expect(page.getByTestId('songs-status')).toHaveText('Minuet in G is up to date.');
+    await expect(kept.getByRole('button', { name: /Update/ })).toHaveCount(0);
+    await expect(page.getByTestId('songs').getByTestId('piece-minuet-in-g')).toContainText(
+      'On this device',
+    );
+
+    await kept.getByRole('button', { name: 'Remove Minuet in G' }).click();
+    await kept.getByRole('button', { name: 'Remove Minuet in G from this device?' }).click();
+    await expect(page.getByTestId('songs-status')).toHaveText(
+      'Minuet in G is no longer on this device. Your progress on it is kept.',
+    );
+    await expect(page.getByRole('heading', { name: 'Your songs', level: 2 })).toBeFocused();
+    await expect(page.getByTestId('your-songs').getByRole('article')).toHaveCount(3);
+    await expect(
+      page.getByTestId('songs').getByRole('button', { name: 'Download Minuet in G' }),
+    ).toBeVisible();
+    await page.goto('progress');
+    await expect(page.getByRole('row', { name: /Minuet in G, Easy/ })).toContainText(
+      'Song, not downloaded',
+    );
+  });
+
+  test('pages of nine, with previous and next, and filters start again on page one', async ({
+    page,
+  }) => {
+    // A catalogue of twelve: the six there are, and six more made from them.
+    await page.route('**/library/index.json', async (route) => {
+      const response = await route.fetch();
+      const lines = (await response.text()).split('\n');
+      const songs = lines.slice(1, -2).map((l) => l.replace(/,$/, ''));
+      const more = songs.map((l) =>
+        l
+          .replaceAll('"piece":"', '"piece":"more-')
+          .replaceAll(/"(id|file)":"([a-z0-9-]+)/g, '"$1":"more-$2')
+          .replace(/"title":"/, '"title":"Another '),
+      );
+      const body = `${lines[0]}\n${[...songs, ...more].join(',\n')}\n]}\n`;
+      await route.fulfill({ response, body });
+    });
+    await page.goto('songs');
+    const items = page.getByTestId('songs').getByRole('listitem');
+    const prev = page.getByRole('button', { name: 'Previous page' });
+    const next = page.getByRole('button', { name: 'Next page' });
+    await expect(items).toHaveCount(9);
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 1 of 2');
+    await expect(prev).toBeDisabled();
+
+    await next.click();
+    await expect(page).toHaveURL(/page=2/);
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+    await expect(items).toHaveCount(3);
+    await expect(next).toBeDisabled();
+    await page.reload();
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+
+    await page.getByTestId('songs-search').fill('another');
+    await expect(page).not.toHaveURL(/page=/);
+    await expect(items).toHaveCount(6);
+    await expect(page.getByRole('navigation', { name: 'Song pages' })).toHaveCount(0);
+
+    await page.goto('songs?page=99');
+    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+  });
+
+  test('the catalogue out of reach says so, and Your songs still play', async ({ page }) => {
+    await page.route('**/library/index.json', (route) => route.abort('internetdisconnected'));
+    await page.goto('songs');
+    await expect(page.getByTestId('catalogue-unreachable')).toContainText(
+      "The catalogue couldn't be reached.",
+    );
+    await expect(page.getByTestId('your-songs').getByRole('article')).toHaveCount(3);
+    await page.unroute('**/library/index.json');
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByTestId('songs').getByRole('article')).toHaveCount(6);
+  });
+});
+
 test.describe('catalogue songs offline', () => {
   test('a downloaded song and a built-in play offline; a link to another fails calmly', async ({
     page,
@@ -146,6 +307,27 @@ test.describe('catalogue songs offline', () => {
       page.getByRole('heading', { name: "This song isn't on this device.", level: 1 }),
     ).toBeVisible();
     await expect(page.getByText("You're offline. Downloads need a connection.")).toBeVisible();
+    await context.setOffline(false);
+  });
+
+  test('the catalogue lists offline, and says downloads need a connection', async ({
+    page,
+    context,
+  }) => {
+    test.fixme(true, 'enabled after perf/lazy-load merges: needs the index precached');
+    await page.goto('');
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+    await context.setOffline(true);
+    await page.goto('songs');
+    await expect(page.getByTestId('catalogue-offline')).toHaveText(
+      "You're offline. Downloads need a connection.",
+    );
+    await expect(page.getByTestId('songs').getByRole('article')).toHaveCount(6);
+    await expect(page.getByTestId('your-songs').getByRole('article')).toHaveCount(3);
     await context.setOffline(false);
   });
 });

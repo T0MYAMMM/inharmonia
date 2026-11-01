@@ -54,7 +54,7 @@ test.describe('Send to Studio', () => {
       page.getByRole('heading', { name: 'MIDI piano-roll editor', level: 1 }),
     ).toBeVisible();
     await expect(page.getByTestId('sent-said')).toHaveText(
-      'Sent from your chart Harbour lights: G major, chords as written, the Triad and root accompaniment. Save keeps a copy in My songs; the chart stays as it is.',
+      'Sent from your chart Harbour lights: G major, chords as written, the Triad and root accompaniment. Save keeps a copy in Your songs; the chart stays as it is.',
     );
     await expect(studioTitle(page)).toHaveValue('Harbour lights (chart, G major)');
     await expect(page.getByTestId('midi-track')).toHaveCount(1);
@@ -95,7 +95,7 @@ test.describe('Send to Studio', () => {
     await sendTo(page, 'Studio');
     await expect(studioTitle(page)).toHaveValue('Minuet in G (song, Easy)');
     await expect(page.getByTestId('sent-said')).toHaveText(
-      'Sent from the song Minuet in G: G major, the Easy version, with the arrangement chosen here. Save keeps a copy in My songs; the song stays as it is.',
+      'Sent from the song Minuet in G: G major, the Easy version, with the arrangement chosen here. Save keeps a copy in Your songs; the song stays as it is.',
     );
     await expect(page.getByTestId('midi-track')).toHaveCount(2);
     await page.getByTestId('sent-back').click();
@@ -329,7 +329,9 @@ test.describe('Send to Progressions', () => {
 });
 
 test.describe('Send to Songs', () => {
-  test('the sequence is saved as a chart in My songs, as it plays, and opens', async ({ page }) => {
+  test('the sequence is saved as a chart in Your songs, as it plays, and opens', async ({
+    page,
+  }) => {
     await page.goto('chords');
     const sequence = page.getByTestId('sequence');
     await typeChords(page, '| C | Am | F G | Dm7 | G7 | C |');
@@ -341,7 +343,7 @@ test.describe('Send to Songs', () => {
     const title = dialog.getByRole('textbox', { name: 'Title' });
     await expect(title).toBeFocused();
     await expect(title).toHaveValue('C Am F G Dm7');
-    await expect(dialog).toContainText('A new chart in My songs: 6 bars in C major');
+    await expect(dialog).toContainText('A new chart in Your songs: 6 bars in C major');
     await title.fill('  ');
     await dialog.getByRole('button', { name: 'Save the chart' }).click();
     await expect(title).toHaveAccessibleDescription(/Give it a title\./);
@@ -517,7 +519,7 @@ test.describe('A song of your own', () => {
     });
     await openMidiMore(page);
     await page.getByTestId('midi-save-song').click();
-    await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
+    await page.getByRole('link', { name: /Open saved song in Your songs/ }).click();
     await expect(page.getByRole('heading', { name: 'Evening tune', level: 1 })).toBeVisible();
 
     const header = page.locator('header').filter({ has: page.getByRole('heading', { level: 1 }) });
