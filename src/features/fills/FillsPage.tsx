@@ -1,6 +1,8 @@
 import { Link } from 'react-router';
 import { FILL_CATEGORIES, FILLS } from '@/content/fills';
 import { loadProgress } from '@/state/progress';
+import { CardArt } from '@/ui/art/CardArt';
+import { FillRun } from '@/ui/art/FillRun';
 import { PageHeader } from '../PageHeader';
 import progStyles from '../progressions/progressions.module.css';
 import styles from './fills.module.css';
@@ -25,6 +27,9 @@ export function FillsPage() {
                 return (
                   <li key={f.id}>
                     <Link to={`/fills/${f.id}`} className={progStyles.card}>
+                      <CardArt>
+                        <FillRun fill={f} />
+                      </CardArt>
                       <span className={progStyles.title}>{f.name}</span>
                       <span className={styles.meta}>
                         Level {f.level}, {f.hand === 'rh' ? 'right hand' : 'left hand'}

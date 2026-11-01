@@ -174,15 +174,32 @@
   font-size: 0.9rem;
 }
 
+/*
+ * The page ends on a staff: five hairlines in place of a rule, 4px apart,
+ * and the final barline (thin, then thick) at the right.
+ */
 .footerInner {
+  position: relative;
   max-width: var(--content-max);
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-2) var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
+  padding-top: calc(var(--space-4) + 16px);
+  background: repeating-linear-gradient(to bottom, var(--pencil-faint) 0 1px, transparent 1px 4px)
+    top left / 100% 17px no-repeat;
+}
+
+.footerInner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 17px;
+  border-left: 1px solid var(--pencil);
+  box-shadow: inset -3px 0 0 var(--pencil);
 }
 
 .footerInner p {

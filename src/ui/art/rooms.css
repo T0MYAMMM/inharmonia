@@ -1,0 +1,81 @@
+/*
+ * Room colours. The page shell carries data-room on every page in a room, and
+ * each of Home's room cards carries its own. Drawings inside take that room's
+ * tint (their panel), line (graphics) and deep (notes and dots); outside a
+ * room they stay pencil. Only the drawings read --art-*: keyboards, scores and
+ * practice tiles never do.
+ */
+[data-room='songs'] {
+  --room-tint: var(--room-songs-tint);
+  --room-line: var(--room-songs-line);
+  --room-deep: var(--room-songs-deep);
+}
+
+[data-room='chords'] {
+  --room-tint: var(--room-chords-tint);
+  --room-line: var(--room-chords-line);
+  --room-deep: var(--room-chords-deep);
+}
+
+[data-room='progressions'] {
+  --room-tint: var(--room-progressions-tint);
+  --room-line: var(--room-progressions-line);
+  --room-deep: var(--room-progressions-deep);
+}
+
+[data-room='fills'] {
+  --room-tint: var(--room-fills-tint);
+  --room-line: var(--room-fills-line);
+  --room-deep: var(--room-fills-deep);
+}
+
+[data-room='ear'] {
+  --room-tint: var(--room-ear-tint);
+  --room-line: var(--room-ear-line);
+  --room-deep: var(--room-ear-deep);
+}
+
+[data-room='studio'] {
+  --room-tint: var(--room-studio-tint);
+  --room-line: var(--room-studio-line);
+  --room-deep: var(--room-studio-deep);
+}
+
+[data-room='progress'] {
+  --room-tint: var(--room-progress-tint);
+  --room-line: var(--room-progress-line);
+  --room-deep: var(--room-progress-deep);
+}
+
+[data-room] {
+  --art-panel: var(--room-tint);
+  --art-line: var(--room-line);
+  --art-deep: var(--room-deep);
+  --art-guide: color-mix(in srgb, var(--room-line) 35%, var(--room-tint));
+}
+
+/*
+ * A room's index page (data-index) gets a short line in the room's colour
+ * above its title. Those whose content is cards (data-wash: Songs,
+ * Progressions, Fills, Studio, Progress) also open in the room's light: the
+ * tint at the top of the page, fading to the background behind the header.
+ * Chords and Ear training are practice surfaces from the first screen, so
+ * they get only the line.
+ *
+ * A page that keeps its index content in the page while another view is open
+ * (Studio's editors) marks it data-room-index; while that is hidden, the page
+ * is no longer the index, and gets neither.
+ */
+[data-wash]:not(:has([data-room-index][hidden])) {
+  background: linear-gradient(to bottom, var(--room-tint) 0, var(--bg) 340px) no-repeat;
+}
+
+[data-index]:not(:has([data-room-index][hidden])) main h1::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 6px;
+  margin-bottom: var(--space-3);
+  border-radius: 3px;
+  background: var(--room-line);
+}
