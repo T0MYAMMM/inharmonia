@@ -281,7 +281,7 @@ test.describe('the catalogue on the Songs page', () => {
 });
 
 test.describe('catalogue songs offline', () => {
-  test('a downloaded song and a built-in play offline; a link to another fails calmly', async ({
+  test('a downloaded song and a built-in play offline; a link to another waits to download', async ({
     page,
     context,
   }) => {
@@ -303,17 +303,21 @@ test.describe('catalogue songs offline', () => {
       await page.getByTestId('play').click();
     }
     // The catalogue's index is precached, so a link to a song not downloaded
-    // still offers it; the download says why it can't, and keeps nothing.
+    // still knows it; offline, Download waits for a connection.
     await page.goto('songs/brahms-lullaby-easy');
     await expect(
       page.getByRole('heading', { name: "Brahms' Lullaby (Wiegenlied)", level: 1 }),
     ).toBeVisible();
-    await page.getByTestId('song-download').click();
-    await expect(page.getByTestId('download-problem')).toHaveText(
-      "You're offline. Downloads need a connection.",
+    const download = page.getByTestId('song-download');
+    await expect(download).toBeDisabled();
+    await expect(page.getByTestId('download-offline')).toHaveText(
+      "You're offline. This song downloads when you're back online.",
     );
-    await expect(page.getByTestId('play')).toHaveCount(0);
+    // Back online, it is offered again, and waits to be asked.
     await context.setOffline(false);
+    await expect(download).toBeEnabled();
+    await expect(page.getByTestId('download-offline')).toHaveCount(0);
+    await expect(page.getByTestId('play')).toHaveCount(0);
   });
 
   test('the catalogue lists offline, and says downloads need a connection', async ({

@@ -12,6 +12,7 @@ import { indexEntry, stringifyIndex, type CatalogueEntry } from '@/core/library/
 import { LIBRARY_MESSAGES, resetCatalogueForTests } from '@/state/catalogue';
 import { downloadPiece, resetReadingForTests } from '@/state/download';
 import { resetDownloadsForTests } from '@/state/downloads';
+import { OFFLINE } from './CatalogueSong';
 import { SongPage } from './SongPage';
 
 // The player itself is tested elsewhere; here it only has to appear, with Play.
@@ -117,6 +118,25 @@ describe('a song page for a catalogue song', () => {
       'Harbour Tune is on this device now, and plays offline too.',
     );
     expect(screen.queryByRole('button', { name: /Update/ })).toBeNull();
+  });
+
+  it('offline, says Download waits for a connection, and offers it again when back', async () => {
+    const { entry } = published();
+    const fetch = serve({ 'index.json': stringifyIndex([entry]) });
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    open('harbour-tune-easy');
+    const download = await screen.findByRole('button', { name: 'Download Harbour Tune' });
+    expect(download).toBeDisabled();
+    expect(screen.getByTestId('download-offline')).toHaveTextContent(OFFLINE);
+    expect(download).toHaveAccessibleDescription(OFFLINE);
+
+    onLine.mockReturnValue(true);
+    act(() => void window.dispatchEvent(new Event('online')));
+    expect(download).toBeEnabled();
+    expect(screen.queryByTestId('download-offline')).toBeNull();
+    // Back online, it waits to be asked: nothing but the index was fetched.
+    expect(fetch.mock.calls.map(([url]) => String(url).split('/').pop())).toEqual(['index.json']);
+    expect(screen.queryByTestId('playing')).toBeNull();
   });
 
   it('says why a download failed, keeps the offer, and stores nothing', async () => {

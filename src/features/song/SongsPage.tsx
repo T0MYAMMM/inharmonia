@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { SONG_LEVELS, type SongLevel } from '@/core/content/types';
@@ -25,6 +25,7 @@ import { PageHeader } from '../PageHeader';
 import { LEVEL_NAMES } from './credit';
 import { paginate } from './paginate';
 import { SongCard } from './SongCard';
+import { useOnline } from './useOnline';
 import styles from './SongsPage.module.css';
 
 type LevelFilter = 'all' | SongLevel;
@@ -226,21 +227,6 @@ function MakeYourOwn() {
       </Link>
     </section>
   );
-}
-
-/** Whether the browser says it is online, kept up to date. */
-function useOnline(): boolean {
-  const [online, setOnline] = useState(() => navigator.onLine !== false);
-  useEffect(() => {
-    const update = () => setOnline(navigator.onLine !== false);
-    window.addEventListener('online', update);
-    window.addEventListener('offline', update);
-    return () => {
-      window.removeEventListener('online', update);
-      window.removeEventListener('offline', update);
-    };
-  }, []);
-  return online;
 }
 
 function Catalogue({
