@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { writeMidi } from '../src/core/midi/smf';
 import { openMidiMore } from './studioHelpers';
+import { downloadSong } from './helpers';
 
 /**
  * Send to: what plays on one page, sent to another room, and the way back.
@@ -88,6 +89,8 @@ test.describe('Send to Studio', () => {
   });
 
   test('a song opens with the arrangement chosen on its page', async ({ page }) => {
+    // A catalogue song, downloaded: its page is the same as a built-in's.
+    await downloadSong(page, 'minuet-in-g-easy');
     await page.goto('songs/minuet-in-g-easy?pattern=waltz');
     await sendTo(page, 'Studio');
     await expect(studioTitle(page)).toHaveValue('Minuet in G (song, Easy)');

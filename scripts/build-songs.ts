@@ -31,6 +31,7 @@ const read = (dir: string, keep: (name: string) => boolean) =>
 const { files, issues, generated } = buildLibrary({
   sources: read(`${BUILT_IN_DIR}/sources`, (n) => n.endsWith('.piece')),
   catalogue: read(CATALOGUE_DIR, (n) => n.endsWith('.json') && n !== INDEX_FILE),
+  builtInFiles: readdirSync(join(root, BUILT_IN_DIR)),
   builtIns: BUILT_IN_PIECES,
   year: new Date().getFullYear(),
   ctx: { patterns: new Set(Object.keys(PATTERNS)), fallbackPattern: 'arpeggio-8ths' },

@@ -22,6 +22,7 @@ chords: | G | D |
 const input = (patch: Partial<LibraryInput> = {}): LibraryInput => ({
   sources: { 'harbour.piece': tune('harbour'), 'lantern.piece': tune('lantern') },
   catalogue: {},
+  builtInFiles: [],
   builtIns: ['harbour'],
   year: 2026,
   ctx: { patterns: new Set(Object.keys(PATTERNS)), fallbackPattern: 'arpeggio-8ths' },
@@ -87,6 +88,7 @@ describe('buildLibrary', () => {
           'broken.json': 'not json',
         },
         builtIns: ['harbour'],
+        builtInFiles: ['index.json', 'lantern.json', 'sources'],
         gzipBytes: () => 60_000,
       }),
     );
@@ -95,6 +97,7 @@ describe('buildLibrary', () => {
       'public/library/Bad Name.json: a catalogue file is named <piece>.json',
       'public/library/broken.json: This is not JSON, so it cannot be an Inharmonia export.',
       'public/library/harbour.json: harbour is built in, so it has no catalogue file',
+      'src/content/songs/lantern.json: only built-in pieces go here (see config/library.ts)',
       'harbour is built in, so it needs src/content/songs/sources/harbour.piece',
       'src/content/songs/index.json: 60000 bytes gzipped, over 50000: time to split the index',
       'public/library/index.json: 60000 bytes gzipped, over 50000: time to split the index',

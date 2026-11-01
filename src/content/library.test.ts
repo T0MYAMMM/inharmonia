@@ -62,6 +62,7 @@ describe('the song library', () => {
           .filter(([p]) => name(p) !== INDEX_FILE)
           .map(([p, t]) => [name(p), t]),
       ),
+      builtInFiles: Object.keys(BUILT_IN).map(name),
       builtIns: BUILT_IN_PIECES,
       year: new Date().getFullYear(),
       ctx,
@@ -75,13 +76,7 @@ describe('the song library', () => {
 
   it('bundles the built-in pieces, each with its three versions', () => {
     const pieces = [...new Set(SONGS.map((s) => s.piece))].sort();
-    expect(pieces).toEqual(expect.arrayContaining([...BUILT_IN_PIECES]));
-    // Until downloads land, the catalogue pieces are bundled too: exact copies.
-    for (const [path, text] of Object.entries(BUILT_IN)) {
-      const piece = name(path).slice(0, -'.json'.length);
-      if (name(path) === INDEX_FILE || BUILT_IN_PIECES.includes(piece)) continue;
-      expect(text, path).toBe(CATALOGUE[`../../public/library/${piece}.json`]);
-    }
+    expect(pieces).toEqual([...BUILT_IN_PIECES].sort());
     for (const p of pieces)
       expect(
         versionsOf(p!).map((s) => s.level),
@@ -105,8 +100,8 @@ describe('the song library', () => {
 
   // The unit sweep: every version of every song, built in or in the catalogue, compiles.
   it('plays every song, built in or in the catalogue', () => {
-    const all = [...SONGS, ...catalogueSongs().filter((c) => !SONGS.some((s) => s.id === c.id))];
-    expect(all.length).toBeGreaterThanOrEqual(SONGS.length);
+    const all = [...SONGS, ...catalogueSongs()];
+    expect(all.length).toBeGreaterThan(SONGS.length);
     for (const s of all) {
       expect(validateLesson(s), s.id).toEqual([]);
       expect(compileLesson(s, PATTERNS).events.length, s.id).toBeGreaterThan(0);

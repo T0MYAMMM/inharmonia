@@ -1,13 +1,16 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
 import { dueForReview } from '@/state/review';
+import { useDownloads } from '@/state/downloads';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
-import { describeExercise, FIRST_SONG, nextNew } from '../progress/catalog';
+import { describeExercise, FIRST_SONG, nextNew, songLookup } from '../progress/catalog';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
@@ -51,7 +54,13 @@ export function HomePage() {
   const mine = useUserProgressions((s) => s.items);
   const state = loadProgress();
   const practised = Object.keys(state.exercises).length > 0;
-  const describe = (id: string) => describeExercise(id, mine);
+  // Songs on this device only: Home never fetches the catalogue.
+  const kept = useDownloads().pieces;
+  const songs = useMemo(
+    () => songLookup([...BUILT_IN_ENTRIES, ...kept.map((p) => p.entry)]),
+    [kept],
+  );
+  const describe = (id: string) => describeExercise(id, mine, songs);
   const due = dueForReview(state, describe, { limit: 1 })[0]?.info ?? null;
   const next = due ?? nextNew((id) => id in state.exercises);
   const run = streak(state);

@@ -127,6 +127,12 @@ export function loadCatalogue(): Promise<void> {
   return loading;
 }
 
+// Back online after the index failed: a page still showing the failure tries again.
+if (typeof window !== 'undefined')
+  window.addEventListener('online', () => {
+    if (state.status === 'failed' && listeners.size) void loadCatalogue();
+  });
+
 export const catalogue = {
   subscribe(l: () => void): () => void {
     listeners.add(l);
