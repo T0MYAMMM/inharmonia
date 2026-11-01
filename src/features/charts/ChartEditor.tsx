@@ -549,7 +549,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           disabled={saving || issues.length > 0}
           data-testid="chart-save"
         >
-          {saving ? 'Saving…' : 'Save to My songs'}
+          {saving ? 'Saving…' : 'Save to Your songs'}
         </Button>
         <span className={styles.note}>
           Kept in this browser on this device. Never uploaded or shared.
