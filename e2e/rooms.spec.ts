@@ -112,3 +112,22 @@ test.describe('drawings on cards', () => {
     await expect(page.getByRole('link', { name: /^Studio Beta Make a song/ })).toBeVisible();
   });
 });
+
+test.describe('spot illustrations', () => {
+  const SPOTS: [string, string][] = [['progress', 'Nothing practised yet']];
+
+  for (const [route, words] of SPOTS) {
+    test(`/${route} has its spot beside "${words}"`, async ({ page }) => {
+      await page.goto(route);
+      await expect(page.getByText(words).first()).toBeVisible();
+      const spots = page.locator('main svg[class*="spot"]');
+      await expect(spots).toHaveCount(1);
+      await expect(spots).toHaveAttribute('aria-hidden', 'true');
+      await expect(spots).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+    });
+  }
+});
