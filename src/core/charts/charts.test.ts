@@ -143,6 +143,7 @@ describe('chord symbols', () => {
     ['N.C.', NO_CHORD],
     ['NC', NO_CHORD],
     ['n.c.', NO_CHORD],
+    ['(N.C.)', NO_CHORD],
   ])('%s reads as %s', (input, out) => {
     expect(normalizeChord(input)).toBe(out);
   });
@@ -213,6 +214,12 @@ describe('bar syntax', () => {
       'C:2 G:2',
       'N.C.:4',
     ]);
+  });
+
+  it('reads N.C. in brackets as no chord', () => {
+    const { bars, issues } = parseBars('| (N.C.) | C |', 4);
+    expect(issues).toEqual([]);
+    expect(bars.map((b) => b.chords[0]!.symbol)).toEqual([NO_CHORD, 'C']);
   });
 
   it('reads dots as beats, and three chords in 3/4', () => {
