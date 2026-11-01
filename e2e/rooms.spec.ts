@@ -67,16 +67,21 @@ async function panels(page: Page) {
 }
 
 test.describe('drawings on cards', () => {
-  const CARDS: [string, number][] = [['', 7]];
+  /** Each page, and its cards that carry a drawing. */
+  const CARDS: [string, string][] = [
+    ['', 'main a[data-room]'],
+    ['fills', 'main a[href*="/fills/"]'],
+  ];
 
-  for (const [route, count] of CARDS) {
+  for (const [route, cards] of CARDS) {
     test(`/${route} draws each card, and keeps the page from scrolling sideways`, async ({
       page,
       isMobile,
     }) => {
       await page.goto(route);
       const found = await panels(page);
-      expect(found).toHaveLength(count);
+      expect(found.length).toBeGreaterThan(0);
+      expect(found).toHaveLength(await page.locator(cards).count());
       for (const p of found) {
         expect(p.hidden && p.drawn).toBe(true);
         if (isMobile) expect(p).toMatchObject({ height: 64, flush: true });
