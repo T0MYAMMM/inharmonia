@@ -16,20 +16,20 @@ nothing saved. Whole pages are cut at 1400px (desktop) and 2000px (phone).
 
 ## Play before the rest of the player
 
-`player-order/`: the first screen of a song (Twinkle, Easy), a fill (step-up) and a progression
-(ii–V–I), light theme, before and after the player's new order, at 1280 and 360. Before, Play sat
-behind the keyboard dock at 360. After, Play comes first in the player, and the settings that
-shape the lesson come last. On a song, the version's note and Send to / Export move under the
-player. On a fill, Play goes above the chord strip.
+`player-order/`: the first screen of a song (Twinkle, Easy), a fill (step-up), a progression
+(ii–V–I) and a chord chart (an invented one, as `e2e/layout.spec.ts` makes it), light theme,
+before and after the player's new order, at 1280 and 360. Before, Play sat behind the keyboard
+dock at 360. After, Play comes first in the player, and the settings that shape the lesson come
+last. On a song, the version's note and Send to / Export move under the player; on a chart, Edit,
+Send to, Export and Show function do. On a fill, Play goes above the chord strip.
 
 | Page        | Play ends at 360, before | After | The dock starts at |
 | ----------- | ------------------------ | ----- | ------------------ |
 | Song        | 810px                    | 526px | 561px              |
 | Fill        | 753px                    | 518px | 561px              |
 | Progression | 682px                    | 524px | 561px              |
+| Chord chart | 718px                    | 502px | 561px              |
 
-Files: `player-{song,fill,progression}-{before,after}-light-{1280,360}.png`.
-
-A chord chart's header is taller (its notes, the progressions found, and four actions on two
-lines), so Play still ends at 614px there. `e2e/layout.spec.ts` keeps that page's dock check
-marked `test.fail` until the chart's layout is decided.
+Files: `player-{song,fill,progression,chart}-{before,after}-light-{1280,360}.png`. The chart's
+"before" is the release branch before the chart's actions moved, so Play there already comes first
+in the player (614px): the chart's own header was what kept it behind the dock.
