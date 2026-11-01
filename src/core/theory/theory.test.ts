@@ -57,6 +57,34 @@ describe('parseChord', () => {
     expect(() => parseChord('H7')).toThrow();
     expect(() => parseChord('Cfoo')).toThrow();
   });
+
+  // Not in the chord library, but chord sheets use them.
+  it.each([
+    ['Cadd11', 'C E G F', '1 3 5 11', 'major'],
+    ['Cadd4', 'C E F G', '1 3 4 5', 'major'],
+    ['Cmadd11', 'C Eb G F', '1 ♭3 5 11', 'minor'],
+    ['Cmadd4', 'C Eb F G', '1 ♭3 4 5', 'minor'],
+    ['C7sus2', 'C D G Bb', '1 2 5 ♭7', 'suspended'],
+    ['C7sus4', 'C F G Bb', '1 4 5 ♭7', 'suspended'],
+    ['C9sus4', 'C F G Bb D', '1 4 5 ♭7 9', 'suspended'],
+    ['Ebadd11', 'Eb G Bb Ab', '1 3 5 11', 'major'],
+    ['B7sus2', 'B C# F# A', '1 2 5 ♭7', 'suspended'],
+  ])('reads %s as %s (%s)', (symbol, tones, formula, family) => {
+    const c = parseChord(symbol);
+    expect(c.tones.join(' ')).toBe(tones);
+    expect(c.formula.join(' ')).toBe(formula);
+    expect(c.family).toBe(family);
+  });
+
+  it('names the eleventh and the second', () => {
+    expect(parseChord('Cadd11').intervalNames).toEqual([
+      'root',
+      'major third',
+      'perfect fifth',
+      'perfect eleventh',
+    ]);
+    expect(parseChord('C7sus2').intervalNames[1]).toBe('major second');
+  });
 });
 
 describe('voiceChord', () => {
@@ -89,6 +117,18 @@ describe('voiceChord', () => {
   it('puts slash bass at the bottom', () => {
     expect(names(voiceChord('A/C#', { floor: 'C3' }))).toBe('C#3 E3 A3');
     expect(names(voiceChord('C/D', { floor: 'C4' }))).toBe('D3 C4 E4 G4');
+  });
+
+  it('voices add11 with the fourth on top, add4 inside the octave, and 7sus2 in every style', () => {
+    expect(names(voiceChord('Ebadd11', { floor: 'C3' }))).toBe('Eb3 G3 Bb3 Ab4');
+    expect(names(voiceChord('Ebadd4', { floor: 'C3' }))).toBe('Eb3 G3 Ab3 Bb3');
+    expect(names(voiceChord('Amadd11', { floor: 'C3' }))).toBe('A3 C4 E4 D5');
+    expect(names(voiceChord('B7sus2', { floor: 'C3' }))).toBe('B3 C#4 F#4 A4');
+    expect(names(voiceChord('B7sus2', { style: 'shell', floor: 'C3' }))).toBe('B3 C#4 A4');
+    expect(names(voiceChord('Cadd11/E', { floor: 'C3' }))).toBe('E3 G3 F4 C5');
+    for (const symbol of ['Cadd11', 'Cadd4', 'Cmadd11', 'C7sus2'])
+      for (const style of ['close', 'open', 'drop2', 'shell', 'rootless'] as const)
+        expect(voiceChord(symbol, { style, floor: 'C3' }).length).toBeGreaterThanOrEqual(3);
   });
 
   it('parses explicit voicings', () => {
@@ -126,6 +166,18 @@ describe('Roman numerals', () => {
     expect(chordToRoman('Bb', 'C')).toBe('♭VII');
     expect(chordToRoman('G7/B', 'C')).toBe('V⁶₅');
     expect(chordToRoman('C/D', 'C')).toBe('I/2');
+  });
+
+  it('reads add11, add4 and 7sus2 as numerals, both ways', () => {
+    expect(chordToRoman('Ebadd11', 'Eb')).toBe('Iadd11');
+    expect(chordToRoman('Ebadd11', 'Bb')).toBe('IVadd11');
+    expect(chordToRoman('Dadd4', 'G')).toBe('Vadd4');
+    expect(chordToRoman('Amadd11', 'C')).toBe('viadd11');
+    expect(chordToRoman('B7sus2', 'E')).toBe('V7sus2');
+    expect(romanToChord('Iadd11', 'Eb')).toBe('Ebadd11');
+    expect(romanToChord('viadd11', 'C')).toBe('Amadd11');
+    expect(romanToChord('iiadd4', 'C')).toBe('Dmadd4');
+    expect(romanToChord('V7sus2', 'E')).toBe('B7sus2');
   });
 
   it('round-trips the common progressions in every key', () => {
