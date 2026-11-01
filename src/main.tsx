@@ -5,7 +5,9 @@ import './styles/global.css';
 import { App } from './app/App';
 import { installAudioUnlock, installMidiAutoConnect } from './app/services';
 import { registerServiceWorker } from './app/pwa';
+import { reloadOnPreloadError } from './app/preloadError';
 
+reloadOnPreloadError();
 installAudioUnlock();
 installMidiAutoConnect();
 void registerServiceWorker();

@@ -84,6 +84,9 @@ test.describe('song library', () => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto('songs');
+    await expect(
+      page.getByTestId('songs').locator('[data-testid^="level-"]').first(),
+    ).toBeVisible();
     const hrefs: string[] = [];
     for (;;) {
       hrefs.push(

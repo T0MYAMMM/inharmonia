@@ -70,6 +70,7 @@ test.describe('keyboard sandbox', () => {
     test.skip(isMobile, 'computer keyboard input is a desktop feature');
     await page.goto('keyboard');
     const c4 = page.locator('[data-midi="60"]');
+    await expect(c4).toBeVisible();
     await page.keyboard.down('a');
     await expect(c4).toHaveAttribute('data-layers', /held/);
     await page.keyboard.up('a');
@@ -94,6 +95,7 @@ test.describe('keyboard sandbox', () => {
       if (r.url().includes('/samples/')) formats.add(r.url().split('.').pop()!);
     });
     await page.goto('keyboard');
+    await expect(page.locator('[data-midi="60"]')).toBeVisible();
     await page.keyboard.press('a');
     await expect(page.getByText('Piano ready')).toBeVisible({ timeout: 20_000 });
     expect([...formats]).toEqual(['mp3']);
