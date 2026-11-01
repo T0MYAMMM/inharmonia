@@ -92,7 +92,8 @@ test.describe('Send to Studio', () => {
     // A catalogue song, downloaded: its page is the same as a built-in's.
     await downloadSong(page, 'minuet-in-g-easy');
     await page.goto('songs/minuet-in-g-easy?pattern=waltz');
-    await sendTo(page, 'Studio');
+    // On a song page, Send to sits under the player, not in the header.
+    await sendTo(page, 'Studio', page.locator('main'));
     await expect(studioTitle(page)).toHaveValue('Minuet in G (song, Easy)');
     await expect(page.getByTestId('sent-said')).toHaveText(
       'Sent from the song Minuet in G: G major, the Easy version, with the arrangement chosen here. Save keeps a copy in Your songs; the song stays as it is.',

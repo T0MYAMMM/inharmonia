@@ -223,20 +223,6 @@ export function SongView({ lesson, versions, actions, notice }: SongViewProps) {
                 ))}
               </nav>
             ) : null}
-            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
-          </>
-        }
-        actions={
-          <>
-            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
-            <ExportMenu
-              build={() => exportItems({ builtInSongs: [lesson] })}
-              midi={{
-                download: () => downloadMidi(compiledToMidi(compiled)),
-                testId: 'song-midi-export',
-              }}
-            />
-            {actions}
           </>
         }
       />
@@ -248,6 +234,24 @@ export function SongView({ lesson, versions, actions, notice }: SongViewProps) {
         variant="song"
         settings={arrangementControls(false)}
         fullScreenSettings={arrangementControls(true)}
+        belowControls={
+          // What the version is and what else you can do with it: under the
+          // player, so Play is in the first screen on a phone.
+          <div className={styles.afterPlayer}>
+            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
+            <div className={styles.afterActions}>
+              <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
+              <ExportMenu
+                build={() => exportItems({ builtInSongs: [lesson] })}
+                midi={{
+                  download: () => downloadMidi(compiledToMidi(compiled)),
+                  testId: 'song-midi-export',
+                }}
+              />
+              {actions}
+            </div>
+          </div>
+        }
       />
       {/* Attribution, not something to read before playing: at the end of the page. */}
       {lesson.source.kind === 'public-domain' ? (
