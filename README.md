@@ -22,7 +22,8 @@ npm run dev          # http://localhost:5173/inharmonia/
 | `npm run lint`      | ESLint                                              |
 | `npm run format`    | Prettier (write); `format:check` to verify          |
 | `npm run typecheck` | TypeScript, strict                                  |
-| `npm run check`     | Lint, format check, typecheck and unit tests        |
+| `npm run songs`     | Build the song library; `-- --check` to verify      |
+| `npm run check`     | Lint, format check, typecheck, songs check, tests   |
 
 Playwright needs a Chromium build: run `npx playwright install chromium` once (CI does this
 itself).
@@ -48,13 +49,16 @@ worker precaches the app, the self-hosted fonts and every piano sample in both f
 back to `index.html`. It updates itself in the background (`registerType: 'autoUpdate'`). The
 manifest and icons in `public/icons/` make it installable, and its scope and start URL follow
 `BASE_PATH`. `src/app/pwa.ts` registers the worker in production only, and the footer says
-"Ready to use offline" once it is.
+"Ready to use offline" once it is. Catalogue songs are not precached: each works offline once it
+is downloaded (see [Song library](#song-library)).
 
 ## Folder overview
 
 ```
 config/site.ts          base path, shared by Vite, the router and the 404 fallback
+config/library.ts       the built-in pieces, retired piece ids, and the catalogue's size caps
 public/samples/         piano samples, one versioned folder (salamander/v1)
+public/library/         the song catalogue: one file per piece, and its index (npm run songs)
 src/
   core/                 framework-agnostic TypeScript; no React here
     theory/             chords from symbols, inversions, voicings, Roman numerals, voice leading
@@ -66,16 +70,19 @@ src/
     songs/              your songs: the editable draft, edits and undo, kept recordings
     charts/             chord charts: symbols, section names, bar syntax, paste parser, key, compile
     format/             the readable JSON file format for export, import and transfer
-    library/            library pieces: the .piece source format and the Easy/Medium/Advanced generator
+    library/            pieces: the .piece format, the Easy/Medium/Advanced generator, the catalogue
+                        index and its rules, and the build behind npm run songs
     persistence/        safe localStorage and versioned documents with migrations
   state/                Zustand stores (settings, progress, your progressions), review, key highlights,
-                        and My songs in IndexedDB
+                        Your songs and downloaded catalogue songs in IndexedDB, the catalogue index
   app/                  router, layout, theme, singletons (services.ts) and hooks
   ui/                   design-system components and the keyboard dock
   features/             one folder per page
   styles/               tokens.css (palette, light and dark) and global.css
 e2e/                    Playwright tests
-docs/format/            the file format (JSON Schema, notes, one example per kind) and the piece source format
+docs/format/            the file format (JSON Schema, notes, one example per kind), the song index and
+                        the piece source format
+docs/composing.md       how a composer's song gets into the catalogue
 scripts/                build-songs.ts (npm run songs) and the transcription eval
 docs/screenshots/       screenshots attached to each phase's pull request
 ```
@@ -169,9 +176,11 @@ export const myLesson: Lesson = {
 - Content must be original, generic theory material, or public domain under both rules in
   [Song library](#song-library). Do not transcribe copyrighted songs.
 
-Built-in songs are not written as TypeScript: they live as JSON files in `src/content/songs/` and
-load through the same reader as imports (`src/content/lessons.ts`). New songs go into the library
-as `.piece` sources, described next.
+Songs are not written as TypeScript: they are JSON files in the export format, read by the same
+reader as imports. The few built-in songs are bundled from `src/content/songs/`
+(`src/content/lessons.ts`); every other song is in the catalogue, downloaded on request.
+Arranged pieces are written as `.piece` sources, and composers make theirs in Studio; both are
+described next.
 
 `compileLesson` (`src/core/content/compile.ts`) turns a lesson into bars, chords with resolved
 voicings, and one timeline for the transport. Melody notes sound for 95% of their written length
@@ -180,17 +189,72 @@ last note.
 
 ## Song library
 
-The Songs page lists one card per piece. Library pieces come in three versions, all generated
-from one source, and the page filters by level and composer and searches by title or composer.
-Each song page names its version, links to the others, and says which bars of the original it
-covers.
+The Songs page has three parts:
+
+- **Your songs:** the songs on this device, which play offline. The built-in pieces (Twinkle,
+  Twinkle, Little Star; Ode to Joy; Für Elise, named in `config/library.ts`) come with the app,
+  then the catalogue songs you downloaded, by title, then **Made by you** (see
+  [Your songs](#your-songs)). A downloaded song has **Update** when the catalogue has a newer
+  file, and **Remove**, which asks first and keeps your progress.
+- **Make your own:** the way into Studio.
+- **Catalogue:** every other song, to download. It filters by level and composer, searches by
+  title or composer, and pages nine at a time. Each card has **Download**, **Update** or "On
+  this device".
+
+One card component (`SongCard`) draws every piece from its index entry, so the page loads no
+song to list them. Each piece comes in up to three versions; each song page names its version,
+links to the others, and says which bars of the original it covers. Home's welcome and the first
+starter on Progress open Twinkle, Easy: it starts on C, stays on the white keys and uses six
+notes within a sixth.
+
+### The catalogue
+
+- **Files.** Each catalogue song is one file in the export format at
+  `public/library/<piece>.json`, served next to the app, with `public/library/index.json`
+  listing them ([the song index](docs/format/README.md#the-song-index)). The built-in songs have
+  an index too, `src/content/songs/index.json`, bundled for Home and the Songs page.
+- **Downloading** (`src/state/download.ts`) checks the file at the boundary, in order: a plain
+  file name on the app's own origin; the size cap (512 kB); its SHA-256 against the index, asked
+  once more with `cache: 'reload'` if it differs, since GitHub Pages caches for ten minutes; the
+  reader; and the catalogue rules. Only then is it stored, in its own IndexedDB database,
+  `inharmonia-library` (`src/state/downloads.ts`), apart from your songs, as the file it came
+  as, read again when played. The browser is asked to keep it. Each failure has plain words:
+  offline, unreachable, a failed request, being updated, unreadable, no room on the device,
+  storage blocked.
+- **Links.** `/songs/:id` looks for the song built in, then downloaded, then in the catalogue.
+  A catalogue song not on this device shows its title, credit, versions and size, and
+  **Download**; the player then appears in place with focus on Play. A retired piece's link
+  (`RETIRED_PIECES`: Senja di Teras, Lanterns at Dusk, Morning Ferry, Window Light) says "This
+  piece is no longer in Inharmonia."
+- **Progress** keeps every song's progress by its id, wherever the song is. Home names the songs
+  on this device; the Progress page also reads the catalogue's index, so a song removed from
+  this device stays listed as "Song, not downloaded", linking to its download. A retired piece's
+  progress stays hidden.
+- **Offline**, the built-in and downloaded songs play. A catalogue song not on this device says
+  the catalogue can't be reached, and why.
+- **Updates** are never automatic: a new SHA-256 in the index shows **Update** on the song's
+  card and page.
+
+### Building the library
+
+- **`npm run songs`** (`scripts/build-songs.ts`, around the pure `src/core/library/build.ts`)
+  builds each `src/content/songs/sources/*.piece` into `src/content/songs/<piece>.json` (built
+  in) or `public/library/<piece>.json` (the catalogue), checks each composer's file in
+  `public/library/` and writes it the app's way, writes both indexes, and prints the bars where
+  Easy merged notes, to check by ear.
+- **`npm run songs -- --check`**, in CI and `npm run check`, writes nothing and fails on a stale
+  file, anything the reader refuses, any catalogue rule (`src/core/library/rules.ts`: songs
+  only, one to three versions with ids `<piece>-<level>`, one title and one credit, an original
+  with its composer or public domain proved for this year), a misnamed file, a retired or
+  duplicate id, a song file over 512 kB, a stray song file among the built-ins, or an index over
+  50 kB gzipped.
+- **Tests** compile every version of every song, built in and in the catalogue; e2e plays the
+  nine built-in versions.
+
+### Arranged pieces
 
 - **Sources** are written in a compact text format, one per piece, in
   `src/content/songs/sources/*.piece` ([docs/format/source.md](docs/format/source.md)).
-  `npm run songs` builds each into `src/content/songs/<piece>.json` (built in) or
-  `public/library/<piece>.json` (the catalogue), writes an index of each, and prints the bars
-  where Easy merged notes, to check by ear. `npm run songs -- --check` (in CI and
-  `npm run check`) fails if a file is out of date with its source or breaks a catalogue rule.
 - **The generator** (`src/core/library/generate.ts`) uses the chord-chart tools from phase 8:
   - _Easy:_ the main theme in the nearest easy key (C, G or F; A, E or D minor), each beat
     playing the note sounding at its start (bars marked `easy-keep` stay as written), triads,
@@ -205,14 +269,21 @@ covers.
   `composerDied`, `firstPublished` and the early `edition` the notes were taken from, plus the
   edition's `editor` and `editorDied` and any arranger. An editor counts toward life + 70 only
   if their own additions are used, which they normally are not: only the original notes are
-  taken. The library test checks every built-in piece against both rules, computed from the
-  current year (`src/core/content/publicDomain.ts`). Notes come only from early editions, never
-  from modern editorial additions or published simplifications.
+  taken. The catalogue rules check every piece against both rules, computed from the current
+  year (`src/core/content/publicDomain.ts`). Notes come only from early editions, never from
+  modern editorial additions or published simplifications.
 - **Meters.** Songs can be in 2/4, 3/4, 4/4 or 3/8 (`SONG_METERS` in
   `src/core/content/types.ts`). Beats count the written beat, so a 3/8 bar has three
   eighth-note beats and its tempo counts eighths; Für Elise is the first piece in 3/8.
-- **Welcome song.** Home's welcome and the first starter on Progress open Twinkle, Twinkle, Little
-  Star, Easy: it starts on C, stays on the white keys and uses six notes within a sixth.
+
+### Composers
+
+Composers the owner invites make their songs in Studio, put the versions together at
+`/compose` (not linked from the app; checked live by the same rules), listen through Import,
+and add the file by pull request, or send it to the owner, who opens one. Composers keep their
+copyright and allow Inharmonia to distribute their pieces free in the app. A MIDI song made in
+Studio carries its piece, level, summary and credit in the file. The whole process, with the
+pull request checklist: [docs/composing.md](docs/composing.md).
 
 ## Song player
 
@@ -389,7 +460,7 @@ then a "Today" card with the top suggestion.
 ## Studio
 
 `/studio` turns a sung or hummed melody into notes on the beat grid, suggests chords for it,
-lets you fix anything in an editor, and saves the result to My songs on this device.
+lets you fix anything in an editor, and saves the result to Your songs on this device.
 
 **Recording.** Pick a tempo (50–140 bpm), a meter (4/4, 3/4 or 2/4) and up to 32 bars, turn
 on the microphone, and record. One bar of count-in plays first, and the click keeps going
@@ -489,11 +560,12 @@ Shift+Ctrl+Z to redo).
   take** and **B: the notes** switch between them mid-playback, and **Play chords** adds or
   removes the left hand (`EditorPlayback.ts`).
 
-## My songs
+## Your songs
 
-**Save to My songs** stores the song in IndexedDB (`src/state/mySongs.ts`, using `idb`). The
-Songs page lists your songs with a **Private** badge, and each opens at `/songs/mine/:id` in
-the song player, with **Edit** (`/studio/edit/:id`) and **Delete**.
+**Save to Your songs** stores the song in IndexedDB (`src/state/mySongs.ts`, using `idb`). The
+Songs page lists them under **Made by you**, the last group of Your songs, with a **Private**
+badge, and each opens at `/songs/mine/:id` in the song player, with **Edit**
+(`/studio/edit/:id`) and **Delete**.
 
 - **Private by design.** Your songs and recordings stay in this browser on this device. They
   are never uploaded and never committed to the repository, and there are no share links.
@@ -632,7 +704,7 @@ again gives the same bytes. A chart is stored as written, with its view settings
 - **Import** by **Import file**, by dropping a file on the list, or by **Paste JSON**. A preview
   lists what is new and what is already here (**Skip**, **Replace** or **Keep both**, which gives
   a fresh id) and any problem by item and field. A file with problems saves nothing. Files from
-  before phase 8 (the old progressions and My songs exports) are upgraded on the way in.
+  before phase 8 (the old progressions and songs exports) are upgraded on the way in.
 - **Nothing is trusted as is.** Only known fields are read and the rest are dropped, so no stray
   text can come in: chart notes come only from the notes field, and lyrics only from a chart
   section's `lyrics`, as text, one line a bar. Every item is checked and rebuilt; a Studio song's

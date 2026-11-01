@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import Ajv2020 from 'ajv/dist/2020';
 import { describe, expect, it } from 'vitest';
 import { BUILT_IN_PIECES } from '@config/library';
 import { compileLesson, validateLesson } from '@/core/content/compile';
@@ -96,6 +99,20 @@ describe('the song library', () => {
         .filter((n) => n !== INDEX_FILE)
         .sort(),
     );
+  });
+
+  it('writes both indexes as their schema says', () => {
+    const schema = JSON.parse(
+      readFileSync(resolve(__dirname, '../../docs/format/library-index.schema.json'), 'utf8'),
+    );
+    const validate = new Ajv2020({ strict: true, allErrors: true }).compile(schema);
+    for (const text of [
+      BUILT_IN[`./songs/${INDEX_FILE}`]!,
+      CATALOGUE[`../../public/library/${INDEX_FILE}`]!,
+    ]) {
+      validate(JSON.parse(text));
+      expect(validate.errors ?? []).toEqual([]);
+    }
   });
 
   // The unit sweep: every version of every song, built in or in the catalogue, compiles.
