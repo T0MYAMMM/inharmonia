@@ -250,7 +250,7 @@ test.describe('chord charts', () => {
     await expect(page.locator('main img')).toHaveCount(0);
   });
 
-  test('a pasted N.C. bar line, Ebadd11 and B7sus2 show and play', async ({ page }) => {
+  test('pasted N.C. lines, Ebadd11 and B7sus2 show and play', async ({ page }) => {
     const lit = () =>
       page.$$eval('[data-layers~="lh"]', (els) =>
         [...new Set(els.map((e) => Number((e as HTMLElement).dataset.midi) % 12))].sort(
@@ -261,27 +261,41 @@ test.describe('chord charts', () => {
     await page.getByTestId('chart-title').fill('Quiet start');
     await page
       .getByTestId('paste-text')
-      .fill(['[Intro]', '| N.C. |', '[Verse]', '| Ebadd11 | B7sus2 |'].join('\n'));
+      .fill(
+        [
+          '[Intro]',
+          '| N.C. |',
+          '[Verse]',
+          '| Ebadd11 | B7sus2 |',
+          '[Outro]',
+          'N.C.',
+          'la la la',
+        ].join('\n'),
+      );
     await page.getByTestId('paste-read').click();
-    // The silent bar is a bar, not a lyric line dropped.
+    // Each silent bar is a bar: only the lyric under the outro's N.C. is dropped.
     await expect(page.getByTestId('lyrics-notice')).toHaveText(
-      'No lyrics found. Only chords and section names are kept.',
+      'Lyrics removed from 1 line. Only chords and section names are kept.',
     );
     const review = page.getByTestId('paste-review');
     await expect(review.getByRole('row').filter({ hasText: '| N.C. |' })).toContainText(
       'Chords: N.C.',
     );
     await expect(review).toContainText('Chords: E♭add11 B7sus2');
+    await expect(review.getByRole('row').filter({ hasText: 'Lyrics removed' })).toHaveText(
+      /la la la\s*Lyrics removed/,
+    );
     await page.getByTestId('paste-use').click();
     await expect(page.getByTestId('chart-issues')).toHaveCount(0);
     await page.getByTestId('chart-key').selectOption('E major');
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: 'Quiet start', level: 1 })).toBeVisible();
-    await expect(page.getByText('E major, 4/4, 3 bars, 80 bpm')).toBeVisible();
+    await expect(page.getByText('E major, 4/4, 4 bars, 80 bpm')).toBeVisible();
 
-    await expect(page.locator('[data-bar="0"]')).toContainText('Bar 1 of 3, N.C.');
+    await expect(page.locator('[data-bar="0"]')).toContainText('Bar 1 of 4, N.C.');
     await expect(page.locator('[data-bar="1"]')).toContainText('E♭add11');
     await expect(page.locator('[data-bar="2"]')).toContainText('B7sus2');
+    await expect(page.locator('[data-bar="3"]')).toContainText('Bar 4 of 4, N.C.');
     await page.getByRole('button', { name: 'Show function' }).click();
     await expect(page.locator('[data-bar="2"]')).toContainText('V7sus2');
 
