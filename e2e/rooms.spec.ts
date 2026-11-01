@@ -70,7 +70,8 @@ test.describe('drawings on cards', () => {
   /** Each page, and its cards that carry a drawing. */
   const CARDS: [string, string][] = [
     ['', 'main a[data-room]'],
-    ['fills', 'main a[href*="/fills/"]'],
+    ['fills', 'main li a[href*="/fills/"]'],
+    ['progressions', 'main li a[href*="/progressions/"]'],
   ];
 
   for (const [route, cards] of CARDS) {

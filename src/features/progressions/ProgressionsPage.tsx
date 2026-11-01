@@ -4,6 +4,8 @@ import type { Progression } from '@/core/content/types';
 import { prettyNumerals } from '@/core/notation';
 import { exportItems } from '@/state/transfer';
 import { useUserProgressions } from '@/state/userProgressions';
+import { CardArt } from '@/ui/art/CardArt';
+import { VoiceLines } from '@/ui/art/VoiceLines';
 import { buttonClass } from '@/ui/buttonClass';
 import { PageHeader } from '../PageHeader';
 import { ExportDialog } from '../transfer/Export';
@@ -70,6 +72,9 @@ function ProgressionList({ items }: { items: readonly Progression[] }) {
       {items.map((p) => (
         <li key={p.id}>
           <Link to={`/progressions/${p.id}`} className={styles.card}>
+            <CardArt>
+              <VoiceLines numerals={p.steps.map((s) => s.numeral)} mode={p.mode} />
+            </CardArt>
             <span className={styles.title}>{p.name}</span>
             <span className={styles.numerals}>{prettyNumerals(p.steps)}</span>
             {p.description ? <span className={styles.desc}>{p.description}</span> : null}
