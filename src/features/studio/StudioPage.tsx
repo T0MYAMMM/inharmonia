@@ -191,7 +191,8 @@ export function StudioPage() {
           <MidiWorkspace key={midiSession.key} initial={midiSession.project} />
         </div>
       ) : null}
-      <div hidden={draft !== null || editing !== null || midiSession !== null}>
+      {/* Studio's own page: while an editor hides it, the room's wash and line go too. */}
+      <div hidden={draft !== null || editing !== null || midiSession !== null} data-room-index>
         <PageHeader
           title={
             <>
