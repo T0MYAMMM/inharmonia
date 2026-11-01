@@ -670,9 +670,13 @@ linear gain) and are capped at full scale.
   lost pointer capture on the keyboard, window blur and a hidden page for computer keys, and a
   MIDI device disconnecting (its notes and its sustain pedal are released).
 
-- Audio starts only from a user gesture. The AudioContext is created synchronously inside the
-  first `pointerdown` or `keydown`, which is what iOS Safari requires. Notes pressed while Tone.js
-  is still loading are played as soon as it is ready.
+- Audio starts only from a user gesture, and only in a room that plays: one with a keyboard, Ear
+  training, the progression builder and Studio. There the AudioContext is created synchronously
+  inside the first `pointerup`, `touchend`, `click` or `keydown` (a touch's `pointerdown` doesn't
+  count as one), which is what iOS Safari requires, and Tone.js and the piano load then. Every Play
+  button also starts it itself. Notes pressed while Tone.js is still loading are played as soon as
+  it is ready; notes and clicks scheduled in that time, like the first beat of a first Play, are
+  held and played on time, or at once if a little late.
 - **iOS silent switch:** on iPhone, Web Audio is muted when the ring/silent switch is set to
   silent. If you hear nothing on iOS, check the switch.
 - A simple synth plays until the piano samples finish loading (about 1.6 MB), then the piano

@@ -99,6 +99,15 @@ export default defineConfig({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 700,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          // Tone.js loads only in rooms that play; a stable name lets tests and
+          // the size budget find it.
+          groups: [{ name: 'tone', test: /node_modules[\\/]tone[\\/]/ }],
+        },
+      },
+    },
   },
   test: {
     globals: true,

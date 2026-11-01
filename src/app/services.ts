@@ -75,14 +75,46 @@ export function installMidiAutoConnect(): void {
   if (useSettings.getState().midiEnabled) void connectMidi();
 }
 
-/** Start audio on the first gesture anywhere, so the first note is not lost to loading. */
-export function installAudioUnlock(target: Window = window): () => void {
-  const unlock = () => {
-    void audio.unlock();
-    target.removeEventListener('pointerdown', unlock, true);
-    target.removeEventListener('keydown', unlock, true);
+/**
+ * The gestures that can start audio. A touch's pointerdown is not a user
+ * activation (its pointerup and touchend are), so a tap is caught on the way up.
+ */
+const UNLOCK_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'] as const;
+
+let arms = 0;
+let armedOn: Window | null = null;
+
+function onGesture(): void {
+  void audio.unlock();
+  // Keep listening until the context is running: a gesture can create it
+  // without the browser letting it start.
+  const ctx = audio.context();
+  if (!ctx || ctx.state === 'running') disarm();
+}
+
+function disarm(): void {
+  if (!armedOn) return;
+  for (const type of UNLOCK_EVENTS) armedOn.removeEventListener(type, onGesture, true);
+  armedOn = null;
+}
+
+/**
+ * Start audio on the next gesture anywhere on the page, so the first note is
+ * not lost to loading. Called by the rooms that play, from an effect: Tone and
+ * the piano load only there. Returns the cleanup; the listener goes when the
+ * last room that armed it closes, or once audio is running.
+ */
+export function armAudio(target: Window = window): () => void {
+  arms++;
+  if (!armedOn && audio.context()?.state !== 'running') {
+    armedOn = target;
+    for (const type of UNLOCK_EVENTS) target.addEventListener(type, onGesture, true);
+  }
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    arms--;
+    if (arms === 0) disarm();
   };
-  target.addEventListener('pointerdown', unlock, true);
-  target.addEventListener('keydown', unlock, true);
-  return unlock;
 }
