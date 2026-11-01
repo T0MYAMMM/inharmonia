@@ -15,15 +15,15 @@ test.describe('song library', () => {
   test('one card per piece, with filters for level, composer and title', async ({ page }) => {
     await page.goto('songs');
     const songs = page.getByTestId('songs');
-    await expect(songs.getByTestId('piece-senja-di-teras')).toBeVisible();
-    const card = songs.getByTestId('piece-morning-ferry');
+    await expect(songs.getByTestId('piece-twinkle-twinkle')).toBeVisible();
+    const card = songs.getByTestId('piece-ode-to-joy');
     await expect(card.getByRole('link', { name: /^Easy/ })).toHaveAttribute(
       'href',
-      /\/songs\/morning-ferry-easy$/,
+      /\/songs\/ode-to-joy-easy$/,
     );
     await expect(card.getByRole('link', { name: /^Medium/ })).toBeVisible();
-    await expect(card.getByRole('link', { name: /^Advanced/ })).toContainText('21 bars');
-    await expect(card).toContainText('Original, by Inharmonia');
+    await expect(card.getByRole('link', { name: /^Advanced/ })).toContainText('24 bars');
+    await expect(card).toContainText('Ludwig van Beethoven, first published 1826');
     // The written key on the card; a picked level shows the key that version plays in.
     const brahms = songs.getByTestId('piece-brahms-lullaby');
     await expect(brahms).toContainText('E♭ major, 3/4');
@@ -31,51 +31,29 @@ test.describe('song library', () => {
     await page.getByRole('radio', { name: 'Advanced' }).click();
     await expect(page).toHaveURL(/level=advanced/);
     await expect(brahms).toContainText('E♭ major, 3/4');
-    await expect(songs.getByTestId('piece-senja-di-teras')).toHaveCount(0);
-    await expect(card.getByRole('link', { name: 'Morning Ferry' })).toHaveAttribute(
+    await expect(card.getByRole('link', { name: 'Ode to Joy' })).toHaveAttribute(
       'href',
-      /morning-ferry-advanced$/,
+      /ode-to-joy-advanced$/,
     );
 
     await page.getByRole('radio', { name: 'Easy' }).click();
     await expect(brahms).toContainText('F major, 3/4');
     await page.getByRole('radio', { name: 'Advanced' }).click();
-    await page.getByTestId('songs-search').fill('ferry');
+    await page.getByTestId('songs-search').fill('joy');
     await expect(songs.getByRole('listitem')).toHaveCount(1);
     await page.getByTestId('songs-search').fill('no such piece');
     await expect(page.getByTestId('songs-empty')).toBeVisible();
     await page.getByRole('link', { name: 'Show them all' }).click();
-    await page.getByTestId('songs-composer').selectOption('Original pieces');
-    await expect(songs.getByRole('listitem')).toHaveCount(4);
+    await page.getByTestId('songs-composer').selectOption('Ludwig van Beethoven');
+    await expect(songs.getByRole('listitem')).toHaveCount(2);
   });
 
-  test('pages of nine, with previous and next, and filters start again on page one', async ({
-    page,
-  }) => {
+  test('nine pieces fit one page, with no pager', async ({ page }) => {
     await page.goto('songs');
-    const items = page.getByTestId('songs').getByRole('listitem');
-    const prev = page.getByRole('button', { name: 'Previous page' });
-    const next = page.getByRole('button', { name: 'Next page' });
-    await expect(items).toHaveCount(9);
-    await expect(page.getByTestId('songs-page')).toHaveText('Page 1 of 2');
-    await expect(prev).toBeDisabled();
-    await expect(page.getByTestId('piece-window-light')).toHaveCount(0);
-
-    await next.click();
-    await expect(page).toHaveURL(/page=2/);
-    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
-    await expect(page.getByTestId('piece-window-light')).toBeVisible();
-    await expect(next).toBeDisabled();
-    await page.reload();
-    await expect(page.getByTestId('piece-window-light')).toBeVisible();
-
-    await page.getByTestId('songs-composer').selectOption('Original pieces');
-    await expect(page).not.toHaveURL(/page=/);
-    await expect(items).toHaveCount(4);
+    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(9);
     await expect(page.getByRole('navigation', { name: 'Song pages' })).toHaveCount(0);
-
     await page.goto('songs?page=99');
-    await expect(page.getByTestId('songs-page')).toHaveText('Page 2 of 2');
+    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(9);
   });
 
   test('every version of every library piece opens and plays', async ({ page }) => {
@@ -92,8 +70,9 @@ test.describe('song library', () => {
           .locator('[data-testid^="level-"]')
           .evaluateAll((els) => els.map((e) => e.getAttribute('href')!))),
       );
+      // One page has no pager; the last page's Next is disabled.
       const next = page.getByTestId('songs-next');
-      if (await next.isDisabled()) break;
+      if ((await next.count()) === 0 || (await next.isDisabled())) break;
       await next.click();
     }
     expect(hrefs.length).toBeGreaterThanOrEqual(24);
@@ -109,18 +88,24 @@ test.describe('song library', () => {
   });
 
   test('a song page names its version and switches between them', async ({ page }) => {
-    await page.goto('songs/lanterns-at-dusk-easy');
-    await expect(page.getByRole('heading', { name: 'Lanterns at Dusk', level: 1 })).toBeVisible();
-    await expect(page.getByTestId('song-credit')).toHaveText('Original, by Inharmonia');
+    await page.goto('songs/ode-to-joy-easy');
+    await expect(page.getByRole('heading', { name: 'Ode to Joy', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('song-credit')).toHaveText(
+      'Ludwig van Beethoven, first published 1826',
+    );
     const levels = page.getByTestId('song-levels');
     await expect(levels.getByRole('link', { name: 'Easy' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    await expect(page.getByText('A minor, 3/4, 16 bars: bars 1–16 of the original')).toBeVisible();
+    await expect(
+      page.getByText('C major (written in D major), 4/4, 24 bars: bars 92–115 of the original'),
+    ).toBeVisible();
     await levels.getByRole('link', { name: 'Advanced' }).click();
-    await expect(page).toHaveURL(/lanterns-at-dusk-advanced$/);
-    await expect(page.getByText('A minor, 3/4, 20 bars: bars 1–20 of the original')).toBeVisible();
-    await expect(page.getByTestId('song-edition')).toHaveCount(0);
+    await expect(page).toHaveURL(/ode-to-joy-advanced$/);
+    await expect(
+      page.getByText('D major, 4/4, 24 bars: bars 92–115 of the original'),
+    ).toBeVisible();
+    await expect(page.getByTestId('song-edition')).toContainText('Source: ');
   });
 });

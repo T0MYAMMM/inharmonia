@@ -209,8 +209,8 @@ covers.
 - **Meters.** Songs can be in 2/4, 3/4, 4/4 or 3/8 (`SONG_METERS` in
   `src/core/content/types.ts`). Beats count the written beat, so a 3/8 bar has three
   eighth-note beats and its tempo counts eighths; Für Elise is the first piece in 3/8.
-- **Original pieces** (Senja di Teras, Window Light, Lanterns at Dusk, Morning Ferry) are written
-  for Inharmonia on the app's own progressions and patterns, and credited as original.
+- **Welcome song.** Home's welcome and the first starter on Progress open Twinkle, Twinkle, Little
+  Star, Easy: it starts on C, stays on the white keys and uses six notes within a sixth.
 
 ## Song player
 

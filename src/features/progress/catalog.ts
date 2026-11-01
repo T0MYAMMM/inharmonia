@@ -68,12 +68,15 @@ export function describeExercise(
   return null;
 }
 
+/** The first song to try: Twinkle, Easy, the song Home's welcome starts with. */
+export const FIRST_SONG = 'twinkle-twinkle-easy';
+
 /** Good first steps, in order, for "try something new". */
 export function starterExercises(): ExerciseInfo[] {
   const firstFill = FILLS.find((f) => f.level === 1)!;
   const list: ExerciseInfo[] = [
-    // Songs with one version first; library pieces come in at the end, Easy versions.
-    ...SONGS.filter((s) => !s.level).map(songStep),
+    // Twinkle first; the other pieces come in at the end, Easy versions.
+    songStep(getSong(FIRST_SONG)!),
     { id: CHORD_DRILL_ID, title: 'Chord drill', kind: 'Chords', href: '/chords/drill' },
     {
       id: `progression:${PROGRESSIONS[0]!.id}`,
@@ -105,14 +108,14 @@ export function starterExercises(): ExerciseInfo[] {
       kind: 'Progression',
       href: `/progressions/${p.id}`,
     })),
-    ...SONGS.filter((s) => s.level === 'easy').map(songStep),
+    ...SONGS.filter((s) => s.level === 'easy' && s.id !== FIRST_SONG).map(songStep),
   ];
   return list;
 }
 
 const LEVEL_NAMES = { easy: 'Easy', medium: 'Medium', advanced: 'Advanced' } as const;
 
-/** "Window Light, Easy" for a library version; the plain title otherwise. */
+/** "Ode to Joy, Easy" for a library version; the plain title otherwise. */
 export function songTitle(s: Lesson): string {
   return s.level ? `${s.title}, ${LEVEL_NAMES[s.level]}` : s.title;
 }

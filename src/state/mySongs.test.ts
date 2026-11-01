@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { getSong as builtInSong } from '@/content/lessons';
 import {
   CHART_VERSION,
   DEFAULT_VIEW,
@@ -287,15 +287,17 @@ describe('moving things between devices', () => {
     ]);
   });
 
-  it('exports built-in songs as originals and stores imported copies as yours', async () => {
-    const out = await exportItems({ builtInSongs: [SENJA_DI_TERAS] }, new Date(0));
-    expect(out.fileName).toBe('inharmonia-song-senja-di-teras.json');
+  it('exports built-in songs with their source and stores imported copies as yours', async () => {
+    const ode = builtInSong('ode-to-joy-easy')!;
+    const out = await exportItems({ builtInSongs: [ode] }, new Date(0));
+    expect(out.fileName).toBe('inharmonia-song-ode-to-joy.json');
     const preview = previewImport(out.text);
-    expect(preview.rows[0]!.storeId).toBe('mine-song-senja-di-teras');
+    expect(preview.rows[0]!.storeId).toBe('mine-song-ode-to-joy-easy');
     await applyImport(preview);
     const saved = mySongs.snapshot.songs[0]!;
-    expect(saved.lesson.source).toEqual({ kind: 'original', author: 'Inharmonia' });
-    expect(saved.lesson.bars).toEqual(SENJA_DI_TERAS.bars);
+    expect(saved.lesson.source).toEqual(ode.source);
+    expect(saved.lesson.source.kind).toBe('public-domain');
+    expect(saved.lesson.bars).toEqual(ode.bars);
   });
 
   it('saves nothing from a file with problems', async () => {

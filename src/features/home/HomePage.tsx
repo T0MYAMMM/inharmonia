@@ -7,7 +7,7 @@ import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
-import { describeExercise, nextNew } from '../progress/catalog';
+import { describeExercise, FIRST_SONG, nextNew } from '../progress/catalog';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
@@ -36,6 +36,9 @@ const ROOMS = [
     body: 'Your best scores, streak, and what to look at today.',
   },
 ];
+
+/** The first song for someone new: white keys only, six notes, a tune everyone knows. */
+const WELCOME_SONG = `/songs/${FIRST_SONG}`;
 
 /** The computer keys' range, from the same map the keyboard uses. */
 const KEY_MAP = computerKeyMap();
@@ -72,8 +75,8 @@ export function HomePage() {
             </li>
             <li>
               <strong>Listen, then play.</strong>{' '}
-              <Link to="/songs/senja-di-teras">Senja di Teras</Link> plays through first; Practice
-              then waits for each note.
+              <Link to={WELCOME_SONG}>Twinkle, Twinkle, Little Star</Link> plays through first, in
+              its Easy version; Practice then waits for each note.
             </li>
             <li>
               <strong>Learn a chord or two.</strong> The <Link to="/chords">chord library</Link>{' '}
@@ -82,8 +85,8 @@ export function HomePage() {
             </li>
           </ol>
           <div className={styles.welcomeActions}>
-            <Link to="/songs/senja-di-teras" className={buttonClass('primary')}>
-              Start with Senja di Teras
+            <Link to={WELCOME_SONG} className={buttonClass('primary')}>
+              Start with Twinkle, Twinkle
             </Link>
             <Button variant="ghost" onClick={() => set({ welcomeDismissed: true })}>
               Got it
