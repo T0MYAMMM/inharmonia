@@ -302,11 +302,17 @@ test.describe('catalogue songs offline', () => {
       await expect(page.getByTestId('status-line')).toContainText(`of ${bars}`);
       await page.getByTestId('play').click();
     }
+    // The catalogue's index is precached, so a link to a song not downloaded
+    // still offers it; the download says why it can't, and keeps nothing.
     await page.goto('songs/brahms-lullaby-easy');
     await expect(
-      page.getByRole('heading', { name: "This song isn't on this device.", level: 1 }),
+      page.getByRole('heading', { name: "Brahms' Lullaby (Wiegenlied)", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText("You're offline. Downloads need a connection.")).toBeVisible();
+    await page.getByTestId('song-download').click();
+    await expect(page.getByTestId('download-problem')).toHaveText(
+      "You're offline. Downloads need a connection.",
+    );
+    await expect(page.getByTestId('play')).toHaveCount(0);
     await context.setOffline(false);
   });
 
@@ -314,7 +320,6 @@ test.describe('catalogue songs offline', () => {
     page,
     context,
   }) => {
-    test.fixme(true, 'enabled after perf/lazy-load merges: needs the index precached');
     await page.goto('');
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
