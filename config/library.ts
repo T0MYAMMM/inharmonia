@@ -26,4 +26,6 @@ export const LIBRARY_LIMITS = {
   fileBytes: 512_000,
   /** The catalogue's index, gzipped: about 200 songs before it needs splitting. */
   indexGzipBytes: 50_000,
+  /** The index as fetched, which may not be compressed on the way. */
+  indexBytes: 1_000_000,
 } as const;
