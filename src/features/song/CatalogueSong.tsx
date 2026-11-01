@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { CatalogueEntry } from '@/core/library/catalogue';
 import { keyName, prettyAccidentals } from '@/core/notation';
@@ -18,7 +18,11 @@ import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import { LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { SongView } from './SongView';
+import { useOnline } from './useOnline';
 import styles from './SongPage.module.css';
+
+/** Why Download is off, on a song page while the browser is offline. */
+export const OFFLINE = "You're offline. This song downloads when you're back online.";
 
 /**
  * A song that isn't built in: played from this device when it was
@@ -125,7 +129,11 @@ export function CatalogueSong({ songId }: { songId: string }) {
   );
 }
 
-/** A catalogue song not on this device: what it is, its versions, its size, and Download. */
+/**
+ * A catalogue song not on this device: what it is, its versions, its size, and
+ * Download. Offline, Download waits, disabled, until the browser is back
+ * online; it never starts by itself.
+ */
 function DownloadOffer({
   entry,
   songId,
@@ -140,6 +148,8 @@ function DownloadOffer({
   alert: ReactNode;
 }) {
   const version = entry.levels.find((l) => l.id === songId)!;
+  const online = useOnline();
+  const offlineId = useId();
   const moved =
     version.key.tonic !== entry.key.tonic || version.key.mode !== entry.key.mode
       ? ` (written in ${prettyAccidentals(keyName(entry.key))})`
@@ -175,13 +185,19 @@ function DownloadOffer({
             <p data-testid="download-offer">
               {`In the catalogue, not on this device yet. Download it once (${formatBytes(entry.bytes)}, every version) to play it here, offline too.`}
             </p>
+            {online ? null : (
+              <p id={offlineId} data-testid="download-offline">
+                {OFFLINE}
+              </p>
+            )}
           </>
         }
         actions={
           <Button
             variant="primary"
             onClick={onDownload}
-            disabled={busy}
+            disabled={busy || !online}
+            aria-describedby={online ? undefined : offlineId}
             aria-label={`${busy ? 'Downloading' : 'Download'} ${entry.title}`}
             data-testid="song-download"
           >

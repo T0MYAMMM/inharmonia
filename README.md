@@ -239,8 +239,9 @@ keys and uses six notes within a sixth.
   this device stays listed as "Song, not downloaded", linking to its download. A retired piece's
   progress stays hidden.
 - **Offline**, the built-in and downloaded songs play. The catalogue still lists, from the
-  index the service worker keeps, and says downloads need a connection; a catalogue song not on
-  this device still offers **Download**, which says the same.
+  index the service worker keeps, and says downloads need a connection. A catalogue song's link
+  still shows the song, with **Download** off and "You're offline. This song downloads when
+  you're back online."; it comes back on when the browser does, and never starts by itself.
 - **Updates** are never automatic: a new SHA-256 in the index shows **Update** on the song's
   card and page.
 
