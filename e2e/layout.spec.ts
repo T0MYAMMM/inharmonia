@@ -380,3 +380,55 @@ test.describe('Play on a phone', () => {
     await playInFirstScreen(page);
   });
 });
+
+test.describe('Play clear of the keyboard dock on a phone', () => {
+  test.skip(({ isMobile }) => !isMobile, 'a 360x780 phone is the mobile project');
+
+  /**
+   * Play's bottom edge above the keyboard dock's top edge, once the page has
+   * settled. The dock stays at the foot of the screen, so Play behind it is
+   * inside the screen but can't be seen or tapped.
+   */
+  async function playAboveDock(page: Page) {
+    const play = page.getByTestId('play');
+    await expect(play).toBeVisible();
+    await expect(page.locator('[data-dock]')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(1500);
+    const box = await play.evaluate((el) => ({
+      bottom: el.getBoundingClientRect().bottom,
+      dock: document.querySelector('[data-dock]')!.getBoundingClientRect().top,
+      scrolled: window.scrollY,
+    }));
+    expect(box.scrolled, 'the page scrolled by itself').toBe(0);
+    expect(
+      box.bottom,
+      `Play ends ${Math.round(box.bottom)}px down, behind the dock from ${Math.round(box.dock)}px`,
+    ).toBeLessThanOrEqual(box.dock);
+  }
+
+  // A known bug, on main too: at 360x780 the dock is 219px tall and covers
+  // Play on every one of these, by 121 to 249px. The layout fix needs a
+  // decision first; remove test.fail with it.
+  const KNOWN = 'known bug: Play sits behind the keyboard dock at 360x780';
+
+  for (const [name, route] of [
+    ['a song', 'songs/fur-elise-easy'],
+    ['the welcome song', 'songs/twinkle-twinkle-easy'],
+    ['a fill', 'fills/step-up'],
+    ['a progression', 'progressions/ii-v-i'],
+  ] as const) {
+    test(`on ${name}, Play ends above the keyboard dock`, async ({ page }) => {
+      test.fail(true, KNOWN);
+      await page.goto(route);
+      await playAboveDock(page);
+    });
+  }
+
+  test('on a chord chart, Play ends above the keyboard dock', async ({ page }) => {
+    test.fail(true, KNOWN);
+    await makeChart(page);
+    await page.reload();
+    await playAboveDock(page);
+  });
+});
