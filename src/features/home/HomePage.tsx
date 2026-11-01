@@ -1,8 +1,6 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { Link } from 'react-router';
 import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
-import { FILLS } from '@/content/fills';
-import { PROGRESSIONS } from '@/content/progressions';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
@@ -11,16 +9,8 @@ import { useDownloads } from '@/state/downloads';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { CardArt } from '@/ui/art/CardArt';
-import { ChordWave } from '@/ui/art/ChordWave';
-import { FillRun } from '@/ui/art/FillRun';
-import { MiniKeys } from '@/ui/art/MiniKeys';
-import { TWINKLE } from '@/ui/art/previews';
 import { KeysSpot } from '@/ui/art/spots';
 import type { Room } from '@/ui/art/rooms';
-import { StaffBars } from '@/ui/art/StaffBars';
-import { SungToNotes } from '@/ui/art/SungToNotes';
-import { VoiceLines } from '@/ui/art/VoiceLines';
-import { WeekDots } from '@/ui/art/WeekDots';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
@@ -73,34 +63,20 @@ const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boole
 /** The first song for someone new: white keys only, six notes, a tune everyone knows. */
 const WELCOME_SONG = `/songs/${FIRST_SONG}`;
 
-/** The Songs room draws that song's opening, as the built-in index has it. */
-const FIRST_PREVIEW = BUILT_IN_ENTRIES.find((e) =>
-  e.levels.some((l) => l.id === FIRST_SONG),
-)?.preview;
+/**
+ * The rooms' drawings load after the page, so the first screen doesn't wait
+ * for them. A chunk that doesn't arrive (or is missing after a deploy, while
+ * preloadError.ts reloads) leaves the panels empty rather than the page broken.
+ */
+const RoomArt = lazy(() =>
+  import('./RoomArt').then(
+    (m) => ({ default: m?.RoomArt ?? NoArt }),
+    () => ({ default: NoArt }),
+  ),
+);
 
-const II_V_I = PROGRESSIONS.find((p) => p.id === 'ii-v-i');
-const RUN_UP = FILLS.find((f) => f.id === 'run-up');
-
-/** Each room drawn from what it holds. */
-function RoomArt({ room, week }: { room: Room; week: { key: string; practised: boolean }[] }) {
-  switch (room) {
-    case 'songs':
-      return FIRST_PREVIEW ? <StaffBars preview={FIRST_PREVIEW} /> : null;
-    case 'chords':
-      return <MiniKeys notes={[60, 64, 67, 71]} below={1} octaves={3} />;
-    case 'progressions':
-      return II_V_I ? (
-        <VoiceLines numerals={II_V_I.steps.map((s) => s.numeral)} mode={II_V_I.mode} width={220} />
-      ) : null;
-    case 'fills':
-      return RUN_UP ? <FillRun fill={RUN_UP} /> : null;
-    case 'ear':
-      return <ChordWave notes={[60, 64, 67]} width={250} />;
-    case 'studio':
-      return <SungToNotes preview={TWINKLE} />;
-    case 'progress':
-      return <WeekDots days={week} />;
-  }
+function NoArt() {
+  return null;
 }
 
 /** The computer keys' range, from the same map the keyboard uses. */
@@ -192,7 +168,9 @@ export function HomePage() {
           <li key={r.to}>
             <Link to={r.to} className={styles.room} data-room={r.room}>
               <CardArt>
-                <RoomArt room={r.room} week={week} />
+                <Suspense fallback={null}>
+                  <RoomArt room={r.room} week={week} />
+                </Suspense>
               </CardArt>
               <span className={styles.roomTitle}>
                 {r.title}

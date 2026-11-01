@@ -81,8 +81,12 @@ test.describe('drawings on cards', () => {
       isMobile,
     }) => {
       await page.goto(route);
-      // A room's code loads after the page itself: measure once its cards are there.
+      // A room's code loads after the page itself, and Home's drawings after
+      // Home: measure once every card is drawn.
       await expect(page.locator(cards).first()).toBeVisible();
+      await expect(page.locator('main [class*="cardArt"] svg')).toHaveCount(
+        await page.locator(cards).count(),
+      );
       const found = await panels(page);
       expect(found.length).toBeGreaterThan(0);
       expect(found).toHaveLength(await page.locator(cards).count());
