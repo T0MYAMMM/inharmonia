@@ -1,4 +1,3 @@
-import { Chord } from 'tonal';
 import { NO_CHORD } from '../content/types';
 import { CHORD_QUALITIES, chroma, parseChord } from '../theory';
 
@@ -15,11 +14,16 @@ export const KNOWN_RULE = { plays: 3, days: 2, keep: 12 } as const;
 
 const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
-const SUFFIX_BY_TYPE = new Map<string, string>([
-  ...CHORD_QUALITIES.map((q) => [Chord.get(`C${q.suffix}`).type, q.suffix] as [string, string]),
-  [Chord.get('CmM7').type, 'mM7'],
-  [Chord.get('Cm6').type, 'm6'],
-]);
+/**
+ * A chord's shape: its intervals from the root. Spellings of one chord share
+ * it (CM7 and Cmaj7), and unlike tonal's type name it is never empty, so
+ * chords tonal leaves unnamed (Cmadd9, C9sus4) do not all share one id.
+ */
+const shapeOf = (suffix: string) => parseChord(`C${suffix}`).intervals.join(' ');
+
+const SUFFIX_BY_SHAPE = new Map<string, string>(
+  [...CHORD_QUALITIES.map((q) => q.suffix), 'mM7', 'm6'].map((s) => [shapeOf(s), s]),
+);
 
 /**
  * One id per chord the hand plays: enharmonic roots share an id (A# = Bb),
@@ -30,8 +34,7 @@ export function chordId(symbol: string): string | null {
   if (symbol === NO_CHORD) return null;
   try {
     const info = parseChord(symbol);
-    const type = Chord.get(`C${info.suffix}`).type;
-    const suffix = SUFFIX_BY_TYPE.get(type) ?? info.suffix;
+    const suffix = SUFFIX_BY_SHAPE.get(info.intervals.join(' ')) ?? info.suffix;
     return `${ROOTS[chroma(info.root)]}${suffix}`;
   } catch {
     return null;

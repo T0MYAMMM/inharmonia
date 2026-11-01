@@ -229,8 +229,16 @@ describe('known chords', () => {
     expect(chordId('CM7')).toBe(chordId('Cmaj7'));
     expect(chordId('D/F#')).toBe(chordId('D'));
     expect(chordId('Gb')).toBe('F#');
+    expect(chordId('C2')).toBe('Cadd9');
     expect(chordId(NO_CHORD)).toBeNull();
     expect(chordId('Hx')).toBeNull();
+  });
+
+  it('keeps chords tonal leaves unnamed apart: Cmadd9 and C9sus4 are not Cadd9', () => {
+    expect(chordId('Cmadd9')).toBe('Cmadd9');
+    expect(chordId('C9sus4')).toBe('C9sus4');
+    expect(chordId('C7add13')).toBe('C7add13');
+    expect(chordId('Cadd9')).toBe('Cadd9');
   });
 
   it('needs 3 clean plays over 2 days, and a manual mark always wins', () => {
