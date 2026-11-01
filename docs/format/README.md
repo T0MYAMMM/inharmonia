@@ -61,7 +61,10 @@ its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 
   (changes, by beat), and `tracks`, each with `id`, `name`, `channel`, `program`, `muted` and
   `notes` (`id`, `startBeat`, `beats`, `midi`, `velocity`). Beats are quarter notes from the
   start. The practice score is not written: it is rebuilt from the project on import, the way
-  Studio's **Save to My songs** builds it. Such a song is 2/4, 3/4 or 4/4 and up to 512 bars.
+  Studio's **Save to Your songs** builds it. Such a song is 2/4, 3/4 or 4/4 and up to 512 bars.
+  A catalogue song made this way also has `piece`, `level` and `summary` before `midi`, and
+  its credit is the item's `source`. Your own MIDI songs never have them: they are rebuilt as
+  yours on import.
 
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
   `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),
@@ -83,6 +86,33 @@ its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 
 
 - **progression**: `mode`, `meter`, and `steps` of `numeral` and `beats` (1, 2 or 4), with an
   optional `description`. Numerals are read against the major scale of the tonic.
+
+## The song index
+
+Each folder of song files has an `index.json` beside it, written by `npm run songs`:
+`public/library/index.json` lists the catalogue, and `src/content/songs/index.json` the
+built-in songs. The Songs page draws every card from these, so it loads no song to list them;
+a download checks the file it fetched against its entry. JSON Schema:
+[library-index.schema.json](library-index.schema.json).
+
+```
+{"format":"inharmonia-library","schema":1,"songs":[
+{"piece":"minuet-in-g","file":"minuet-in-g.json","bytes":48029,"sha256":"…","title":"Minuet in G", …},
+…
+]}
+```
+
+One entry per line, so a diff shows the songs that changed. Each entry has the `piece` id, its
+`file`, its size in `bytes` (UTF-8) and its `sha256`; the `title`, the `composer` (for the
+filter) and the `credit` line; the written `key` (the Advanced version's) and the `meter`; an
+optional `summary`; `levels`, each with its `level`, song `id` (`<piece>-<level>`), `bars` and
+the `key` it plays in; and a `preview`.
+
+The `preview` is the opening melody, for a drawing on a staff: `{ meter, bars }`, one string per
+bar, each note `"<note>:<beats>"` or `"r:<beats>"`, with `~` after a note tied to the next, and
+beats in the meter's unit (`"r:2 G4:0.5 G4:0.5"`). It starts at the first bar that sounds; when
+that bar starts with a rest it is a pickup, and two more bars follow it, otherwise two bars are
+taken. It comes from the Advanced version or the only one, and holds at most 24 notes and rests.
 
 ## Importing
 

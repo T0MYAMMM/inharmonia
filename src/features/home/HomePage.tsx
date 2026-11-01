@@ -1,13 +1,16 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
 import { dueForReview } from '@/state/review';
+import { useDownloads } from '@/state/downloads';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
-import { describeExercise, nextNew } from '../progress/catalog';
+import { describeExercise, FIRST_SONG, nextNew, songLookup } from '../progress/catalog';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
@@ -37,6 +40,9 @@ const ROOMS = [
   },
 ];
 
+/** The first song for someone new: white keys only, six notes, a tune everyone knows. */
+const WELCOME_SONG = `/songs/${FIRST_SONG}`;
+
 /** The computer keys' range, from the same map the keyboard uses. */
 const KEY_MAP = computerKeyMap();
 const FIRST_KEY = KEY_MAP[0]!;
@@ -48,7 +54,13 @@ export function HomePage() {
   const mine = useUserProgressions((s) => s.items);
   const state = loadProgress();
   const practised = Object.keys(state.exercises).length > 0;
-  const describe = (id: string) => describeExercise(id, mine);
+  // Songs on this device only: Home never fetches the catalogue.
+  const kept = useDownloads().pieces;
+  const songs = useMemo(
+    () => songLookup([...BUILT_IN_ENTRIES, ...kept.map((p) => p.entry)]),
+    [kept],
+  );
+  const describe = (id: string) => describeExercise(id, mine, songs);
   const due = dueForReview(state, describe, { limit: 1 })[0]?.info ?? null;
   const next = due ?? nextNew((id) => id in state.exercises);
   const run = streak(state);
@@ -72,8 +84,8 @@ export function HomePage() {
             </li>
             <li>
               <strong>Listen, then play.</strong>{' '}
-              <Link to="/songs/senja-di-teras">Senja di Teras</Link> plays through first; Practice
-              then waits for each note.
+              <Link to={WELCOME_SONG}>Twinkle, Twinkle, Little Star</Link> plays through first, in
+              its Easy version; Practice then waits for each note.
             </li>
             <li>
               <strong>Learn a chord or two.</strong> The <Link to="/chords">chord library</Link>{' '}
@@ -82,8 +94,8 @@ export function HomePage() {
             </li>
           </ol>
           <div className={styles.welcomeActions}>
-            <Link to="/songs/senja-di-teras" className={buttonClass('primary')}>
-              Start with Senja di Teras
+            <Link to={WELCOME_SONG} className={buttonClass('primary')}>
+              Start with Twinkle, Twinkle
             </Link>
             <Button variant="ghost" onClick={() => set({ welcomeDismissed: true })}>
               Got it

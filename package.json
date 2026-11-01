@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run format:check && npm run typecheck && npm run test",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run songs -- --check && npm run test",
     "eval:transcription": "tsx scripts/eval-transcription.ts",
     "songs": "tsx --tsconfig tsconfig.app.json scripts/build-songs.ts",
     "size": "tsx scripts/size-budget.ts"

@@ -109,9 +109,10 @@ export function AboutPage() {
 
         <h2>Music</h2>
         <p>
-          Every exercise, progression, fill and melody here is original or generic theory material.
-          Senja di Teras is an original piece written for Inharmonia, and the fills were written for
-          it too. Progressions are named for how they sound, not for songs that use them.
+          Exercises, progressions and fills are original or generic theory material, and
+          progressions are named for how they sound, not for songs that use them. Songs are
+          public-domain pieces, each from an early edition named on its page, or pieces their
+          composers allow Inharmonia to share.
         </p>
       </div>
     </>

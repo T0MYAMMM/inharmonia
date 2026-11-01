@@ -1,10 +1,12 @@
 # The piece source format
 
 Library pieces are written once, in a small text format, in
-`src/content/songs/sources/<piece>.piece`. `npm run songs` turns each source into
-`src/content/songs/<piece>.json` (the [readable JSON format](README.md)) with three versions,
-Easy, Medium and Advanced, and lists the bars where Easy merged notes so you can check them by
-ear. A test fails if a JSON file is out of date with its source.
+`src/content/songs/sources/<piece>.piece`. `npm run songs` turns each source into a file in
+the [readable JSON format](README.md) with three versions, Easy, Medium and Advanced, and lists
+the bars where Easy merged notes so you can check them by ear. A built-in piece (named in
+`config/library.ts`) goes to `src/content/songs/<piece>.json`; every other piece goes to the
+catalogue, `public/library/<piece>.json`. `npm run songs -- --check`, run in CI, fails if a
+file is out of date with its source.
 
 Write the notes as they are in the edition you work from. The Easy and Medium versions come
 from the generator: don't write simplified versions by hand.

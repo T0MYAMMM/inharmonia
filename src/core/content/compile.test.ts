@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERNS, ARPEGGIO_8THS } from '@/content/patterns';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { getSong } from '@/content/lessons';
 import { MIX } from '@config/mix';
 import {
   applyPattern,
@@ -111,43 +111,59 @@ describe('validateLesson', () => {
   });
 });
 
-describe('Senja di Teras', () => {
-  it('is valid: 16 bars of 4 beats, chords and melody add up', () => {
-    expect(validateLesson(SENJA_DI_TERAS)).toEqual([]);
-    expect(SENJA_DI_TERAS.bars).toHaveLength(16);
+describe('Ode to Joy, Medium', () => {
+  const ode = getSong('ode-to-joy-medium')!;
+
+  it('is valid: 24 bars of 4 beats, chords and melody add up', () => {
+    expect(validateLesson(ode)).toEqual([]);
+    expect(ode.bars).toHaveLength(24);
   });
 
-  it('compiles with the prototype voicings and an 8th-note arpeggio', () => {
-    const c = compileLesson(SENJA_DI_TERAS, PATTERNS);
-    expect(c.lengthBeats).toBe(64);
-    const a = c.chords.find((x) => x.symbol === 'A')!;
-    expect(a.voicing.map((n) => n.name)).toEqual(['A1', 'E2', 'A2', 'C#3']);
+  it('compiles with close voicings and changes chord within a bar', () => {
+    const c = compileLesson(ode, PATTERNS);
+    expect(c.lengthBeats).toBe(96);
     const d = c.chords.find((x) => x.symbol === 'D')!;
-    expect(d.voicing.map((n) => n.name)).toEqual(['D2', 'A2', 'D3', 'F#3']);
+    expect(d.voicing.map((n) => n.name)).toEqual(['D3', 'F#3', 'A3']);
     expect(c.bars[3]!.chords.map((x) => [x.symbol, x.beats])).toEqual([
-      ['A7sus4', 2],
-      ['A7', 2],
+      ['D', 1],
+      ['A', 1],
+      ['A', 2],
     ]);
-    expect(c.bars[0]!.rh.map((n) => n.note!.name)).toEqual(['A4', 'F#4', 'E4', 'F#4', 'A4']);
-    expect(c.bars[15]!.rh.at(-1)).toMatchObject({ startBeat: 62, beats: 2 });
-    expect(c.chords[0]!.voicing.map((n) => n.name)).toEqual(['D2', 'A2', 'C#3', 'F#3']);
-    expect(c.chords.find((x) => x.symbol === 'A/C#')!.voicing.map((n) => n.name)).toEqual([
-      'C#2',
-      'A2',
-      'C#3',
-      'E3',
-    ]);
+    expect(c.bars[0]!.rh.map((n) => n.note!.name)).toEqual(['F#4', 'G4', 'A4']);
+    expect(c.bars[23]!.rh.at(-1)).toMatchObject({ startBeat: 94, beats: 2 });
   });
 
-  it('uses the prototype playback levels', () => {
-    const c = compileLesson(SENJA_DI_TERAS, PATTERNS);
+  it('plays the levels from the mix, the broken chord restarting on each chord', () => {
+    const c = compileLesson({ ...ode, lhPattern: 'arpeggio-8ths' }, PATTERNS);
     const rh = c.events.filter((e) => e.channel === 'rh');
-    expect(rh[0]).toMatchObject({ velocity: 0.4, dur: 0.95 });
+    expect(rh[0]).toMatchObject({ velocity: 0.4, dur: 1.9 });
+    // Bar 1 is D for two beats, then D again: each starts with an accent.
     const lh = c.events.filter((e) => e.channel === 'lh' && e.beat < 4);
-    expect(lh.map((e) => e.velocity)).toEqual([0.26, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13]);
+    expect(lh.map((e) => e.velocity)).toEqual([0.26, 0.13, 0.13, 0.13, 0.26, 0.13, 0.13, 0.13]);
     expect(c.bars.filter((b) => b.section).map((b) => [b.index, b.section])).toEqual([
-      [0, 'Verse'],
-      [8, 'Chorus'],
+      [0, 'Theme'],
+      [23, 'Ending'],
+    ]);
+  });
+});
+
+describe('hand-chosen voicings', () => {
+  it('plays the notes written for a chord, as written', () => {
+    const lesson = tiny({
+      bars: [
+        {
+          chords: [
+            { symbol: 'Dmaj7', beats: 2, voicing: { notes: ['D2', 'A2', 'C#3', 'F#3'] } },
+            { symbol: 'A/C#', beats: 2, voicing: { notes: ['C#2', 'A2', 'C#3', 'E3'] } },
+          ],
+          rh: [{ note: 'A4', beats: 4 }],
+        },
+      ],
+    });
+    const c = compileLesson(lesson, PATTERNS);
+    expect(c.chords.map((x) => x.voicing.map((n) => n.name))).toEqual([
+      ['D2', 'A2', 'C#3', 'F#3'],
+      ['C#2', 'A2', 'C#3', 'E3'],
     ]);
   });
 });

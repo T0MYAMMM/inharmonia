@@ -2,6 +2,7 @@ import { formatBars } from '../charts/syntax';
 import type { ChartView, ChordChart } from '../charts/types';
 import type { ContentSource, Lesson, NoteSpec, PatternSpec, Progression } from '../content/types';
 import type { MidiProject } from '../midi/smf';
+import { MIDI_SUMMARY } from '../songs/draft';
 import type { UserRecording } from '../songs/library';
 import {
   FORMAT,
@@ -126,8 +127,9 @@ function midiProject(p: MidiProject): MidiProject {
 /**
  * A song as a file item. Explicit voicings are written only when they were
  * chosen by hand (`voicings`); Studio songs have theirs worked out again on
- * import. A song made from a MIDI file is written as its MIDI project and
- * nothing else: its score is rebuilt from the project on import.
+ * import. A song made from a MIDI file is written as its MIDI project: its
+ * score is rebuilt from the project on import. Only a catalogue song made
+ * from one adds its piece, level and summary.
  */
 export function songItem(input: {
   id: string;
@@ -144,7 +146,16 @@ export function songItem(input: {
     source: source(input.source),
     ...iso(input.updatedAt),
   };
-  if (l.midi) return { ...head, song: { midi: midiProject(l.midi) } };
+  if (l.midi)
+    return {
+      ...head,
+      song: {
+        ...(l.piece ? { piece: l.piece } : {}),
+        ...(l.level ? { level: l.level } : {}),
+        ...(l.summary && l.summary !== MIDI_SUMMARY ? { summary: l.summary } : {}),
+        midi: midiProject(l.midi),
+      },
+    };
   return {
     ...head,
     song: {

@@ -47,6 +47,8 @@ const ChartEditorPage = lazyPage(
   () => import('@/features/charts/ChartEditorPage'),
   'ChartEditorPage',
 );
+/** For composers, not linked from the app. */
+const ComposePage = lazyPage(() => import('@/features/compose/ComposePage'), 'ComposePage');
 
 export function AppRoutes() {
   return (
@@ -74,6 +76,7 @@ export function AppRoutes() {
         <Route path="studio/edit/:songId" element={<EditSongPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="compose" element={<ComposePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

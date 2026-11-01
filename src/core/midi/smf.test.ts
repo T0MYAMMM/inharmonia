@@ -116,7 +116,7 @@ describe('Standard MIDI File support', () => {
       PATTERNS,
     );
     expect(compiledToMidi(chart).tracks.map((t) => t.name)).toEqual(['Chords']);
-    const song = compileLesson(getSong('minuet-in-g-easy')!, PATTERNS);
+    const song = compileLesson(getSong('twinkle-twinkle-easy')!, PATTERNS);
     expect(compiledToMidi(song).tracks.map((t) => t.name)).toEqual([
       'Right hand · melody',
       'Left hand · accompaniment',
