@@ -111,6 +111,44 @@ test.describe('drawings on cards', () => {
     ]);
     await expect(page.getByRole('link', { name: /^Studio Beta Make a song/ })).toBeVisible();
   });
+
+  for (const [width, columns] of [
+    [1280, 3],
+    [800, 2],
+  ] as const) {
+    test(`at ${width}px, a room alone on the last row lies across the whole row`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(isMobile, 'a phone has one column, where nothing changes');
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('');
+      const layout = await page.locator('main ul:has(> li > a[data-room])').evaluate((ul) => {
+        const box = (el: Element | null | undefined) => el!.getBoundingClientRect();
+        const items = [...ul.children];
+        const lone = items.at(-1)!;
+        const parts = (li: Element) => ({
+          panel: box(li.querySelector('[class*="cardArt"]')),
+          title: box(li.querySelector('a > :nth-child(2)')),
+        });
+        return {
+          tops: items.map((li) => Math.round(box(li).top)),
+          grid: box(ul).width,
+          lone: { width: box(lone).width, ...parts(lone) },
+          first: parts(items[0]!),
+          second: parts(items[1]!),
+        };
+      });
+      // The columns the grid makes: the first row holds that many cards.
+      expect(layout.tops.filter((t) => t === layout.tops[0])).toHaveLength(columns);
+      expect(layout.lone.width).toBeCloseTo(layout.grid, 0);
+      // The drawing sits where the first column's does, the words where the second's do.
+      expect(layout.lone.panel.left).toBeCloseTo(layout.first.panel.left, 0);
+      expect(layout.lone.panel.width).toBeCloseTo(layout.first.panel.width, 0);
+      expect(layout.lone.title.left).toBeCloseTo(layout.second.title.left, 0);
+      expect(layout.lone.panel.right).toBeLessThan(layout.lone.title.left);
+    });
+  }
 });
 
 test.describe('spot illustrations', () => {
