@@ -12,6 +12,7 @@ import { ChordWave } from '@/ui/art/ChordWave';
 import { FillRun } from '@/ui/art/FillRun';
 import { MiniKeys } from '@/ui/art/MiniKeys';
 import { TWINKLE } from '@/ui/art/previews';
+import { KeysSpot } from '@/ui/art/spots';
 import type { Room } from '@/ui/art/rooms';
 import { StaffBars } from '@/ui/art/StaffBars';
 import { SungToNotes } from '@/ui/art/SungToNotes';
@@ -118,6 +119,9 @@ export function HomePage() {
       {!dismissed && !practised ? (
         <section className={styles.welcome} aria-labelledby="welcome-title">
           <h2 id="welcome-title">New here?</h2>
+          <div className={styles.welcomeArt}>
+            <KeysSpot />
+          </div>
           <ol className={styles.steps}>
             <li>
               <strong>Find the keys.</strong> Tap the piano, use your computer keyboard (

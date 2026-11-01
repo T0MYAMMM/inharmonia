@@ -114,7 +114,11 @@ test.describe('drawings on cards', () => {
 });
 
 test.describe('spot illustrations', () => {
-  const SPOTS: [string, string][] = [['progress', 'Nothing practised yet']];
+  const SPOTS: [string, string][] = [
+    ['progress', 'Nothing practised yet'],
+    ['no-such-page', 'Nothing here.'],
+    ['', 'New here?'],
+  ];
 
   for (const [route, words] of SPOTS) {
     test(`/${route} has its spot beside "${words}"`, async ({ page }) => {
