@@ -32,6 +32,7 @@ import {
 } from '../songs/draft';
 import { cleanDraft, type UserRecording } from '../songs/library';
 import { isValidChord, spelled } from '../theory';
+import { cleanSource } from './source';
 import { FILE_LIMITS, FORMAT, FORMAT_VERSION, type ItemKind } from './types';
 
 export interface ImportContext {
@@ -110,53 +111,6 @@ function meter(raw: unknown, field: string, allowed: number[]): { beats: number;
   if (!isObj(raw) || !allowed.includes(raw.beats as number) || raw.unit !== 4)
     return fail(field, `must be ${allowed.map((b) => `${b}/4`).join(' or ')}`);
   return { beats: raw.beats as number, unit: 4 };
-}
-
-/** A source as written, if it is one; anything else counts as the user's own. */
-export function cleanSource(raw: unknown): ContentSource {
-  if (!isObj(raw)) return { kind: 'user' };
-  switch (raw.kind) {
-    case 'original':
-      return isStr(raw.author, 80) && raw.author
-        ? { kind: 'original', author: raw.author }
-        : { kind: 'original' };
-    case 'generic':
-      return { kind: 'generic' };
-    case 'public-domain': {
-      if (!isStr(raw.composer, 80) || !raw.composer) return { kind: 'user' };
-      // Files from before the proof fields had only a year.
-      const published = isNum(raw.firstPublished, 0, 3000)
-        ? raw.firstPublished
-        : isNum(raw.year, 0, 3000)
-          ? raw.year
-          : null;
-      if (published === null) return { kind: 'user' };
-      const contributors = Array.isArray(raw.contributors)
-        ? raw.contributors.flatMap((c) =>
-            isObj(c) && isStr(c.role, 40) && isStr(c.name, 80) && isNum(c.died, 0, 3000)
-              ? [{ role: c.role, name: c.name, died: c.died }]
-              : [],
-          )
-        : [];
-      return {
-        kind: 'public-domain',
-        composer: raw.composer,
-        composerDied: isNum(raw.composerDied, 0, 3000) ? raw.composerDied : null,
-        firstPublished: published,
-        edition: isStr(raw.edition, 300) ? raw.edition : '',
-        ...(isStr(raw.editor, 80) && raw.editor
-          ? {
-              editor: raw.editor,
-              editorDied: isNum(raw.editorDied, 0, 3000) ? raw.editorDied : null,
-              editorAdditionsUsed: raw.editorAdditionsUsed === true,
-            }
-          : {}),
-        ...(contributors.length ? { contributors } : {}),
-      };
-    }
-    default:
-      return { kind: 'user' };
-  }
 }
 
 /**
