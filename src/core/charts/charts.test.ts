@@ -291,7 +291,21 @@ describe('chord line detection', () => {
     ['| N.C. | N.C. |', true],
     ['|: NC :| x2', true],
     ['| N.C. / / / | % |', true],
-    ['N.C.', false],
+    ['| (N.C.) |', true],
+    ['N.C.', true],
+    ['NC', true],
+    ['   N.C.', true],
+    ['N.C.  N.C.', true],
+    ['(N.C.)', true],
+    ['N.C. G', true],
+    ['N.C.   G   D', true],
+    ['C  (N.C.)  G', true],
+    ['Back home in N.C.', false],
+    ['N.C. is where I live', false],
+    ['N.C., here I come', false],
+    ["N.C.'s coast", false],
+    ['Lincoln, N.C.', false],
+    ['Am I in N.C.', false],
     ['|', false],
     ['| - |', false],
     ['N.C.  |  C', true],
@@ -549,6 +563,62 @@ describe('pasting a chord sheet', () => {
     expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
       [NO_CHORD, NO_CHORD],
     ]);
+    const plain = parseSheet('Intro: N.C.', 4);
+    expect(plain.lines[0]).toMatchObject({ kind: 'header', chords: [NO_CHORD] });
+    expect(plain.lyricLines).toBe(0);
+  });
+
+  it('reads N.C. over lyrics as a chord line, alone or with chords, and drops the lyric', () => {
+    const sheet = parseSheet(
+      [
+        '[Intro]',
+        'N.C.',
+        'la la la lyric line here',
+        '',
+        '[Verse]',
+        'N.C. G',
+        'la la placeholder words',
+        'N.C.   G   D',
+        '(N.C.)',
+      ].join('\n'),
+      4,
+    );
+    expect(sheet.lines.map((l) => l.kind)).toEqual([
+      'header',
+      'chords',
+      'lyric',
+      'blank',
+      'header',
+      'chords',
+      'lyric',
+      'chords',
+      'chords',
+    ]);
+    expect(sheet.lyricLines).toBe(2);
+    expect(sheet.lines.flatMap((l) => l.unknown)).toEqual([]);
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
+      [NO_CHORD],
+      [NO_CHORD, 'G', NO_CHORD, 'G', 'D', NO_CHORD],
+    ]);
+    expectNoLyrics(sheet);
+  });
+
+  it('keeps the words under a line of only N.C. on its bar, when asked', () => {
+    const sheet = parseSheet('N.C.\nla la la lyric line here', 4, { keepLyrics: true });
+    const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
+    expect(sections[0]!.bars).toEqual([
+      { chords: [{ symbol: NO_CHORD, beats: 4 }], lyric: 'la la la lyric line here' },
+    ]);
+  });
+
+  it('leaves a lyric line with N.C. in its words a lyric', () => {
+    const sheet = parseSheet(
+      ['C   G', 'Back home in N.C.', 'N.C. is where I live', "Lincoln, N.C.'s coast"].join('\n'),
+      4,
+    );
+    expect(sheet.lines.map((l) => l.kind)).toEqual(['chords', 'lyric', 'lyric', 'lyric']);
+    expect(sheet.lyricLines).toBe(3);
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([['C', 'G']]);
   });
 
   it('reads add11, add4 and 7sus2 chords from a sheet, normalised', () => {
