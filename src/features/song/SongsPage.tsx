@@ -29,7 +29,7 @@ function groups(songs: readonly Lesson[]): Lesson[][] {
 
 const GROUPS = groups(SONGS);
 const COMPOSERS = [...new Set(GROUPS.map((g) => composerOf(g[0]!)))].sort((a, b) =>
-  a === 'Original pieces' ? -1 : b === 'Original pieces' ? 1 : a.localeCompare(b),
+  a.localeCompare(b),
 );
 
 export function SongsPage() {
