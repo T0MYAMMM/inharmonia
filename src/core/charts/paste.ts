@@ -65,6 +65,8 @@ export interface ParseSheetOptions {
 
 /** Bar lines, repeat marks, N.C., brackets and dashes: ignored when judging a line. */
 const STRUCTURAL = /^(?:\|+:?|:?\|+|%|x\s?\d+|\d+\s?x|n\.?\s?c\.?|[[\]()\-–—/:.~*]+)$/i;
+/** What a line of bars holding only N.C. is made of: bar lines, N.C., beat marks, % and x2. */
+const NO_CHORD_BARS = /^(?:\|+:?|:?\|+|n\.?c\.?|\.+|\/|%|x\d+|\d+x)$/i;
 const INLINE = /\[([^\]]{1,24})\]/g;
 
 /** Strip "(Am)" to "Am" before checking whether a token is a chord. */
@@ -80,12 +82,19 @@ function chordToken(t: string): string | null {
  * marks, N.C., brackets and dashes not counted) must be chords, and there must
  * be two chords, or the spacing chord lines have (indent, wide gaps or bar
  * lines), so a one-word lyric line such as "A" or "Am" is not taken for one.
+ * Bars holding only N.C. ("| N.C. | N.C. |") are a line of chords too: an a
+ * cappella intro or a band break.
  */
 export function isChordLine(line: string): boolean {
   const text = line.replace(/\s+$/, '');
   const tokens = text.split(/\s+/).filter(Boolean);
   const counted = tokens.filter((t) => !STRUCTURAL.test(t));
-  if (counted.length === 0) return false;
+  if (counted.length === 0)
+    return (
+      text.includes('|') &&
+      tokens.some((t) => normalizeChord(t) === NO_CHORD) &&
+      tokens.every((t) => NO_CHORD_BARS.test(t))
+    );
   const chords = counted.filter((t) => chordToken(t) !== null).length;
   if (chords / counted.length < 0.6) return false;
   const spaced = /^\s/.test(text) || /\S\s{2,}\S/.test(text) || text.includes('|');
