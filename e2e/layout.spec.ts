@@ -318,6 +318,7 @@ test.describe('Play on a phone', () => {
 
   for (const [name, route] of [
     ['a song', 'songs/fur-elise-easy'],
+    ['the welcome song', 'songs/twinkle-twinkle-easy'],
     ['a fill', 'fills/step-up'],
     ['a progression', 'progressions/ii-v-i'],
   ] as const) {
@@ -407,11 +408,6 @@ test.describe('Play clear of the keyboard dock on a phone', () => {
     ).toBeLessThanOrEqual(box.dock);
   }
 
-  // A known bug, on main too: at 360x780 the dock is 219px tall and covers
-  // Play on every one of these, by 121 to 249px. The layout fix needs a
-  // decision first; remove test.fail with it.
-  const KNOWN = 'known bug: Play sits behind the keyboard dock at 360x780';
-
   for (const [name, route] of [
     ['a song', 'songs/fur-elise-easy'],
     ['the welcome song', 'songs/twinkle-twinkle-easy'],
@@ -419,14 +415,16 @@ test.describe('Play clear of the keyboard dock on a phone', () => {
     ['a progression', 'progressions/ii-v-i'],
   ] as const) {
     test(`on ${name}, Play ends above the keyboard dock`, async ({ page }) => {
-      test.fail(true, KNOWN);
       await page.goto(route);
       await playAboveDock(page);
     });
   }
 
   test('on a chord chart, Play ends above the keyboard dock', async ({ page }) => {
-    test.fail(true, KNOWN);
+    // Still behind it: the chart's header (its notes, the progressions found,
+    // and Edit, Send to, Export and Show function on two lines) puts Play at
+    // 570-614px against the dock's 561px. Remove test.fail with the fix.
+    test.fail(true, 'known: on a chord chart Play ends 53px behind the dock at 360x780');
     await makeChart(page);
     await page.reload();
     await playAboveDock(page);

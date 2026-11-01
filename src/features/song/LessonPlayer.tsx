@@ -59,7 +59,10 @@ export interface LessonPlayerProps {
   recordId?: string;
   /** song: melody plus left hand, with a hand selector. progression: chords only, with play-along. */
   variant: 'song' | 'progression';
-  /** Settings that shape the lesson (key, pattern, voicing), shown in the sticky panel. */
+  /**
+   * Settings that shape the lesson (key, pattern, voicing), at the end of the
+   * sticky panel: Play and the mode come first.
+   */
   settings?: ReactNode;
   /** The same URL-controlled arrangement, rendered only inside Falling Notes fullscreen. */
   fullScreenSettings?: ReactNode;
@@ -194,39 +197,7 @@ export function LessonPlayer({
   return (
     <>
       <div className={styles.panel} data-sticky-panel>
-        {settings}
-        <div className={styles.row}>
-          <Segmented
-            label="Mode"
-            value={snap.mode}
-            options={progression ? PROGRESSION_MODES : SONG_MODES}
-            onChange={(m) => ctrl.setMode(m)}
-          />
-          {progression ? (
-            !practice ? (
-              <span className={`${styles.group} ${styles.end}`}>
-                {playAlong ? (
-                  <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
-                    Backing
-                  </Toggle>
-                ) : (
-                  <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                    Comping
-                  </Toggle>
-                )}
-              </span>
-            ) : null
-          ) : (
-            <span className={`${styles.group} ${styles.end}`}>
-              <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
-                Melody
-              </Toggle>
-              <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                Left hand
-              </Toggle>
-            </span>
-          )}
-        </div>
+        {/* Play first, so it is in the first screen on a phone; what shapes the lesson last. */}
         <div className={styles.row}>
           <span className={styles.group}>
             <Button
@@ -261,6 +232,38 @@ export function LessonPlayer({
               )}
               <Toggle pressed={metronome} onChange={(v) => setSettings({ metronome: v })}>
                 Metronome
+              </Toggle>
+            </span>
+          )}
+        </div>
+        <div className={styles.row}>
+          <Segmented
+            label="Mode"
+            value={snap.mode}
+            options={progression ? PROGRESSION_MODES : SONG_MODES}
+            onChange={(m) => ctrl.setMode(m)}
+          />
+          {progression ? (
+            !practice ? (
+              <span className={`${styles.group} ${styles.end}`}>
+                {playAlong ? (
+                  <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
+                    Backing
+                  </Toggle>
+                ) : (
+                  <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
+                    Comping
+                  </Toggle>
+                )}
+              </span>
+            ) : null
+          ) : (
+            <span className={`${styles.group} ${styles.end}`}>
+              <Toggle pressed={snap.rhOn} onChange={(v) => ctrl.setHand('rh', v)} tone="amber">
+                Melody
+              </Toggle>
+              <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
+                Left hand
               </Toggle>
             </span>
           )}
@@ -349,6 +352,7 @@ export function LessonPlayer({
             at {snap.tempo} bpm.
           </p>
         ) : null}
+        {settings}
         <p className="visually-hidden" role="status" aria-live="polite">
           {snap.announcement}
         </p>
