@@ -5,6 +5,7 @@ import { EarPage } from '@/features/ear/EarPage';
 import { HomePage } from '@/features/home/HomePage';
 import { ProgressionBuilderPage } from '@/features/progressions/ProgressionBuilderPage';
 import { SongsPage } from '@/features/song/SongsPage';
+import { StudioPage } from '@/features/studio/StudioPage';
 import { KeyboardDock } from '@/ui/keyboard/KeyboardDock';
 import { armAudio, audio } from './services';
 
@@ -92,6 +93,7 @@ describe('the rooms that play arm it; the others do not', () => {
     ['a keyboard', <KeyboardDock key="dock" />],
     ['Ear training', <EarPage key="ear" />],
     ['the progression builder', <ProgressionBuilderPage key="builder" />],
+    ['Studio', <StudioPage key="studio" />],
   ])('%s does', (_name, ui) => {
     const { unmount } = inRouter(ui);
     gesture('pointerup');

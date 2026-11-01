@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fakeMic } from './studioHelpers';
 
 /** Requests for the piano: Tone's chunk and the samples. */
 function audioRequests(page: Page): string[] {
@@ -86,6 +87,21 @@ test.describe('loading', () => {
     expect(audio).toEqual([]);
     await page.getByRole('heading', { level: 1 }).click();
     await expect.poll(() => audio.some((p) => p.includes('/assets/tone-'))).toBe(true);
+  });
+
+  test('Studio starts its pitch worker with the first take', async ({ page }) => {
+    await fakeMic(page);
+    const workers: string[] = [];
+    page.on('request', (r) => {
+      if (r.url().includes('/analysis.worker-')) workers.push(r.url());
+    });
+    await page.goto('studio');
+    await expect(page.getByTestId('enable-mic')).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(workers).toEqual([]);
+    await page.getByTestId('enable-mic').click();
+    await expect(page.getByTestId('record')).toBeEnabled();
+    expect(workers).toHaveLength(1);
   });
 
   test('the first Play on a song is heard from its first note', async ({ page }) => {
