@@ -68,6 +68,12 @@ describe('simplify levels', () => {
     ['Am7', 'Am7', 'Am'],
     ['CM7', 'CM7', 'C'],
     ['Bbm', 'Bbm', 'Bbm'],
+    ['Ebadd11', 'Eb', 'Eb'],
+    ['Dadd4', 'D', 'D'],
+    ['Amadd11', 'Am', 'Am'],
+    ['Cmadd4', 'Cm', 'Cm'],
+    ['B7sus2', 'B7', 'B'],
+    ['E9sus4', 'E7', 'E'],
   ];
   it.each(cases)('%s → %s → %s', (symbol, simplified, basic) => {
     expect(simplifyChord(symbol, 'original')).toEqual({ symbol });
@@ -104,6 +110,15 @@ describe('transposing', () => {
     expect(up(['E', 'B', 'C#m', 'A'], 'C', 'E')).toBe('C G Am F');
     expect(transposeChord('Am', 'A', 'F#', 'minor')).toBe('F#m');
     expect(transposeChord(NO_CHORD, 'C', 'D')).toBe(NO_CHORD);
+  });
+
+  it('moves add11, add4 and 7sus2 chords, their suffix as written', () => {
+    const up = (symbols: string[], to: string, from = 'C') =>
+      symbols.map((s) => transposeChord(s, from, to)).join(' ');
+    expect(up(['Cadd11', 'G7sus2', 'Amadd11', 'Fadd4', 'Cadd11/E'], 'Eb')).toBe(
+      'Ebadd11 Bb7sus2 Cmadd11 Abadd4 Ebadd11/G',
+    );
+    expect(up(['Ebadd11', 'Bb7sus2'], 'E', 'Eb')).toBe('Eadd11 B7sus2');
   });
 
   it('names keys the usual way and labels the move', () => {
@@ -193,6 +208,34 @@ describe('the chart as the view plays it', () => {
     ]);
   });
 
+  it('plays add11, add4 and 7sus2 chords with every tone, numbered, in every style, level and key', () => {
+    const sheet = chartOf('Eb', [['Ebadd11'], ['Cmadd11'], ['Abadd4'], ['Bb7sus2', 'Bb7sus4']]);
+    const lesson = chartToLesson('t', sheet);
+    expect(lesson.bars.map((b) => b.chords.map((c) => c.numeral).join(' '))).toEqual([
+      'Iadd11',
+      'viadd11',
+      'IVadd4',
+      'V7sus2 V7sus4',
+    ]);
+    const classes = (c: { voicing: { midi: number }[] }) =>
+      [...new Set(c.voicing.map((n) => n.midi % 12))].sort((a, b) => a - b);
+    // Each right-hand voicing holds every tone of its chord.
+    expect(playedChords(sheet).flat().map(classes)).toEqual([
+      [3, 7, 8, 10], // Ebadd11: Eb G Bb Ab
+      [0, 3, 5, 7], // Cmadd11: C Eb G F
+      [0, 1, 3, 8], // Abadd4: Ab C Db Eb
+      [0, 5, 8, 10], // Bb7sus2: Bb C F Ab
+      [3, 5, 8, 10], // Bb7sus4: Bb Eb F Ab
+    ]);
+    for (const style of CHART_STYLES.map((s) => s.id))
+      for (const simplify of ['original', 'simplified', 'basic'] as SimplifyLevel[])
+        for (const transpose of [-5, 0, 4]) {
+          const l = chartToLesson('t', sheet, view({ style, simplify, transpose }));
+          expect(validateLesson(l)).toEqual([]);
+          expect(() => compileLesson(l, PATTERNS)).not.toThrow();
+        }
+  });
+
   it('accepts only the chart styles in a view', () => {
     expect(cleanView({ style: 'bossa' }).style).toBe('triad-root');
     expect(cleanView({ style: 'held' }).style).toBe('held');
@@ -239,6 +282,15 @@ describe('known chords', () => {
     expect(chordId('C9sus4')).toBe('C9sus4');
     expect(chordId('C7add13')).toBe('C7add13');
     expect(chordId('Cadd9')).toBe('Cadd9');
+  });
+
+  it('gives add11, add4 and 7sus2 chords their own ids, enharmonic roots shared', () => {
+    expect(chordId('D#add11')).toBe('Ebadd11');
+    expect(chordId('Ebadd11/G')).toBe('Ebadd11');
+    expect(chordId('Ebadd4')).toBe('Ebadd4');
+    expect(chordId('A#madd11')).toBe('Bbmadd11');
+    expect(chordId('B7sus2')).toBe('B7sus2');
+    expect(chordId('Cb7sus2')).toBe('B7sus2');
   });
 
   it('needs 3 clean plays over 2 days, and a manual mark always wins', () => {
