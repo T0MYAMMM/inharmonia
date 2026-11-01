@@ -1,0 +1,214 @@
+/*
+ * Drawings from the app's own music. Inside a room (rooms.css) they take the
+ * room's colours: --art-panel (its tint), --art-line (graphics) and --art-deep
+ * (notes and dots), with --art-guide between line and tint. Anywhere else they
+ * are pencil. They never use the colours that mean a hand or a target note:
+ * these show what a room holds, they don't mark anything to play.
+ */
+.art {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* A spot illustration: an empty state or the missing page. */
+.spot {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.guide {
+  stroke: var(--art-guide, var(--pencil-faint));
+  stroke-width: 1;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A beat line between the bar lines on a roll. */
+.faintGuide {
+  stroke: var(--art-guide, var(--pencil-faint));
+  stroke-width: 1;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.line {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Staff lines and ticks in a spot illustration. */
+.thinLine {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1;
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.deepLine {
+  stroke: var(--art-deep, var(--pencil));
+  stroke-width: 1.75;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.dot {
+  fill: var(--art-deep, var(--pencil));
+}
+
+.ring {
+  fill: var(--art-panel, var(--surface-sunk));
+  stroke: var(--art-deep, var(--pencil));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.pill {
+  fill: var(--art-line, var(--pencil));
+}
+
+.deepPill {
+  fill: var(--art-deep, var(--pencil));
+}
+
+/* A fill's run: thicker than other lines, so its shape reads at a glance. */
+.run {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 2.25;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The chord change a fill leads into: a dashed barline. */
+.change {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The note a fill lands on: an open ring, clearly larger than the run's dots. */
+.landing {
+  fill: var(--art-panel, var(--surface-sunk));
+  stroke: var(--art-deep, var(--pencil));
+  stroke-width: 2.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.keyWhite {
+  fill: var(--surface);
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.keyBlack {
+  fill: var(--art-line, var(--pencil));
+}
+
+.dotOnBlack {
+  fill: var(--surface);
+}
+
+.label {
+  fill: var(--art-line, var(--pencil));
+  font: 600 7px var(--font-sans);
+  text-anchor: middle;
+}
+
+.labelOnBlack {
+  fill: var(--surface);
+  font: 600 7px var(--font-sans);
+  text-anchor: middle;
+}
+
+/* A song's bars on a staff (StaffBars). */
+.staffLine {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.barline {
+  stroke: var(--art-line, var(--pencil));
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Noteheads, beams and dots. */
+.head {
+  fill: var(--art-deep, var(--pencil));
+}
+
+.hollowHead {
+  fill: var(--art-panel, var(--surface-sunk));
+  stroke: var(--art-deep, var(--pencil));
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Stems, flags, ties and ledger lines. */
+.stem {
+  stroke: var(--art-deep, var(--pencil));
+  stroke-width: 1.25;
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.sig {
+  fill: var(--art-deep, var(--pencil));
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/*
+ * A drawing at the top of a card, in a window as wide as the card, on the
+ * room's tint. The drawing keeps its own proportions.
+ */
+.cardArt {
+  display: flex;
+  align-items: center;
+  height: 68px;
+  margin-bottom: var(--space-3);
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--art-panel, var(--surface-sunk));
+  overflow: hidden;
+}
+
+.cardArt > svg {
+  width: auto;
+  max-width: 100%;
+  height: 44px;
+}
+
+/*
+ * On a phone the panel runs edge to edge across the card's top, in place of
+ * its top padding, so the drawing gets the card's full width. Cards with this
+ * panel keep --space-5 padding.
+ */
+@media (max-width: 600px) {
+  .cardArt {
+    height: 64px;
+    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-3);
+    padding: 0 var(--space-4);
+    border-radius: calc(var(--radius-card) - 1px) calc(var(--radius-card) - 1px) 0 0;
+  }
+}
