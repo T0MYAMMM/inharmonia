@@ -3,7 +3,7 @@ import { FILLS, getFill } from '@/content/fills';
 import { getProgression, PROGRESSIONS } from '@/content/progressions';
 import type { Progression, SongLevel } from '@/core/content/types';
 import type { CatalogueEntry } from '@/core/library/catalogue';
-import { CHORD_EAR_LEVELS, NOTE_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice';
+import { CHORD_EAR_LEVELS, NOTE_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice/ear';
 import { CHORD_DRILL_ID } from '../chords/drillId';
 
 /** Ear-training exercises by the id used in progress ids, "ear:<exercise>:<level>". */
