@@ -40,34 +40,20 @@
   color: var(--muted);
 }
 
+/* Key, pattern and fill on one row; voicing and voice leading on the next. */
 .settings {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settingsRow {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: var(--space-3);
 }
 
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.select {
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
 .patternNote {
-  flex-basis: 100%;
   color: var(--muted);
   font-size: 0.875rem;
 }
@@ -105,6 +91,14 @@
 
 .sectionHead h2 {
   margin: 0;
+}
+
+/* A section's actions stay together: beside the title, or on the line under it. */
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .sectionHead:first-of-type {
@@ -151,36 +145,12 @@
 .builder {
   display: grid;
   gap: var(--space-4);
-  max-width: 46rem;
+  max-width: var(--text-width);
 }
 
-.input,
-.textarea {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.input {
-  min-height: 44px;
-  padding: 0 12px;
-}
-
-.textarea {
-  padding: 10px 12px;
+/* Numerals read at a glance. */
+.chords {
   font-size: 1.125rem;
-  line-height: 1.5;
-  resize: vertical;
-}
-
-.input[aria-invalid='true'],
-.textarea[aria-invalid='true'] {
-  border-color: var(--wrong);
 }
 
 .help {
@@ -189,9 +159,10 @@
   font-size: 0.875rem;
 }
 
+/* Columns of equal width, so the last row never holds one numeral alone. */
 .palette {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
   gap: var(--space-2);
 }
 
@@ -232,15 +203,7 @@
 
 .previewTitle {
   margin: 0;
-  font-size: 1.1rem;
-}
-
-.inlineField {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-weight: 600;
-  color: var(--muted);
+  font-size: var(--card-title-size);
 }
 
 .previewBars {
@@ -327,10 +290,6 @@ button.previewChord:hover {
   gap: var(--space-3);
 }
 
-.cancel {
-  font-weight: 600;
-}
-
 .start {
   justify-self: start;
 }
@@ -339,4 +298,16 @@ button.previewChord:hover {
   display: flex;
   gap: var(--space-1);
   margin-right: calc(-1 * var(--space-2));
+}
+
+/* What did not come across from the chords sent here. */
+.sentNotes {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.95rem;
+}
+
+.sentProblem {
+  color: var(--ink);
+  font-weight: 600;
 }

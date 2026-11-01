@@ -24,12 +24,13 @@ import { formatNote, keyName, prettyAccidentals } from '@/core/notation';
 import { useSettings } from '@/state/settings';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { LessonPlayer } from '../song/LessonPlayer';
-import song from '../song/SongPage.module.css';
 import { createWorkerAnalyzer } from './capture/analysis';
 import { Microphone } from './capture/microphone';
 import { ChordSuggestions } from './ChordSuggestions';
@@ -41,8 +42,12 @@ import type { EditorTrace } from './editorModel';
 import { SongEditor } from './SongEditor';
 import { MidiWorkspace } from './MidiWorkspace';
 import { blankMidiProject } from '@/core/midi/adapters';
-import { parseMidi, type MidiProject } from '@/core/midi/smf';
+import type { MidiProject } from '@/core/midi/smf';
+import type { HandoffFrom } from '@/core/handoff';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import { TakeView } from './TakeView';
+import { WaysIn } from './WaysIn';
 import styles from './studio.module.css';
 
 const METERS = [
@@ -90,23 +95,28 @@ export function StudioPage() {
   const warning = snap.warning ? problemMessage(snap.warning) : null;
   const [draft, setDraft] = useState<Lesson | null>(null);
   const [editing, setEditing] = useState<EditorInput | null>(null);
-  const [midiSession, setMidiSession] = useState<{ key: number; project: MidiProject } | null>(
-    null,
+  // Sent from another room: opened in the MIDI editor, with the way back to where it came from.
+  const arrival = useArrival('studio');
+  const [midiSession, setMidiSession] = useState<MidiSession | null>(() =>
+    arrival.status === 'ok'
+      ? {
+          key: 0,
+          project: arrival.handoff.project,
+          from: arrival.handoff.from,
+          said: arrival.handoff.said,
+        }
+      : null,
   );
-  const [midiError, setMidiError] = useState('');
   const openMidi = (project: MidiProject) => {
     ctrl.disable();
     setMidiSession({ key: Date.now(), project });
-    setMidiError('');
     window.scrollTo?.(0, 0);
   };
-  const importMidi = async (file?: File) => {
-    if (!file) return;
-    try {
-      openMidi(parseMidi(await file.arrayBuffer(), file.name));
-    } catch (error) {
-      setMidiError(error instanceof Error ? error.message : 'Invalid MIDI file.');
-    }
+  /** Bring the take setup into view and move focus to it. */
+  const toTake = () => {
+    const title = document.getElementById('setup-title');
+    title?.closest('section')?.scrollIntoView({ block: 'start' });
+    title?.focus({ preventScroll: true });
   };
 
   const tryDraft = (lesson: Lesson) => {
@@ -144,19 +154,10 @@ export function StudioPage() {
       ) : null}
       {editing ? (
         <div hidden={draft !== null}>
-          <div className={song.header}>
-            <p className={song.meta}>
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={backFromEdit}
-                data-testid="back-to-take"
-              >
-                ← Back to the take
-              </Button>
-            </p>
-            <h1>Edit your song</h1>
-          </div>
+          <PageHeader
+            crumb={{ onClick: backFromEdit, label: 'Back to the take', testId: 'back-to-take' }}
+            title="Edit your song"
+          />
           <SongEditor
             key={editing.key}
             initial={editing.initial}
@@ -172,62 +173,43 @@ export function StudioPage() {
       ) : null}
       {midiSession ? (
         <div hidden={draft !== null || editing !== null}>
-          <MidiWorkspace
-            key={midiSession.key}
-            initial={midiSession.project}
-            onBack={() => setMidiSession(null)}
+          <PageHeader
+            crumb={
+              midiSession.from
+                ? { ...midiSession.from, testId: 'sent-back' }
+                : { onClick: () => setMidiSession(null), label: 'Back to Studio' }
+            }
+            title="MIDI piano-roll editor"
+            lede={
+              midiSession.said ? (
+                <ArrivalNote text={midiSession.said} testId="sent-said" />
+              ) : (
+                'Open a .mid file or start from nothing, then edit every track on a piano roll. It stays on this device.'
+              )
+            }
           />
+          <MidiWorkspace key={midiSession.key} initial={midiSession.project} />
         </div>
       ) : null}
       <div hidden={draft !== null || editing !== null || midiSession !== null}>
-        <div className={page.hero}>
-          <h1>
-            Studio <BetaBadge />
-          </h1>
-          <p className={page.lede}>
-            Create music by singing, open an existing MIDI file, or compose in the new multitrack
-            piano-roll editor. MIDI stays on this device until you choose to export it.
+        <PageHeader
+          title={
+            <>
+              Studio <BetaBadge />
+            </>
+          }
+          lede="Three ways to make a song: sing it, compose it on a piano roll, or bring in a MIDI file. Everything stays on this device until you export it."
+        />
+        {arrival.problem ? (
+          <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+            {arrival.problem}
           </p>
-        </div>
+        ) : null}
 
-        <section className={styles.card} aria-labelledby="midi-studio-title">
-          <h2 id="midi-studio-title" className={styles.cardTitle}>
-            MIDI editor
-          </h2>
-          <p className={styles.note}>
-            Import .mid or .midi from a converter or DAW, draw and resize notes on a multitrack
-            piano roll, adjust velocity and timing, preview, and export MIDI again.
-          </p>
-          <div className={styles.row}>
-            <Button
-              variant="primary"
-              onClick={() => openMidi(blankMidiProject())}
-              data-testid="studio-new-midi"
-            >
-              Create MIDI
-            </Button>
-            <label className={styles.select}>
-              Open MIDI file
-              <input
-                type="file"
-                accept=".mid,.midi,audio/midi,audio/x-midi"
-                data-testid="studio-import-midi"
-                onChange={(e) => {
-                  void importMidi(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-            </label>
-          </div>
-          {midiError ? (
-            <p role="alert" className={styles.problem}>
-              {midiError}
-            </p>
-          ) : null}
-        </section>
+        <WaysIn onSing={toTake} onNew={() => openMidi(blankMidiProject())} onOpen={openMidi} />
 
         <section className={styles.card} aria-labelledby="setup-title">
-          <h2 id="setup-title" className={styles.cardTitle}>
+          <h2 id="setup-title" className={styles.cardTitle} tabIndex={-1}>
             Set up the take
           </h2>
           <div className={styles.setup}>
@@ -241,19 +223,16 @@ export function StudioPage() {
                 format={(v) => `${v} bpm`}
               />
             </div>
-            <div className={styles.field}>
-              <span>Meter</span>
+            <Field label="Meter" group>
               <Segmented
                 label="Meter"
                 value={String(studio.beatsPerBar) as '4' | '3' | '2'}
                 options={METERS}
                 onChange={(v) => setStudio({ beatsPerBar: Number(v) as 2 | 3 | 4 })}
               />
-            </div>
-            <label className={styles.field}>
-              Bars
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Bars">
+              <Select
                 value={studio.bars}
                 onChange={(e) => setStudio({ bars: Number(e.target.value) })}
                 data-testid="bars"
@@ -263,8 +242,8 @@ export function StudioPage() {
                     {b}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
           </div>
           <p className={styles.note}>
             Wear headphones if you can, so the click stays out of the recording. Wired ones keep the
@@ -285,8 +264,14 @@ export function StudioPage() {
           </p>
         </section>
 
+        {/* Said when calibration starts; the card below shows the same. */}
+        <p className="visually-hidden" role="status">
+          {snap.phase === 'calibrating'
+            ? `Calibrating: clap once on each of ${CALIBRATION_CLICKS} clicks.`
+            : ''}
+        </p>
         {snap.phase === 'calibrating' ? (
-          <section className={styles.card} aria-live="polite">
+          <section className={styles.card}>
             <h2 className={styles.cardTitle}>Clap on the click</h2>
             <p>
               You'll hear {CALIBRATION_CLICKS} clicks. Clap once, sharply, exactly on each one,
@@ -349,21 +334,26 @@ export function StudioPage() {
               </div>
             </>
           )}
-          {problem ? (
-            <div className={styles.problem} role="alert" data-testid="problem">
-              <strong>{problem.title}</strong>
-              <ul>
-                {problem.steps.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {warning && !problem ? (
-            <div className={styles.warning} role="status">
-              <strong>{warning.title}</strong> {warning.steps[0]}
-            </div>
-          ) : null}
+          {/* The regions stay; what they say comes and goes. */}
+          <div role="alert">
+            {problem ? (
+              <div className={styles.problem} data-testid="problem">
+                <strong>{problem.title}</strong>
+                <ul>
+                  {problem.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          <div role="status">
+            {warning && !problem ? (
+              <div className={styles.warning}>
+                <strong>{warning.title}</strong> {warning.steps[0]}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         {snap.take && !snap.problem ? (
@@ -372,6 +362,15 @@ export function StudioPage() {
       </div>
     </>
   );
+}
+
+/** A project open in the MIDI editor; one sent from another room knows the way back. */
+interface MidiSession {
+  key: number;
+  project: MidiProject;
+  from?: HandoffFrom;
+  /** What was sent, said on arrival. */
+  said?: string;
 }
 
 /** The draft in the song player: listen and practise it before saving. */
@@ -398,18 +397,11 @@ function DraftView({
   const compiled = useMemo(() => compileLesson(lesson, PATTERNS), [lesson]);
   return (
     <>
-      <div className={song.header}>
-        <p className={song.meta}>
-          <Button variant="ghost" size="small" onClick={onBack} data-testid="back-from-try">
-            ← {backLabel}
-          </Button>
-        </p>
-        <h1>{lesson.title}</h1>
-        <p className={song.meta}>
-          {keyName(lesson.key)}, {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length}{' '}
-          bars. Not saved yet: save it from the editor to keep it.
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ onClick: onBack, label: backLabel, testId: 'back-from-try' }}
+        title={lesson.title}
+        lede={`${keyName(lesson.key)}, ${lesson.meter.beats}/${lesson.meter.unit}, ${lesson.bars.length} bars. Not saved yet: save it from the editor to keep it.`}
+      />
       <LessonPlayer key={lesson.id} compiled={compiled} variant="song" />
     </>
   );
@@ -479,8 +471,7 @@ function TakeResult({
         </div>
 
         <div className={styles.controls}>
-          <div className={styles.field}>
-            <span>Key</span>
+          <Field label="Key" group>
             <Segmented
               label="Key"
               value={top.some((k) => `${k.tonic} ${k.mode}` === keyId) ? keyId : ''}
@@ -490,11 +481,9 @@ function TakeResult({
               }))}
               onChange={(v) => setKeyChoice(v)}
             />
-          </div>
-          <label className={styles.field}>
-            Or another key
-            <select
-              className={styles.select}
+          </Field>
+          <Field label="Or another key">
+            <Select
               value={keyId}
               onChange={(e) => setKeyChoice(e.target.value)}
               data-testid="key-select"
@@ -506,17 +495,29 @@ function TakeResult({
                   </option>
                 ),
               )}
-            </select>
-          </label>
-          <div className={styles.field}>
-            <span>Grid</span>
+            </Select>
+          </Field>
+          <Field label="Octave" group>
+            <Segmented
+              label="Octave"
+              value={String(draft.octaveShift)}
+              options={[-1, 0, 1, 2].map((k) => ({
+                value: String(k),
+                label: k > 0 ? `+${k}` : String(k),
+              }))}
+              onChange={(v) => setOctave(Number(v))}
+            />
+          </Field>
+        </div>
+        <div className={styles.controls}>
+          <Field label="Grid" group>
             <Segmented
               label="Grid"
               value={String(grid.step) as '1' | '0.5' | '0.25'}
               options={GRIDS}
               onChange={(v) => setGrid({ ...grid, step: Number(v) as GridStep })}
             />
-          </div>
+          </Field>
           <Toggle pressed={grid.triplets} onChange={(v) => setGrid({ ...grid, triplets: v })}>
             Triplets
           </Toggle>
@@ -529,18 +530,6 @@ function TakeResult({
               step={5}
               onChange={(v) => setGrid({ ...grid, tolerance: v / 100 })}
               format={(v) => `${v}% of a step`}
-            />
-          </div>
-          <div className={styles.field}>
-            <span>Octave</span>
-            <Segmented
-              label="Octave"
-              value={String(draft.octaveShift)}
-              options={[-1, 0, 1, 2].map((k) => ({
-                value: String(k),
-                label: k > 0 ? `+${k}` : String(k),
-              }))}
-              onChange={(v) => setOctave(Number(v))}
             />
           </div>
         </div>

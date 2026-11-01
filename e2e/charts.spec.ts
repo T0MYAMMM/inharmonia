@@ -66,7 +66,7 @@ test.describe('chord charts', () => {
     await expect(page.getByText('Private', { exact: true })).toBeVisible();
     await expect(page.getByText('C major, 4/4, 24 bars, 80 bpm')).toBeVisible();
     await expect(page.getByTestId('chart-notes-view')).toHaveText('Slow down in the last chorus.');
-    await expect(page.getByRole('heading', { name: 'Bait' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bait', level: 2 })).toBeVisible();
     await page.getByRole('button', { name: 'Show function' }).click();
     await expect(page.locator('[data-bar="2"]')).toContainText('vi');
 
@@ -78,9 +78,10 @@ test.describe('chord charts', () => {
     );
 
     // The export is readable, keeps the view, and has no lyric text in it.
-    const { name, text } = await readDownload(page, () =>
-      page.getByTestId('export-download').click(),
-    );
+    const { name, text } = await readDownload(page, async () => {
+      await page.getByTestId('export-menu').click();
+      await page.getByTestId('export-download').click();
+    });
     expect(name).toBe('inharmonia-chart-practice-chart.json');
     const doc = JSON.parse(text);
     expect(
@@ -111,6 +112,142 @@ test.describe('chord charts', () => {
     await expect(
       page.getByTestId('my-songs').getByRole('link', { name: /Practice chart/ }),
     ).toHaveCount(2);
+  });
+
+  test('keep lyrics when pasting: kept on this device, and unticked every time', async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    const keep = page.getByRole('checkbox', { name: 'Keep lyrics' });
+    await expect(keep).not.toBeChecked();
+    await page.getByTestId('paste-text').fill(SHEET);
+    await keep.check();
+    await page.getByTestId('paste-read').click();
+    await expect(page.getByTestId('lyrics-notice')).toHaveText(
+      'Lyrics kept from 2 lines, on this device only. 1 line left out: lyrics are kept only right under their chords. 1 chord could not be read: fix it in the grid before saving.',
+    );
+    const review = page.getByTestId('paste-review');
+    await expect(review.getByRole('row').filter({ hasText: 'Lyrics kept' })).toHaveText([
+      /la la la lyric line here\s*Lyrics kept: la la \| la lyric \| line \| here/,
+      /lyric line here la la\s*Lyrics kept: lyric \| line \| here \| la la/,
+    ]);
+    await expect(review.getByRole('row').filter({ hasText: 'Left out' })).toHaveText(
+      /la la la la\s*Left out: no chords right above it/,
+    );
+    // Unticked, it reads as it always has.
+    await keep.uncheck();
+    await expect(page.getByTestId('lyrics-notice')).toHaveText(
+      /^Lyrics removed from 3 lines\. Only chords and section names are kept\./,
+    );
+    // Back to the text and out: the next paste starts unticked.
+    await page.getByRole('button', { name: 'Back to the text' }).click();
+    await keep.check();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('paste-open').click();
+    await expect(page.getByRole('checkbox', { name: 'Keep lyrics' })).not.toBeChecked();
+  });
+
+  test('type lyrics bar by bar; they are saved with the chart', async ({ page }) => {
+    await page.goto('songs/charts/new');
+    await expect(
+      page.getByText('Lyrics are kept only if you ask, and only on this device.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('chart-title').fill('Typed words');
+    await page.getByTestId('add-section').selectOption('Verse');
+    await page.getByTestId('edit-text-0').click();
+    await page.getByTestId('bars-text').fill('| C | G | Am | F |');
+    await page.getByTestId('bars-apply').click();
+    // A new section opens on its first bar.
+    await expect(page.getByTestId('bar-0-0')).toHaveAttribute('aria-pressed', 'true');
+    const lyrics = page.getByRole('textbox', { name: 'Lyrics' });
+    await lyrics.fill('lanterns on the water');
+    await lyrics.press('Enter');
+    await expect(page.getByTestId('bar-0-1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(lyrics).toBeFocused();
+    await page.keyboard.type('slow boats');
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('heading', { name: 'Typed words', level: 1 })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Edit' }).click();
+    await expect(page.getByTestId('bar-0-0')).toContainText('lanterns on the water');
+    await expect(page.getByTestId('bar-0-1')).toContainText('slow boats');
+    await expect(page.getByTestId('bar-0-2').getByTestId('bar-lyric')).toHaveCount(0);
+  });
+
+  test('lyrics sit under their bars and follow the playing bar; Show lyrics is kept', async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    await page.getByTestId('chart-title').fill('Harbour words');
+    await page
+      .getByTestId('paste-text')
+      .fill(
+        [
+          '[Verse]',
+          'C          G          Am         F',
+          'lanterns on the water slow boats coming home',
+        ].join('\n'),
+      );
+    await page.getByTestId('keep-lyrics').check();
+    await page.getByTestId('paste-read').click();
+    await page.getByTestId('paste-use').click();
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('heading', { name: 'Harbour words', level: 1 })).toBeVisible();
+
+    const show = page.getByRole('button', { name: 'Show lyrics' });
+    await expect(show).toHaveAttribute('aria-pressed', 'true');
+    const score = page.locator('[data-score-view]');
+    await expect(score.getByTestId('bar-lyric')).toHaveText([
+      'lanterns on',
+      'the water',
+      'slow boats',
+      'coming home',
+    ]);
+    // Play from bar 2: its words are in the playing bar, and they move on with it.
+    await page.locator('[data-bar="1"]').click();
+    await expect(page.locator('[data-bar][aria-current="true"]')).toContainText('the water');
+    await expect(page.locator('[data-bar="2"]')).toHaveAttribute('aria-current', 'true', {
+      timeout: 8000,
+    });
+    await expect(page.locator('[data-bar][aria-current="true"]')).toContainText('slow boats');
+    await page.getByTestId('play').click();
+
+    await show.click();
+    await expect(score.getByTestId('bar-lyric')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Show lyrics' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    await expect(score.getByTestId('bar-lyric')).toHaveCount(0);
+  });
+
+  test('a chart without lyrics has no Show lyrics', async ({ page }) => {
+    await page.goto('songs/charts/new');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('chart-title').fill('No words');
+    await page.getByTestId('add-section').selectOption('Verse');
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('button', { name: 'Show function' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show lyrics' })).toHaveCount(0);
+  });
+
+  test('lyrics with markup in them stay text', async ({ page }) => {
+    const markup = '<img src=x onerror="window.pwned=1">';
+    await page.goto('songs/charts/new');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByTestId('chart-title').fill('Markup words');
+    await page.getByTestId('add-section').selectOption('Verse');
+    await page.getByRole('textbox', { name: 'Lyrics' }).fill(markup);
+    await expect(page.getByTestId('bar-0-0')).toContainText(markup);
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByRole('heading', { name: 'Markup words', level: 1 })).toBeVisible();
+    await expect(page.locator('[data-score-view]').getByTestId('bar-lyric')).toHaveText(markup);
+    expect(await page.evaluate(() => (window as unknown as { pwned?: number }).pwned)).toBe(
+      undefined,
+    );
+    await expect(page.locator('main img')).toHaveCount(0);
   });
 
   test('type bars in chart syntax', async ({ page }) => {

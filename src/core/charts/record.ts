@@ -1,5 +1,5 @@
 import type { ContentSource, Lesson } from '../content/types';
-import { chartToLesson } from './compile';
+import { chartToLesson, cleanView, migrateChart } from './compile';
 import type { ChartView, ChordChart } from './types';
 
 export const USER_CHART_VERSION = 1;
@@ -29,4 +29,20 @@ export function makeUserChart(
 /** The lesson the player runs for a stored chart. */
 export function userChartLesson(c: UserChart): Lesson {
   return chartToLesson(c.id, c.chart, c.view);
+}
+
+/**
+ * A record read back from storage, in the current shape: its chart migrated
+ * and its view filled in. Null when it was made by a newer version.
+ */
+export function migrateUserChart(raw: UserChart): UserChart | null {
+  try {
+    return {
+      ...raw,
+      chart: migrateChart(raw.chart as unknown as Record<string, unknown>),
+      view: cleanView(raw.view),
+    };
+  } catch {
+    return null;
+  }
 }

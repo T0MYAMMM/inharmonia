@@ -1,5 +1,4 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Link } from 'react-router';
 import { audio, lights, notes } from '@/app/services';
 import { CHORD_QUALITIES } from '@/core/theory';
 import type { Strictness } from '@/core/content/types';
@@ -12,6 +11,7 @@ import { Segmented } from '@/ui/Segmented';
 import { Toggle } from '@/ui/Toggle';
 import { KeyboardDock } from '@/ui/keyboard';
 import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { DrillController } from './DrillController';
 import styles from './chords.module.css';
 import { CHORD_DRILL_ID } from './drillId';
@@ -63,13 +63,11 @@ export function ChordDrillPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Chord drill</h1>
-        <p className={page.lede}>
-          Ten chords a round. Play each one and hold it; take as long as you need.{' '}
-          <Link to="/chords">Back to chords</Link>
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/chords', label: 'Chords' }}
+        title="Chord drill"
+        lede="Ten chords a round. Play each one and hold it; take as long as you need."
+      />
 
       {!snap.running ? (
         <Card title="What to practice">
@@ -174,13 +172,15 @@ export function ChordDrillPage() {
               {snap.showing ? 'Hide' : 'Show me'}
             </Button>
             <Button onClick={() => ctrl.skip()}>Skip</Button>
-            <Button variant="ghost" onClick={() => ctrl.stop()}>
-              Change chords
-            </Button>
           </div>
           <p className={styles.stats}>
             <span>{snap.clean} clean so far</span>
           </p>
+          <div>
+            <Button variant="ghost" onClick={() => ctrl.stop()}>
+              Change chords
+            </Button>
+          </div>
         </div>
       )}
       <p className="visually-hidden" role="status" aria-live="polite">

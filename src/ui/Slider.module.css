@@ -1,31 +1,24 @@
 .field {
   display: grid;
-  gap: 6px;
+  gap: var(--label-gap);
   min-width: 0;
 }
 
+/* The same line height as a Field label, so labels in a row line up. */
 .top {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
-  font-size: 0.9rem;
+  font-size: var(--label-font-size);
+  line-height: 1.3;
 }
 
 .label {
-  color: var(--muted);
-  font-weight: 600;
+  color: var(--label-color);
+  font-weight: var(--label-font-weight);
 }
 
 .value {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-}
-
-.range {
-  width: 100%;
-  height: 28px;
-  margin: 0;
-  background: transparent;
-  accent-color: var(--ink);
-  cursor: pointer;
 }

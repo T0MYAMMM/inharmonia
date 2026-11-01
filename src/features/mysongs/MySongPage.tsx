@@ -10,9 +10,11 @@ import { deleteRecording, deleteSong, getSong, useMySongs } from '@/state/mySong
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
 import { exportItems } from '@/state/transfer';
+import { Checkbox } from '@/ui/Checkbox';
 import { LessonPlayer } from '../song/LessonPlayer';
-import { ExportButtons } from '../transfer/Export';
-import songStyles from '../song/SongPage.module.css';
+import { ExportMenu } from '../transfer/Export';
+import { PageHeader } from '../PageHeader';
+import { EDIT_IN_STUDIO } from '../sendTo/names';
 import { PrivateBadge } from './PrivateBadge';
 import styles from './mysongs.module.css';
 
@@ -45,79 +47,55 @@ export function MySongPage() {
     return <p className={styles.note}>Loading…</p>;
   if (!song || !compiled)
     return (
-      <div className={songStyles.header}>
-        <h1>Song not found</h1>
-        <p className={styles.note}>
-          It may have been deleted, or it was made in another browser. Songs stay in the browser
-          they were made in; use export and import to move them.
-        </p>
-        <p>
-          <Link to="/songs">Back to Songs</Link>
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title="Song not found"
+        lede="It may have been deleted, or it was made in another browser. Songs stay in the browser they were made in; use export and import to move them."
+      />
     );
 
   const bytes = recordings[song.id];
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/songs">Songs</Link>
-        </p>
-        <h1>{song.lesson.title}</h1>
-        <PrivateBadge />
-        <p className={songStyles.meta}>
-          {keyName(song.lesson.key)}, {song.lesson.meter.beats}/{song.lesson.meter.unit},{' '}
-          {song.lesson.bars.length} bars
-        </p>
-        <div className={styles.actions}>
-          <Link to={`/studio/edit/${song.id}`} className={buttonClass('secondary', 'small')}>
-            Edit
-          </Link>
-          {bytes ? (
-            <>
-              <span className={styles.note}>Recording kept, {formatBytes(bytes)}.</span>
-              <Button
-                size="small"
-                variant="ghost"
-                onClick={() => void deleteRecording(song.id)}
-                data-testid="delete-recording"
-              >
-                Delete the recording
-              </Button>
-            </>
-          ) : (
-            <span className={styles.note}>No recording kept.</span>
-          )}
-        </div>
-        <div className={styles.actions}>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title={song.lesson.title}
+        tags={<PrivateBadge />}
+        lede={`${keyName(song.lesson.key)}, ${song.lesson.meter.beats}/${song.lesson.meter.unit}, ${song.lesson.bars.length} bars. ${bytes ? `Recording kept, ${formatBytes(bytes)}.` : 'No recording kept.'}`}
+        actions={
+          <>
+            <Link to={`/studio/edit/${song.id}`} className={buttonClass('secondary', 'small')}>
+              {EDIT_IN_STUDIO}
+            </Link>
+            <ExportMenu
+              build={() =>
+                exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })
+              }
+              midi={{
+                download: () => downloadMidi(song.draft.midi ?? compiledToMidi(compiled)),
+                testId: 'my-song-midi-export',
+              }}
+            />
+            {bytes ? (
+              <Checkbox className={styles.note} checked={withRecording} onChange={setWithRecording}>
+                Include the recording
+              </Checkbox>
+            ) : null}
+          </>
+        }
+      />
+      <LessonPlayer key={song.id + song.updatedAt} compiled={compiled} variant="song" />
+      <div className={styles.danger}>
+        {bytes ? (
           <Button
             size="small"
             variant="ghost"
-            onClick={() => downloadMidi(song.draft.midi ?? compiledToMidi(compiled))}
-            data-testid="my-song-midi-export"
+            onClick={() => void deleteRecording(song.id)}
+            data-testid="delete-recording"
           >
-            Export .mid
+            Delete the recording
           </Button>
-          <ExportButtons
-            build={() =>
-              exportItems({ songs: [song], includeRecordings: !!bytes && withRecording })
-            }
-          />
-          {bytes ? (
-            <label className={styles.note}>
-              <input
-                type="checkbox"
-                checked={withRecording}
-                onChange={(e) => setWithRecording(e.target.checked)}
-              />{' '}
-              Include the recording
-            </label>
-          ) : null}
-        </div>
-      </div>
-      <LessonPlayer key={song.id + song.updatedAt} compiled={compiled} variant="song" />
-      <div className={styles.danger}>
+        ) : null}
         {confirm ? (
           <>
             <span>Delete “{song.lesson.title}” for good? This cannot be undone.</span>

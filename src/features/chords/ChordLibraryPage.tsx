@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
 import { audio, lights } from '@/app/services';
@@ -13,13 +13,21 @@ import {
   voiceChord,
   type VoicingStyle,
 } from '@/core/theory';
+import { storage } from '@/core/persistence/storage';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { buttonClass } from '@/ui/buttonClass';
 import { Card } from '@/ui/Card';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { Segmented } from '@/ui/Segmented';
 import { KeyboardDock } from '@/ui/keyboard';
-import page from '../page.module.css';
+import { markUsed } from '@/state/handoff';
+import { PageHeader } from '../PageHeader';
+import { useArrival } from '../sendTo/useHandoff';
+import { SequencePanel } from './SequencePanel';
+import { useSequenceEditor } from './useSequenceEditor';
+import { usePlayedChord } from './usePlayedChord';
+import { useSequencePlayer } from './useSequencePlayer';
 import styles from './chords.module.css';
 
 const GROUPS: { title: string; ids: string[] }[] = [
@@ -67,11 +75,41 @@ export function ChordLibraryPage() {
   const key: KeyContext = { tonic: root, mode: 'major' };
   const angka = notation === 'angka';
 
-  // Light the voicing in dusk (chord tones).
+  // Chords sent here from a progression or a chart's section, applied once:
+  // a reload keeps the way back and does not apply them again.
+  const arrival = useArrival('chords');
+  const [incoming] = useState(() =>
+    arrival.status === 'ok' && !arrival.used
+      ? { meter: arrival.handoff.meter, bars: arrival.handoff.bars, what: arrival.handoff.what }
+      : undefined,
+  );
+  const sequence = useSequenceEditor(storage, incoming);
   useEffect(() => {
+    if (!incoming || !arrival.id) return;
+    markUsed('chords', arrival.id);
+    // After the page has moved to its top: to the sequence, ready to play.
+    const t = window.setTimeout(() => {
+      if (sequence.arrived) sequence.announce(sequence.arrived);
+      const card = document.querySelector<HTMLElement>('[data-testid="sequence"]');
+      card?.scrollIntoView({ block: 'start' });
+      card?.querySelector<HTMLElement>('[data-testid="sequence-play"]')?.focus({
+        preventScroll: true,
+      });
+    }, 0);
+    return () => window.clearTimeout(t);
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const playback = useSequencePlayer(sequence.sequence);
+  const played = usePlayedChord();
+
+  // Light the voicing in dusk (chord tones), unless the sequence is playing
+  // and lighting its own.
+  useEffect(() => {
+    if (playback.playing) return;
     lights.setExactly('lh', voicingKey.split(',').map(Number));
     return () => lights.clear('lh');
-  }, [voicingKey]);
+  }, [voicingKey, playback.playing]);
 
   const held = useHeldNotes();
   const target = chordTarget(voicing);
@@ -102,19 +140,33 @@ export function ChordLibraryPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Chords</h1>
-        <p className={page.lede}>
-          Pick a root and a quality. See how the chord is built, hear it, and play it back.{' '}
-          <Link to={`/chords/drill`}>Drill chords</Link> ·{' '}
-          <Link to="/chords/known">Chords you know</Link>
+      <PageHeader
+        crumb={
+          arrival.status === 'ok' ? { ...arrival.handoff.from, testId: 'sent-back' } : undefined
+        }
+        title="Chords"
+        lede="Pick a root and a quality. See how the chord is built, hear it, and play it back. Put chords in a line to hear them played."
+        actions={
+          <>
+            <Link to="/chords/drill" className={buttonClass('secondary', 'small')}>
+              Drill chords
+            </Link>
+            <Link to="/chords/known" className={buttonClass('secondary', 'small')}>
+              Chords you know
+            </Link>
+          </>
+        }
+      />
+      {arrival.problem ? (
+        <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+          {arrival.problem}
         </p>
-      </div>
+      ) : null}
       <div className={styles.layout}>
         <div className={`${styles.side} ${styles.areaSide}`}>
           <div className={styles.group} role="group" aria-label="Root">
             <span className={styles.groupTitle}>Root</span>
-            <div className={styles.pills}>
+            <div className={styles.pillGrid}>
               {ALL_ROOTS.map((r) => (
                 <button
                   key={r}
@@ -131,7 +183,7 @@ export function ChordLibraryPage() {
           {GROUPS.map((g) => (
             <div key={g.title} className={styles.group} role="group" aria-label={g.title}>
               <span className={styles.groupTitle}>{g.title}</span>
-              <div className={styles.pills}>
+              <div className={styles.pillGrid}>
                 {g.ids.map((id) => {
                   const q = CHORD_QUALITIES.find((x) => x.id === id)!;
                   return (
@@ -190,7 +242,7 @@ export function ChordLibraryPage() {
         </div>
 
         <Card title="Voicing" className={styles.areaVoicing}>
-          <div className={page.prose} style={{ gap: 'var(--space-3)', maxWidth: 'none' }}>
+          <div className={styles.voicingBody}>
             <Segmented
               label="Voicing style"
               value={style}
@@ -215,6 +267,13 @@ export function ChordLibraryPage() {
                 Hear it
               </Button>
               <Button onClick={() => play(true)}>Hear it broken</Button>
+              <Button
+                onClick={() => sequence.addChord(symbol)}
+                disabled={sequence.full}
+                data-testid="add-to-sequence"
+              >
+                Add to sequence
+              </Button>
             </div>
             <p
               className={styles.feedback}
@@ -226,6 +285,10 @@ export function ChordLibraryPage() {
             </p>
           </div>
         </Card>
+
+        <div className={styles.areaSequence}>
+          <SequencePanel editor={sequence} playback={playback} played={played} />
+        </div>
       </div>
       <KeyboardDock focus={[voicing[0]!.midi, voicing.at(-1)!.midi]} />
     </>

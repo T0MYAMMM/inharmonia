@@ -1,7 +1,7 @@
 .welcome {
   display: grid;
   gap: var(--space-3);
-  max-width: 46rem;
+  max-width: var(--text-width);
   margin-bottom: var(--space-6);
   padding: var(--space-5);
   border-radius: var(--radius-card);
@@ -72,6 +72,14 @@
 
 .more {
   font-weight: 600;
+}
+
+@media (pointer: coarse) {
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-height);
+  }
 }
 
 .rooms {

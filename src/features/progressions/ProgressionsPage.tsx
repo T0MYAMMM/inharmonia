@@ -5,7 +5,7 @@ import { prettyNumerals } from '@/core/notation';
 import { exportItems } from '@/state/transfer';
 import { useUserProgressions } from '@/state/userProgressions';
 import { buttonClass } from '@/ui/buttonClass';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { ExportDialog } from '../transfer/Export';
 import { ImportControls } from '../transfer/Import';
 import styles from './progressions.module.css';
@@ -14,32 +14,32 @@ export function ProgressionsPage() {
   const mine = useUserProgressions((s) => s.items);
   return (
     <>
-      <div className={page.hero}>
-        <h1>Progressions</h1>
-        <p className={page.lede}>
-          Common chord progressions, written as Roman numerals. Play them in any key, with any
-          voicing and comping pattern, then practice them or play along in time.
-        </p>
-      </div>
+      <PageHeader
+        title="Progressions"
+        lede="Common chord progressions, written as Roman numerals. Play them in any key, with any voicing and comping pattern, then practice them or play along in time."
+      />
 
       <ImportControls>
         {(importButtons) => (
           <>
             <div className={styles.sectionHead}>
               <h2>Yours</h2>
-              <Link to="/progressions/new" className={buttonClass('primary', 'small')}>
-                New progression
-              </Link>
-              <span className={styles.spacer} />
-              <ExportDialog
-                candidates={mine.map((p) => ({
-                  key: p.id,
-                  kind: 'progression' as const,
-                  title: p.name,
-                }))}
-                build={(keys) => exportItems({ progressions: mine.filter((p) => keys.has(p.id)) })}
-              />
-              {importButtons}
+              <div className={styles.sectionActions}>
+                <Link to="/progressions/new" className={buttonClass('primary', 'small')}>
+                  New progression
+                </Link>
+                <ExportDialog
+                  candidates={mine.map((p) => ({
+                    key: p.id,
+                    kind: 'progression' as const,
+                    title: p.name,
+                  }))}
+                  build={(keys) =>
+                    exportItems({ progressions: mine.filter((p) => keys.has(p.id)) })
+                  }
+                />
+                {importButtons}
+              </div>
             </div>
             {mine.length ? (
               <ProgressionList items={mine} />

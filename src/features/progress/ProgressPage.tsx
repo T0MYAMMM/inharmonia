@@ -4,7 +4,7 @@ import { clearProgress, loadProgress, streak } from '@/state/progress';
 import { dueForReview, lastSevenDays, relativeDay } from '@/state/review';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import { describeExercise, nextNew, starterExercises, type ExerciseInfo } from './catalog';
 import styles from './progress.module.css';
 
@@ -34,13 +34,10 @@ export function ProgressPage() {
   if (!rows.length)
     return (
       <>
-        <div className={page.hero}>
-          <h1>Progress</h1>
-          <p className={page.lede}>
-            Nothing practised yet. When you finish a song, a drill round, a play-along or a fill, it
-            shows up here with your best score, and comes back when it's worth another look.
-          </p>
-        </div>
+        <PageHeader
+          title="Progress"
+          lede="Nothing practised yet. When you finish a song, a drill round, a play-along or a fill, it shows up here with your best score, and comes back when it's worth another look."
+        />
         <h2 className={styles.h2}>Somewhere to start</h2>
         <SuggestionList items={starterExercises().slice(0, 4)} />
       </>
@@ -58,12 +55,10 @@ export function ProgressPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Progress</h1>
-        <p className={page.lede}>
-          What to look at today, and how everything you've practised is going.
-        </p>
-      </div>
+      <PageHeader
+        title="Progress"
+        lede="What to look at today, and how everything you've practised is going."
+      />
 
       <div className={styles.stats}>
         <div className={styles.stat}>

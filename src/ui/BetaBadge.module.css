@@ -4,9 +4,9 @@
   margin-left: 6px;
   padding: 1px 7px;
   border-radius: var(--radius-pill);
-  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
-  background: color-mix(in srgb, var(--amber) 16%, transparent);
-  color: var(--ink);
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+  color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;

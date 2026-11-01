@@ -1,0 +1,181 @@
+{
+  "format": "inharmonia",
+  "version": 3,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "song",
+      "id": "example-midi-song",
+      "title": "Example MIDI song",
+      "source": {
+        "kind": "user"
+      },
+      "updated": "2026-01-01T00:00:00.000Z",
+      "song": {
+        "midi": {
+          "title": "Example MIDI song",
+          "ppq": 480,
+          "tempo": 92,
+          "meter": {
+            "beats": 4,
+            "unit": 4
+          },
+          "tempos": [
+            {
+              "beat": 0,
+              "bpm": 92
+            }
+          ],
+          "meters": [
+            {
+              "beat": 0,
+              "numerator": 4,
+              "denominator": 4
+            }
+          ],
+          "tracks": [
+            {
+              "id": "t1c0",
+              "name": "Melody",
+              "channel": 0,
+              "program": 0,
+              "muted": false,
+              "notes": [
+                {
+                  "id": "n1",
+                  "startBeat": 0,
+                  "beats": 1,
+                  "midi": 76,
+                  "velocity": 92
+                },
+                {
+                  "id": "n2",
+                  "startBeat": 1,
+                  "beats": 1,
+                  "midi": 74,
+                  "velocity": 92
+                },
+                {
+                  "id": "n3",
+                  "startBeat": 2,
+                  "beats": 2,
+                  "midi": 72,
+                  "velocity": 92
+                },
+                {
+                  "id": "n4",
+                  "startBeat": 4,
+                  "beats": 1.5,
+                  "midi": 74,
+                  "velocity": 92
+                },
+                {
+                  "id": "n5",
+                  "startBeat": 5.5,
+                  "beats": 0.5,
+                  "midi": 76,
+                  "velocity": 92
+                },
+                {
+                  "id": "n6",
+                  "startBeat": 6,
+                  "beats": 2,
+                  "midi": 79,
+                  "velocity": 92
+                }
+              ]
+            },
+            {
+              "id": "t2c1",
+              "name": "Chords",
+              "channel": 1,
+              "program": 4,
+              "muted": false,
+              "notes": [
+                {
+                  "id": "n1",
+                  "startBeat": 0,
+                  "beats": 3.75,
+                  "midi": 60,
+                  "velocity": 64
+                },
+                {
+                  "id": "n2",
+                  "startBeat": 0,
+                  "beats": 3.75,
+                  "midi": 64,
+                  "velocity": 64
+                },
+                {
+                  "id": "n3",
+                  "startBeat": 0,
+                  "beats": 3.75,
+                  "midi": 67,
+                  "velocity": 64
+                },
+                {
+                  "id": "n4",
+                  "startBeat": 4,
+                  "beats": 3.75,
+                  "midi": 59,
+                  "velocity": 64
+                },
+                {
+                  "id": "n5",
+                  "startBeat": 4,
+                  "beats": 3.75,
+                  "midi": 62,
+                  "velocity": 64
+                },
+                {
+                  "id": "n6",
+                  "startBeat": 4,
+                  "beats": 3.75,
+                  "midi": 67,
+                  "velocity": 64
+                }
+              ]
+            },
+            {
+              "id": "t3c2",
+              "name": "Bass",
+              "channel": 2,
+              "program": 32,
+              "muted": true,
+              "notes": [
+                {
+                  "id": "n1",
+                  "startBeat": 0,
+                  "beats": 2,
+                  "midi": 48,
+                  "velocity": 100
+                },
+                {
+                  "id": "n2",
+                  "startBeat": 2,
+                  "beats": 2,
+                  "midi": 43,
+                  "velocity": 100
+                },
+                {
+                  "id": "n3",
+                  "startBeat": 4,
+                  "beats": 2,
+                  "midi": 43,
+                  "velocity": 100
+                },
+                {
+                  "id": "n4",
+                  "startBeat": 6,
+                  "beats": 2,
+                  "midi": 50,
+                  "velocity": 100
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

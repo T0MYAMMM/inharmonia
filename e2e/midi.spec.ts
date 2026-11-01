@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { parseMidi, writeMidi, type MidiProject } from '../src/core/midi/smf';
+import { openMidiFileMenu, openMidiMore } from './studioHelpers';
 
 const sample: MidiProject = {
   title: 'MIDI Studio test',
@@ -47,6 +48,7 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   await page.getByTestId('midi-note').first().click();
   await page.getByRole('slider', { name: 'Note velocity' }).fill('55');
   const downloadPromise = page.waitForEvent('download');
+  await openMidiFileMenu(page);
   await page.getByTestId('midi-export').click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.mid$/);
@@ -55,11 +57,41 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   expect(result.tracks[0]!.notes).toHaveLength(3);
   expect(result.tracks[1]!.notes[0]!.velocity).toBe(115);
   expect(result.tracks[0]!.notes.some((n) => n.velocity === 55)).toBe(true);
+  await openMidiMore(page);
   await page.getByTestId('midi-save-song').click();
-  await expect(page.getByRole('link', { name: /Open saved song in My Songs/ })).toBeVisible();
-  await page.getByRole('link', { name: /Open saved song in My Songs/ }).click();
+  await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
+  await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
   await expect(page.getByRole('heading', { name: 'test-arrangement', level: 1 })).toBeVisible();
+  await page.getByTestId('export-menu').click();
   await expect(page.getByTestId('my-song-midi-export')).toBeVisible();
+});
+
+test('Studio opens a MIDI file dropped on its card, and says when a file is not MIDI', async ({
+  page,
+}) => {
+  await page.goto('studio');
+  const card = page.getByTestId('studio-open-card');
+  const drop = async (name: string, type: string, bytes: number[]) => {
+    const dataTransfer = await page.evaluateHandle(
+      (file) => {
+        const data = new DataTransfer();
+        data.items.add(new File([new Uint8Array(file.bytes)], file.name, { type: file.type }));
+        return data;
+      },
+      { name, type, bytes },
+    );
+    await card.dispatchEvent('dragover', { dataTransfer });
+    await expect(card).toHaveAttribute('data-over', 'true');
+    await card.dispatchEvent('drop', { dataTransfer });
+  };
+  await drop('notes.json', 'application/json', [...Buffer.from('{}')]);
+  await expect(card.getByRole('status')).toHaveText(
+    "That isn't a MIDI file. Choose a .mid or .midi file.",
+  );
+  await expect(card).not.toHaveAttribute('data-over');
+  await drop('arrangement.mid', 'audio/midi', [...writeMidi(sample)]);
+  await expect(page.getByRole('heading', { name: 'MIDI piano-roll editor' })).toBeVisible();
+  await expect(page.getByTestId('midi-track')).toHaveCount(2);
 });
 
 test('MIDI Studio supports composing without using the microphone', async ({ page }) => {
@@ -70,8 +102,57 @@ test('MIDI Studio supports composing without using the microphone', async ({ pag
   await expect(page.getByRole('button', { name: '+ Track' })).toBeVisible();
   await page.getByRole('button', { name: '+ Track' }).click();
   await expect(page.getByTestId('midi-track')).toHaveCount(2);
-  await page.getByRole('button', { name: '← Back to Studio' }).click();
+  await page.getByRole('button', { name: 'Back to Studio' }).click();
   await expect(page.getByTestId('enable-mic')).toBeVisible();
+});
+
+test('MIDI header: every control shares its row with another', async ({ page, isMobile }) => {
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  await expect(page.getByTestId('midi-play')).toBeVisible();
+  for (const width of isMobile ? [360] : [1280, 820]) {
+    if (!isMobile) await page.setViewportSize({ width, height: 900 });
+    // On a phone the settings are folded into one line.
+    for (const id of isMobile ? ['midi-header'] : ['midi-header', 'midi-settings']) {
+      const perRow = await page.getByTestId(id).evaluate((root) => {
+        const centres = [...root.querySelectorAll('button, input, select')]
+          .map((el) => el.getBoundingClientRect())
+          .filter((box) => box.width > 0)
+          .map((box) => box.top + box.height / 2)
+          .sort((a, b) => a - b);
+        // Controls whose centres are within 8px of each other share a row.
+        const rows: number[][] = [];
+        for (const c of centres) {
+          const row = rows.at(-1);
+          if (row && c - row[0]! < 8) row.push(c);
+          else rows.push([c]);
+        }
+        return rows.map((r) => r.length);
+      });
+      expect(perRow.length).toBeGreaterThan(0);
+      expect(
+        perRow.every((n) => n > 1),
+        `${id} at ${width}px has ${perRow.join(', ')} controls per row`,
+      ).toBe(true);
+    }
+  }
+});
+
+test('MIDI menus work from the keyboard', async ({ page }) => {
+  await page.goto('studio');
+  await page.getByTestId('studio-new-midi').click();
+  await expect(page.getByTestId('midi-play')).toBeVisible();
+  const more = page.getByTestId('midi-more');
+  const button = (await more.isVisible()) ? more : page.getByTestId('midi-file-menu');
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const items = page.getByRole('menu').getByRole('menuitem');
+  await expect(items.first()).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(items.last()).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(button).toBeFocused();
 });
 
 test('MIDI piano roll: fixed headers, zooms, box select, hover, seeking and keyboard input', async ({
@@ -126,7 +207,7 @@ test('MIDI piano roll: fixed headers, zooms, box select, hover, seeking and keyb
   // Vertical zoom makes rows taller; the pitch column and ruler stay in view when scrolling.
   const tall = async () => Number(await notes.first().getAttribute('height'));
   const short = await tall();
-  await page.getByRole('slider', { name: 'MIDI row height' }).fill('40');
+  await page.getByRole('slider', { name: 'Vertical zoom' }).fill('40');
   expect(await tall()).toBeGreaterThan(short);
   await page.getByTestId('midi-roll').evaluate((el) => {
     el.scrollLeft = 400;
@@ -175,4 +256,92 @@ test('MIDI piano roll on touch: a tap draws a note, the keyboard toggles', async
   await expect(page.getByTestId('midi-record-note')).toContainText('at the playhead');
   await page.getByTestId('midi-keyboard-toggle').click();
   await expect(page.getByTestId('midi-keyboard')).toHaveCount(0);
+});
+
+test('a song saved from a MIDI file comes back from its export with every track', async ({
+  page,
+}) => {
+  // 72 bars, more than a written song may have, played in a little unevenly.
+  const late = (i: number) => (i * 7) % 5;
+  const long: MidiProject = {
+    ...sample,
+    title: 'Evening ferry',
+    tracks: [
+      {
+        ...sample.tracks[0]!,
+        notes: Array.from({ length: 144 }, (_, i) => ({
+          id: `m${i}`,
+          midi: [72, 74, 76, 79][i % 4]!,
+          startBeat: i * 2 + late(i) / 480,
+          beats: 1.75,
+          velocity: 90,
+        })),
+      },
+      {
+        ...sample.tracks[1]!,
+        notes: Array.from({ length: 72 }, (_, i) => ({
+          id: `b${i}`,
+          midi: 48,
+          startBeat: i * 4,
+          beats: 3.9,
+          velocity: 100 + (i % 20),
+        })),
+      },
+    ],
+  };
+  await page.goto('studio');
+  await page.getByTestId('studio-import-midi').setInputFiles({
+    name: 'Evening ferry.mid',
+    mimeType: 'audio/midi',
+    buffer: Buffer.from(writeMidi(long)),
+  });
+  await expect(page.getByTestId('midi-track')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Mute Bass' }).click();
+  await openMidiMore(page);
+  await page.getByTestId('midi-save-song').click();
+  await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
+
+  await page.goto('songs');
+  await page.getByTestId('export-open').click();
+  const dialog = page.getByTestId('export-dialog');
+  const download = page.waitForEvent('download');
+  await dialog.getByTestId('export-download').click();
+  const path = (await (await download).path())!;
+  const text = await readFile(path, 'utf8');
+  const doc = JSON.parse(text);
+  expect(doc.version).toBe(3);
+  expect(doc.items[0].song.midi.tracks.map((t: { name: string }) => t.name)).toEqual([
+    'Lead',
+    'Bass',
+  ]);
+  await dialog.getByRole('button', { name: 'Close' }).click();
+
+  // Read it back as a copy beside the one already here.
+  const preview = page.getByTestId('import-preview');
+  await page.getByTestId('import-file').setInputFiles(path);
+  await expect(preview.getByTestId('import-summary')).toHaveText(
+    '1 item in this file: 0 new, 1 already here.',
+  );
+  await expect(preview.getByTestId('import-errors')).toHaveCount(0);
+  await preview.getByTestId('import-choice-1').selectOption('copy');
+  await preview.getByTestId('import-confirm').click();
+  await expect(page.getByTestId('import-result')).toHaveText('Imported: 1 added.');
+  const copies = page.getByTestId('my-songs').getByRole('link', { name: /Evening ferry/ });
+  await expect(copies).toHaveCount(2);
+
+  for (const i of [0, 1]) {
+    await page.goto('songs');
+    await copies.nth(i).click();
+    await expect(page.getByRole('heading', { name: 'Evening ferry', level: 1 })).toBeVisible();
+    await expect(page.getByText(/4\/4, 72 bars/)).toBeVisible();
+    await page.getByRole('link', { name: 'Edit in Studio' }).click();
+    await expect(page.getByTestId('midi-track')).toHaveText([
+      /Lead\s*144 notes/,
+      /Bass\s*72 notes/,
+    ]);
+    await expect(page.getByRole('button', { name: 'Unmute Bass' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
 });

@@ -503,7 +503,7 @@ the song player, with **Edit** (`/studio/edit/:id`) and **Delete**.
   phase 8 keep their `user-…` ids. The database is at version 2 (a `charts` store was added);
   each version has its own upgrade step, so an older database opens without losing anything.
 - **Backup.** See [Export and import](#export-and-import). Recordings go into a file only when
-  you tick **Include recordings**.
+  you tick **Include recordings**, and a chart's lyrics only when you tick **Include lyrics**.
 - **One list.** Studio songs and chord charts share the list, newest first, tagged **Studio** or
   **Chart**. Once you have both kinds, **All / Studio / Charts** filters it.
 - The browser is asked to keep the data (`navigator.storage.persist`). Where storage is blocked
@@ -552,20 +552,31 @@ entered once and played as often as it comes back.
   wrote it and mapped to a section kind. A line counts as chords when at least 60% of its words
   are chords (bar marks, `%`, `x2`, `N.C.`, brackets and dashes are not counted) and it has two
   chords or chord-like spacing, so a one-word lyric such as "A" stays a lyric. A review table
-  shows how every line was read before anything is used.
-- **No lyrics are ever stored.** Lyric lines are dropped as soon as the sheet is read; only their
-  count is kept, for the notice "Lyrics removed from N lines". The notes field is never filled
-  from a pasted sheet. There is no URL import and nothing is fetched: charts are typed or pasted
-  by you.
+  shows how every line was read before anything is used. The notes field is never filled from a
+  pasted sheet. There is no URL import and nothing is fetched: charts are typed or pasted by you.
+- **Lyrics only if you ask, and only here.** By default lyric lines are dropped as the sheet is
+  read; only their count is kept, for the notice "Lyrics removed from N lines". Tick **Keep
+  lyrics** (unticked every time) to keep each lyric line on the bars it sat under: the line is
+  cut at the chords right above it, each cut moved back to the start of its word, and a line
+  with no chords right above it is left out. In the editor, a bar's **Lyrics** field holds its
+  words, one line, up to 120 characters; Enter goes on to the next bar.
+  - Lyrics are kept only in this browser's storage on this device. They are never uploaded, never
+    in a share link, and never sent to Studio, Chords or Progressions by **Send to**.
+  - Like everything stored here, they can be lost with the browser's site data: clearing it, or
+    Safari removing it after 7 days without a visit when the app isn't installed. To keep a copy,
+    export the chart with **Include lyrics** ticked.
+  - They are text only, shown as text, never as markup.
 - **Key suggestion** (`key.ts`) scores all 24 keys by how many chords fit, weighting the first
   and last chord of each section, and offers the best two as one-click choices.
 - **Playing it.** A chart compiles to an ordinary lesson (`compile.ts`): voice-led triads in the
   right hand (G3 to E5), root or slash bass in the left. Its page (`/songs/charts/:id`) has
-  Listen, left-hand Practice and Play-along, a **Show function** toggle for Roman numerals (kept
-  with the chart), **Edit**, export and **Delete**. Charts are private like Studio songs:
-  stored in IndexedDB, `source: { kind: 'user' }`, no share links, no upload.
+  Listen, left-hand Practice and Play-along, a **Show function** toggle for Roman numerals and,
+  when it has lyrics, **Show lyrics** (both kept with the chart), **Edit**, export and **Delete**.
+  With lyrics shown, each bar's words sit under its chords and the playing bar's are in ink, so
+  they follow the music. Charts are private like Studio songs: stored in IndexedDB,
+  `source: { kind: 'user' }`, no share links, no upload.
 - **Limits.** 24 sections, 32 bars per section, 40 form entries, 400 bars once the form is
-  played out.
+  played out, 120 characters of lyrics a bar.
 
 ### Making a chart playable
 
@@ -611,15 +622,21 @@ again gives the same bytes. A chart is stored as written, with its view settings
 - **Export** one item from its page (**Download .json**, **Copy as JSON**), or everything or a
   selection from a list. One item is saved as `inharmonia-<kind>-<slug>.json`, several as
   `inharmonia-export-<date>.json`. Built-in songs and progressions can be exported too, with
-  their original source.
+  their original source. A song made from a MIDI file is written as its whole MIDI project,
+  every track, and comes back from it.
+- **Lyrics are left out** of every export unless you tick **Include lyrics** (in a chart's Export
+  menu, or in the export dialog when a chosen chart has some). It starts unticked every time,
+  and what was saved says when lyrics were left out.
 - **Import** by **Import file**, by dropping a file on the list, or by **Paste JSON**. A preview
   lists what is new and what is already here (**Skip**, **Replace** or **Keep both**, which gives
   a fresh id) and any problem by item and field. A file with problems saves nothing. Files from
   before phase 8 (the old progressions and My songs exports) are upgraded on the way in.
 - **Nothing is trusted as is.** Only known fields are read and the rest are dropped, so no stray
-  text (such as lyrics) can come in; chart notes come only from the notes field. Every item is
-  checked and rebuilt; a Studio song's lesson is rebuilt from its draft. Imported items are
-  private and stored under `mine-…` ids, and their source is kept as written.
+  text can come in: chart notes come only from the notes field, and lyrics only from a chart
+  section's `lyrics`, as text, one line a bar. Every item is checked and rebuilt; a Studio song's
+  lesson is rebuilt from its draft, and a MIDI song's from its project. Imported items are
+  private and stored under `mine-…` ids, and their source is kept as written. The preview says
+  which charts bring lyrics, and when **Replace** would drop the lyrics a chart here has.
 
 ## Accessibility and Lighthouse
 

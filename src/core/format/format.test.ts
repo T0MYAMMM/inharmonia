@@ -5,12 +5,15 @@ import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { PROGRESSIONS } from '@/content/progressions';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { withLyric } from '../charts/lyrics';
 import { parseBars } from '../charts/syntax';
-import { DEFAULT_VIEW, type ChordChart } from '../charts/types';
+import { CHART_VERSION, DEFAULT_VIEW, type ChordChart } from '../charts/types';
+import type { MidiProject } from '../midi/smf';
 import { makeUserSong, type UserRecording } from '../songs/library';
-import type { SongDraft } from '../songs/draft';
+import { midiToDraft, type SongDraft } from '../songs/draft';
 import {
   buildFile,
+  FORMAT_VERSION,
   chartItem,
   describeError,
   exportFileName,
@@ -46,7 +49,10 @@ function parsed(text: string): ParsedFile {
   return p;
 }
 
-/** Back to a file item, the way the app exports what it imported. */
+/**
+ * Back to a file item, the way the app exports what it imported, Include
+ * lyrics ticked: a chart without lyrics is written the same either way.
+ */
 function reexport(i: ImportedItem): FileItem {
   const v = i.value;
   const updatedAt = i.updatedAt ?? undefined;
@@ -65,6 +71,7 @@ function reexport(i: ImportedItem): FileItem {
       chart: v.chart,
       view: v.view,
       ...(updatedAt ? { updatedAt } : {}),
+      lyrics: true,
     });
   return progressionItem(v.progression);
 }
@@ -77,7 +84,7 @@ const roundTrip = (text: string) =>
 // Invented content only.
 const bars = (t: string) => parseBars(t, 4).bars;
 const chart: ChordChart = {
-  version: 1,
+  version: CHART_VERSION,
   title: 'Test chart',
   key: { tonic: 'Eb', mode: 'major' },
   tempo: 72,
@@ -106,6 +113,7 @@ const view = {
   simplify: 'simplified' as const,
   style: 'triad-root',
   showFunction: true,
+  showLyrics: false,
 };
 
 const draft: SongDraft = {
@@ -131,7 +139,7 @@ const draft: SongDraft = {
 };
 
 describe('example files', () => {
-  it.each(['song', 'chart', 'progression'])(
+  it.each(['song', 'chart', 'progression', 'midi-song', 'chart-lyrics'])(
     '%s.json matches the schema and round-trips byte for byte',
     (name) => {
       const text = readFileSync(resolve(ROOT, `docs/format/examples/${name}.json`), 'utf8');
@@ -285,6 +293,285 @@ describe('exports', () => {
   });
 });
 
+describe('a chart with lyrics', () => {
+  // Invented words on the first section's bars.
+  const sung = (): ChordChart => ({
+    ...chart,
+    sections: chart.sections.map((s, si) =>
+      si === 0
+        ? {
+            ...s,
+            bars: s.bars.map((b, i) =>
+              withLyric(b, ['lanterns on the', 'water', undefined, 'home'][i]),
+            ),
+          }
+        : s,
+    ),
+  });
+  const file = (lyrics?: boolean) =>
+    stringifyFile(
+      buildFile(
+        [
+          chartItem({
+            id: 'mine-chart-1',
+            chart: sung(),
+            view,
+            updatedAt: at.getTime(),
+            ...(lyrics === undefined ? {} : { lyrics }),
+          }),
+        ],
+        [],
+        at,
+      ),
+    );
+
+  it('is exported without them unless asked, and imports as the chart without them', () => {
+    const text = file();
+    expect(file(false)).toBe(text);
+    expectSchema(text);
+    expect(text).not.toMatch(/"lyrics"|lanterns|water|home/);
+    expect(parsed(text).items[0]!.value).toEqual({ kind: 'chart', chart, view });
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it('is exported with them when asked: a line per bar, only for sections that have some', () => {
+    const text = file(true);
+    expectSchema(text);
+    const sections = JSON.parse(text).items[0].chart.sections;
+    expect(sections[0].lyrics).toEqual(['lanterns on the', 'water', '', 'home']);
+    expect(sections[1]).not.toHaveProperty('lyrics');
+    expect(parsed(text).items[0]!.value).toEqual({ kind: 'chart', chart: sung(), view });
+    // Imported, then exported with them again: the same bytes.
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it('are checked by bar on the way in, and the words are never quoted back', () => {
+    const bad = (patch: (lyrics: unknown[]) => unknown) => {
+      const doc = JSON.parse(file(true));
+      doc.items[0].chart.sections[0].lyrics = patch(doc.items[0].chart.sections[0].lyrics);
+      const p = parseFile(JSON.stringify(doc), ctx);
+      if ('fatal' in p) throw new Error(p.fatal);
+      return p.errors.map(describeError);
+    };
+    expect(bad((l) => l.slice(1))).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics: should list one line of lyrics per bar ("" for none)',
+    ]);
+    expect(bad((l) => [l[0], 'water\nmore water', l[2], l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[1]: should be one line',
+    ]);
+    expect(bad((l) => [l[0], l[1], 'la '.repeat(41), l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[2]: is over 120 characters',
+    ]);
+    expect(bad((l) => [l[0], 7, l[2], l[3]])).toEqual([
+      'Item 1 (Test chart), chart.sections[0].lyrics[1]: should be text',
+    ]);
+    // Spaces are evened out, and an empty line is no lyrics.
+    const doc = JSON.parse(file(true));
+    doc.items[0].chart.sections[0].lyrics = ['  lanterns   on the ', ' ', '', 'home'];
+    const back = parsed(JSON.stringify(doc)).items[0]!.value;
+    expect(
+      back.kind === 'chart' && back.chart.sections[0]!.bars.map((b) => b.lyric ?? null),
+    ).toEqual(['lanterns on the', null, null, 'home']);
+  });
+});
+
+describe('version 2 files', () => {
+  it.each(['song', 'chart', 'progression'])(
+    'the version 2 %s example still imports, and exports again as version 3',
+    (name) => {
+      const v2 = readFileSync(resolve(__dirname, `fixtures/v2-${name}.json`), 'utf8');
+      expect(JSON.parse(v2).version).toBe(2);
+      expect(parsed(v2).version).toBe(2);
+      const v3 = readFileSync(resolve(ROOT, `docs/format/examples/${name}.json`), 'utf8');
+      expect(roundTrip(v2)).toBe(v3);
+    },
+  );
+});
+
+/** Invented: a melody, held chords and a muted bass, a little uneven, as played in. */
+function midiProject(bars: number, tempo = 96): MidiProject {
+  const late = (i: number) => ((i * 7) % 5) / 480;
+  return {
+    title: 'Evening ferry',
+    ppq: 480,
+    tempo,
+    meter: { beats: 4, unit: 4 },
+    tempos: [
+      { beat: 0, bpm: tempo },
+      { beat: 128, bpm: tempo - 6 },
+    ],
+    meters: [{ beat: 0, numerator: 4, denominator: 4 }],
+    tracks: [
+      {
+        id: 't1c0',
+        name: 'Melody',
+        channel: 0,
+        program: 0,
+        muted: false,
+        notes: Array.from({ length: bars * 2 }, (_, i) => ({
+          id: `n${i + 1}`,
+          startBeat: i * 2 + late(i),
+          beats: 1.75 - late(i + 1),
+          midi: [72, 74, 76, 79, 77, 76, 74, 72][i % 8]!,
+          velocity: 80 + (i % 20),
+        })),
+      },
+      {
+        id: 't2c1',
+        name: 'Chords',
+        channel: 1,
+        program: 4,
+        muted: false,
+        notes: Array.from({ length: bars * 3 }, (_, i) => ({
+          id: `n${i + 1}`,
+          startBeat: Math.floor(i / 3) * 4 + late(i),
+          beats: 3.9,
+          midi: [60, 64, 67][i % 3]! + [0, 5, 7, 0][Math.floor(i / 3) % 4]!,
+          velocity: 64,
+        })),
+      },
+      {
+        id: 't3c2',
+        name: 'Bass',
+        channel: 2,
+        program: 32,
+        muted: true,
+        notes: Array.from({ length: bars }, (_, i) => ({
+          id: `n${i + 1}`,
+          startBeat: i * 4,
+          beats: 2,
+          midi: 36 + [0, 5, 7, 0][i % 4]!,
+          velocity: 100,
+        })),
+      },
+    ],
+  };
+}
+
+const midiFile = (project: MidiProject, title = project.title) => {
+  const song = makeUserSong('mine-song-ferry', { ...midiToDraft(project), title }, at.getTime());
+  return {
+    song,
+    text: stringifyFile(
+      buildFile(
+        [
+          songItem({
+            id: song.id,
+            source: { kind: 'user' },
+            lesson: song.lesson,
+            updatedAt: song.updatedAt,
+            voicings: false,
+          }),
+        ],
+        [],
+        at,
+      ),
+    ),
+  };
+};
+
+describe('songs made from a MIDI file', () => {
+  it('round-trip with every track, at 80 bars, uneven, with a tempo change and a muted track', () => {
+    const project = midiProject(80);
+    const { song, text } = midiFile(project);
+    expectSchema(text);
+    const item = JSON.parse(text).items[0];
+    expect(Object.keys(item.song)).toEqual(['midi']);
+    expect(item.song.midi.tracks.map((t: { name: string }) => t.name)).toEqual([
+      'Melody',
+      'Chords',
+      'Bass',
+    ]);
+    const back = parsed(text).items[0]!;
+    if (back.value.kind !== 'song') throw new Error('expected a song');
+    expect(back.value.draft.bars).toBe(80);
+    expect(back.value.draft.midi).toEqual(project);
+    expect(back.value.lesson).toEqual(song.lesson);
+    // One project, shared by the draft and the lesson, as Studio's save leaves it.
+    expect(back.value.lesson.midi).toBe(back.value.draft.midi);
+    expect(roundTrip(text)).toBe(text);
+  });
+
+  it('keep a tempo outside 30 to 240, which a MIDI file may have', () => {
+    const back = parsed(midiFile(midiProject(4, 250)).text).items[0]!;
+    expect(back.value.kind === 'song' && back.value.lesson.tempo.default).toBe(250);
+  });
+
+  it('take the title from the item, and give a song with none a name', () => {
+    const titled = parsed(midiFile(midiProject(2), 'Ferry, slower').text).items[0]!;
+    expect(titled.value.kind === 'song' && titled.value.lesson.title).toBe('Ferry, slower');
+    const blank = midiFile({ ...midiProject(2), title: '' });
+    expect(JSON.parse(blank.text).items[0].title).toBe('Untitled');
+    expect(roundTrip(blank.text)).toBe(blank.text);
+  });
+
+  it('name what is wrong with a project, under song.midi', () => {
+    const file = (patch: (p: MidiProject) => void) => {
+      const doc = JSON.parse(midiFile(midiProject(2)).text);
+      patch(doc.items[0].song.midi);
+      const p = parseFile(JSON.stringify(doc), ctx);
+      if ('fatal' in p) throw new Error(p.fatal);
+      return p.errors.map(describeError);
+    };
+    expect(file((p) => (p.tracks[1]!.notes[2]!.velocity = 0))).toEqual([
+      'Item 1 (Evening ferry), song.midi: invalid MIDI note 3',
+    ]);
+    expect(file((p) => (p.meter = { beats: 6, unit: 8 }))).toEqual([
+      'Item 1 (Evening ferry), song.midi.meter: must be 2/4, 3/4 or 4/4',
+    ]);
+    expect(file((p) => (p.tracks[0]!.notes[0]!.startBeat = 4 * 512 + 1))).toEqual([
+      'Item 1 (Evening ferry), song.midi: is longer than 512 bars',
+    ]);
+  });
+
+  it('refuse a version 2 export of one, which left its tracks out, and say so', () => {
+    // What version 2 wrote: the practice score, every chord N.C., and no project.
+    const { song } = midiFile(midiProject(2));
+    const { midi: _left, ...lesson } = song.lesson;
+    const doc = JSON.parse(
+      stringifyFile(
+        buildFile(
+          [songItem({ id: song.id, source: { kind: 'user' }, lesson, voicings: false })],
+          [],
+          at,
+        ),
+      ),
+    );
+    doc.version = 2;
+    const p = parseFile(JSON.stringify(doc), ctx);
+    if ('fatal' in p) throw new Error(p.fatal);
+    expect(p.items).toEqual([]);
+    expect(p.errors.map(describeError)).toEqual([
+      'Item 1 (Evening ferry), song: came from a MIDI file, and this older export left its tracks out. Export it again from where it was made.',
+    ]);
+  });
+
+  it('refuse N.C. in a song of your own, by its field', () => {
+    const doc = JSON.parse(
+      stringifyFile(
+        buildFile(
+          [
+            songItem({
+              id: 's1',
+              source: { kind: 'user' },
+              lesson: makeUserSong('s1', draft, 0).lesson,
+              voicings: false,
+            }),
+          ],
+          [],
+          at,
+        ),
+      ),
+    );
+    doc.items[0].song.bars[1].chords[1].symbol = 'N.C.';
+    const p = parseFile(JSON.stringify(doc), ctx);
+    if ('fatal' in p) throw new Error(p.fatal);
+    expect(p.errors.map(describeError)).toEqual([
+      'Item 1 (Morning), song.bars[1].chords[1].symbol: N.C. works in a chart, not in a song of yours',
+    ]);
+  });
+});
+
 describe('version 1 files', () => {
   it('reads an old progressions export', () => {
     const v1 = JSON.stringify({
@@ -334,7 +621,12 @@ describe('version 1 files', () => {
 
 describe('bad files', () => {
   const file = (items: unknown[]) =>
-    JSON.stringify({ format: 'inharmonia', version: 2, exportedAt: at.toISOString(), items });
+    JSON.stringify({
+      format: 'inharmonia',
+      version: FORMAT_VERSION,
+      exportedAt: at.toISOString(),
+      items,
+    });
   const good = () =>
     JSON.parse(
       stringifyFile(buildFile([chartItem({ id: 'c1', chart, view: DEFAULT_VIEW })], [], at)),
@@ -345,7 +637,7 @@ describe('bad files', () => {
     ['[1,2]', 'This is not an Inharmonia export.'],
     ['{"format":"other"}', 'This is not an Inharmonia export.'],
     [
-      JSON.stringify({ format: 'inharmonia', version: 3, items: [] }),
+      JSON.stringify({ format: 'inharmonia', version: 4, items: [] }),
       'This file comes from a newer version of Inharmonia. Update, then try again.',
     ],
     [file(Array.from({ length: 501 }, () => ({}))), 'This file holds more than 500 items.'],

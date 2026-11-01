@@ -6,4 +6,5 @@ package-lock.json
 playwright-report
 test-results
 docs/format/examples
+src/core/format/fixtures
 src/content/songs/*.json

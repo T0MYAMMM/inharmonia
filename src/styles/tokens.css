@@ -21,9 +21,20 @@
 
   --on-amber: #1c2838;
   --on-dusk: #ffffff;
+  /*
+   * The primary action (Play, Save, Start, Hear it). Ink, not amber: amber
+   * marks the right hand and the target note, and a primary button beside
+   * a target note in practice would say the same thing as the note.
+   */
+  --primary: var(--ink);
+  --on-primary: var(--bg);
   --amber-soft: color-mix(in srgb, var(--amber) 22%, var(--surface));
   --wrong-soft: color-mix(in srgb, var(--wrong) 18%, var(--surface));
   --surface-sunk: color-mix(in srgb, var(--line) 35%, var(--surface));
+  /*
+   * The focus ring, and text selection in global.css, are dusk on purpose:
+   * states that must show on every surface, named here once, not decoration.
+   */
   --focus: var(--dusk);
 
   --key-white: #fbfcfd;
@@ -51,11 +62,57 @@
   --space-7: 48px;
   --gutter: clamp(16px, 4vw, 32px);
   --content-max: 1120px;
+  /* The measure for running text and single-column forms and cards: ledes, prose, the builder. */
+  --text-width: 44rem;
+  /* A card's title, wherever the card is: Card, Studio's cards, the chart editor's. */
+  --card-title-size: 1.25rem;
+
+  /*
+   * Breakpoints. CSS can't read custom properties in media queries, so these
+   * are the only widths a max-width query should use:
+   *   compact  600px  phones: stack rows, fold settings away
+   *   medium   760px  small tablets: side-by-side panels become one column
+   *   wide     960px  the nav and four-up grids give way
+   * In TypeScript they are BREAKPOINTS in src/app/hooks.ts.
+   */
+
+  /*
+   * Control heights: Button, Toggle, Segmented, Menu, the form controls and the
+   * pills and chips that act like them. Touch raises both to 44px (below).
+   */
+  --control-height: 40px;
+  --control-height-small: 32px;
+  --control-radius: var(--radius-sm);
+  --control-pad-x: 12px;
+  --control-pad-x-small: 10px;
+  --control-font-size: 1rem;
+  --control-font-size-small: 0.875rem;
+  /* Fixed widths, so a row of controls keeps its shape as their values change. */
+  --control-width-short: 7rem; /* a slider in a toolbar, the least a title gets */
+  --control-width-long: 18rem; /* a slider that leads a row */
+
+  /* The label above or beside a control. */
+  --label-font-size: 0.85rem;
+  --label-font-weight: 600;
+  --label-color: var(--muted);
+  --label-gap: 4px;
 
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --press-ms: 160ms;
   --wrong-ms: 260ms;
   --pulse-ms: 1.2s;
+}
+
+/*
+ * On touch every control is a full 44px target, small ones too. Anything
+ * sized from these tokens follows. A laptop with a touch screen reports a
+ * fine primary pointer and keeps the desktop sizes.
+ */
+@media (pointer: coarse) {
+  :root {
+    --control-height: 44px;
+    --control-height-small: 44px;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -73,6 +130,8 @@
     --wrong: #e0645c;
     --on-amber: #121924;
     --on-dusk: #121924;
+    --primary: var(--ink);
+    --on-primary: var(--bg);
     --key-white: #d9e0e8;
     --key-white-edge: #8e9bab;
     --key-black: #0b1018;
@@ -97,6 +156,8 @@
   --wrong: #e0645c;
   --on-amber: #121924;
   --on-dusk: #121924;
+  --primary: var(--ink);
+  --on-primary: var(--bg);
   --key-white: #d9e0e8;
   --key-white-edge: #8e9bab;
   --key-black: #0b1018;

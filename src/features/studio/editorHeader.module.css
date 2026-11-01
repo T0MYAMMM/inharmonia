@@ -1,0 +1,114 @@
+/* Back and the title on the left; the tools on the right, or under them as one block. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.start {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-left: auto;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A short line between groups, with the same room on both sides. */
+.group + .group::before {
+  content: '';
+  width: 1px;
+  height: var(--space-5);
+  margin-right: var(--space-1);
+  background: var(--line);
+}
+
+/* Dense: the title and a few tools share one row on a phone. */
+.header[data-dense] {
+  column-gap: var(--space-2);
+}
+
+.header[data-dense] .group + .group::before {
+  display: none;
+}
+
+/* A row of tool groups under the header. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Below 760px each group takes a line, and its buttons share it evenly. */
+@media (max-width: 760px) {
+  .row {
+    display: grid;
+  }
+
+  .row > .group > button {
+    flex: 1;
+  }
+
+  /* A Segmented keeps its options on one line; the buttons beside it share the rest. */
+  .row > .group > [role='radiogroup'] {
+    flex: none;
+  }
+
+  .row > .group + .group::before {
+    display: none;
+  }
+}
+
+/* At least --control-width-short, and as wide as the row lets it be. */
+.title {
+  display: flex;
+  flex: 1 0 auto;
+  width: var(--control-width-short);
+}
+
+.title > input {
+  width: 100%;
+}
+
+/* An editor's folded instructions: a line of muted text that opens to a list. */
+.help {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.help > summary {
+  width: fit-content;
+  min-height: var(--control-height-small);
+  align-content: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.helpBody {
+  max-width: var(--text-width);
+  padding-bottom: var(--space-2);
+}
+
+.helpBody ul {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--space-1);
+}

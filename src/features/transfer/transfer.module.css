@@ -5,6 +5,16 @@
   gap: var(--space-2);
 }
 
+/* The Export menu and what it last did; the empty status takes no room. */
+.exportMenu {
+  display: inline-flex;
+  align-items: center;
+}
+
+.exportMenu > [role='status']:not(:empty) {
+  margin-left: var(--space-2);
+}
+
 .status {
   margin: 0;
   font-weight: 600;
@@ -67,10 +77,6 @@
   background: var(--surface-sunk);
 }
 
-.row input[type='checkbox'] {
-  accent-color: var(--ink);
-}
-
 .kind {
   font-size: 0.75rem;
   font-weight: 700;
@@ -83,6 +89,21 @@
   font-weight: 600;
   flex: 1 1 10rem;
   min-width: 0;
+}
+
+/* What a choice would lose, under the item it is about. */
+.warn {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* A box to tick, and under it what ticking it means. */
+.option {
+  display: grid;
+  gap: 2px;
 }
 
 .note {
@@ -99,48 +120,12 @@
   font-size: 0.9rem;
 }
 
-.select {
-  font: inherit;
-  font-size: 0.85rem;
-  color: var(--ink);
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-}
-
 .textarea {
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
   min-height: 12rem;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface-sunk);
-  color: var(--ink);
-}
-
-.file {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .drop[data-over] {
   outline: 2px dashed var(--ink);
   outline-offset: 6px;
   border-radius: 14px;
-}
-
-.check {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.check input {
-  accent-color: var(--ink);
 }

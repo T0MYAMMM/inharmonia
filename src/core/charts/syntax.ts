@@ -89,6 +89,7 @@ function parseCell(
     if (/^\.+$/.test(t) || t === '/') {
       const last = slots.at(-1);
       if (last) last.dots += t === '/' ? 1 : t.length;
+      else report(t, 'Dots add beats to the chord before them, inside a bar: | C . . G |');
       continue;
     }
     // "N.C." ends in a dot that is not a beat mark.
@@ -98,6 +99,8 @@ function parseCell(
     if (!sym) report(m[1]!, `"${m[1]}" is not a chord`);
     slots.push({ symbol: sym ?? m[1]!, dots: m[2]!.length });
   }
+  // Only dots: reported above, and not a bar.
+  if (slots.length === 0) return null;
   if (slots.length > LIMITS.chordsPerBar) {
     report(null, `A bar holds up to ${LIMITS.chordsPerBar} chords`);
     slots.length = LIMITS.chordsPerBar;

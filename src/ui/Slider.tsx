@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { RangeInput } from './RangeInput';
 import styles from './Slider.module.css';
 
 export interface SliderProps {
@@ -31,16 +32,14 @@ export function Slider({
           {format(value)}
         </output>
       </div>
-      <input
+      <RangeInput
         id={id}
-        className={styles.range}
-        type="range"
         min={min}
         max={max}
         step={step}
         value={value}
         aria-valuetext={format(value)}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={onChange}
       />
     </div>
   );

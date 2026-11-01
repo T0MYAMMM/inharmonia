@@ -31,9 +31,21 @@ import {
 import { newSongId, saveSong } from '@/state/mySongs';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Checkbox } from '@/ui/Checkbox';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
+import { PlayButton } from '@/ui/PlayButton';
 import { Toggle } from '@/ui/Toggle';
 import { EditorPlayback, type EditorTakeAudio, type HearSource } from './EditorPlayback';
+import {
+  EditorHeader,
+  EditorHelp,
+  EditorTitle,
+  ToolGroup,
+  ToolRow,
+  UndoRedo,
+} from './EditorHeader';
 import { EditorRoll } from './EditorRoll';
 import { BEAT_PX, describeNote, type ChordOption, type EditorTrace } from './editorModel';
 import { patternIdsFor } from './patternChoices';
@@ -228,73 +240,82 @@ export function SongEditor(props: SongEditorProps) {
 
   return (
     <div className={styles.editor} onKeyDown={onKeyDown}>
-      <label className={styles.title}>
-        Title
-        <input
-          type="text"
-          value={draft.title}
-          maxLength={80}
-          onChange={(e) =>
-            setHistory((h) => ({ ...h, present: { ...h.present, title: e.target.value } }))
-          }
-          data-testid="song-title"
-        />
-      </label>
-
-      <div className={styles.toolbar} role="toolbar" aria-label="Edit">
-        <Button size="small" onClick={() => setHistory(undo)} disabled={!history.past.length}>
-          Undo
-        </Button>
-        <Button size="small" onClick={() => setHistory(redo)} disabled={!history.future.length}>
-          Redo
-        </Button>
-        <Segmented
-          label="Grid"
-          value={String(step) as '1' | '0.5' | '0.25'}
-          options={STEPS}
-          onChange={(v) => setStep(Number(v))}
-        />
-        <Button size="small" onClick={add} data-testid="add-note">
-          Add note
-        </Button>
-        <Button size="small" onClick={remove} disabled={!selected} data-testid="delete-note">
-          Delete note
-        </Button>
-        <Button
-          size="small"
-          onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}
-        >
-          Octave down
-        </Button>
-        <Button
-          size="small"
-          onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}
-        >
-          Octave up
-        </Button>
-      </div>
-
-      <div className={styles.toolbar}>
-        <Button variant="primary" onClick={play} data-testid="editor-play">
-          {playback.playing ? 'Stop' : 'Play'}
-        </Button>
-        {props.take ? (
-          <Segmented
-            label="Hear"
-            value={playback.source}
-            options={HEAR}
-            onChange={(v) => playback.setSource(v)}
+      <EditorHeader
+        start={
+          <EditorTitle
+            value={draft.title}
+            onChange={(e) =>
+              setHistory((h) => ({ ...h, present: { ...h.present, title: e.target.value } }))
+            }
+            data-testid="song-title"
           />
-        ) : null}
-        <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)}>
-          Play chords
-        </Toggle>
-        {props.take ? (
-          <Toggle pressed={showTrace} onChange={setShowTrace}>
-            Pitch line
-          </Toggle>
-        ) : null}
-      </div>
+        }
+        tools={
+          <>
+            <UndoRedo
+              canUndo={history.past.length > 0}
+              canRedo={history.future.length > 0}
+              onUndo={() => setHistory(undo)}
+              onRedo={() => setHistory(redo)}
+            />
+            <ToolGroup label="Playback">
+              <PlayButton
+                playing={playback.playing}
+                stopLabel="Stop"
+                onClick={play}
+                data-testid="editor-play"
+              />
+              <Toggle pressed={playback.chords} onChange={(v) => playback.setChords(v)} tone="dusk">
+                Chords
+              </Toggle>
+            </ToolGroup>
+          </>
+        }
+      />
+
+      {/* With a take: which to hear, and its pitch line. Without one there is neither. */}
+      {props.take ? (
+        <ToolRow>
+          <ToolGroup label="Your take">
+            <Segmented
+              label="Hear"
+              value={playback.source}
+              options={HEAR}
+              onChange={(v) => playback.setSource(v)}
+            />
+            <Toggle pressed={showTrace} onChange={setShowTrace}>
+              Pitch line
+            </Toggle>
+          </ToolGroup>
+        </ToolRow>
+      ) : null}
+
+      <ToolRow>
+        <ToolGroup>
+          <Segmented
+            label="Grid"
+            value={String(step) as '1' | '0.5' | '0.25'}
+            options={STEPS}
+            onChange={(v) => setStep(Number(v))}
+          />
+        </ToolGroup>
+        <ToolGroup label="Notes">
+          <Button onClick={add} data-testid="add-note">
+            Add note
+          </Button>
+          <Button onClick={remove} disabled={!selected} data-testid="delete-note">
+            Delete note
+          </Button>
+        </ToolGroup>
+        <ToolGroup label="Octave">
+          <Button onClick={() => change(transposeMelody(draft, -12), 'Melody down an octave')}>
+            Octave down
+          </Button>
+          <Button onClick={() => change(transposeMelody(draft, 12), 'Melody up an octave')}>
+            Octave up
+          </Button>
+        </ToolGroup>
+      </ToolRow>
 
       <EditorRoll
         draft={draft}
@@ -314,33 +335,43 @@ export function SongEditor(props: SongEditorProps) {
           )
         }
       />
-      <p className={styles.help}>
-        Drag a note to move it, or its right edge to change its length; tap an empty spot to add
-        one. With the keyboard: arrows move the selected note, Shift with the arrows changes its
-        length or octave, [ and ] pick the previous or next note, Delete removes it, and Ctrl+Z
-        undoes.
-      </p>
+      <EditorHelp summary="How to edit">
+        <ul>
+          <li>
+            Drag a note to move it, or its right edge to change its length; tap an empty spot to add
+            one.
+          </li>
+          <li>
+            With the keyboard: the arrows move the selected note, and with Shift they change its
+            length or octave. [ and ] pick the previous or next note, Delete removes it, and Ctrl+Z
+            undoes.
+          </li>
+        </ul>
+      </EditorHelp>
       <p className="visually-hidden" role="status" aria-live="polite" data-testid="editor-status">
         {said}
       </p>
 
       <div className={styles.toolbar}>
-        <label className={styles.inline}>
-          Style
-          <select value={restyle} onChange={(e) => setRestyle(e.target.value as HarmonyStyleId)}>
+        <Field label="Style" inline>
+          <Select
+            size="small"
+            value={restyle}
+            onChange={(e) => setRestyle(e.target.value as HarmonyStyleId)}
+          >
             {HARMONY_STYLES.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button size="small" onClick={suggestAgain} data-testid="suggest-again">
           Suggest chords again
         </Button>
-        <label className={styles.inline}>
-          Left hand
-          <select
+        <Field label="Left hand" inline>
+          <Select
+            size="small"
             value={draft.lhPattern}
             onChange={(e) => change({ ...draft, lhPattern: e.target.value }, 'Left hand changed')}
           >
@@ -349,8 +380,8 @@ export function SongEditor(props: SongEditorProps) {
                 {PATTERNS[id]!.name}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
 
       <section className={styles.save} aria-labelledby="save-title">
@@ -362,16 +393,10 @@ export function SongEditor(props: SongEditorProps) {
           export on the Songs page to back them up.
         </p>
         {canKeep ? (
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={keep}
-              onChange={(e) => setKeep(e.target.checked)}
-              data-testid="keep-recording"
-            />
+          <Checkbox checked={keep} onChange={setKeep} data-testid="keep-recording">
             Keep the recording of my take ({formatBytes(props.recordingBytes)}), to compare and see
             my pitch line later
-          </label>
+          </Checkbox>
         ) : null}
         {kept && !keep ? (
           <p className={styles.small}>Saving now deletes the kept recording.</p>

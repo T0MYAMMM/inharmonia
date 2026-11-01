@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { PATTERNS } from '@/content/patterns';
 import { compileLesson, validateLesson } from '../content/compile';
+import { compiledToMidi } from '../midi/adapters';
 import {
+  barWords,
   chartIssues,
   chartToLesson,
   CHART_VERSION,
+  cleanView,
   emptyChart,
   expandForm,
   formatBars,
+  hasLyrics,
   isChordLine,
   migrateChart,
+  playedLyrics,
+  tidyLyric,
+  withLyric,
+  withoutLyrics,
   NO_CHORD,
   normalizeChord,
   parseBars,
@@ -209,6 +218,31 @@ describe('bar syntax', () => {
     expect(bars[1]!.chords[0]!.symbol).toBe('Hx');
   });
 
+  it('reports dots with no chord before them instead of reading an empty bar', () => {
+    // Without bar lines each token is a bar, so the dots stand alone.
+    const loose = parseBars('C . . G', 4);
+    expect(loose.bars.map((b) => b.chords.map((c) => `${c.symbol}:${c.beats}`).join(' '))).toEqual([
+      'C:4',
+      'G:4',
+    ]);
+    expect(loose.issues).toEqual([
+      {
+        line: 1,
+        bar: 2,
+        token: '.',
+        message: 'Dots add beats to the chord before them, inside a bar: | C . . G |',
+      },
+      {
+        line: 1,
+        bar: 3,
+        token: '.',
+        message: 'Dots add beats to the chord before them, inside a bar: | C . . G |',
+      },
+    ]);
+    expect(parseBars('| . . C G |', 4).issues.map((i) => i.token)).toEqual(['.', '.']);
+    expect(parseBars('| . . C G |', 4).bars[0]!.chords.map((c) => c.beats)).toEqual([2, 2]);
+  });
+
   it('round-trips through text, uneven splits included', () => {
     const bars = parseBars('| C . . G | Am | F G | C |\n| N.C. |', 4).bars;
     const text = formatBars(bars, 4);
@@ -324,6 +358,124 @@ describe('pasting a chord sheet', () => {
       'lyric',
     ]);
     expect(sheet.lyricLines).toBe(4);
+  });
+
+  it('keeps lyrics only when asked: by default the parse holds no lyric text', () => {
+    const off = parseSheet(OVER, 4);
+    expect(off.keptLines).toBe(0);
+    expect(off.lines.some((l) => l.words || l.under !== undefined)).toBe(false);
+    expect(off).toEqual(parseSheet(OVER, 4, { keepLyrics: false }));
+    expectNoLyrics(off);
+  });
+
+  it('keeps each lyric line on the bars it sat under, cut at the chords', () => {
+    const sheet = parseSheet(OVER, 4, { keepLyrics: true });
+    expect([sheet.keptLines, sheet.lyricLines]).toEqual([4, 0]);
+    expect(sheet.lines.filter((l) => l.kind === 'lyric').map((l) => [l.n, l.under])).toEqual([
+      [6, 5],
+      [8, 7],
+      [12, 11],
+      [14, 13],
+    ]);
+    const { sections, form } = sheetToChart(sheet, { beatsPerBar: 4 });
+    // C at column 0 and G at 11 cut "la la la lyric line here" inside "lyric":
+    // the cut moves back to the start of the word, so words stay whole.
+    expect(sections.map((s) => [s.label, s.bars.map((b) => b.lyric ?? null)])).toEqual([
+      ['Intro', [null, null, null, null]],
+      ['Verse', ['la la la', 'lyric line here', 'la la', 'placeholder words']],
+      ['Chorus', ['lyric', 'line', 'here', 'la la', 'la la', 'la', null]],
+    ]);
+    // The [Chorus] with no lines of its own still plays the chorus again.
+    expect(form.map((id) => sections.find((s) => s.id === id)!.label)).toEqual([
+      'Intro',
+      'Verse',
+      'Chorus',
+      'Chorus',
+    ]);
+  });
+
+  it('puts words before the first chord on its bar, and none past the end of the line', () => {
+    const sheet = parseSheet('[Verse]\n     C     G       Am\npick up la la', 4, {
+      keepLyrics: true,
+    });
+    const bars = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    expect(bars.map((b) => b.lyric ?? null)).toEqual(['pick up la', 'la', null]);
+  });
+
+  it('keeps only the line right under the chords; others are left out and counted', () => {
+    const sheet = parseSheet('C   G\nla la la\nlyric line here\n\nAm   F\n\nplaceholder', 4, {
+      keepLyrics: true,
+    });
+    expect([sheet.keptLines, sheet.lyricLines]).toEqual([1, 2]);
+    expect(sheet.lines.filter((l) => l.kind === 'lyric').map((l) => l.under ?? null)).toEqual([
+      1,
+      null,
+      null,
+    ]);
+  });
+
+  it('cuts inline chords between them, and a chord inside a word takes the whole word', () => {
+    const sheet = parseSheet('[C]pick up [G]la la[Am]la [F]here', 4, { keepLyrics: true });
+    expect(sheet.lines[0]).toMatchObject({ kind: 'inline', lyricsRemoved: false });
+    // "la[Am]la": Am changes inside the word, so it takes all of it.
+    expect(barWords(sheet.lines[0]!)).toEqual(['pick up', 'la', 'lala', 'here']);
+    expect([sheet.keptLines, sheet.lyricLines]).toEqual([1, 0]);
+  });
+
+  it('keeps words by bar on bar-line lines, the first time through only, and after a header', () => {
+    const sheet = parseSheet('Reff: | F  | G | C | x2\n      la la  la  la', 4, {
+      keepLyrics: true,
+    });
+    const bars = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    expect(bars.map((b) => [b.chords[0]!.symbol, b.lyric ?? null])).toEqual([
+      ['F', 'la la'],
+      ['G', 'la'],
+      ['C', 'la'],
+      ['F', null],
+      ['G', null],
+      ['C', null],
+    ]);
+  });
+
+  it('joins the words of two chords to a bar', () => {
+    const sheet = parseSheet('C    G    Am   F    C    G\nla   la   la   here la   line', 4, {
+      keepLyrics: true,
+    });
+    const bars = sheetToChart(sheet, { beatsPerBar: 4, twoPerBar: new Set([1]) }).sections[0]!.bars;
+    expect(bars.map((b) => b.lyric)).toEqual(['la la', 'la here', 'la line']);
+  });
+
+  it('keeps a second verse with its own words as its own section, and merges same words', () => {
+    const text = [
+      'Verse 1',
+      'C   G',
+      'la la',
+      'Verse 2',
+      'C   G',
+      'lyric line',
+      'Verse',
+      'C   G',
+      'la la',
+    ].join('\n');
+    const kept = sheetToChart(parseSheet(text, 4, { keepLyrics: true }), { beatsPerBar: 4 });
+    expect(kept.sections.map((s) => s.label)).toEqual(['Verse 1', 'Verse 2']);
+    expect(kept.form).toEqual([kept.sections[0]!.id, kept.sections[1]!.id, kept.sections[0]!.id]);
+    // Without lyrics the same chords are one section, as before.
+    const dropped = sheetToChart(parseSheet(text, 4), { beatsPerBar: 4 });
+    expect(dropped.sections.map((s) => s.label)).toEqual(['Verse 1']);
+  });
+
+  it('cuts words over 120 characters a bar at a word, and says so', () => {
+    // Thirty words under C, with G 150 columns along: 25 of them (149 characters) are C's.
+    const long = Array.from({ length: 30 }, () => 'lyric').join(' ');
+    const sheet = parseSheet(`C${' '.repeat(149)}G\n${long}`, 4, { keepLyrics: true });
+    expect(sheet.lines[0]!.cut).toBe(true);
+    const [first, second] = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    expect(first!.lyric).toBe(Array.from({ length: 20 }, () => 'lyric').join(' '));
+    expect(second!.lyric).toBe('lyric lyric lyric lyric lyric');
+    expect(chartIssues({ ...emptyChart('x'), ...sheetToChart(sheet, { beatsPerBar: 4 }) })).toEqual(
+      [],
+    );
   });
 
   it('keeps N.C. as a bar', () => {
@@ -468,5 +620,82 @@ describe('charts as lessons', () => {
       notes: '',
     });
     expect(() => migrateChart({ ...chart(), version: CHART_VERSION + 1 })).toThrow('newer version');
+  });
+
+  it('reads a version 1 chart as version 2 with no lyrics, and nothing else changed', () => {
+    expect(CHART_VERSION).toBe(2);
+    const v1 = { ...chart(), version: 1 };
+    expect(migrateChart(v1)).toEqual({ ...chart(), version: 2 });
+    expect(hasLyrics(migrateChart(v1))).toBe(false);
+  });
+});
+
+// Invented words, for these tests only.
+const WORDS = ['lanterns on the water', 'slow boats', undefined, 'coming home'];
+const sung = (): ChordChart => {
+  const c = chart();
+  c.sections[0]!.bars = c.sections[0]!.bars.map((b, i) => withLyric(b, WORDS[i]));
+  return c;
+};
+
+describe('lyrics in a chart', () => {
+  it('sit on their bars, one line each, and are followed in play order', () => {
+    const c = sung();
+    expect(hasLyrics(c)).toBe(true);
+    expect(hasLyrics(chart())).toBe(false);
+    expect(chartIssues(c)).toEqual([]);
+    // Form v c v c, the chorus twice each time: the verse's words come round with it.
+    expect(playedLyrics(c)).toEqual([
+      ...WORDS,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ...WORDS,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(playedLyrics(c)).toHaveLength(expandForm(c).length);
+    expect(withoutLyrics(c)).toEqual(chart());
+  });
+
+  it('are tidied to one line, and an empty one is none', () => {
+    expect(tidyLyric('  slow\tboats\n coming   home ')).toBe('slow boats coming home');
+    expect(tidyLyric(' \n ')).toBeUndefined();
+    expect(withLyric({ chords: [], lyric: 'old' }, '  ')).toEqual({ chords: [] });
+    expect(withLyric({ chords: [] }, 'a\u2028b')).toEqual({ chords: [], lyric: 'a b' });
+  });
+
+  it('are checked for length and line breaks, named by bar and never quoted', () => {
+    const c = sung();
+    c.sections[0]!.bars[0]!.lyric = 'la '.repeat(41);
+    c.sections[0]!.bars[1]!.lyric = 'two\nlines';
+    c.sections[1]!.bars[0]!.lyric = 7 as unknown as string;
+    const issues = chartIssues(c);
+    expect(issues).toEqual([
+      { section: 'Verse', bar: 1, message: 'Lyrics are over 120 characters' },
+      { section: 'Verse', bar: 2, message: 'Lyrics are one line a bar' },
+      { section: 'Reff', bar: 1, message: 'Lyrics must be text' },
+    ]);
+    expect(JSON.stringify(issues)).not.toMatch(/la la|lines/);
+    c.sections[0]!.bars[0]!.lyric = 'la '.repeat(40).trim();
+    expect(chartIssues(c).map((i) => i.bar)).toEqual([2, 1]);
+  });
+
+  it('show by default: only a view that turned them off hides them', () => {
+    expect(cleanView(undefined).showLyrics).toBe(true);
+    expect(cleanView({ showFunction: true }).showLyrics).toBe(true);
+    expect(cleanView({ showLyrics: false }).showLyrics).toBe(false);
+    expect(cleanView({ showLyrics: 'no' as unknown as boolean }).showLyrics).toBe(true);
+  });
+
+  it('never reach what plays: the lesson and its MIDI are the same without them', () => {
+    const lesson = chartToLesson('mine-chart-1', sung());
+    expect(lesson).toEqual(chartToLesson('mine-chart-1', chart()));
+    expect(JSON.stringify(lesson)).not.toMatch(/lanterns|boats|home/);
+    const midi = compiledToMidi(compileLesson(lesson, PATTERNS));
+    expect(JSON.stringify(midi)).not.toMatch(/lanterns|boats|home/);
   });
 });

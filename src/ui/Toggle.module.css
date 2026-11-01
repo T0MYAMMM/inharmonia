@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: var(--control-height);
   padding: 0 14px 0 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
@@ -10,11 +10,17 @@
   color: var(--muted);
   font-weight: 600;
   font-size: 0.9rem;
+  white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition:
     border-color 140ms var(--ease-out),
     color 140ms var(--ease-out);
+}
+
+.small {
+  min-height: var(--control-height-small);
+  padding: 0 12px 0 10px;
 }
 
 .toggle:hover {

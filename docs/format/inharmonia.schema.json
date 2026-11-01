@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/T0MYAMMM/inharmonia/docs/format/inharmonia.schema.json",
   "title": "Inharmonia export file",
-  "description": "Songs, chord charts and progressions exported from Inharmonia (format version 2). Values are readable: note names, chord symbols, Roman numerals and beats. The app also checks musical rules this schema cannot express (bars adding up, chords it can voice, form ids that exist).",
+  "description": "Songs, chord charts and progressions exported from Inharmonia (format version 3). Values are readable: note names, chord symbols, Roman numerals and beats. The app also checks musical rules this schema cannot express (bars adding up, chords it can voice, form ids that exist).",
   "type": "object",
   "required": ["format", "version", "exportedAt", "items"],
   "additionalProperties": false,
@@ -11,7 +11,7 @@
       "const": "inharmonia"
     },
     "version": {
-      "const": 2
+      "const": 3
     },
     "exportedAt": {
       "type": "string",
@@ -283,170 +283,340 @@
           "$ref": "#/$defs/updated"
         },
         "song": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/writtenSong"
+            },
+            {
+              "$ref": "#/$defs/midiSong"
+            }
+          ]
+        }
+      }
+    },
+    "writtenSong": {
+      "description": "A song written out in bars: melody, chords, and the left hand as a pattern, a figure or written notes.",
+      "type": "object",
+      "required": ["key", "meter", "tempo", "lhPattern", "bars"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "meter": {
+          "$ref": "#/$defs/meter"
+        },
+        "tempo": {
           "type": "object",
-          "required": ["key", "meter", "tempo", "lhPattern", "bars"],
+          "required": ["default", "min", "max"],
           "additionalProperties": false,
           "properties": {
-            "key": {
-              "$ref": "#/$defs/key"
+            "default": {
+              "type": "number",
+              "minimum": 30,
+              "maximum": 240
             },
-            "meter": {
-              "$ref": "#/$defs/meter"
+            "min": {
+              "type": "number",
+              "minimum": 20
             },
-            "tempo": {
-              "type": "object",
-              "required": ["default", "min", "max"],
-              "additionalProperties": false,
-              "properties": {
-                "default": {
-                  "type": "number",
-                  "minimum": 30,
-                  "maximum": 240
-                },
-                "min": {
-                  "type": "number",
-                  "minimum": 20
-                },
-                "max": {
-                  "type": "number",
-                  "maximum": 300
+            "max": {
+              "type": "number",
+              "maximum": 300
+            }
+          }
+        },
+        "lhPattern": {
+          "type": "string",
+          "description": "A left-hand pattern id, such as \"arpeggio-8ths\" or \"block\"."
+        },
+        "lhFigure": {
+          "type": "object",
+          "description": "A piece's own left-hand figure, used instead of lhPattern: steps over the chord's voicing.",
+          "required": ["name", "cycleBeats", "steps"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 60
+            },
+            "cycleBeats": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 64
+            },
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "items": {
+                "type": "object",
+                "required": ["at", "dur", "voices"],
+                "additionalProperties": false,
+                "properties": {
+                  "at": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "dur": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "const": "chord"
+                      }
+                    ]
+                  },
+                  "voices": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -8,
+                          "maximum": 8
+                        },
+                        {
+                          "enum": ["all", "root", "fifth"]
+                        }
+                      ]
+                    }
+                  },
+                  "accent": {
+                    "const": true
+                  }
                 }
               }
-            },
-            "lhPattern": {
-              "type": "string",
-              "description": "A left-hand pattern id, such as \"arpeggio-8ths\" or \"block\"."
-            },
-            "lhFigure": {
-              "type": "object",
-              "description": "A piece's own left-hand figure, used instead of lhPattern: steps over the chord's voicing.",
-              "required": ["name", "cycleBeats", "steps"],
-              "additionalProperties": false,
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "maxLength": 60
-                },
-                "cycleBeats": {
-                  "type": "number",
-                  "exclusiveMinimum": 0,
-                  "maximum": 64
-                },
-                "steps": {
-                  "type": "array",
-                  "minItems": 1,
-                  "maxItems": 32,
-                  "items": {
-                    "type": "object",
-                    "required": ["at", "dur", "voices"],
-                    "additionalProperties": false,
-                    "properties": {
-                      "at": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "dur": {
-                        "anyOf": [
-                          {
-                            "type": "number",
-                            "exclusiveMinimum": 0
-                          },
-                          {
-                            "const": "chord"
-                          }
-                        ]
-                      },
-                      "voices": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -8,
-                              "maximum": 8
-                            },
-                            {
-                              "enum": ["all", "root", "fifth"]
-                            }
-                          ]
-                        }
-                      },
-                      "accent": {
-                        "const": true
+            }
+          }
+        },
+        "piece": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]{1,60}$",
+          "description": "Library pieces: the piece this song is a version of."
+        },
+        "level": {
+          "enum": ["easy", "medium", "advanced"]
+        },
+        "covers": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Which part of the original it covers."
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "bars": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "required": ["chords", "melody"],
+            "additionalProperties": false,
+            "properties": {
+              "section": {
+                "type": "string",
+                "maxLength": 24
+              },
+              "chords": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "required": ["symbol", "beats"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "symbol": {
+                      "$ref": "#/$defs/chordSymbol"
+                    },
+                    "beats": {
+                      "$ref": "#/$defs/beats"
+                    },
+                    "voicing": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 8,
+                      "items": {
+                        "$ref": "#/$defs/noteName"
                       }
                     }
                   }
                 }
+              },
+              "melody": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/note"
+                }
+              },
+              "left": {
+                "type": "array",
+                "description": "Left-hand notes written out for this bar, in place of the figure or pattern.",
+                "items": {
+                  "$ref": "#/$defs/note"
+                }
               }
+            }
+          }
+        }
+      }
+    },
+    "midiSong": {
+      "type": "object",
+      "required": ["midi"],
+      "additionalProperties": false,
+      "properties": {
+        "midi": {
+          "$ref": "#/$defs/midiProject"
+        }
+      }
+    },
+    "midiProject": {
+      "type": "object",
+      "description": "A song made from a MIDI file, written as the MIDI project it is: every track and every note. This is the one place MIDI numbers appear: midi is the pitch (60 is middle C), velocity is 1 to 127, channel 0 to 15, and program the General MIDI instrument, 0 to 127. Beats are quarter notes from the start of the song. The practice score is rebuilt from it on import.",
+      "required": ["title", "ppq", "tempo", "meter", "tempos", "meters", "tracks"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "ppq": {
+          "type": "number",
+          "minimum": 24,
+          "maximum": 9600
+        },
+        "tempo": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 300
+        },
+        "meter": {
+          "type": "object",
+          "required": ["beats", "unit"],
+          "additionalProperties": false,
+          "properties": {
+            "beats": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 16
             },
-            "piece": {
-              "type": "string",
-              "pattern": "^[a-z0-9-]{1,60}$",
-              "description": "Library pieces: the piece this song is a version of."
-            },
-            "level": {
-              "enum": ["easy", "medium", "advanced"]
-            },
-            "covers": {
-              "type": "string",
-              "maxLength": 80,
-              "description": "Which part of the original it covers."
-            },
-            "summary": {
-              "type": "string",
-              "maxLength": 140
-            },
-            "bars": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 64,
-              "items": {
-                "type": "object",
-                "required": ["chords", "melody"],
-                "additionalProperties": false,
-                "properties": {
-                  "section": {
-                    "type": "string",
-                    "maxLength": 24
-                  },
-                  "chords": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 4,
-                    "items": {
-                      "type": "object",
-                      "required": ["symbol", "beats"],
-                      "additionalProperties": false,
-                      "properties": {
-                        "symbol": {
-                          "$ref": "#/$defs/chordSymbol"
-                        },
-                        "beats": {
-                          "$ref": "#/$defs/beats"
-                        },
-                        "voicing": {
-                          "type": "array",
-                          "minItems": 1,
-                          "maxItems": 8,
-                          "items": {
-                            "$ref": "#/$defs/noteName"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "melody": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/$defs/note"
-                    }
-                  },
-                  "left": {
-                    "type": "array",
-                    "description": "Left-hand notes written out for this bar, in place of the figure or pattern.",
-                    "items": {
-                      "$ref": "#/$defs/note"
+            "unit": {
+              "enum": [2, 4, 8, 16]
+            }
+          }
+        },
+        "tempos": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "required": ["beat", "bpm"],
+            "additionalProperties": false,
+            "properties": {
+              "beat": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "bpm": {
+                "type": "number",
+                "minimum": 20,
+                "maximum": 300
+              }
+            }
+          }
+        },
+        "meters": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "required": ["beat", "numerator", "denominator"],
+            "additionalProperties": false,
+            "properties": {
+              "beat": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "numerator": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 16
+              },
+              "denominator": {
+                "enum": [2, 4, 8, 16]
+              }
+            }
+          }
+        },
+        "tracks": {
+          "type": "array",
+          "maxItems": 1536,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "channel", "program", "muted", "notes"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "channel": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 15
+              },
+              "program": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "muted": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": "array",
+                "maxItems": 50000,
+                "items": {
+                  "type": "object",
+                  "required": ["id", "startBeat", "beats", "midi", "velocity"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "startBeat": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "beats": {
+                      "type": "number",
+                      "minimum": 0.0001,
+                      "maximum": 10000
+                    },
+                    "midi": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 127
+                    },
+                    "velocity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 127
                     }
                   }
                 }
@@ -551,6 +721,16 @@
                       "type": "string",
                       "pattern": "^[^|\\n]{1,80}$"
                     }
+                  },
+                  "lyrics": {
+                    "type": "array",
+                    "description": "The words sung over each bar, one line per bar, \"\" for none. Only in a file exported with Include lyrics, and only for a section that has some.",
+                    "maxItems": 32,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "pattern": "^[^\\n\\r]*$"
+                    }
                   }
                 }
               }
@@ -571,7 +751,7 @@
         },
         "view": {
           "type": "object",
-          "required": ["transpose", "simplify", "style", "showFunction"],
+          "required": ["transpose", "simplify", "style", "showFunction", "showLyrics"],
           "additionalProperties": false,
           "properties": {
             "transpose": {
@@ -587,6 +767,10 @@
             },
             "showFunction": {
               "type": "boolean"
+            },
+            "showLyrics": {
+              "type": "boolean",
+              "description": "Show each bar's lyrics under it, when the chart has any."
             }
           }
         }

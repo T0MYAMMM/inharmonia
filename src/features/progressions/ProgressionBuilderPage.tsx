@@ -21,9 +21,17 @@ import { romanToChord, voiceChord, type Mode } from '@/core/theory';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
+import { buttonClass } from '@/ui/buttonClass';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
+import { TextArea } from '@/ui/TextArea';
+import { TextInput } from '@/ui/TextInput';
+import type { Handoff } from '@/core/handoff';
 import { NotFoundPage } from '../not-found/NotFoundPage';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import styles from './progressions.module.css';
 
 const PALETTE: Record<Mode, string[]> = {
@@ -71,42 +79,64 @@ interface Initial {
   description: string;
   mode: Mode;
   text: string;
+  /** The key the preview plays in. */
+  previewKey: string;
 }
 
 function initialFrom(p: Progression | undefined, copy: boolean): Initial {
-  if (!p) return { name: '', description: '', mode: 'major', text: '' };
+  if (!p) return { name: '', description: '', mode: 'major', text: '', previewKey: 'C' };
   return {
     name: copy ? `${p.name} (my version)`.slice(0, MAX_NAME) : p.name,
     description: p.description ?? '',
     mode: p.mode,
     text: progressionToText(p.steps),
+    previewKey: 'C',
   };
 }
+
+type Sent = Extract<Handoff, { kind: 'progression' }>;
 
 /**
  * Write a progression as Roman numerals, hear its chords in any key, and save
  * it in this browser. Used for new progressions, copies of built-ins
- * (`?from=<id>`) and editing saved ones (`/progressions/:id/edit`).
+ * (`?from=<id>`), chords sent from a chart or the chord sequence
+ * (`?sent=<id>`) and editing saved ones (`/progressions/:id/edit`).
  */
 export function ProgressionBuilderPage() {
   const { progressionId } = useParams();
   const [params] = useSearchParams();
+  const arrival = useArrival('progression');
   const editing = useUserProgressions((s) => (progressionId ? s.get(progressionId) : undefined));
   const source = progressionId
     ? editing
     : (getProgression(params.get('from') ?? '') ??
       useUserProgressions.getState().get(params.get('from') ?? ''));
   if (progressionId && !editing) return <NotFoundPage />;
+  const sent = !progressionId && arrival.status === 'ok' ? arrival.handoff : null;
   return (
     <Builder
-      key={progressionId ?? 'new'}
-      initial={initialFrom(source, !progressionId)}
+      key={progressionId ?? arrival.id ?? 'new'}
+      initial={sent ? { ...sent.prefill, description: '' } : initialFrom(source, !progressionId)}
       editId={progressionId}
+      sent={sent}
+      problem={progressionId ? null : arrival.problem}
     />
   );
 }
 
-function Builder({ initial, editId }: { initial: Initial; editId: string | undefined }) {
+function Builder({
+  initial,
+  editId,
+  sent,
+  problem,
+}: {
+  initial: Initial;
+  editId: string | undefined;
+  /** Chords sent here from a chart or the chord sequence. */
+  sent: Sent | null;
+  /** What was sent but is not here. */
+  problem: string | null;
+}) {
   const navigate = useNavigate();
   const save = useUserProgressions((s) => s.save);
   const remove = useUserProgressions((s) => s.remove);
@@ -115,12 +145,12 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
   const [description, setDescription] = useState(initial.description);
   const [mode, setMode] = useState<Mode>(initial.mode);
   const [text, setText] = useState(initial.text);
-  const [previewKey, setPreviewKey] = useState('C');
+  const [previewKey, setPreviewKey] = useState(initial.previewKey);
   const [submitted, setSubmitted] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const errorsRef = useRef<HTMLDivElement | null>(null);
-  const ids = { help: useId(), errors: useId(), name: useId(), chords: useId() };
+  const ids = { errors: useId(), name: useId(), chords: useId() };
 
   const keys: readonly string[] = mode === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
   const key = keys.includes(previewKey) ? previewKey : 'C';
@@ -182,27 +212,39 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/progressions">Progressions</Link>
-        </p>
-        <h1>{editId ? 'Edit progression' : 'New progression'}</h1>
-        <p className={songStyles.meta}>Saved in this browser only.</p>
-      </div>
+      <PageHeader
+        crumb={sent ? sent.from : { to: '/progressions', label: 'Progressions' }}
+        title={editId ? 'Edit progression' : 'New progression'}
+        lede={
+          <>
+            <p>Saved in this browser only.</p>
+            {sent ? <ArrivalNote text={sent.said} testId="sent-said" /> : null}
+            {sent?.notes.length ? (
+              <ul className={styles.sentNotes} data-testid="sent-notes">
+                {sent.notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            ) : null}
+            {problem ? (
+              <p className={styles.sentProblem} role="status" data-testid="sent-problem">
+                {problem}
+              </p>
+            ) : null}
+          </>
+        }
+      />
 
       <form className={styles.builder} onSubmit={onSubmit} noValidate>
-        <label className={styles.field} htmlFor={ids.name}>
-          Name
-          <input
-            id={ids.name}
-            className={styles.input}
+        <Field label="Name" id={ids.name}>
+          <TextInput
             value={name}
             maxLength={MAX_NAME}
             onChange={(e) => setName(e.target.value)}
             aria-invalid={nameIssue ? true : undefined}
             autoComplete="off"
           />
-        </label>
+        </Field>
 
         <Segmented
           label="Mode"
@@ -212,25 +254,24 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           className={styles.start}
         />
 
-        <div className={styles.field}>
-          <label htmlFor={ids.chords}>Chords</label>
-          <textarea
-            id={ids.chords}
-            className={styles.textarea}
+        <Field
+          label="Chords"
+          id={ids.chords}
+          hint="Roman numerals, one bar each. Split a bar with a comma: ii7,V7. Write ♭ as b and ♯ as #."
+        >
+          <TextArea
+            className={styles.chords}
             value={text}
             rows={3}
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
             onChange={(e) => setText(e.target.value)}
-            aria-describedby={`${ids.help} ${ids.errors}`}
+            aria-describedby={ids.errors}
             aria-invalid={chordIssues.length ? true : undefined}
             placeholder={mode === 'minor' ? 'i bVII bVI V7' : 'I vi ii7,V7 I'}
           />
-          <span id={ids.help} className={styles.help}>
-            Roman numerals, one bar each. Split a bar with a comma: ii7,V7. Write ♭ as b and ♯ as #.
-          </span>
-        </div>
+        </Field>
 
         <div className={styles.palette} role="group" aria-label="Add a chord">
           {PALETTE[mode].map((n) => (
@@ -259,10 +300,8 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
         <section className={styles.preview} aria-label="Preview">
           <div className={styles.previewHead}>
             <h2 className={styles.previewTitle}>Preview</h2>
-            <label className={styles.inlineField}>
-              In
-              <select
-                className={styles.select}
+            <Field label="In" inline>
+              <Select
                 value={key}
                 onChange={(e) => setPreviewKey(e.target.value)}
                 data-testid="preview-key"
@@ -272,8 +311,8 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
                     {keyLabel(k)}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
           </div>
           {parsed.bars.length ? (
             <ol className={styles.previewBars}>
@@ -306,26 +345,27 @@ function Builder({ initial, editId }: { initial: Initial; editId: string | undef
           )}
         </section>
 
-        <label className={styles.field}>
-          Note (optional)
-          <input
-            className={styles.input}
+        <Field label="Note (optional)">
+          <TextInput
             value={description}
             maxLength={MAX_DESCRIPTION}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Where you heard it, or what it's for"
             autoComplete="off"
           />
-        </label>
+        </Field>
 
         <div className={styles.actions}>
           <Button type="submit" variant="primary">
             Save
           </Button>
-          <Link to={editId ? `/progressions/${editId}` : '/progressions'} className={styles.cancel}>
+          <Link
+            to={editId ? `/progressions/${editId}` : (sent?.from.to ?? '/progressions')}
+            className={buttonClass('ghost')}
+          >
             Cancel
           </Link>
-          <span className={songStyles.spacer} />
+          <span className={styles.spacer} />
           {editId ? (
             <Button variant="ghost" onClick={onDelete} onBlur={() => setConfirmDelete(false)}>
               {confirmDelete ? 'Delete for good?' : 'Delete'}

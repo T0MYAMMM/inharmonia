@@ -1,6 +1,7 @@
 import { formatBars } from '../charts/syntax';
 import type { ChartView, ChordChart } from '../charts/types';
 import type { ContentSource, Lesson, NoteSpec, PatternSpec, Progression } from '../content/types';
+import type { MidiProject } from '../midi/smf';
 import type { UserRecording } from '../songs/library';
 import {
   FORMAT,
@@ -92,9 +93,41 @@ function figure(f: PatternSpec): FileFigure {
 const iso = (ms: number | undefined) =>
   ms === undefined ? {} : { updated: new Date(ms).toISOString() };
 
+/** A MIDI project with its fields in a fixed order, every track and note kept. */
+function midiProject(p: MidiProject): MidiProject {
+  return {
+    title: p.title,
+    ppq: p.ppq,
+    tempo: p.tempo,
+    meter: { beats: p.meter.beats, unit: p.meter.unit },
+    tempos: p.tempos.map((t) => ({ beat: t.beat, bpm: t.bpm })),
+    meters: p.meters.map((m) => ({
+      beat: m.beat,
+      numerator: m.numerator,
+      denominator: m.denominator,
+    })),
+    tracks: p.tracks.map((t) => ({
+      id: t.id,
+      name: t.name,
+      channel: t.channel,
+      program: t.program,
+      muted: t.muted,
+      notes: t.notes.map((n) => ({
+        id: n.id,
+        startBeat: n.startBeat,
+        beats: n.beats,
+        midi: n.midi,
+        velocity: n.velocity,
+      })),
+    })),
+  };
+}
+
 /**
  * A song as a file item. Explicit voicings are written only when they were
- * chosen by hand (`voicings`); Studio songs have theirs worked out again on import.
+ * chosen by hand (`voicings`); Studio songs have theirs worked out again on
+ * import. A song made from a MIDI file is written as its MIDI project and
+ * nothing else: its score is rebuilt from the project on import.
  */
 export function songItem(input: {
   id: string;
@@ -104,12 +137,16 @@ export function songItem(input: {
   voicings: boolean;
 }): FileItem {
   const l = input.lesson;
-  return {
-    kind: 'song',
+  const head = {
+    kind: 'song' as const,
     id: input.id,
     title: l.title,
     source: source(input.source),
     ...iso(input.updatedAt),
+  };
+  if (l.midi) return { ...head, song: { midi: midiProject(l.midi) } };
+  return {
+    ...head,
     song: {
       key: { tonic: l.key.tonic, mode: l.key.mode },
       meter: { beats: l.meter.beats, unit: l.meter.unit },
@@ -136,13 +173,18 @@ export function songItem(input: {
   };
 }
 
-/** A chord chart as a file item: the chart exactly as entered, and how it is viewed. */
+/**
+ * A chord chart as a file item: the chart exactly as entered, and how it is
+ * viewed. Its lyrics are left out unless `lyrics` asks for them.
+ */
 export function chartItem(input: {
   id: string;
   source?: ContentSource;
   chart: ChordChart;
   view: ChartView;
   updatedAt?: number;
+  /** Include the words sung over each bar. Off unless asked: they stay on this device. */
+  lyrics?: boolean;
 }): FileItem {
   const c = input.chart;
   return {
@@ -161,6 +203,9 @@ export function chartItem(input: {
         type: s.type,
         repeat: s.repeat,
         bars: s.bars.map((b) => formatBars([b], c.meter.beats).replace(/^\| | \|$/g, '')),
+        ...(input.lyrics === true && s.bars.some((b) => b.lyric)
+          ? { lyrics: s.bars.map((b) => b.lyric ?? '') }
+          : {}),
       })),
       form: [...c.form],
       notes: c.notes,
@@ -170,6 +215,7 @@ export function chartItem(input: {
       simplify: input.view.simplify,
       style: input.view.style,
       showFunction: input.view.showFunction,
+      showLyrics: input.view.showLyrics,
     },
   };
 }
