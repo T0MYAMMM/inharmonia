@@ -209,10 +209,11 @@ The Songs page has three parts:
   this device".
 
 One card component (`SongCard`) draws every piece from its index entry, so the page loads no
-song to list them. Each piece comes in up to three versions; each song page names its version,
-links to the others, and says which bars of the original it covers. Home's welcome and the first
-starter on Progress open Twinkle, Easy: it starts on C, stays on the white keys and uses six
-notes within a sixth.
+song to list them. Each card opens with the piece's first bars on a staff, drawn from the entry's
+preview (`StaffBars` in `src/ui/art`). Each piece comes in up to three versions; each song page
+names its version, links to the others, and says which bars of the original it covers. Home's
+welcome and the first starter on Progress open Twinkle, Easy: it starts on C, stays on the white
+keys and uses six notes within a sixth.
 
 ### The catalogue
 
@@ -237,8 +238,9 @@ notes within a sixth.
   on this device; the Progress page also reads the catalogue's index, so a song removed from
   this device stays listed as "Song, not downloaded", linking to its download. A retired piece's
   progress stays hidden.
-- **Offline**, the built-in and downloaded songs play. A catalogue song not on this device says
-  the catalogue can't be reached, and why.
+- **Offline**, the built-in and downloaded songs play. The catalogue still lists, from the
+  index the service worker keeps, and says downloads need a connection; a catalogue song not on
+  this device still offers **Download**, which says the same.
 - **Updates** are never automatic: a new SHA-256 in the index shows **Update** on the song's
   card and page.
 
