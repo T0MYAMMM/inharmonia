@@ -187,8 +187,10 @@ covers.
 
 - **Sources** are written in a compact text format, one per piece, in
   `src/content/songs/sources/*.piece` ([docs/format/source.md](docs/format/source.md)).
-  `npm run songs` builds each into `src/content/songs/<piece>.json` and prints the bars where
-  Easy merged notes, to check by ear. A test fails if a JSON file is out of date with its source.
+  `npm run songs` builds each into `src/content/songs/<piece>.json` (built in) or
+  `public/library/<piece>.json` (the catalogue), writes an index of each, and prints the bars
+  where Easy merged notes, to check by ear. `npm run songs -- --check` (in CI and
+  `npm run check`) fails if a file is out of date with its source or breaks a catalogue rule.
 - **The generator** (`src/core/library/generate.ts`) uses the chord-chart tools from phase 8:
   - _Easy:_ the main theme in the nearest easy key (C, G or F; A, E or D minor), each beat
     playing the note sounding at its start (bars marked `easy-keep` stay as written), triads,
