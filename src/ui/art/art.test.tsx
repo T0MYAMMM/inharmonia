@@ -112,10 +112,10 @@ describe('drawings', () => {
     expect(CATALOGUE.length).toBeGreaterThan(0);
   });
 
-  it("draws Twinkle's first two bars from the built-in index, as Home's Songs card does", () => {
+  it("draws Twinkle's opening bars from the built-in index, as Home's Songs card does", () => {
     const twinkle = BUILT_IN_ENTRIES.find((e) => e.piece === 'twinkle-twinkle')!;
     const svg = drawn(<StaffBars preview={twinkle.preview} />);
-    expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(6);
     expect([...svg.querySelectorAll('text')].map((t) => t.textContent)).toEqual(['2', '4']);
   });
 });

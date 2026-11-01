@@ -22,15 +22,30 @@ const n = (note: string, beats: number, tie?: boolean): NoteSpec => ({
 const FOUR = { beats: 4, unit: 4 };
 
 describe('previewOf', () => {
-  it('takes the first two bars of the melody, in the shared string format', () => {
+  it('takes the opening bars of the melody, in the shared string format', () => {
+    // Two bars of 2/4 are four beats: a third bar makes six.
     const twinkle = getSong('twinkle-twinkle-advanced')!;
     expect(previewOf(twinkle.bars, twinkle.meter)).toEqual({
       meter: { beats: 2, unit: 4 },
-      bars: ['C5:1 C5:1', 'G5:1 G5:1'],
+      bars: ['C5:1 C5:1', 'G5:1 G5:1', 'A5:1 A5:1'],
     });
   });
 
-  it('treats a first bar that starts with a rest as a pickup, and adds two bars to it', () => {
+  it('takes at least two bars and six quarter notes, and at most four bars', () => {
+    const bars = ['C5', 'D5', 'E5', 'F5', 'G5', 'A5'].map((note) => bar([n(note, 1)]));
+    const count = (beats: number, unit: number) => previewOf(bars, { beats, unit }).bars.length;
+    expect(count(4, 4)).toBe(2);
+    expect(count(3, 4)).toBe(2);
+    expect(count(6, 8)).toBe(2);
+    expect(count(2, 4)).toBe(3);
+    expect(count(3, 8)).toBe(4);
+    // Four bars of 2/8 are only four quarter notes: four bars is the most.
+    expect(count(2, 8)).toBe(4);
+    // A song shorter than that gives what it has.
+    expect(previewOf(bars.slice(0, 1), { beats: 2, unit: 4 }).bars).toEqual(['C5:1']);
+  });
+
+  it('treats a first bar that starts with a rest as a pickup, and adds the bars after it', () => {
     const three = { beats: 3, unit: 4 };
     const bars = [
       bar([n('r', 2), n('G4', 0.5), n('G4', 0.5)]),
@@ -42,12 +57,14 @@ describe('previewOf', () => {
       meter: { beats: 3, unit: 4 },
       bars: ['r:2 G4:0.5 G4:0.5', 'Bb4:1.5 G4:0.5 G4:1', 'C5:3'],
     });
-    // Für Elise starts on its two-note pickup, in 3/8.
+    // Für Elise starts on its two-note pickup, in 3/8: the pickup, then four
+    // bars for six quarter notes, cut at 24 notes and rests.
     const elise = getSong('fur-elise-advanced')!;
     const preview = previewOf(elise.bars, elise.meter);
     expect(preview.meter).toEqual({ beats: 3, unit: 8 });
-    expect(preview.bars).toHaveLength(3);
+    expect(preview.bars).toHaveLength(5);
     expect(preview.bars[0]).toMatch(/^r:2 E5:0.5 D#5:0.5$/);
+    expect(preview.bars.join(' ').split(' ').length).toBeLessThanOrEqual(24);
   });
 
   it('skips an introduction that is all rests', () => {
