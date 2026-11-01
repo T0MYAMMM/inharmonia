@@ -421,10 +421,6 @@ test.describe('Play clear of the keyboard dock on a phone', () => {
   }
 
   test('on a chord chart, Play ends above the keyboard dock', async ({ page }) => {
-    // Still behind it: the chart's header (its notes, the progressions found,
-    // and Edit, Send to, Export and Show function on two lines) puts Play at
-    // 570-614px against the dock's 561px. Remove test.fail with the fix.
-    test.fail(true, 'known: on a chord chart Play ends 53px behind the dock at 360x780');
     await makeChart(page);
     await page.reload();
     await playAboveDock(page);

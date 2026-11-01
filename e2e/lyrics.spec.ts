@@ -203,9 +203,9 @@ test.describe('Send to', () => {
       await expect(page.locator('main')).not.toContainText(MARK);
     };
 
-    // The chart as it plays, to Studio.
+    // The chart as it plays, to Studio: Send to is under the player.
     await page
-      .locator('header')
+      .getByTestId('chart-actions')
       .getByRole('button', { name: /^Send to/ })
       .click();
     await page.getByRole('menuitem', { name: 'Studio' }).click();
