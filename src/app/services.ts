@@ -81,10 +81,24 @@ export function installMidiAutoConnect(): void {
  */
 const UNLOCK_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'] as const;
 
+/** Keys that move focus or only modify another key: not a reason to start audio. */
+const PASSING_KEYS = new Set(['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'Escape']);
+
+/**
+ * A gesture on its way somewhere else: following a link, using a nav, moving
+ * focus. Leaving a room that plays shouldn't load the piano.
+ */
+function isPassing(e: Event): boolean {
+  if (e instanceof KeyboardEvent && PASSING_KEYS.has(e.key)) return true;
+  return Boolean((e.target as Element | null)?.closest?.('a[href], nav'));
+}
+
 let arms = 0;
 let armedOn: Window | null = null;
 
-function onGesture(): void {
+function onGesture(e: Event): void {
+  // Stay armed for the next gesture.
+  if (isPassing(e)) return;
   void audio.unlock();
   // Keep listening until the context is running: a gesture can create it
   // without the browser letting it start.
