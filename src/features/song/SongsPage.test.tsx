@@ -107,6 +107,27 @@ describe('the Songs page', () => {
     );
   });
 
+  it('opens every card, in Your songs and the catalogue, with its first bars drawn', async () => {
+    serve({ 'index.json': stringifyIndex([HARBOUR.entry, LANTERN.entry]) });
+    open();
+    const catalogue = await within(section('Catalogue')).findAllByRole('article');
+    const cards = [...within(section('Your songs')).getAllByRole('article'), ...catalogue];
+    expect(cards).toHaveLength(5);
+    for (const card of cards) {
+      const art = card.firstElementChild!;
+      expect(art).toHaveClass('cardArt');
+      expect(art).toHaveAttribute('aria-hidden', 'true');
+      expect(art.querySelectorAll('svg line').length).toBeGreaterThan(0);
+      expect(art.querySelectorAll('svg ellipse').length).toBeGreaterThan(0);
+    }
+    // Harbour Tune opens G4 B4 | D5: three notes.
+    expect(
+      within(section('Catalogue'))
+        .getByTestId('piece-harbour-tune')
+        .querySelectorAll('.cardArt ellipse'),
+    ).toHaveLength(3);
+  });
+
   it('downloads from a card into Your songs, and removes after asking', async () => {
     serve({
       'index.json': stringifyIndex([HARBOUR.entry, LANTERN.entry]),

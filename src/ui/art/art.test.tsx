@@ -3,10 +3,11 @@ import { join, relative, resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { FILLS } from '@/content/fills';
 import { SONGS } from '@/content/lessons';
 import { PROGRESSIONS } from '@/content/progressions';
-import type { Lesson } from '@/core/content/types';
+import { parseIndex, previewOf } from '@/core/library/catalogue';
 import { CardArt } from './CardArt';
 import { ChordWave } from './ChordWave';
 import { FillRun } from './FillRun';
@@ -14,34 +15,16 @@ import { MidiFilePage } from './MidiFilePage';
 import { MiniKeys } from './MiniKeys';
 import { TWINKLE } from './previews';
 import { SongRoll } from './SongRoll';
-import type { SongPreview } from './songPreview';
 import { KeysSpot, MetronomeSpot, RestSpot } from './spots';
 import { StaffBars } from './StaffBars';
 import { SungToNotes } from './SungToNotes';
 import { VoiceLines } from './VoiceLines';
 import { WeekDots } from './WeekDots';
 
-/**
- * A built-in song's preview, cut as the song catalogue's index cuts it: from
- * the first bar that sounds, a pickup plus two bars (or two bars), at most 24
- * notes. Every version is checked, not only the one the index shows.
- */
-function previewOf(song: Lesson): SongPreview {
-  const sounds = (i: number) => (song.bars[i]?.rh ?? []).some((n) => n.note !== 'r');
-  const first = Math.max(
-    0,
-    song.bars.findIndex((_, i) => sounds(i)),
-  );
-  const pickup = song.bars[first]?.rh?.[0]?.note === 'r' ? 1 : 0;
-  let left = 24;
-  const bars = song.bars.slice(first, first + 2 + pickup).map((bar) =>
-    (bar.rh ?? [])
-      .slice(0, Math.max(left, 0))
-      .map((n) => (left--, `${n.note}:${n.beats}${n.tie ? '~' : ''}`))
-      .join(' '),
-  );
-  return { meter: song.meter, bars };
-}
+/** The catalogue's index, as the app serves it next to itself. */
+const CATALOGUE = parseIndex(
+  readFileSync(resolve(__dirname, '../../../public/library/index.json'), 'utf8'),
+)!;
 
 /** The drawing's root: an svg on its own, hidden from assistive tech. */
 function drawn(ui: ReactElement): SVGSVGElement {
@@ -103,19 +86,37 @@ describe('drawings', () => {
     expect(container.firstElementChild).toBeNull();
   });
 
-  it.each(SONGS.map((s) => [s.id, s] as const))('song %s draws its first bars', (_, song) => {
-    const preview = previewOf(song);
-    const staff = drawn(<StaffBars preview={preview} />);
-    expect(staff.querySelectorAll('ellipse').length).toBeGreaterThan(0);
-    // Studio's drawings read the same shape.
-    drawn(<SongRoll preview={preview} />);
-    drawn(<SungToNotes preview={preview} />);
+  it.each(SONGS.map((s) => [s.id, s] as const))(
+    'built-in song %s draws its first bars',
+    (_, song) => {
+      // Every version, cut as the index cuts the one it shows.
+      const preview = previewOf(song.bars, song.meter);
+      const staff = drawn(<StaffBars preview={preview} />);
+      expect(staff.querySelectorAll('ellipse').length).toBeGreaterThan(0);
+      // Studio's drawings read the same shape.
+      drawn(<SongRoll preview={preview} />);
+      drawn(<SungToNotes preview={preview} />);
+    },
+  );
+
+  it.each([...BUILT_IN_ENTRIES, ...CATALOGUE].map((e) => [e.piece, e] as const))(
+    "%s's index preview draws on its card",
+    (_, entry) => {
+      const staff = drawn(<StaffBars preview={entry.preview} />);
+      expect(staff.querySelectorAll('ellipse').length).toBeGreaterThan(0);
+    },
+  );
+
+  it('the catalogue has songs to draw', () => {
+    expect(BUILT_IN_ENTRIES.length).toBeGreaterThan(0);
+    expect(CATALOGUE.length).toBeGreaterThan(0);
   });
 
-  it("draws Twinkle's first two bars on Home's Songs card", () => {
-    const svg = drawn(<StaffBars preview={TWINKLE} />);
-    expect(svg.querySelectorAll('ellipse')).toHaveLength(7);
-    expect(svg.querySelector('text')).toHaveTextContent('4');
+  it("draws Twinkle's first two bars from the built-in index, as Home's Songs card does", () => {
+    const twinkle = BUILT_IN_ENTRIES.find((e) => e.piece === 'twinkle-twinkle')!;
+    const svg = drawn(<StaffBars preview={twinkle.preview} />);
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
+    expect([...svg.querySelectorAll('text')].map((t) => t.textContent)).toEqual(['2', '4']);
   });
 });
 

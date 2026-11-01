@@ -4,6 +4,8 @@ import type { SongLevel } from '@/core/content/types';
 import type { CatalogueEntry } from '@/core/library/catalogue';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import type { ProgressState } from '@/state/progress';
+import { CardArt } from '@/ui/art/CardArt';
+import { StaffBars } from '@/ui/art/StaffBars';
 import { LEVEL_NAMES } from './credit';
 import styles from './SongsPage.module.css';
 
@@ -21,8 +23,8 @@ export interface SongCardProps {
 
 /**
  * One piece, from its index entry, wherever it is: built in, downloaded or in
- * the catalogue. An article of title, credit, meta, summary and foot, so a
- * drawing can go in as its first child.
+ * the catalogue. An article of its opening bars drawn on a staff, then title,
+ * credit, meta, summary and foot.
  */
 export function SongCard({ entry, level, progress, actions, alert, titleRef }: SongCardProps) {
   const main = entry.levels.find((l) => l.level === (level ?? 'easy')) ?? entry.levels[0]!;
@@ -32,6 +34,9 @@ export function SongCard({ entry, level, progress, actions, alert, titleRef }: S
   const titleId = useId();
   return (
     <article className={styles.card} aria-labelledby={titleId} data-testid={`piece-${entry.piece}`}>
+      <CardArt>
+        <StaffBars preview={entry.preview} />
+      </CardArt>
       <h3 className={styles.title} id={titleId}>
         <Link to={`/songs/${main.id}`} ref={titleRef}>
           {entry.title}

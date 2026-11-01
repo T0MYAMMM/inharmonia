@@ -98,6 +98,31 @@ test.describe('drawings on cards', () => {
     });
   }
 
+  test('/songs draws each song card, in Your songs and the catalogue', async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto('songs');
+    await expect(page.getByTestId('songs').getByRole('article')).toHaveCount(6);
+    await expect(page.getByTestId('your-songs').getByRole('article')).toHaveCount(3);
+    const found = await panels(page);
+    expect(found).toHaveLength(9);
+    for (const p of found) {
+      expect(p.hidden && p.drawn).toBe(true);
+      if (isMobile) expect(p).toMatchObject({ height: 64, flush: true });
+      else expect(p.height).toBe(68);
+    }
+    // Each drawing opens its card, above the title.
+    const first = await page
+      .locator('main article[data-testid^="piece-"]')
+      .evaluateAll((els) => els.map((a) => a.firstElementChild!.className));
+    expect(first.every((c) => c.includes('cardArt'))).toBe(true);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  });
+
   test("Home's rooms include Studio, each card in its own room's colour", async ({ page }) => {
     await page.goto('');
     const rooms = page.locator('main a[data-room]');
