@@ -43,12 +43,18 @@ reads it. Deep links like `/inharmonia/about` work.
 ### Offline and install
 
 The production build is a PWA (`vite-plugin-pwa`, configured in `vite.config.ts`). The service
-worker precaches the app, the self-hosted fonts and every piano sample in both formats, about
-4 MB in all. After the first visit, everything works offline, including deep links, which fall
-back to `index.html`. It updates itself in the background (`registerType: 'autoUpdate'`). The
-manifest and icons in `public/icons/` make it installable, and its scope and start URL follow
-`BASE_PATH`. `src/app/pwa.ts` registers the worker in production only, and the footer says
-"Ready to use offline" once it is.
+worker precaches the app (every room's code, Tone.js included), its styles, the self-hosted fonts,
+the icons and the library's index. The piano samples wait for a room that plays (one with a
+keyboard, Ear training, the progression builder or Studio): once one has opened, the worker is
+installed and the page is idle, `src/app/sampleWarm.ts` caches them in the one format this browser
+plays (about 1.5 MB of Ogg, or 1.7 MB of MP3), unless the browser asks to save data. A visit that
+stays out of those rooms fetches no samples, which matters on metered mobile data. The worker reads
+them cache-first, and the piano caches them as it plays, too. After the first visit, everything
+works offline, including deep links, which fall back to `index.html`; the piano needs a room that
+plays to have been opened once online, and plays the synth until then. The worker updates itself in
+the background (`registerType: 'autoUpdate'`). The manifest and icons in `public/icons/` make it
+installable, and its scope and start URL follow `BASE_PATH`. `src/app/pwa.ts` registers the worker
+in production only, and the footer says "Ready to use offline" once it is.
 
 ## Folder overview
 
@@ -670,9 +676,15 @@ linear gain) and are capped at full scale.
   lost pointer capture on the keyboard, window blur and a hidden page for computer keys, and a
   MIDI device disconnecting (its notes and its sustain pedal are released).
 
-- Audio starts only from a user gesture. The AudioContext is created synchronously inside the
-  first `pointerdown` or `keydown`, which is what iOS Safari requires. Notes pressed while Tone.js
-  is still loading are played as soon as it is ready.
+- Audio starts only from a user gesture, and only in a room that plays: one with a keyboard, Ear
+  training, the progression builder and Studio. There the AudioContext is created synchronously
+  inside the first `pointerup`, `touchend`, `click` or `keydown` (a touch's `pointerdown` doesn't
+  count as one), which is what iOS Safari requires, and Tone.js and the piano load then. A gesture
+  on a link or in a nav, and Tab, Shift, Ctrl, Alt, Meta or Escape, don't count: leaving the room or
+  moving focus doesn't load the piano. Every Play button also starts it itself. Notes pressed while
+  Tone.js is still loading are played as soon as it is ready; notes and clicks scheduled in that
+  time, like the first beat of a first Play, are held and played on time, or at once if a little
+  late.
 - **iOS silent switch:** on iPhone, Web Audio is muted when the ring/silent switch is set to
   silent. If you hear nothing on iOS, check the switch.
 - A simple synth plays until the piano samples finish loading (about 1.6 MB), then the piano

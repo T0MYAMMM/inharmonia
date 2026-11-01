@@ -1,6 +1,6 @@
-import { useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { audio } from '@/app/services';
+import { armAudio, audio } from '@/app/services';
 import { MIX, mixVelocity } from '@config/mix';
 import { getProgression } from '@/content/progressions';
 import {
@@ -137,6 +137,8 @@ function Builder({
   /** What was sent but is not here. */
   problem: string | null;
 }) {
+  // A room that plays: the first gesture here starts audio.
+  useEffect(() => armAudio(), []);
   const navigate = useNavigate();
   const save = useUserProgressions((s) => s.save);
   const remove = useUserProgressions((s) => s.remove);
