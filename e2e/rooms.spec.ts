@@ -81,6 +81,8 @@ test.describe('drawings on cards', () => {
       isMobile,
     }) => {
       await page.goto(route);
+      // A room's code loads after the page itself: measure once its cards are there.
+      await expect(page.locator(cards).first()).toBeVisible();
       const found = await panels(page);
       expect(found.length).toBeGreaterThan(0);
       expect(found).toHaveLength(await page.locator(cards).count());
