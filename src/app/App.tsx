@@ -1,28 +1,52 @@
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Layout } from './Layout';
 import { HomePage } from '@/features/home/HomePage';
-import { KeyboardSandboxPage } from '@/features/dev/KeyboardSandboxPage';
-import { AboutPage } from '@/features/about/AboutPage';
-import { SongPage } from '@/features/song/SongPage';
-import { ChordLibraryPage } from '@/features/chords/ChordLibraryPage';
-import { ChordDrillPage } from '@/features/chords/ChordDrillPage';
-import { KnownChordsPage } from '@/features/chords/KnownChordsPage';
-import { ProgressionsPage } from '@/features/progressions/ProgressionsPage';
-import { ProgressionPage } from '@/features/progressions/ProgressionPage';
-import { ProgressionBuilderPage } from '@/features/progressions/ProgressionBuilderPage';
-import { SongsPage } from '@/features/song/SongsPage';
-import { FillsPage } from '@/features/fills/FillsPage';
-import { FillPage } from '@/features/fills/FillPage';
-import { EarPage } from '@/features/ear/EarPage';
-import { ProgressPage } from '@/features/progress/ProgressPage';
-import { StudioPage } from '@/features/studio/StudioPage';
-import { MySongPage } from '@/features/mysongs/MySongPage';
-import { EditSongPage } from '@/features/mysongs/EditSongPage';
-import { ChartPage } from '@/features/charts/ChartPage';
-import { ChartEditorPage } from '@/features/charts/ChartEditorPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
+import { lazyPage } from './lazyPage';
 import { useThemeEffect } from './theme';
 import { ROUTER_BASENAME } from './config';
+
+// Every room but Home loads its code when it first opens.
+const KeyboardSandboxPage = lazyPage(
+  () => import('@/features/dev/KeyboardSandboxPage'),
+  'KeyboardSandboxPage',
+);
+const AboutPage = lazyPage(() => import('@/features/about/AboutPage'), 'AboutPage');
+const SongPage = lazyPage(() => import('@/features/song/SongPage'), 'SongPage');
+const ChordLibraryPage = lazyPage(
+  () => import('@/features/chords/ChordLibraryPage'),
+  'ChordLibraryPage',
+);
+const ChordDrillPage = lazyPage(() => import('@/features/chords/ChordDrillPage'), 'ChordDrillPage');
+const KnownChordsPage = lazyPage(
+  () => import('@/features/chords/KnownChordsPage'),
+  'KnownChordsPage',
+);
+const ProgressionsPage = lazyPage(
+  () => import('@/features/progressions/ProgressionsPage'),
+  'ProgressionsPage',
+);
+const ProgressionPage = lazyPage(
+  () => import('@/features/progressions/ProgressionPage'),
+  'ProgressionPage',
+);
+const ProgressionBuilderPage = lazyPage(
+  () => import('@/features/progressions/ProgressionBuilderPage'),
+  'ProgressionBuilderPage',
+);
+const SongsPage = lazyPage(() => import('@/features/song/SongsPage'), 'SongsPage');
+const FillsPage = lazyPage(() => import('@/features/fills/FillsPage'), 'FillsPage');
+const FillPage = lazyPage(() => import('@/features/fills/FillPage'), 'FillPage');
+const EarPage = lazyPage(() => import('@/features/ear/EarPage'), 'EarPage');
+const ProgressPage = lazyPage(() => import('@/features/progress/ProgressPage'), 'ProgressPage');
+const StudioPage = lazyPage(() => import('@/features/studio/StudioPage'), 'StudioPage');
+const MySongPage = lazyPage(() => import('@/features/mysongs/MySongPage'), 'MySongPage');
+const EditSongPage = lazyPage(() => import('@/features/mysongs/EditSongPage'), 'EditSongPage');
+const ChartPage = lazyPage(() => import('@/features/charts/ChartPage'), 'ChartPage');
+const ChartEditorPage = lazyPage(
+  () => import('@/features/charts/ChartEditorPage'),
+  'ChartEditorPage',
+);
 
 export function AppRoutes() {
   return (

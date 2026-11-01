@@ -162,6 +162,11 @@
   outline: none;
 }
 
+/* A room's code is loading: hold the footer where the page will push it. */
+.pending {
+  min-height: 100dvh;
+}
+
 .footer {
   padding: var(--space-6) max(var(--gutter), env(safe-area-inset-right))
     max(var(--space-6), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
