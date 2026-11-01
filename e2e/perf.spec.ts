@@ -161,12 +161,15 @@ test.describe('offline after the first visit', () => {
             urls.push(`${name} ${new URL(r.url).pathname}`);
         return urls;
       });
-    // The samples come once the page is idle, in the one format this browser plays.
-    await expect
-      .poll(async () => (await cached()).filter((u) => u.includes('/samples/')).length, {
-        timeout: 20_000,
-      })
-      .toBe(30);
+    const samplesCached = async () => (await cached()).filter((u) => u.includes('/samples/'));
+    // Home alone, with the page idle: no samples.
+    await page.waitForTimeout(1500);
+    expect(await samplesCached()).toEqual([]);
+    // A room that plays has them cached when the page is idle, in the one
+    // format this browser plays.
+    await page.goto('songs/ode-to-joy-easy');
+    await expect(page.getByTestId('play')).toBeVisible();
+    await expect.poll(async () => (await samplesCached()).length, { timeout: 20_000 }).toBe(30);
     const format = await page.evaluate(() =>
       new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3',
     );

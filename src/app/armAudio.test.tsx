@@ -9,11 +9,15 @@ import { StudioPage } from '@/features/studio/StudioPage';
 import { KeyboardDock } from '@/ui/keyboard/KeyboardDock';
 import { armAudio, audio } from './services';
 
+const warm = vi.hoisted(() => ({ schedule: vi.fn() }));
+vi.mock('./sampleWarm', () => ({ scheduleSampleWarm: warm.schedule }));
+
 /** The context the engine reports, as far as arming cares. */
 let ctx: { state: AudioContextState } | null = null;
 let unlock: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  warm.schedule.mockClear();
   ctx = null;
   unlock = vi.spyOn(audio, 'unlock').mockImplementation(() => {
     ctx ??= { state: 'suspended' };
@@ -118,10 +122,11 @@ describe('the rooms that play arm it; the others do not', () => {
   it.each([
     ['Home', <HomePage key="home" />],
     ['Songs', <SongsPage key="songs" />],
-  ])('%s does not', (_name, ui) => {
+  ])('%s does not, nor has the samples cached', (_name, ui) => {
     inRouter(ui);
     gesture('pointerup');
     expect(unlock).not.toHaveBeenCalled();
+    expect(warm.schedule).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -129,8 +134,9 @@ describe('the rooms that play arm it; the others do not', () => {
     ['Ear training', <EarPage key="ear" />],
     ['the progression builder', <ProgressionBuilderPage key="builder" />],
     ['Studio', <StudioPage key="studio" />],
-  ])('%s does', (_name, ui) => {
+  ])('%s does, and has the samples cached', (_name, ui) => {
     const { unmount } = inRouter(ui);
+    expect(warm.schedule).toHaveBeenCalled();
     gesture('pointerup');
     expect(unlock).toHaveBeenCalledTimes(1);
     unmount();

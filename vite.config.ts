@@ -86,7 +86,8 @@ export default defineConfig({
         // index, so the app and its catalogue list work offline (the plugin
         // adds the manifest itself). Not the library's songs (downloads live in
         // IndexedDB) and not the piano samples: those are cached in one format
-        // when the page is idle (app/sampleWarm.ts) and read cache-first.
+        // once a room that plays has opened (app/sampleWarm.ts), and read
+        // cache-first.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}', 'library/index.json'],
         globIgnores: ['404.html'],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,

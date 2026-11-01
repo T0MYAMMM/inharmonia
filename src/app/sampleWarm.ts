@@ -54,6 +54,30 @@ export async function warmSamples(
   for (const url of urls) await cache.add(url);
 }
 
+let scheduled = false;
+
+/** The installed service worker, when this build has one. */
+function workerReady(): Promise<unknown> | null {
+  return import.meta.env.PROD && 'serviceWorker' in navigator
+    ? navigator.serviceWorker.ready
+    : null;
+}
+
+/**
+ * Warm the samples once a room that plays has opened (armAudio calls this),
+ * at most once per page load: when the service worker is installed and the
+ * page is idle. A visit that never opens such a room fetches no samples,
+ * which matters on metered mobile data.
+ */
+export function scheduleSampleWarm(
+  ready: Promise<unknown> | null = workerReady(),
+  warm: () => Promise<void> = () => warmSamples(),
+): void {
+  if (scheduled || !ready) return;
+  scheduled = true;
+  void ready.then(() => whenIdle(() => void warm().catch(() => undefined)));
+}
+
 /** Run when the page is idle, or after a short wait where idle callbacks don't exist. */
 export function whenIdle(run: () => void): void {
   if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 10_000 });
