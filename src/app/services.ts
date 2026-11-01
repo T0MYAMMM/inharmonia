@@ -3,6 +3,7 @@ import { Transport, WorkerTicker } from '@/core/audio';
 import { ComputerKeys, NoteStream, WebMidiInput } from '@/core/input';
 import { KeyLights, PRESS_FLASH_MS } from '@/state/keyLights';
 import { useSettings } from '@/state/settings';
+import { scheduleSampleWarm } from './sampleWarm';
 
 /**
  * App-wide singletons. Everything here is plain TypeScript; React components
@@ -115,10 +116,12 @@ function disarm(): void {
 /**
  * Start audio on the next gesture anywhere on the page, so the first note is
  * not lost to loading. Called by the rooms that play, from an effect: Tone and
- * the piano load only there. Returns the cleanup; the listener goes when the
+ * the piano load only there, and the first such room also has the samples
+ * cached for offline use. Returns the cleanup; the listener goes when the
  * last room that armed it closes, or once audio is running.
  */
 export function armAudio(target: Window = window): () => void {
+  scheduleSampleWarm();
   arms++;
   if (!armedOn && audio.context()?.state !== 'running') {
     armedOn = target;

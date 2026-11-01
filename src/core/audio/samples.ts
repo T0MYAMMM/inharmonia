@@ -6,8 +6,9 @@
 export const SAMPLE_VERSION = 'v1';
 export const SAMPLE_DIR = `samples/salamander/${SAMPLE_VERSION}/`;
 /**
- * The service worker's cache for them, filled in one format when the page is
- * idle (see app/sampleWarm.ts) and read cache-first. A new version gets a new cache.
+ * The service worker's cache for them, filled in one format once a room that
+ * plays has opened (see app/sampleWarm.ts) and read cache-first. A new version
+ * gets a new cache.
  */
 export const SAMPLE_CACHE_PREFIX = 'inharmonia-samples-';
 export const SAMPLE_CACHE = `${SAMPLE_CACHE_PREFIX}${SAMPLE_VERSION}`;

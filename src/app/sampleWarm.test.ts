@@ -2,6 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SAMPLE_CACHE, sampleNotes, sampleUrls } from '@/core/audio/samples';
 import { samplesToWarm, warmSamples } from './sampleWarm';
 
+/** A fresh copy of the module, so "once per page load" starts over. */
+async function freshSchedule() {
+  vi.resetModules();
+  return (await import('./sampleWarm')).scheduleSampleWarm;
+}
+
 const BASE = '/inharmonia/';
 const all = (format: 'ogg' | 'mp3') => Object.values(sampleUrls(BASE, format));
 
@@ -100,5 +106,40 @@ describe('warmSamples', () => {
     fake.failAfter(3);
     await expect(warmSamples(BASE, fake.storage)).rejects.toThrow('Failed to fetch');
     expect(fake.stores.get(SAMPLE_CACHE)!.size).toBe(3);
+  });
+});
+
+describe('scheduleSampleWarm', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('warms once per page load, after the worker is ready and the page is idle', async () => {
+    vi.useFakeTimers();
+    const schedule = await freshSchedule();
+    const warm = vi.fn(async () => undefined);
+    schedule(Promise.resolve(), warm);
+    schedule(Promise.resolve(), warm);
+    expect(warm).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(warm).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing without a service worker', async () => {
+    vi.useFakeTimers();
+    const schedule = await freshSchedule();
+    const warm = vi.fn(async () => undefined);
+    schedule(null, warm);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(warm).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed warm to itself', async () => {
+    vi.useFakeTimers();
+    const schedule = await freshSchedule();
+    const warm = vi.fn(() => Promise.reject(new TypeError('Failed to fetch')));
+    schedule(Promise.resolve(), warm);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(warm).toHaveBeenCalledTimes(1);
   });
 });

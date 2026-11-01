@@ -133,7 +133,10 @@ test('works offline after the first visit', async ({ page, context }) => {
   await page.reload();
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await expect(page.getByText('Ready to use offline.')).toBeVisible();
-  // The piano's samples are cached once the page is idle, in this browser's format.
+  // Once a room that plays has opened, the piano's samples are cached when the
+  // page is idle, in this browser's format.
+  await page.goto('songs/ode-to-joy-easy');
+  await expect(page.getByTestId('play')).toBeVisible();
   const format = await page.evaluate(() =>
     new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3',
   );
