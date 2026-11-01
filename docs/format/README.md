@@ -62,6 +62,9 @@ its notes are MIDI numbers: `midi` is the pitch (60 is middle C), `velocity` is 
   `notes` (`id`, `startBeat`, `beats`, `midi`, `velocity`). Beats are quarter notes from the
   start. The practice score is not written: it is rebuilt from the project on import, the way
   Studio's **Save to My songs** builds it. Such a song is 2/4, 3/4 or 4/4 and up to 512 bars.
+  A catalogue song made this way also has `piece`, `level` and `summary` before `midi`, and
+  its credit is the item's `source`. Your own MIDI songs never have them: they are rebuilt as
+  yours on import.
 
 - **chart**: key, tempo, meter (3/4 or 4/4), `sections`, `form` and `notes`, plus a separate
   `view`: `transpose` (semitones, -11 to 11), `simplify` (`original`, `simplified` or `basic`),

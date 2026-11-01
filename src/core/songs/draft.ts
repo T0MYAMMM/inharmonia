@@ -51,6 +51,10 @@ export interface SongDraft {
   alternatives?: ChordSegment[];
 }
 
+/** What a song made from a MIDI file says about itself, unless it has a summary of its own. */
+export const MIDI_SUMMARY =
+  'Imported MIDI. The score shows a single melody; playback and Falling Notes use all MIDI tracks.';
+
 export const MIN_NOTE_BEATS = 0.25;
 /** A song from a MIDI file may be this long; one written in Studio stays shorter (`MAX_BARS`). */
 export const MAX_MIDI_BARS = 512;
@@ -110,8 +114,7 @@ export function toLesson(d: SongDraft, id: string): Lesson {
       kind: 'song',
       source: { kind: 'user' },
       title: d.title.trim() || 'Untitled',
-      summary:
-        'Imported MIDI. The score shows a single melody; playback and Falling Notes use all MIDI tracks.',
+      summary: MIDI_SUMMARY,
       key: d.key,
       meter: d.meter,
       tempo: { default: d.tempo, min: Math.min(30, d.tempo), max: Math.max(240, d.tempo) },

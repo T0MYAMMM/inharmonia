@@ -468,10 +468,23 @@
       }
     },
     "midiSong": {
+      "description": "A song made from a MIDI file. A catalogue song made in Studio also has piece, level and summary; its credit is the item's source.",
       "type": "object",
       "required": ["midi"],
       "additionalProperties": false,
       "properties": {
+        "piece": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]{1,60}$",
+          "description": "Catalogue songs: the piece this song is a version of."
+        },
+        "level": {
+          "enum": ["easy", "medium", "advanced"]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 140
+        },
         "midi": {
           "$ref": "#/$defs/midiProject"
         }

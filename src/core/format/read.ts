@@ -159,23 +159,54 @@ export function cleanSource(raw: unknown): ContentSource {
   }
 }
 
+/** A library or catalogue song's piece and version, checked. */
+function pieceAndLevel(raw: Obj): { piece?: string; level?: SongLevel } {
+  if (
+    raw.piece !== undefined &&
+    (typeof raw.piece !== 'string' || !/^[a-z0-9-]{1,60}$/.test(raw.piece))
+  )
+    fail('song.piece', 'should be a short id (lowercase letters, digits, dashes)');
+  if (raw.level !== undefined && !SONG_LEVELS.includes(raw.level as SongLevel))
+    fail('song.level', `should be ${SONG_LEVELS.join(', ')}`);
+  return {
+    ...(raw.piece ? { piece: raw.piece as string } : {}),
+    ...(raw.level ? { level: raw.level as SongLevel } : {}),
+  };
+}
+
 /**
  * A song made from a MIDI file: its project, checked as Studio checks one, and
- * the practice score built from it the way Studio's Save builds it.
+ * the practice score built from it the way Studio's Save builds it. A song
+ * from elsewhere (a catalogue song, with its credit) keeps its source, piece,
+ * level and summary; your own is rebuilt as yours, as written songs are.
  */
-function readMidiSong(raw: unknown, id: string, title: string) {
-  const project = cleanMidiProject(raw);
+function readMidiSong(raw: Obj, id: string, title: string, src: ContentSource) {
+  if (raw.summary !== undefined && !isStr(raw.summary, FILE_LIMITS.summary))
+    fail('song.summary', `should be text up to ${FILE_LIMITS.summary} characters`);
+  const library = pieceAndLevel(raw);
+  const project = cleanMidiProject(raw.midi);
   if (typeof project === 'string') return fail('song.midi', project);
   const misfit = midiSongProblem(project);
   if (misfit === 'meter') fail('song.midi.meter', 'must be 2/4, 3/4 or 4/4');
   if (misfit === 'length') fail('song.midi', `is longer than ${FILE_LIMITS.midiBars} bars`);
   const draft: SongDraft = { ...midiToDraft(project), title };
-  return { kind: 'song' as const, lesson: toLesson(draft, id), draft };
+  const lesson = toLesson(draft, id);
+  if (src.kind === 'user') return { kind: 'song' as const, lesson, draft };
+  return {
+    kind: 'song' as const,
+    lesson: {
+      ...lesson,
+      source: src,
+      ...library,
+      ...(raw.summary ? { summary: raw.summary as string } : {}),
+    },
+    draft,
+  };
 }
 
 function readSong(raw: unknown, id: string, title: string, src: ContentSource, ctx: ImportContext) {
   if (!isObj(raw)) return fail('song', 'is missing');
-  if (raw.midi !== undefined) return readMidiSong(raw.midi, id, title);
+  if (raw.midi !== undefined) return readMidiSong(raw, id, title, src);
   // Before anything else in it is checked: what version 2 wrote for one, every chord N.C.
   if (src.kind === 'user' && Array.isArray(raw.bars) && raw.bars.length && raw.bars.every(allNC))
     fail(
@@ -240,13 +271,7 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
       ...(b.section ? { section: b.section as string } : {}),
     };
   });
-  if (
-    raw.piece !== undefined &&
-    (typeof raw.piece !== 'string' || !/^[a-z0-9-]{1,60}$/.test(raw.piece))
-  )
-    fail('song.piece', 'should be a short id (lowercase letters, digits, dashes)');
-  if (raw.level !== undefined && !SONG_LEVELS.includes(raw.level as SongLevel))
-    fail('song.level', `should be ${SONG_LEVELS.join(', ')}`);
+  const library = pieceAndLevel(raw);
   if (raw.covers !== undefined && !isStr(raw.covers, 80))
     fail('song.covers', 'should be text up to 80 characters');
   const lhFigure = raw.lhFigure === undefined ? undefined : readFigure(raw.lhFigure);
@@ -262,8 +287,7 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
     tempo,
     lhPattern,
     ...(lhFigure ? { lhFigure } : {}),
-    ...(raw.piece ? { piece: raw.piece as string } : {}),
-    ...(raw.level ? { level: raw.level as SongLevel } : {}),
+    ...library,
     ...(raw.covers ? { covers: raw.covers as string } : {}),
     rules: DEFAULT_RULES,
     bars,
