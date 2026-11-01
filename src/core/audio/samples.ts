@@ -5,6 +5,13 @@
  */
 export const SAMPLE_VERSION = 'v1';
 export const SAMPLE_DIR = `samples/salamander/${SAMPLE_VERSION}/`;
+/**
+ * The service worker's cache for them, filled in one format once a room that
+ * plays has opened (see app/sampleWarm.ts) and read cache-first. A new version
+ * gets a new cache.
+ */
+export const SAMPLE_CACHE_PREFIX = 'inharmonia-samples-';
+export const SAMPLE_CACHE = `${SAMPLE_CACHE_PREFIX}${SAMPLE_VERSION}`;
 
 export type SampleFormat = 'ogg' | 'mp3';
 
@@ -38,4 +45,9 @@ export function sampleUrls(baseUrl: string, format: SampleFormat): Record<string
 export function pickSampleFormat(canPlayType: (type: string) => string): SampleFormat {
   if (canPlayType('audio/ogg; codecs="vorbis"')) return 'ogg';
   return 'mp3';
+}
+
+/** The format this browser loads: the one choice the engine and the offline cache share. */
+export function browserSampleFormat(): SampleFormat {
+  return pickSampleFormat((t) => new Audio().canPlayType(t));
 }

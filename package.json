@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run test",
     "eval:transcription": "tsx scripts/eval-transcription.ts",
-    "songs": "tsx --tsconfig tsconfig.app.json scripts/build-songs.ts"
+    "songs": "tsx --tsconfig tsconfig.app.json scripts/build-songs.ts",
+    "size": "tsx scripts/size-budget.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

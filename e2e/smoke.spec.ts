@@ -70,6 +70,7 @@ test.describe('keyboard sandbox', () => {
     test.skip(isMobile, 'computer keyboard input is a desktop feature');
     await page.goto('keyboard');
     const c4 = page.locator('[data-midi="60"]');
+    await expect(c4).toBeVisible();
     await page.keyboard.down('a');
     await expect(c4).toHaveAttribute('data-layers', /held/);
     await page.keyboard.up('a');
@@ -94,6 +95,7 @@ test.describe('keyboard sandbox', () => {
       if (r.url().includes('/samples/')) formats.add(r.url().split('.').pop()!);
     });
     await page.goto('keyboard');
+    await expect(page.locator('[data-midi="60"]')).toBeVisible();
     await page.keyboard.press('a');
     await expect(page.getByText('Piano ready')).toBeVisible({ timeout: 20_000 });
     expect([...formats]).toEqual(['mp3']);
@@ -131,13 +133,31 @@ test('works offline after the first visit', async ({ page, context }) => {
   await page.reload();
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await expect(page.getByText('Ready to use offline.')).toBeVisible();
+  // Once a room that plays has opened, the piano's samples are cached when the
+  // page is idle, in this browser's format.
+  await page.goto('songs/ode-to-joy-easy');
+  await expect(page.getByTestId('play')).toBeVisible();
+  const format = await page.evaluate(() =>
+    new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3',
+  );
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          async () => (await (await caches.open('inharmonia-samples-v1')).keys()).length,
+        ),
+      {
+        timeout: 20_000,
+      },
+    )
+    .toBe(30);
   await context.setOffline(true);
   await page.goto('fills/enclosure');
   await expect(page.getByRole('heading', { name: 'Enclosure' })).toBeVisible();
-  const sample = await page.evaluate(async () => {
-    const r = await fetch(`${location.origin}/inharmonia/samples/salamander/v1/C4.mp3`);
+  const sample = await page.evaluate(async (ext) => {
+    const r = await fetch(`${location.origin}/inharmonia/samples/salamander/v1/C4.${ext}`);
     return r.ok && (await r.arrayBuffer()).byteLength > 1000;
-  });
+  }, format);
   expect(sample).toBe(true);
   await context.setOffline(false);
 });

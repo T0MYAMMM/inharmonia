@@ -20,9 +20,10 @@ export function useOfflineReady(): boolean {
 }
 
 /**
- * Register the service worker (production builds only). It precaches the app,
- * fonts and piano samples, updates itself in the background, and once a worker
- * controls the page the app is ready offline.
+ * Register the service worker (production builds only). It precaches the app
+ * and its fonts and updates itself in the background; once a worker controls
+ * the page the app is ready offline. The piano samples are cached separately,
+ * once a room that plays opens (see sampleWarm.ts).
  */
 export async function registerServiceWorker(): Promise<void> {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;

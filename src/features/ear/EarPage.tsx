@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
-import { audio } from '@/app/services';
+import { armAudio, audio } from '@/app/services';
 import {
   CHORD_EAR_LEVELS,
   ChordEarQuiz,
@@ -78,6 +78,8 @@ const asExercise = (v: string | null): Exercise =>
   v === 'notes' || v === 'progressions' ? v : 'chords';
 
 export function EarPage() {
+  // A room that plays: the first gesture here starts audio.
+  useEffect(() => armAudio(), []);
   const [params, setParams] = useSearchParams();
   const exercise = asExercise(params.get('exercise'));
   const levels: readonly { id: string; name: string }[] = LEVELS[exercise];

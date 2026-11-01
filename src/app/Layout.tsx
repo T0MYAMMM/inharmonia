@@ -1,11 +1,12 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { useEffect, useId, useRef, useState } from 'react';
+import { Suspense, useEffect, useId, useRef, useState } from 'react';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Segmented } from '@/ui/Segmented';
 import { useDismiss } from '@/ui/useDismiss';
 import { VolumeSlider } from '@/ui/VolumeSlider';
 import { useSettings, type ThemeChoice } from '@/state/settings';
 import { useOfflineReady } from './pwa';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 import type { NotationSystem } from '@/core/notation';
 import styles from './Layout.module.css';
 
@@ -130,7 +131,12 @@ export function Layout() {
         </div>
       </header>
       <main id="main" ref={mainRef} tabIndex={-1} className={styles.main}>
-        <Outlet />
+        <RouteErrorBoundary resetKey={pathname}>
+          {/* Only a cold deep link shows this: moving between rooms keeps the old page up. */}
+          <Suspense fallback={<div className={styles.pending} aria-busy="true" />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
