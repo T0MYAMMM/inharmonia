@@ -4,6 +4,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { BASE_PATH } from './config/site.ts';
+import { SAMPLE_CACHE, SAMPLE_DIR } from './src/core/audio/samples.ts';
 
 const segmentsToKeep = BASE_PATH.split('/').filter(Boolean).length;
 
@@ -81,12 +82,23 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // The app, its fonts and every piano sample (both formats, 3.3 MB), so it works offline.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,ogg,mp3}'],
+        // Every room's code, the styles, fonts and icons, and the library's
+        // index, so the app and its catalogue list work offline (the plugin
+        // adds the manifest itself). Not the library's songs (downloads live in
+        // IndexedDB) and not the piano samples: those are cached in one format
+        // when the page is idle (app/sampleWarm.ts) and read cache-first.
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}', 'library/index.json'],
         globIgnores: ['404.html'],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         navigateFallbackDenylist: [/\/404\.html$/],
         cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern: new RegExp(`/${SAMPLE_DIR}[^/]+\\.(?:ogg|mp3)$`),
+            handler: 'CacheFirst',
+            options: { cacheName: SAMPLE_CACHE },
+          },
+        ],
       },
     }),
   ],

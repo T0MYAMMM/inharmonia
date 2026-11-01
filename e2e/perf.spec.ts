@@ -127,3 +127,68 @@ test.describe('loading', () => {
     await page.getByTestId('play').click();
   });
 });
+
+test.describe('offline after the first visit', () => {
+  test('every room loads, and the piano plays from one cached format', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('./');
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+    const cached = () =>
+      page.evaluate(async () => {
+        const urls: string[] = [];
+        for (const name of await caches.keys())
+          for (const r of await (await caches.open(name)).keys())
+            urls.push(`${name} ${new URL(r.url).pathname}`);
+        return urls;
+      });
+    // The samples come once the page is idle, in the one format this browser plays.
+    await expect
+      .poll(async () => (await cached()).filter((u) => u.includes('/samples/')).length, {
+        timeout: 20_000,
+      })
+      .toBe(30);
+    const format = await page.evaluate(() =>
+      new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3',
+    );
+    const all = await cached();
+    const samples = all.filter((u) => u.includes('/samples/'));
+    expect(
+      samples.every((u) => u.startsWith('inharmonia-samples-v1 ') && u.endsWith(`.${format}`)),
+    ).toBe(true);
+    // The precache has every room's code, Tone included, and no samples.
+    const precache = all.filter((u) => u.startsWith('workbox-precache'));
+    expect(precache.some((u) => /\/assets\/tone-[^/]+\.js$/.test(u))).toBe(true);
+    expect(precache.some((u) => /\/assets\/StudioPage-[^/]+\.js$/.test(u))).toBe(true);
+    expect(precache.filter((u) => u.includes('/samples/'))).toEqual([]);
+
+    await context.setOffline(true);
+    // A room never opened online, reached in the app and by a cold link.
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: 'Chords' })
+      .click();
+    await expect(page.getByTestId('chord-symbol')).toBeVisible();
+    for (const [path, heading] of [
+      ['studio', /Studio/],
+      ['ear', /Ear training/],
+      ['songs/ode-to-joy-easy', /Ode to Joy/],
+    ] as const) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+    }
+    // The piano, not the synth.
+    await page.goto('keyboard');
+    const key = page.locator('[data-midi="60"]');
+    await key.scrollIntoViewIfNeeded();
+    const box = (await key.boundingBox())!;
+    await key.click({ position: { x: box.width / 2, y: box.height - 20 } });
+    await expect(page.getByText('Piano ready')).toBeVisible({ timeout: 20_000 });
+    await context.setOffline(false);
+  });
+});
