@@ -4,10 +4,11 @@ import { PATTERNS } from './patterns';
 
 /**
  * Built-in songs live in src/content/songs/*.json, in the same readable format
- * as exports, and load through the same reader. Library pieces are generated
- * from src/content/songs/sources/*.piece by `npm run songs`.
+ * as exports, and load through the same reader. They are generated from
+ * src/content/songs/sources/*.piece by `npm run songs`, with index.json, the
+ * list of them the Songs page reads.
  */
-const FILES = import.meta.glob('./songs/*.json', {
+const FILES = import.meta.glob(['./songs/*.json', '!./songs/index.json'], {
   query: '?raw',
   import: 'default',
   eager: true,

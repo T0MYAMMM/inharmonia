@@ -1,37 +1,63 @@
 /**
- * Build the library: every src/content/songs/sources/*.piece becomes
- * src/content/songs/<piece>.json with its Easy, Medium and Advanced versions.
+ * Build the song library from what is in the repo:
+ * - each src/content/songs/sources/*.piece becomes its Easy, Medium and
+ *   Advanced versions: in src/content/songs/ for a built-in piece, in
+ *   public/library/ for a catalogue piece;
+ * - a composer's file in public/library/ is checked and written the app's way;
+ * - an index of each folder lists its songs for the Songs page.
  * Prints the bars where Easy dropped notes, to check by ear.
  *
- *   npm run songs          write the JSON files
- *   npm run songs -- --check   fail if a JSON file is out of date
+ *   npm run songs              write the files
+ *   npm run songs -- --check   write nothing; fail if a file is out of date or breaks a rule
  */
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { generatePiece, parsePiece, pieceFile } from '../src/core/library';
+import { gzipSync } from 'node:zlib';
+import { BUILT_IN_PIECES } from '../config/library';
+import { PATTERNS } from '../src/content/patterns';
+import { buildLibrary, BUILT_IN_DIR, CATALOGUE_DIR, INDEX_FILE } from '../src/core/library/build';
 
-const dir = join(import.meta.dirname, '../src/content/songs');
+const root = join(import.meta.dirname, '..');
 const check = process.argv.includes('--check');
-let stale = 0;
-for (const name of readdirSync(join(dir, 'sources'))
-  .filter((f) => f.endsWith('.piece'))
-  .sort()) {
-  const src = parsePiece(readFileSync(join(dir, 'sources', name), 'utf8'));
-  const out = join(dir, `${src.meta.piece}.json`);
-  const text = pieceFile(src);
-  const { easyChanges, easyShift } = generatePiece(src);
+
+const read = (dir: string, keep: (name: string) => boolean) =>
+  Object.fromEntries(
+    readdirSync(join(root, dir))
+      .filter(keep)
+      .map((name) => [name, readFileSync(join(root, dir, name), 'utf8')]),
+  );
+
+const { files, issues, generated } = buildLibrary({
+  sources: read(`${BUILT_IN_DIR}/sources`, (n) => n.endsWith('.piece')),
+  catalogue: read(CATALOGUE_DIR, (n) => n.endsWith('.json') && n !== INDEX_FILE),
+  builtIns: BUILT_IN_PIECES,
+  year: new Date().getFullYear(),
+  ctx: { patterns: new Set(Object.keys(PATTERNS)), fallbackPattern: 'arpeggio-8ths' },
+  sha256: (text) => createHash('sha256').update(text, 'utf8').digest('hex'),
+  gzipBytes: (text) => gzipSync(text).length,
+});
+
+let failed = issues.length;
+for (const issue of issues) console.error(issue);
+for (const [path, text] of files) {
+  const file = join(root, path);
   if (check) {
-    if (!existsSync(out) || readFileSync(out, 'utf8') !== text) {
-      console.error(`${out} is out of date: run npm run songs`);
-      stale++;
+    if (!existsSync(file) || readFileSync(file, 'utf8') !== text) {
+      console.error(`${path} is out of date: run npm run songs`);
+      failed++;
     }
     continue;
   }
-  writeFileSync(out, text);
-  console.log(
-    `${src.meta.piece}.json  (Easy ${easyShift ? `${easyShift > 0 ? '+' : ''}${easyShift} semitones` : 'in the written key'})`,
-  );
-  for (const c of easyChanges)
-    console.log(`  Easy bar ${c.bar} [${c.section}]: ${c.before}  →  ${c.after}`);
+  writeFileSync(file, text);
 }
-if (stale) process.exit(1);
+if (!check)
+  for (const { piece, easyShift, easyChanges } of generated) {
+    console.log(
+      `${piece}  (Easy ${easyShift ? `${easyShift > 0 ? '+' : ''}${easyShift} semitones` : 'in the written key'})`,
+    );
+    for (const c of easyChanges)
+      console.log(`  Easy bar ${c.bar} [${c.section}]: ${c.before}  →  ${c.after}`);
+  }
+if (failed) process.exit(1);
+console.log(check ? 'The song library is up to date.' : `Wrote ${files.size} files.`);
