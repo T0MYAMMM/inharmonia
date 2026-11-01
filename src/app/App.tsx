@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Layout } from './Layout';
 import { HomePage } from '@/features/home/HomePage';
@@ -22,6 +23,11 @@ import { ChartPage } from '@/features/charts/ChartPage';
 import { ChartEditorPage } from '@/features/charts/ChartEditorPage';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useThemeEffect } from './theme';
+
+/** For composers, not linked from the app: loaded only when opened. */
+const ComposePage = lazy(() =>
+  import('@/features/compose/ComposePage').then((m) => ({ default: m.ComposePage })),
+);
 import { ROUTER_BASENAME } from './config';
 
 export function AppRoutes() {
@@ -50,6 +56,14 @@ export function AppRoutes() {
         <Route path="studio/edit/:songId" element={<EditSongPage />} />
         <Route path="keyboard" element={<KeyboardSandboxPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route
+          path="compose"
+          element={
+            <Suspense fallback={<div aria-busy="true" />}>
+              <ComposePage />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

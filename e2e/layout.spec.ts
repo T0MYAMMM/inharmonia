@@ -29,6 +29,7 @@ const ROUTES = [
   'studio/edit/no-such-song',
   'keyboard',
   'about',
+  'compose',
   'no-such-page',
 ];
 
