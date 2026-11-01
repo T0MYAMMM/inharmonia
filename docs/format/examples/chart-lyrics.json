@@ -1,0 +1,81 @@
+{
+  "format": "inharmonia",
+  "version": 3,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "chart",
+      "id": "example-chart-lyrics",
+      "title": "Example chart with lyrics",
+      "source": {
+        "kind": "user"
+      },
+      "updated": "2026-01-01T00:00:00.000Z",
+      "chart": {
+        "key": {
+          "tonic": "C",
+          "mode": "major"
+        },
+        "tempo": 84,
+        "meter": {
+          "beats": 4,
+          "unit": 4
+        },
+        "sections": [
+          {
+            "id": "verse",
+            "label": "Verse",
+            "type": "verse",
+            "repeat": 1,
+            "bars": [
+              "C",
+              "G",
+              "Am",
+              "F",
+              "C",
+              "G",
+              "Am",
+              "F"
+            ],
+            "lyrics": [
+              "Lanterns on the",
+              "water, slow",
+              "boats coming home",
+              "",
+              "Every window",
+              "golden, every road",
+              "a song",
+              ""
+            ]
+          },
+          {
+            "id": "chorus",
+            "label": "Chorus",
+            "type": "chorus",
+            "repeat": 1,
+            "bars": [
+              "F",
+              "G",
+              "C",
+              "C"
+            ]
+          }
+        ],
+        "form": [
+          "verse",
+          "chorus",
+          "verse",
+          "chorus"
+        ],
+        "notes": "Slow down in the last chorus."
+      },
+      "view": {
+        "transpose": 0,
+        "simplify": "original",
+        "style": "triad-root",
+        "showFunction": false,
+        "showLyrics": true
+      }
+    }
+  ]
+}

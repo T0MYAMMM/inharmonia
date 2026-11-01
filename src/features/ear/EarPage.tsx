@@ -19,8 +19,9 @@ import { voiceChord, type SpelledNote } from '@/core/theory';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
-import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './ear.module.css';
 
 type Exercise = 'notes' | 'chords' | 'progressions';
@@ -89,26 +90,27 @@ export function EarPage() {
 
   return (
     <>
-      <div className={page.hero}>
-        <h1>Ear training</h1>
-        <p className={page.lede}>
-          Hear a note and name it with no reference, hear a chord and name its quality, or hear four
-          chords and name them in Roman numerals. Listen as often as you like before you answer.
-        </p>
-      </div>
+      <PageHeader
+        title="Ear training"
+        lede="Hear a note and name it with no reference, hear a chord and name its quality, or hear four chords and name them in Roman numerals. Listen as often as you like before you answer."
+      />
       <div className={styles.controls}>
-        <Segmented
-          label="Exercise"
-          value={exercise}
-          options={EXERCISES}
-          onChange={(v) => set({ exercise: v, level: '' })}
-        />
-        <Segmented
-          label="Level"
-          value={level.id}
-          options={levels.map((l) => ({ value: l.id, label: l.name }))}
-          onChange={(v) => set({ level: v })}
-        />
+        <Field label="Exercise" group>
+          <Segmented
+            label="Exercise"
+            value={exercise}
+            options={EXERCISES}
+            onChange={(v) => set({ exercise: v, level: '' })}
+          />
+        </Field>
+        <Field label="Level" group>
+          <Segmented
+            label="Level"
+            value={level.id}
+            options={levels.map((l) => ({ value: l.id, label: l.name }))}
+            onChange={(v) => set({ level: v })}
+          />
+        </Field>
       </div>
       {exercise === 'notes' ? (
         <NoteQuiz key={level.id} levelId={level.id} />

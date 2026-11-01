@@ -3,7 +3,16 @@ import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
-import { DEFAULT_VIEW, emptyChart, makeUserChart, parseBars, type ChordChart } from '@/core/charts';
+import {
+  CHART_VERSION,
+  DEFAULT_VIEW,
+  emptyChart,
+  hasLyrics,
+  makeUserChart,
+  parseBars,
+  withLyric,
+  type ChordChart,
+} from '@/core/charts';
 import { makeUserSong, type SongDraft, type UserRecording } from '@/core/songs';
 import {
   DB_NAME,
@@ -80,6 +89,40 @@ describe('my songs', () => {
     expect(mySongs.snapshot.songs).toHaveLength(2);
     expect(mySongs.snapshot.charts[0]!.id).toMatch(/^mine-chart-/);
     expect((await getSong('user-a'))!.lesson.source).toEqual({ kind: 'user' });
+  });
+
+  it('reads a version 1 chart in the current shape, and leaves out one from a newer version', async () => {
+    await saveChart(
+      makeUserChart('mine-chart-old', { ...chart('Old'), version: 1 }, DEFAULT_VIEW, 1),
+    );
+    await saveChart(
+      makeUserChart(
+        'mine-chart-new',
+        { ...chart('New'), version: CHART_VERSION + 1 },
+        DEFAULT_VIEW,
+        2,
+      ),
+    );
+    resetForTests();
+    await refresh();
+    expect(mySongs.snapshot.status).toBe('ready');
+    expect(mySongs.snapshot.charts.map((c) => [c.chart.title, c.chart.version])).toEqual([
+      ['Old', CHART_VERSION],
+    ]);
+    expect((await getChart('mine-chart-old'))!.chart).toEqual(chart('Old'));
+    expect(await getChart('mine-chart-new')).toBeUndefined();
+  });
+
+  it("keeps a chart's lyrics on its bars, through a reload", async () => {
+    const sung = chart('Sung');
+    sung.sections[0]!.bars[1] = withLyric(sung.sections[0]!.bars[1]!, 'slow boats coming home');
+    await saveChart(makeUserChart('mine-chart-sung', sung, DEFAULT_VIEW, 1));
+    resetForTests();
+    await refresh();
+    expect(mySongs.snapshot.charts[0]!.chart).toEqual(sung);
+    expect((await getChart('mine-chart-sung'))!.chart.sections[0]!.bars[1]!.lyric).toBe(
+      'slow boats coming home',
+    );
   });
 
   it('upgrades a version 1 database, keeping its songs and recordings', async () => {
@@ -192,6 +235,38 @@ describe('moving things between devices', () => {
     expect(preview.rows[0]!.recording).toBe(true);
     await applyImport(preview);
     expect(mySongs.snapshot.recordings).toHaveProperty('user-a');
+  });
+
+  it("leaves a chart's lyrics out of an export unless asked, and says how many", async () => {
+    const sung = chart('Sung');
+    sung.sections[0]!.bars[0] = withLyric(sung.sections[0]!.bars[0]!, 'lanterns on the water');
+    await saveChart(makeUserChart('mine-chart-sung', sung, DEFAULT_VIEW, 1));
+    await saveChart(makeUserChart('mine-chart-plain', chart('Plain'), DEFAULT_VIEW, 2));
+    const charts = mySongs.snapshot.charts;
+    const without = await exportItems({ charts });
+    expect(without.lyrics).toEqual({ included: 0, leftOut: 1 });
+    expect(without.text).not.toMatch(/lanterns|"lyrics"/);
+    const withThem = await exportItems({ charts, includeLyrics: true });
+    expect(withThem.lyrics).toEqual({ included: 1, leftOut: 0 });
+    expect(withThem.text).toContain('"lanterns on the water"');
+
+    // Read back here: the file's rows say which hold lyrics, and which charts here have some.
+    const rows = (text: string) =>
+      previewImport(text).rows.map((r) => [r.title, r.lyrics, r.existingLyrics]);
+    expect(rows(withThem.text)).toEqual([
+      ['Plain', false, false],
+      ['Sung', true, true],
+    ]);
+    expect(rows(without.text)).toEqual([
+      ['Plain', false, false],
+      ['Sung', false, true],
+    ]);
+    // Kept both, the copy has them; replaced from a file without, the chart here loses them.
+    const preview = previewImport(withThem.text);
+    await applyImport(preview, { 1: 'skip', 2: 'copy' });
+    expect(mySongs.snapshot.charts.filter((c) => hasLyrics(c.chart))).toHaveLength(2);
+    await applyImport(previewImport(without.text), { 1: 'skip', 2: 'replace' });
+    expect(hasLyrics((await getChart('mine-chart-sung'))!.chart)).toBe(false);
   });
 
   it('skips, replaces or keeps both when something is already here', async () => {

@@ -4,67 +4,14 @@
   min-width: 0;
   padding: var(--space-3) 0;
 }
-.heading h2 {
-  margin: 0 0 6px;
-}
-.heading p {
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.5;
-}
 .toolbar {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
-.toolbar label,
-.tracks label,
-.inspector label {
-  display: grid;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.toolbar input,
-.toolbar select,
-.trackInspector input,
-.inspector input {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: 8px;
-  min-height: 34px;
-  padding: 5px 8px;
-  max-width: 190px;
-  font: inherit;
-}
-.toolbar input[type='range'],
-.inspector input[type='range'] {
-  padding: 0;
+.range {
   width: 140px;
-}
-.filePicker {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex !important;
-  min-height: 40px;
-  align-items: center;
-  cursor: pointer;
-  padding: 6px 13px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--ink) !important;
-}
-.filePicker input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
 }
 .editGrid {
   display: grid;
@@ -99,8 +46,9 @@
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+/* The track you are editing: an ink edge, like a Toggle that is on. */
 .track[data-active] {
-  border-color: var(--amber);
+  border-color: var(--ink);
   background: var(--surface-sunk);
 }
 .trackPick {
@@ -128,10 +76,6 @@
   gap: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
-}
-.trackInspector input {
-  min-width: 0;
-  width: 100%;
 }
 .rollColumn {
   display: grid;
@@ -210,16 +154,11 @@
 .note:hover {
   filter: brightness(1.12) drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
 }
-.zoomGroup {
-  display: flex;
-  gap: 10px;
-  align-items: end;
-}
 .iconButton {
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: var(--control-height-small);
+  height: var(--control-height-small);
   flex: none;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -230,25 +169,6 @@
 .iconButton[aria-pressed='true'] {
   color: var(--muted);
   background: var(--surface-sunk);
-}
-.pianoToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 6px 13px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.pianoToggle[aria-pressed='true'] {
-  background: var(--amber);
-  border-color: var(--amber);
-  color: var(--on-amber);
 }
 /* The app's keyboard dock, placed under the roll instead of floating over it. */
 .inlineKeys > :global([data-dock]) {
@@ -265,7 +185,8 @@
   color: var(--ink);
   padding: 8px 12px;
   border-radius: 10px;
-  background: var(--amber-soft);
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
 }
 .seek {
   display: grid;
@@ -292,6 +213,13 @@
   touch-action: none;
   border-radius: 999px;
 }
+/* On touch the bar is a 44px target; the rail inside stays thin. */
+@media (pointer: coarse) {
+  .seekTrack {
+    height: 44px;
+  }
+}
+
 .seekTrack:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -308,10 +236,11 @@
 .seekTrack:hover .seekRail {
   height: 8px;
 }
+/* Where playback is, in ink: amber is for a hand or the target note. */
 .seekFill {
   height: 100%;
   width: 0;
-  background: var(--amber);
+  background: var(--ink);
 }
 .seekThumb {
   position: absolute;
@@ -321,7 +250,7 @@
   height: 14px;
   margin: -7px 0 0 -7px;
   border-radius: 50%;
-  background: var(--amber);
+  background: var(--ink);
   border: 2px solid var(--surface);
   box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
   pointer-events: none;
@@ -343,6 +272,16 @@
   color: var(--muted);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+}
+/* One line kept for it, so the roll doesn't move when a message comes or goes. */
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 .warning {
   margin: 0;

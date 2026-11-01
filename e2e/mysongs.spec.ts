@@ -99,7 +99,7 @@ test.describe('my songs', () => {
 
     // Edit it again: the kept recording brings back A/B and the pitch line.
     await mine.getByRole('link').click();
-    await page.getByRole('link', { name: 'Edit', exact: true }).click();
+    await page.getByRole('link', { name: 'Edit in Studio' }).click();
     await expect(page.getByRole('heading', { name: 'Edit Arpeggio study' })).toBeVisible();
     await expect(page.locator('[data-note]')).toHaveCount(12);
     await expect(page.getByRole('radio', { name: 'A: your take' })).toBeVisible();

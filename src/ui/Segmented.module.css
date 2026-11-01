@@ -1,18 +1,25 @@
+/*
+ * As wide as its options, in a grid or a flex column as much as in a row.
+ * When they don't fit they wrap instead of scrolling out of sight: the
+ * corners are half the control's height, so one line is a pill and two
+ * lines are a rounded box.
+ */
 .group {
   display: inline-flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
   padding: 3px;
   gap: 2px;
-  border-radius: var(--radius-pill);
+  border-radius: calc(var(--control-height) / 2);
   background: var(--surface-sunk);
   border: 1px solid var(--line);
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
+/* As tall as the other controls: the group's padding and border take 8px. */
 .option {
   position: relative;
-  min-height: 34px;
+  min-height: calc(var(--control-height) - 8px);
   padding: 0 14px;
   border: 0;
   border-radius: var(--radius-pill);
@@ -26,6 +33,27 @@
   transition:
     background-color 140ms var(--ease-out),
     color 140ms var(--ease-out);
+}
+
+/* On touch an option's target reaches over the group's padding to the full 44px. */
+@media (pointer: coarse) {
+  .option::after {
+    content: '';
+    position: absolute;
+    inset: -4px -1px;
+  }
+}
+
+/*
+ * On a phone the options sit closer, so more groups fit on one line; when
+ * they still wrap, each line's options share its width, so a lone option on
+ * the second line reads as a row of the group rather than a stray.
+ */
+@media (max-width: 600px) {
+  .option {
+    flex: 1 1 auto;
+    padding: 0 10px;
+  }
 }
 
 .option:hover {

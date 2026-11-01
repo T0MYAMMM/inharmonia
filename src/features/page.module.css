@@ -1,14 +1,92 @@
-.hero {
+/*
+ * The page shell (PageHeader): the way up, the title, the lede, the actions.
+ * Crumb to title 8px, title to lede 12px, lede to actions 16px.
+ */
+.header {
   display: grid;
   gap: var(--space-3);
-  margin: var(--space-5) 0 var(--space-6);
-  max-width: 46rem;
+  margin: var(--space-4) 0 var(--space-6);
+}
+
+.crumb {
+  margin-bottom: calc(var(--space-2) - var(--space-3));
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* A button that leaves a view on the same page, dressed as the link it stands for. */
+.crumbButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* A full touch target without making the line taller. */
+.crumb > a,
+.crumbButton {
+  position: relative;
+}
+
+@media (pointer: coarse) {
+  .crumb > a::after,
+  .crumbButton::after {
+    content: '';
+    position: absolute;
+    inset: -10px -8px;
+  }
 }
 
 .lede {
+  max-width: var(--text-width);
   font-size: 1.125rem;
   color: var(--muted);
-  max-width: 40rem;
+}
+
+.lede > * + * {
+  margin-top: var(--space-2);
+}
+
+/* Badges start the lede's first line. */
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-right: var(--space-2);
+  vertical-align: 0.1em;
+}
+
+.tags + p {
+  display: inline;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-1);
+}
+
+@media (max-width: 600px) {
+  .header {
+    margin: var(--space-2) 0 var(--space-5);
+  }
+
+  /* Beside a phone's smaller h1, the lede at body size, so the page gets to Play sooner. */
+  .lede {
+    font-size: 1rem;
+  }
+}
+
+/* A short note under the lede: a version's arrangement, an edition. */
+.small {
+  font-size: 0.875rem;
 }
 
 .grid {
@@ -28,11 +106,16 @@
 .prose {
   display: grid;
   gap: var(--space-4);
-  max-width: 44rem;
+  max-width: var(--text-width);
 }
 
 .prose h2 {
   margin-top: var(--space-5);
+}
+
+/* Right under the page header, which already leaves room. */
+.prose > h2:first-child {
+  margin-top: 0;
 }
 
 .list {
@@ -40,22 +123,4 @@
   padding-left: 1.2em;
   display: grid;
   gap: var(--space-2);
-}
-
-.grid4 {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-@media (max-width: 960px) {
-  .grid4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .grid4 {
-    grid-template-columns: 1fr;
-  }
 }

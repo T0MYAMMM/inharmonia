@@ -9,15 +9,18 @@ import type { TransportState } from '@/core/audio';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Field } from '@/ui/Field';
 import { NoteLabel } from '@/ui/NoteLabel';
 import { ProgressTrack } from '@/ui/ProgressTrack';
 import { setProgress } from '@/ui/progress';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { VolumeSlider } from '@/ui/VolumeSlider';
 import { KeyboardDock } from '@/ui/keyboard';
 import { buildDemo, DEMO_BEATS_PER_BAR, DEMO_CHORDS, DEMO_KEY, DEMO_LENGTH } from './demo';
 import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
 import styles from './KeyboardSandboxPage.module.css';
 
 const STATUS_TEXT = {
@@ -33,13 +36,10 @@ const ms = (s: number) => `${Math.round(s * 1000)} ms`;
 export function KeyboardSandboxPage() {
   return (
     <>
-      <div className={page.hero}>
-        <h1>Keyboard sandbox</h1>
-        <p className={page.lede}>
-          Play with the mouse, a touch screen, your computer keyboard or a MIDI keyboard. The sound
-          starts on your first press.
-        </p>
-      </div>
+      <PageHeader
+        title="Keyboard sandbox"
+        lede="Play with the mouse, a touch screen, your computer keyboard or a MIDI keyboard. The sound starts on your first press."
+      />
       <div className={page.grid}>
         <SoundCard />
         <NowPlayingCard />
@@ -127,8 +127,8 @@ function NowPlayingCard() {
           ))}
         </div>
         <p className={styles.meta}>
-          Labels are relative to C major{angka ? ', do = C' : ''}. Change note names at the top of
-          the page.
+          Labels are relative to C major{angka ? ', do = C' : ''}. Change note names in Settings,
+          the gear at the top of the page.
         </p>
         {angka ? (
           <Toggle
@@ -185,10 +185,8 @@ function MidiCard() {
             No MIDI keyboard found yet. Plug one in and it will appear here.
           </p>
         ) : (
-          <label className={styles.stack} style={{ gap: 6 }}>
-            <span className={page.muted}>Input</span>
-            <select
-              className={styles.select}
+          <Field label="Input">
+            <Select
               value={m.selected}
               onChange={(e) => {
                 midi.select(e.target.value);
@@ -201,8 +199,8 @@ function MidiCard() {
                   {d.name}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Field>
         )}
         {m.sustain ? <p className={styles.meta}>Sustain pedal down</p> : null}
       </div>

@@ -63,3 +63,15 @@ export async function sing(page: Page, melody: [number, number, number][]) {
     (window as unknown as { __melody: [number, number, number][] }).__melody = m;
   }, melody);
 }
+
+/** Open the MIDI workspace's File menu: under More (⋯) on a narrow screen. */
+export async function openMidiFileMenu(page: Page) {
+  const more = page.getByTestId('midi-more');
+  await ((await more.isVisible()) ? more : page.getByTestId('midi-file-menu')).click();
+}
+
+/** On a narrow screen, Undo, Redo and Save are under More (⋯); elsewhere they're in view. */
+export async function openMidiMore(page: Page) {
+  const more = page.getByTestId('midi-more');
+  if (await more.isVisible()) await more.click();
+}

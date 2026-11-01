@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { MAJOR_KEYS, MINOR_KEYS } from '@/core/content/realize';
 import {
   barOf,
@@ -14,6 +14,7 @@ import {
   SECTION_NAMES,
   sectionTypeOf,
   suggestKeys,
+  withLyric,
   type ChartBar,
   type ChartSection,
   type ChordChart,
@@ -21,8 +22,12 @@ import {
 } from '@/core/charts';
 import { keyName, prettyAccidentals, prettyChord } from '@/core/notation';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
+import { TextArea } from '@/ui/TextArea';
+import { TextInput } from '@/ui/TextInput';
 import { PasteSheet } from './PasteSheet';
 import styles from './charts.module.css';
 
@@ -46,6 +51,8 @@ const newSectionId = () => `s${Date.now().toString(36)}${(++ids).toString(36)}`;
 export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   const [chart, setChart] = useState<ChordChart>(initial);
   const [selected, setSelected] = useState<{ section: string; bar: number } | null>(null);
+  // Enter in a bar's lyrics moves on to the next bar's, ready to type.
+  const [typingLyrics, setTypingLyrics] = useState(false);
   const [textFor, setTextFor] = useState<string | null>(null);
   const [pasting, setPasting] = useState(initial.sections.length === 0);
   const bpb = chart.meter.beats;
@@ -100,20 +107,16 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           The song
         </h2>
         <div className={styles.fields}>
-          <label className={styles.field}>
-            Title
-            <input
-              className={styles.input}
+          <Field label="Title">
+            <TextInput
               value={chart.title}
               maxLength={LIMITS.title}
               onChange={(e) => patch({ title: e.target.value })}
               data-testid="chart-title"
             />
-          </label>
-          <label className={styles.field}>
-            Key
-            <select
-              className={styles.select}
+          </Field>
+          <Field label="Key">
+            <Select
               value={keyId(chart.key)}
               onChange={(e) => {
                 const [tonic, mode] = e.target.value.split(' ') as [string, 'major' | 'minor'];
@@ -126,10 +129,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   {prettyAccidentals(keyName(k))}
                 </option>
               ))}
-            </select>
-          </label>
-          <div className={styles.field}>
-            <span>Meter</span>
+            </Select>
+          </Field>
+          <Field label="Meter" group>
             <Segmented
               label="Meter"
               value={String(bpb) as '4' | '3'}
@@ -139,23 +141,26 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               ]}
               onChange={(v) => {
                 const beats = Number(v) as 3 | 4;
-                // Bars keep their chords, split evenly in the new meter.
+                // Bars keep their chords, split evenly in the new meter, and their lyrics.
                 setChart((c) => ({
                   ...c,
                   meter: { beats, unit: 4 },
                   sections: c.sections.map((s) => ({
                     ...s,
                     bars: s.bars.map((b) =>
-                      barOf(
-                        b.chords.map((x) => x.symbol),
-                        beats,
+                      withLyric(
+                        barOf(
+                          b.chords.map((x) => x.symbol),
+                          beats,
+                        ),
+                        b.lyric,
                       ),
                     ),
                   })),
                 }));
               }}
             />
-          </div>
+          </Field>
           <div className={styles.slider}>
             <Slider
               label="Tempo"
@@ -168,27 +173,28 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           </div>
         </div>
         {chart.sections.length && suggestions[0] ? (
-          <p className={styles.note} data-testid="key-suggestion">
-            The chords suggest{' '}
-            {suggestions.map((k, i) => (
-              <span key={keyId(k)}>
-                {i > 0 ? ' or ' : ''}
-                <Button
-                  size="small"
-                  variant={keyId(k) === keyId(chart.key) ? 'secondary' : 'ghost'}
-                  onClick={() => patch({ key: { tonic: k.tonic, mode: k.mode } })}
-                  aria-pressed={keyId(k) === keyId(chart.key)}
-                >
-                  {prettyAccidentals(keyName(k))}
-                </Button>
-              </span>
+          <div
+            className={`${styles.row} ${styles.keySuggest}`}
+            role="group"
+            aria-label="Suggested keys"
+            data-testid="key-suggestion"
+          >
+            <span className={styles.note}>The chords suggest</span>
+            {suggestions.map((k) => (
+              <Button
+                key={keyId(k)}
+                size="small"
+                variant={keyId(k) === keyId(chart.key) ? 'secondary' : 'ghost'}
+                onClick={() => patch({ key: { tonic: k.tonic, mode: k.mode } })}
+                aria-pressed={keyId(k) === keyId(chart.key)}
+              >
+                {prettyAccidentals(keyName(k))}
+              </Button>
             ))}
-            .
-          </p>
+          </div>
         ) : null}
-        <label className={styles.field}>
-          Notes for yourself
-          <textarea
+        <Field label="Notes for yourself" className={styles.start}>
+          <TextArea
             className={styles.notes}
             value={chart.notes}
             maxLength={LIMITS.notes}
@@ -196,7 +202,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             placeholder="Slow down in the bridge."
             data-testid="chart-notes"
           />
-        </label>
+        </Field>
       </section>
 
       {pasting ? (
@@ -241,10 +247,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           data-testid={`section-${si}`}
         >
           <div className={styles.sectionHead}>
-            <label className={styles.field}>
-              Section
-              <input
-                className={styles.input}
+            <Field label="Section">
+              <TextInput
                 value={s.label}
                 maxLength={MAX_LABEL}
                 onChange={(e) => {
@@ -255,11 +259,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 }}
                 data-testid={`section-label-${si}`}
               />
-            </label>
-            <label className={styles.field}>
-              Kind
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Kind">
+              <Select
                 value={s.type}
                 onChange={(e) => patchSection(s.id, { type: e.target.value as SectionType })}
               >
@@ -268,12 +270,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                     {t === 'custom' ? 'Other' : SECTION_NAMES[t]}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className={styles.field}>
-              Repeat
-              <select
-                className={styles.select}
+              </Select>
+            </Field>
+            <Field label="Repeat">
+              <Select
                 value={s.repeat}
                 onChange={(e) => patchSection(s.id, { repeat: Number(e.target.value) })}
               >
@@ -282,13 +282,14 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                     ×{n}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
             <span className={styles.spacer} />
             <span className={styles.sectionTools}>
               <Button
                 size="small"
                 variant="ghost"
+                icon
                 onClick={() => moveSection(s.id, -1)}
                 disabled={si === 0}
                 aria-label={`Move ${s.label} up`}
@@ -298,6 +299,7 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               <Button
                 size="small"
                 variant="ghost"
+                icon
                 onClick={() => moveSection(s.id, 1)}
                 disabled={si === chart.sections.length - 1}
                 aria-label={`Move ${s.label} down`}
@@ -319,8 +321,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             <BarsText
               initial={formatBars(s.bars, bpb)}
               beatsPerBar={bpb}
+              lyricBars={s.bars.flatMap((b, i) => (b.lyric ? [i + 1] : []))}
               onApply={(bars) => {
-                setBars(s.id, () => bars);
+                // Lyrics stay with their bar number.
+                setBars(s.id, (old) => bars.map((b, i) => withLyric(b, old[i]?.lyric)));
                 setTextFor(null);
               }}
               onCancel={() => setTextFor(null)}
@@ -340,7 +344,10 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                         className={styles.bar}
                         aria-pressed={isSel}
                         data-invalid={bad || undefined}
-                        onClick={() => setSelected(isSel ? null : { section: s.id, bar: bi })}
+                        onClick={() => {
+                          setSelected(isSel ? null : { section: s.id, bar: bi });
+                          setTypingLyrics(false);
+                        }}
                         data-testid={`bar-${si}-${bi}`}
                       >
                         <span className={styles.barNo}>{bi + 1}</span>
@@ -351,6 +358,11 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                             </span>
                           ))}
                         </span>
+                        {b.lyric ? (
+                          <span className={styles.barLyric} data-testid="bar-lyric">
+                            {b.lyric}
+                          </span>
+                        ) : null}
                       </button>
                     </li>
                   );
@@ -362,13 +374,23 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   bar={s.bars[selected.bar]!}
                   beatsPerBar={bpb}
                   canDelete={s.bars.length > 1}
+                  focusLyrics={typingLyrics}
                   onChange={(bar) =>
                     setBars(s.id, (bars) => bars.map((b, i) => (i === selected.bar ? bar : b)))
                   }
+                  onNextLyrics={
+                    selected.bar + 1 < s.bars.length
+                      ? () => {
+                          setSelected({ section: s.id, bar: selected.bar + 1 });
+                          setTypingLyrics(true);
+                        }
+                      : undefined
+                  }
                   onInsert={() => {
+                    // A copy of the chords: the words of the next bar are rarely the same.
                     setBars(s.id, (bars) => [
                       ...bars.slice(0, selected.bar + 1),
-                      structuredClone(bars[selected.bar]!),
+                      { chords: structuredClone(bars[selected.bar]!.chords) },
                       ...bars.slice(selected.bar + 1),
                     ]);
                     setSelected({ section: s.id, bar: selected.bar + 1 });
@@ -409,10 +431,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
       ))}
 
       <div className={styles.row}>
-        <label className={styles.field}>
-          Add a section
-          <select
-            className={styles.select}
+        <Field label="Add a section">
+          <Select
             value=""
             onChange={(e) => e.target.value && addSection(e.target.value)}
             disabled={chart.sections.length >= LIMITS.sections}
@@ -424,8 +444,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 {l}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
 
       <section className={styles.card} aria-labelledby="form-title">
@@ -484,10 +504,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
           })}
         </ol>
         {chart.sections.length ? (
-          <label className={styles.field}>
-            Play next
-            <select
-              className={styles.select}
+          <Field label="Play next">
+            <Select
               value=""
               onChange={(e) => e.target.value && patch({ form: [...chart.form, e.target.value] })}
               disabled={chart.form.length >= LIMITS.form}
@@ -499,8 +517,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   {s.label}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Field>
         ) : null}
       </section>
 
@@ -517,7 +535,17 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
       <div className={styles.row}>
         <Button
           variant="primary"
-          onClick={() => onSave({ ...chart, title: chart.title.trim() || 'Untitled chart' })}
+          onClick={() =>
+            onSave({
+              ...chart,
+              title: chart.title.trim() || 'Untitled chart',
+              // Lyrics as typed, kept to one line with spaces evened out.
+              sections: chart.sections.map((s) => ({
+                ...s,
+                bars: s.bars.map((b) => withLyric(b, b.lyric)),
+              })),
+            })
+          }
           disabled={saving || issues.length > 0}
           data-testid="chart-save"
         >
@@ -531,83 +559,82 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   );
 }
 
-/** One bar: 1 to 4 chords, each with its length in beats. */
+/** One bar: 1 to 4 chords, each with its length in beats, and the words sung over it. */
 function BarEditor({
   bar,
   beatsPerBar,
   canDelete,
+  focusLyrics,
   onChange,
+  onNextLyrics,
   onInsert,
   onDelete,
 }: {
   bar: ChartBar;
   beatsPerBar: number;
   canDelete: boolean;
+  /** Arrived here by Enter in the bar before's lyrics: start in the lyrics. */
+  focusLyrics: boolean;
   onChange: (bar: ChartBar) => void;
+  /** Enter in the lyrics moves to the next bar's; none on the last bar. */
+  onNextLyrics?: () => void;
   onInsert: () => void;
   onDelete: () => void;
 }) {
   const [drafts, setDrafts] = useState(() => bar.chords.map((c) => c.symbol));
   const total = bar.chords.reduce((s, c) => s + c.beats, 0);
+  const noteId = useId();
+  // Every change keeps the bar's lyrics: only chords are replaced.
+  const setChords = (chords: ChartBar['chords']) => onChange({ ...bar, chords });
   const setCount = (n: number) => {
     const symbols = Array.from(
       { length: n },
       (_, i) => bar.chords[i]?.symbol ?? bar.chords.at(-1)!.symbol,
     );
     setDrafts(symbols);
-    onChange(barOf(symbols, beatsPerBar));
+    setChords(barOf(symbols, beatsPerBar).chords);
   };
   return (
     <div className={styles.barEditor} role="group" aria-label="Edit bar" data-testid="bar-editor">
-      <label className={styles.field}>
-        Chords in the bar
-        <select
-          className={styles.select}
-          value={bar.chords.length}
-          onChange={(e) => setCount(Number(e.target.value))}
-        >
+      <Field label="Chords in the bar">
+        <Select value={bar.chords.length} onChange={(e) => setCount(Number(e.target.value))}>
           {[1, 2, 3, 4].map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
       {bar.chords.map((c, i) => {
         const draft = drafts[i] ?? c.symbol;
         const ok = normalizeChord(draft) !== null;
         return (
           <div key={i} className={styles.slot}>
-            <label className={styles.field}>
-              Chord {i + 1}
-              <input
-                className={styles.input}
+            <Field label={<>Chord {i + 1}</>}>
+              <TextInput
+                className={styles.chordInput}
                 value={draft}
                 aria-invalid={!ok}
                 onChange={(e) => {
                   const v = e.target.value;
                   setDrafts((d) => d.map((x, k) => (k === i ? v : x)));
                   const sym = normalizeChord(v);
-                  onChange({
-                    chords: bar.chords.map((x, k) =>
-                      k === i ? { ...x, symbol: sym ?? v.trim() } : x,
-                    ),
-                  });
+                  setChords(
+                    bar.chords.map((x, k) => (k === i ? { ...x, symbol: sym ?? v.trim() } : x)),
+                  );
                 }}
                 data-testid={`chord-input-${i}`}
               />
-            </label>
-            <label className={styles.field}>
-              Beats
-              <select
-                className={styles.select}
+            </Field>
+            <Field label="Beats">
+              <Select
                 value={c.beats}
                 onChange={(e) =>
-                  onChange({
-                    chords: bar.chords.map((x, k) =>
+                  setChords(
+                    bar.chords.map((x, k) =>
                       k === i ? { ...x, beats: Number(e.target.value) } : x,
                     ),
-                  })
+                  )
                 }
               >
                 {[
@@ -622,16 +649,14 @@ function BarEditor({
                       {b}
                     </option>
                   ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
             <Button
               size="small"
               variant="ghost"
               onClick={() => {
                 setDrafts((d) => d.map((x, k) => (k === i ? NO_CHORD : x)));
-                onChange({
-                  chords: bar.chords.map((x, k) => (k === i ? { ...x, symbol: NO_CHORD } : x)),
-                });
+                setChords(bar.chords.map((x, k) => (k === i ? { ...x, symbol: NO_CHORD } : x)));
               }}
             >
               N.C.
@@ -645,6 +670,28 @@ function BarEditor({
           These last {total} beats; the bar has {beatsPerBar}.
         </p>
       ) : null}
+      <Field label="Lyrics" className={styles.lyricField}>
+        <TextInput
+          value={bar.lyric ?? ''}
+          maxLength={LIMITS.lyric}
+          // Typed as it comes; evened out when the chart is saved.
+          onChange={(e) => {
+            const { lyric: _old, ...rest } = bar;
+            onChange(e.target.value ? { ...rest, lyric: e.target.value } : rest);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || !onNextLyrics) return;
+            e.preventDefault();
+            onNextLyrics();
+          }}
+          autoFocus={focusLyrics}
+          aria-describedby={noteId}
+          data-testid="bar-lyrics"
+        />
+      </Field>
+      <p id={noteId} className={styles.note}>
+        {onNextLyrics ? 'Enter goes to the next bar. ' : ''}Kept on this device only.
+      </p>
       <div className={styles.row}>
         <Button size="small" onClick={onInsert}>
           Copy after
@@ -657,23 +704,38 @@ function BarEditor({
   );
 }
 
-/** A section's bars as text in chart syntax, checked as you type. */
+/** "Bar 7", "Bars 7 and 8", "Bars 5, 7 and 8". */
+function barList(ns: readonly number[]): string {
+  const last = ns.at(-1)!;
+  return ns.length === 1 ? `Bar ${last}` : `Bars ${ns.slice(0, -1).join(', ')} and ${last}`;
+}
+
+/**
+ * A section's bars as text in chart syntax, checked as you type. Lyrics are
+ * not in the text: they stay with their bar number, and it says which would
+ * go with bars the text no longer has.
+ */
 function BarsText({
   initial,
   beatsPerBar,
+  lyricBars,
   onApply,
   onCancel,
 }: {
   initial: string;
   beatsPerBar: number;
+  /** 1-based numbers of the bars that hold lyrics now. */
+  lyricBars: readonly number[];
   onApply: (bars: ChartBar[]) => void;
   onCancel: () => void;
 }) {
   const [text, setText] = useState(initial);
   const { bars, issues } = parseBars(text, beatsPerBar);
+  const dropped = lyricBars.filter((n) => n > bars.length);
   return (
     <div className={styles.barsText}>
-      <textarea
+      <TextArea
+        mono
         className={styles.paste}
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -685,6 +747,14 @@ function BarsText({
         <code>| C . . G |</code> dots add beats, <code>%</code> repeats the bar before,{' '}
         <code>N.C.</code> no chord, <code>x2</code> after a line plays it twice.
       </p>
+      {lyricBars.length ? (
+        <p className={styles.notice} role="status" data-testid="bars-text-lyrics">
+          Lyrics stay with their bar number.
+          {dropped.length
+            ? ` ${barList(dropped)} ${dropped.length === 1 ? 'has' : 'have'} lyrics; using ${bars.length} bar${bars.length === 1 ? '' : 's'} drops them.`
+            : ''}
+        </p>
+      ) : null}
       {issues.length ? (
         <ul className={styles.issues}>
           {issues.map((i, k) => (

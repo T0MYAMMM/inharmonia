@@ -3,8 +3,9 @@
   grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
   grid-template-areas:
     'side head'
-    'side voicing';
-  grid-template-rows: auto 1fr;
+    'side voicing'
+    'sequence sequence';
+  grid-template-rows: auto 1fr auto;
   gap: var(--space-5);
   align-items: start;
 }
@@ -92,11 +93,26 @@
   grid-area: voicing;
 }
 
-/* On narrow screens the chord comes first, then the pickers, then the details. */
-@media (max-width: 860px) {
+.areaSequence {
+  grid-area: sequence;
+  min-width: 0;
+}
+
+.voicingBody {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/*
+ * On narrow screens the chord comes first, then the pickers, then the details.
+ * This is the wide breakpoint, not the medium one tokens.css gives side-by-side
+ * panels: beside the 320px pickers, the chord and how it is built need the
+ * room, and at 800px the chord's card would be 150px wide.
+ */
+@media (max-width: 960px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'head' 'side' 'voicing';
+    grid-template-areas: 'head' 'side' 'voicing' 'sequence';
     grid-template-rows: none;
     gap: var(--space-4);
   }
@@ -124,8 +140,20 @@
   gap: 6px;
 }
 
+/* Six to a row, so twelve roots and each group of six qualities fill their rows. */
+.pillGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pillGrid > .pill {
+  min-width: 0;
+  padding: 0 4px;
+}
+
 .pill {
-  min-height: 36px;
+  min-height: var(--control-height-small);
   min-width: 44px;
   padding: 0 12px;
   border-radius: var(--radius-pill);
@@ -272,7 +300,7 @@
   align-items: start;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 760px) {
   .knownLayout {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
@@ -281,6 +309,28 @@
 
 .knownCount {
   font-weight: 700;
+}
+
+/* The seven kinds: four and three in a narrow column, one row when there is room. */
+.knownSide {
+  container-type: inline-size;
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@container (min-width: 32rem) {
+  .kinds {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.knownRule {
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .knownGrid {
@@ -343,5 +393,11 @@
 }
 
 .knownStatus {
+  font-weight: 600;
+}
+
+/* What was sent here and could not be applied. */
+.sentProblem {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
   font-weight: 600;
 }

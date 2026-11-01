@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { audio, getTransport, lights, notes } from '@/app/services';
-import { useMediaQuery } from '@/app/hooks';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { FILL_CATEGORIES, getFill } from '@/content/fills';
 import {
   changeKey,
@@ -17,11 +17,14 @@ import { romanToChord, type Mode } from '@/core/theory';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
+import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { KeyboardDock } from '@/ui/keyboard';
 import { NotFoundPage } from '../not-found/NotFoundPage';
+import { PageHeader } from '../PageHeader';
 import songStyles from '../song/SongPage.module.css';
 import progStyles from '../progressions/progressions.module.css';
 import { FillController, type FillMode } from './FillController';
@@ -84,7 +87,7 @@ export function FillPage() {
   };
 
   const exercise = fill && change ? exerciseFor(fill, key, mode, change) : null;
-  const small = useMediaQuery('(max-width: 600px)');
+  const small = useMediaQuery(BREAKPOINTS.compact);
   if (!fill || !exercise) return <NotFoundPage />;
 
   const keyLabel = (k: string) => `${prettyAccidentals(k)}${mode === 'minor' ? ' minor' : ''}`;
@@ -93,32 +96,26 @@ export function FillPage() {
   const category = FILL_CATEGORIES.find((c) => c.id === fill.category)!.name;
 
   const fields = (
-    <div className={progStyles.settings}>
-      <Segmented
-        label="Key mode"
-        value={mode}
-        options={KEY_MODES}
-        onChange={(m) => update({ mode: m, key: null, change: null })}
-      />
-      <label className={progStyles.field}>
-        Key
-        <select
-          className={progStyles.select}
-          value={key}
-          onChange={(e) => update({ key: e.target.value })}
-          data-testid="key"
-        >
+    <div className={progStyles.settingsRow}>
+      <Field label="Key mode" group>
+        <Segmented
+          label="Key mode"
+          value={mode}
+          options={KEY_MODES}
+          onChange={(m) => update({ mode: m, key: null, change: null })}
+        />
+      </Field>
+      <Field label="Key">
+        <Select value={key} onChange={(e) => update({ key: e.target.value })} data-testid="key">
           {keys.map((k) => (
             <option key={k} value={k}>
               {keyLabel(k)}
             </option>
           ))}
-        </select>
-      </label>
-      <label className={progStyles.field}>
-        Change
-        <select
-          className={progStyles.select}
+        </Select>
+      </Field>
+      <Field label="Change">
+        <Select
           value={changeKey(change!)}
           onChange={(e) => update({ change: e.target.value })}
           data-testid="change"
@@ -128,27 +125,23 @@ export function FillPage() {
               {changeLabel(c)}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
     </div>
   );
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to="/fills">Fills</Link>
-        </p>
-        <h1>{fill.name}</h1>
-        <p className={songStyles.meta}>
-          {category}, level {fill.level}, {fill.hand === 'rh' ? 'right hand' : 'left hand'}.{' '}
-          {fill.description}
-        </p>
-      </div>
+      <PageHeader
+        crumb={{ to: '/fills', label: 'Fills' }}
+        title={fill.name}
+        lede={`${category}, level ${fill.level}, ${fill.hand === 'rh' ? 'right hand' : 'left hand'}`}
+      />
       <FillTrainer
         key={fill.id}
         exerciseId={fill.id}
         exercise={exercise}
+        about={fill.description}
         settings={
           small ? (
             <details className={progStyles.details}>
@@ -170,10 +163,13 @@ function FillTrainer({
   exercise,
   exerciseId,
   settings,
+  about,
 }: {
   exercise: FillExercise;
   exerciseId: string;
   settings: React.ReactNode;
+  /** What the fill does, in a sentence or two: under the controls, not needed before Play. */
+  about: string;
 }) {
   const [ctrl] = useState(
     () =>
@@ -194,7 +190,7 @@ function FillTrainer({
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
   const notation = useSettings((s) => s.notation);
   const accidentalStyle = useSettings((s) => s.accidentalStyle);
-  const small = useMediaQuery('(max-width: 600px)');
+  const small = useMediaQuery(BREAKPOINTS.compact);
 
   useEffect(() => {
     ctrl.attach();
@@ -280,18 +276,19 @@ function FillTrainer({
             options={MODES}
             onChange={(m) => ctrl.setMode(m)}
           />
-          <span className={songStyles.spacer} />
-          <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
-            Chords
-          </Toggle>
-          {snap.mode !== 'listen' ? (
-            <Toggle
-              pressed={snap.match === 'exact'}
-              onChange={(v) => ctrl.setMatch(v ? 'exact' : 'any-octave')}
-            >
-              Exact octave
+          <span className={`${songStyles.group} ${songStyles.end}`}>
+            <Toggle pressed={snap.backing} onChange={(v) => ctrl.setBacking(v)} tone="dusk">
+              Chords
             </Toggle>
-          ) : null}
+            {snap.mode !== 'listen' ? (
+              <Toggle
+                pressed={snap.match === 'exact'}
+                onChange={(v) => ctrl.setMatch(v ? 'exact' : 'any-octave')}
+              >
+                Exact octave
+              </Toggle>
+            ) : null}
+          </span>
         </div>
       </div>
 
@@ -402,6 +399,7 @@ function FillTrainer({
           {snap.announcement}
         </p>
       </div>
+      <p className={styles.about}>{about}</p>
       <KeyboardDock focus={exercise.range} showTarget={practice || speed} />
     </>
   );

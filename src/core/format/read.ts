@@ -1,4 +1,5 @@
 import { chartIssues, cleanView, migrateChart } from '../charts/compile';
+import { isOneLine, withLyric } from '../charts/lyrics';
 import { SECTION_NAMES, MAX_LABEL, type SectionType } from '../charts/sections';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, LIMITS, type ChartView, type ChordChart } from '../charts/types';
@@ -21,7 +22,14 @@ import {
   type Progression,
   type SongLevel,
 } from '../content/types';
-import { lessonToDraft, toLesson, type SongDraft } from '../songs/draft';
+import { cleanMidiProject } from '../midi/smf';
+import {
+  lessonToDraft,
+  midiSongProblem,
+  midiToDraft,
+  toLesson,
+  type SongDraft,
+} from '../songs/draft';
 import { cleanDraft, type UserRecording } from '../songs/library';
 import { isValidChord, spelled } from '../theory';
 import { FILE_LIMITS, FORMAT, FORMAT_VERSION, type ItemKind } from './types';
@@ -151,8 +159,29 @@ export function cleanSource(raw: unknown): ContentSource {
   }
 }
 
+/**
+ * A song made from a MIDI file: its project, checked as Studio checks one, and
+ * the practice score built from it the way Studio's Save builds it.
+ */
+function readMidiSong(raw: unknown, id: string, title: string) {
+  const project = cleanMidiProject(raw);
+  if (typeof project === 'string') return fail('song.midi', project);
+  const misfit = midiSongProblem(project);
+  if (misfit === 'meter') fail('song.midi.meter', 'must be 2/4, 3/4 or 4/4');
+  if (misfit === 'length') fail('song.midi', `is longer than ${FILE_LIMITS.midiBars} bars`);
+  const draft: SongDraft = { ...midiToDraft(project), title };
+  return { kind: 'song' as const, lesson: toLesson(draft, id), draft };
+}
+
 function readSong(raw: unknown, id: string, title: string, src: ContentSource, ctx: ImportContext) {
   if (!isObj(raw)) return fail('song', 'is missing');
+  if (raw.midi !== undefined) return readMidiSong(raw.midi, id, title);
+  // Before anything else in it is checked: what version 2 wrote for one, every chord N.C.
+  if (src.kind === 'user' && Array.isArray(raw.bars) && raw.bars.length && raw.bars.every(allNC))
+    fail(
+      'song',
+      'came from a MIDI file, and this older export left its tracks out. Export it again from where it was made.',
+    );
   const k = key(raw.key, 'song.key');
   const m = isObj(raw.meter) ? songMeter(raw.meter.beats, raw.meter.unit) : undefined;
   if (!m) return fail('song.meter', `must be ${SONG_METERS.map(meterName).join(', ')}`);
@@ -244,11 +273,36 @@ function readSong(raw: unknown, id: string, title: string, src: ContentSource, c
     const bar = /^Bar (\d+)/.exec(issues[0]!)?.[1];
     fail(bar ? `song.bars[${Number(bar) - 1}]` : 'song', issues[0]!.replace(/^Bar \d+: /, ''));
   }
-  const draft = lessonToDraft(lesson);
   // Songs from elsewhere (built-in, or with a named author) stay as written, voicings
   // included; your own songs are rebuilt the way the app builds them.
   const rebuild = src.kind === 'user';
+  if (rebuild) noChordInYourSong(bars);
+  const draft = lessonToDraft(lesson);
   return { kind: 'song' as const, lesson: rebuild ? toLesson(draft, id) : lesson, draft };
+}
+
+/**
+ * A bar whose chords are all N.C.: in a song of yours, every bar like this
+ * means it came from a MIDI file and was exported before version 3, which
+ * left its tracks out.
+ */
+const allNC = (b: unknown) =>
+  isObj(b) &&
+  Array.isArray(b.chords) &&
+  b.chords.length > 0 &&
+  b.chords.every((c) => isObj(c) && c.symbol === NO_CHORD);
+
+/** A song of yours is rebuilt with a chord on every beat, so N.C. can't be in one. */
+function noChordInYourSong(bars: readonly { chords: readonly { symbol: string }[] }[]) {
+  bars.forEach((b, bi) =>
+    b.chords.forEach((c, ci) => {
+      if (c.symbol === NO_CHORD)
+        fail(
+          `song.bars[${bi}].chords[${ci}].symbol`,
+          'N.C. works in a chart, not in a song of yours',
+        );
+    }),
+  );
 }
 
 function readNotes(raw: readonly unknown[], field: string): NoteSpec[] {
@@ -341,6 +395,18 @@ function readChart(raw: unknown, viewRaw: unknown, title: string) {
       if (parsed.bars.length !== 1) fail(bf, 'should be exactly one bar');
       return parsed.bars[0]!;
     });
+    // The words over each bar, when the file was exported with them. Never quoted back.
+    if (s.lyrics !== undefined) {
+      if (!Array.isArray(s.lyrics) || s.lyrics.length !== bars.length)
+        fail(`${f}.lyrics`, 'should list one line of lyrics per bar ("" for none)');
+      (s.lyrics as unknown[]).forEach((text, li) => {
+        const lf = `${f}.lyrics[${li}]`;
+        if (typeof text !== 'string') return fail(lf, 'should be text');
+        if (text.length > LIMITS.lyric) fail(lf, `is over ${LIMITS.lyric} characters`);
+        if (!isOneLine(text)) fail(lf, 'should be one line');
+        bars[li] = withLyric(bars[li]!, text);
+      });
+    }
     return {
       id: s.id as string,
       label: (s.label as string).trim(),
@@ -474,7 +540,7 @@ function upgradeV1(data: Obj): { items: unknown[] } | null {
 }
 
 /**
- * Read an Inharmonia file (version 2, or a version 1 progressions or songs
+ * Read an Inharmonia file (version 3 or 2, or a version 1 progressions or songs
  * export). Every field is checked; only known fields are read, so unknown text
  * is dropped; lessons are rebuilt from what was read. Any error is reported
  * with its item and field, and then nothing should be saved.
@@ -566,12 +632,10 @@ export function parseFile(text: string, ctx: ImportContext): ParsedFile | { fata
         value,
       });
     } catch (e) {
-      if (!(e instanceof Fail)) throw e;
       out.errors.push({
         item: index,
         ...(title ? { title } : {}),
-        ...(e.field ? { field: e.field } : {}),
-        message: e.message,
+        ...problem(e),
       });
     }
   });
@@ -581,11 +645,19 @@ export function parseFile(text: string, ctx: ImportContext): ParsedFile | { fata
         const [id, rec] = readAsset(a, `assets[${i}]`);
         out.recordings.set(id, rec);
       } catch (e) {
-        if (!(e instanceof Fail)) throw e;
-        out.errors.push({ field: e.field, message: e.message });
+        out.errors.push({ field: `assets[${i}]`, ...problem(e) });
       }
     });
   return out;
+}
+
+/**
+ * What went wrong, said: a check's field and message, or anything else that
+ * stopped the item being read, so a broken item is reported, not lost.
+ */
+function problem(e: unknown): { field?: string; message: string } {
+  if (e instanceof Fail) return { ...(e.field ? { field: e.field } : {}), message: e.message };
+  return { message: `couldn't be read: ${e instanceof Error ? e.message : String(e)}` };
 }
 
 /** "Item 2 (Sore di Taman), chart.sections[0].bars[3]: "Hx" is not a chord". */

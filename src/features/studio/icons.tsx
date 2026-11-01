@@ -1,4 +1,6 @@
-/** Small line icons for the MIDI editor, drawn in the current text colour. */
+import { LineIcon } from '@/ui/icons';
+
+/** Small line icons for Studio and its editors, drawn in the current text colour. */
 
 export function SpeakerIcon({ muted }: { muted: boolean }) {
   return (
@@ -45,6 +47,39 @@ export function PianoIcon() {
         stroke="currentColor"
         strokeWidth="0.5"
       />
+    </svg>
+  );
+}
+
+/** Points down the page, at what a button leads to. */
+export function ArrowDownIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M12 4v15M5.5 12.5 12 19l6.5-6.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export const ChevronDownIcon = () => <LineIcon d="m6 9 6 6 6-6" size={16} />;
+/** Wider or narrower beats. */
+export const ZoomTimeIcon = () => <LineIcon d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" size={18} />;
+/** Taller or shorter pitch rows. */
+export const ZoomPitchIcon = () => <LineIcon d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" size={18} />;
+
+/** More actions: three dots. */
+export function MoreIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="5" cy="12" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="19" cy="12" r="2" fill="currentColor" />
     </svg>
   );
 }

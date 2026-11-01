@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import {
   DEFAULT_VIEW,
   emptyChart,
@@ -8,7 +8,9 @@ import {
   type UserChart,
 } from '@/core/charts';
 import { getChart, newChartId, saveChart } from '@/state/mySongs';
-import songStyles from '../song/SongPage.module.css';
+import { PageHeader } from '../PageHeader';
+import { ArrivalNote } from '../sendTo/SendToMenu';
+import { useArrival } from '../sendTo/useHandoff';
 import { ChartEditor } from './ChartEditor';
 import styles from './charts.module.css';
 
@@ -19,6 +21,9 @@ export function ChartEditorPage() {
   const [loaded, setLoaded] = useState<{ id: string; chart: UserChart | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState('');
+  // A new chart started from a progression: its chords to build on, and the way back.
+  const arrival = useArrival('chart');
+  const sent = !chartId && arrival.status === 'ok' ? arrival.handoff : null;
 
   useEffect(() => {
     if (!chartId) return;
@@ -34,14 +39,7 @@ export function ChartEditorPage() {
   const existing = chartId && loaded?.id === chartId ? loaded.chart : null;
   if (chartId && (!loaded || loaded.id !== chartId)) return <p className={styles.note}>Loading…</p>;
   if (chartId && !existing)
-    return (
-      <div className={songStyles.header}>
-        <h1>Chart not found</h1>
-        <p>
-          <Link to="/songs">Back to Songs</Link>
-        </p>
-      </div>
-    );
+    return <PageHeader crumb={{ to: '/songs', label: 'Songs' }} title="Chart not found" />;
 
   const save = async (chart: ChordChart) => {
     setSaving(true);
@@ -52,7 +50,7 @@ export function ChartEditorPage() {
         ? { ...existing, updatedAt: now, chart }
         : makeUserChart(newChartId(), chart, DEFAULT_VIEW, now);
       await saveChart(record);
-      navigate(`/songs/charts/${record.id}`);
+      navigate(`/songs/charts/${record.id}`, { state: { saved: 'Saved.' } });
     } catch {
       setProblem('Could not save: this browser is not letting Inharmonia store data.');
       setSaving(false);
@@ -61,27 +59,35 @@ export function ChartEditorPage() {
 
   return (
     <>
-      <div className={songStyles.header}>
-        <p className={songStyles.meta}>
-          <Link to={existing ? `/songs/charts/${existing.id}` : '/songs'}>
-            {existing ? '← Back to the chart' : 'Songs'}
-          </Link>
-        </p>
-        <h1>{existing ? `Edit ${existing.chart.title}` : 'New chord chart'}</h1>
-        <p className={songStyles.meta}>
-          Type the chords bar by bar, or paste a chord sheet. Lyrics are never kept.
-        </p>
-      </div>
+      <PageHeader
+        crumb={
+          existing
+            ? { to: `/songs/charts/${existing.id}`, label: existing.chart.title }
+            : (sent?.from ?? { to: '/songs', label: 'Songs' })
+        }
+        title={existing ? `Edit ${existing.chart.title}` : 'New chord chart'}
+        lede={
+          <>
+            <p>
+              Type the chords bar by bar, or paste a chord sheet. Lyrics are kept only if you ask,
+              and only on this device.
+            </p>
+            {sent ? <ArrivalNote text={sent.said} testId="sent-said" /> : null}
+            {!chartId && arrival.problem ? (
+              <p className={styles.notice} role="status" data-testid="sent-problem">
+                {arrival.problem}
+              </p>
+            ) : null}
+          </>
+        }
+      />
       <ChartEditor
-        initial={existing?.chart ?? emptyChart('')}
+        key={sent ? arrival.id : 'blank'}
+        initial={existing?.chart ?? sent?.chart ?? emptyChart('')}
         saving={saving}
         onSave={(c) => void save(c)}
       />
-      {problem ? (
-        <p className={styles.issues} role="alert">
-          {problem}
-        </p>
-      ) : null}
+      <div role="alert">{problem ? <p className={styles.issues}>{problem}</p> : null}</div>
     </>
   );
 }

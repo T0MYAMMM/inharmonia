@@ -9,7 +9,7 @@
 }
 
 .meta {
-  color: var(--dusk-text);
+  color: var(--muted);
   font-weight: 600;
 }
 
@@ -23,6 +23,13 @@
   display: grid;
   gap: var(--space-3);
   margin-top: var(--space-4);
+}
+
+/* What the fill does, under the controls: worth reading, not needed before Play. */
+.about {
+  max-width: var(--text-width);
+  margin-top: var(--space-5);
+  color: var(--muted);
 }
 
 .strip {
@@ -148,11 +155,24 @@
   }
 }
 
+/* Four settings: one row, two by two, or one column, never three and one. */
 .speedSettings {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-3) var(--space-4);
   align-items: end;
+}
+
+@media (max-width: 960px) {
+  .speedSettings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .speedSettings {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .speedField {

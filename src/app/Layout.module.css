@@ -50,7 +50,10 @@
 }
 
 .navLink {
-  padding: 8px 9px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 9px;
   border-radius: var(--radius-pill);
   font-weight: 600;
   font-size: 0.95rem;
@@ -76,8 +79,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--control-height);
+  height: var(--control-height);
   padding: 0;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
@@ -185,4 +188,16 @@
   display: flex;
   gap: var(--space-4);
   font-weight: 600;
+}
+
+/* On touch the brand and the footer's links are full targets. */
+@media (pointer: coarse) {
+  .brand,
+  .footerNav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--control-height);
+    min-height: var(--control-height);
+  }
 }

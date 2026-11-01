@@ -21,20 +21,24 @@ import {
   type MidiProject,
 } from '@/core/midi/smf';
 import { newSongId, saveSong } from '@/state/mySongs';
+import { Field } from '@/ui/Field';
 import { KeyboardDock } from '@/ui/keyboard';
 import { keyName } from '@/ui/keyboard/layout';
 import { Button } from '@/ui/Button';
 import { joinTinyRetriggers } from '@/core/midi/cleanup';
+import { NumberInput } from '@/ui/NumberInput';
+import { RangeInput } from '@/ui/RangeInput';
+import { TextInput } from '@/ui/TextInput';
 import { MidiRoll } from './MidiRoll';
-import { PianoIcon, SpeakerIcon } from './icons';
+import { SpeakerIcon } from './icons';
 import { KeyRecorder, moveNotes } from './rollEdit';
+import { MIDI_ACCEPT, NOT_MIDI } from './midiFiles';
+import { EditorHelp } from './EditorHeader';
+import { MidiHeader, MidiSettings } from './MidiHeader';
+import { ROW_RANGE, ZOOM_RANGE } from './midiSettings';
 import { SeekBar } from './SeekBar';
 import styles from './midiWorkspace.module.css';
 
-const STEPS = [1, 0.5, 0.25, 0.125, 0];
-/** Horizontal zoom, pixels per beat, and vertical zoom, pixels per pitch row. */
-const ZOOM_RANGE = { min: 20, max: 240, initial: 56 } as const;
-const ROW_RANGE = { min: 12, max: 44, initial: 22 } as const;
 type NewNote = Omit<MidiNote, 'id'>;
 const next = (p: MidiProject, trackId: string, fn: (notes: MidiNote[]) => MidiNote[]) => ({
   ...p,
@@ -44,11 +48,13 @@ const next = (p: MidiProject, trackId: string, fn: (notes: MidiNote[]) => MidiNo
 export interface MidiWorkspaceProps {
   initial?: MidiProject;
   song?: UserSong;
-  onBack?: () => void;
 }
 
-/** Full multitrack editor, separate from the monophonic singing/transcription tool. */
-export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
+/**
+ * Full multitrack editor, separate from the monophonic singing/transcription
+ * tool. The page around it gives it its heading and the way back.
+ */
+export function MidiWorkspace({ initial, song }: MidiWorkspaceProps) {
   const [history, setHistory] = useState(() => historyOf(initial ?? blankMidiProject()));
   const p = history.present;
   const [trackId, setTrackId] = useState(p.tracks[0]?.id ?? '');
@@ -63,6 +69,7 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
   const [pending, setPending] = useState<NewNote[]>([]);
   const t = getTransport();
   const nextId = useRef(1);
+  const fileRef = useRef<HTMLInputElement>(null);
   /** Where playback starts and step input lands, in beats, while stopped. */
   const cursor = useRef(0);
   const playingRef = useRef(false);
@@ -273,6 +280,22 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       setStatus(error instanceof Error ? error.message : 'Could not open this MIDI file.');
     }
   };
+  const startNew = () => {
+    stop();
+    cursor.current = 0;
+    setHistory(historyOf(blankMidiProject()));
+    setTrackId('melody');
+    setSelected(null);
+    setSaved(null);
+  };
+  const exportMidi = () => {
+    try {
+      downloadMidi(p);
+      setStatus('Exported .mid file.');
+    } catch (e) {
+      setStatus(String(e));
+    }
+  };
   const save = async () => {
     try {
       const draft = midiToDraft(p);
@@ -280,9 +303,9 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       const row = saved ? updateUserSong(saved, draft, now) : makeUserSong(newSongId(), draft, now);
       await saveSong(row);
       setSaved(row);
-      setStatus('Saved full MIDI and a representative practice score to My Songs.');
+      setStatus('Saved full MIDI and a representative practice score to My songs.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not save to My Songs.');
+      setStatus(error instanceof Error ? error.message : 'Could not save to My songs.');
     }
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -334,158 +357,81 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
       tabIndex={-1}
       onKeyDown={onKeyDown}
     >
-      <div className={styles.heading}>
-        <h2>MIDI piano-roll editor</h2>
-        <p>
-          Open a .mid file or create one from scratch. Click empty space to draw, drag notes to move
-          them and their right edge to resize them. Drag a box (or Shift-click) to select several
-          notes and move them together, with the mouse or the arrow keys. MIDI is edited locally.
-        </p>
-      </div>
-      <div className={styles.toolbar}>
-        {onBack ? (
-          <Button variant="ghost" onClick={onBack}>
-            ← Back to Studio
-          </Button>
-        ) : null}
-        <label className={styles.filePicker}>
-          Open .mid / .midi
-          <input
-            type="file"
-            accept=".mid,.midi,audio/midi,audio/x-midi"
-            data-testid="midi-file"
-            onChange={(e) => {
-              void load(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
-        </label>
-        <Button
-          onClick={() => {
-            stop();
-            cursor.current = 0;
-            setHistory(historyOf(blankMidiProject()));
-            setTrackId('melody');
-            setSelected(null);
-            setSaved(null);
-          }}
-        >
-          New
-        </Button>
-        <Button onClick={() => setHistory((h) => undo(h))} disabled={!history.past.length}>
-          Undo
-        </Button>
-        <Button onClick={() => setHistory((h) => redo(h))} disabled={!history.future.length}>
-          Redo
-        </Button>
-        <Button variant="primary" onClick={play} data-testid="midi-play">
-          {playing ? 'Pause' : 'Play'}
-        </Button>
-        <button
-          type="button"
-          className={styles.pianoToggle}
-          aria-pressed={showKeys}
-          onClick={() => setShowKeys((v) => !v)}
-          title="Play notes into the current track on an on-screen, computer or MIDI keyboard"
-          data-testid="midi-keyboard-toggle"
-        >
-          <PianoIcon />
-          {showKeys ? 'Hide keyboard' : 'Keyboard'}
-        </button>
-        <Button
-          onClick={() => {
-            try {
-              downloadMidi(p);
-              setStatus('Exported .mid file.');
-            } catch (e) {
-              setStatus(String(e));
-            }
-          }}
-          data-testid="midi-export"
-        >
-          Export .mid
-        </Button>
-        <Button onClick={() => void save()} data-testid="midi-save-song">
-          Save to My Songs
-        </Button>
-      </div>
-      <div className={styles.toolbar}>
-        <label>
-          Title{' '}
-          <input
-            aria-label="MIDI title"
-            value={p.title}
-            maxLength={80}
-            onChange={(e) => update({ ...p, title: e.target.value }, 'Renamed project.')}
-          />
-        </label>
-        <label>
-          Tempo (BPM){' '}
-          <input
-            type="number"
-            min={20}
-            max={300}
-            aria-label="MIDI tempo"
-            value={p.tempo}
-            onChange={(e) => {
-              const tempo = Math.max(20, Math.min(300, Number(e.target.value) || 120));
-              update(
-                {
-                  ...p,
-                  tempo,
-                  tempos: [{ beat: 0, bpm: tempo }, ...p.tempos.filter((t) => t.beat > 0)],
-                },
-                'Tempo updated.',
-              );
-            }}
-          />
-        </label>
-        <label>
-          Snap{' '}
-          <select
-            value={step}
-            onChange={(e) => setStep(Number(e.target.value))}
-            aria-label="Note snap"
-          >
-            {STEPS.map((value) => (
-              <option value={value} key={value}>
-                {value ? String(value) + ' beat' : 'Free'}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className={styles.zoomGroup}>
-          <label>
-            Zoom ↔{' '}
-            <input
-              type="range"
-              min={ZOOM_RANGE.min}
-              max={ZOOM_RANGE.max}
-              step={4}
-              value={zoom}
-              aria-label="MIDI zoom"
-              onChange={(e) => setZoom(Number(e.target.value))}
-            />
-          </label>
-          <label>
-            Zoom ↕{' '}
-            <input
-              type="range"
-              min={ROW_RANGE.min}
-              max={ROW_RANGE.max}
-              step={2}
-              value={row}
-              aria-label="MIDI row height"
-              onChange={(e) => setRow(Number(e.target.value))}
-            />
-          </label>
-        </div>
-        <span className={styles.dim}>
-          {p.meter.beats}/{p.meter.unit} · {p.tracks.reduce((n, tr) => n + tr.notes.length, 0)}{' '}
-          notes
-          {selection.length > 1 ? ` · ${selection.length} selected` : ''}
+      <EditorHelp summary="How to edit">
+        <ul>
+          <li>
+            Click an empty spot to draw a note. Drag a note to move it, or its right edge to change
+            its length.
+          </li>
+          <li>Drag a box, or Shift-click, to select several notes and move them together.</li>
+          <li>
+            With the keyboard: the arrow keys move the selection (Shift for an octave), Delete
+            removes it, Ctrl+A selects the whole track, Escape clears the selection, Ctrl+Z undoes
+            and Space plays.
+          </li>
+        </ul>
+      </EditorHelp>
+      <MidiHeader
+        title={p.title}
+        onTitle={(title) => update({ ...p, title }, 'Renamed project.')}
+        canUndo={history.past.length > 0}
+        canRedo={history.future.length > 0}
+        onUndo={() => setHistory((h) => undo(h))}
+        onRedo={() => setHistory((h) => redo(h))}
+        playing={playing}
+        onPlay={play}
+        showKeys={showKeys}
+        onShowKeys={setShowKeys}
+        onNew={startNew}
+        onOpen={() => fileRef.current?.click()}
+        onDropFile={(file) => void load(file)}
+        onRefuse={() => setStatus(NOT_MIDI)}
+        onExport={exportMidi}
+        onSave={() => void save()}
+      />
+      <MidiSettings
+        tempo={p.tempo}
+        onTempo={(tempo) =>
+          update(
+            {
+              ...p,
+              tempo,
+              tempos: [{ beat: 0, bpm: tempo }, ...p.tempos.filter((t) => t.beat > 0)],
+            },
+            'Tempo updated.',
+          )
+        }
+        step={step}
+        onStep={setStep}
+        zoom={zoom}
+        onZoom={setZoom}
+        row={row}
+        onRow={setRow}
+        meter={`${p.meter.beats}/${p.meter.unit}`}
+        notes={p.tracks.reduce((n, tr) => n + tr.notes.length, 0)}
+      />
+      {/* The File menu's Open MIDI file opens this. */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept={MIDI_ACCEPT}
+        className="visually-hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+        data-testid="midi-file"
+        onChange={(e) => {
+          void load(e.target.files?.[0]);
+          // Let the same file be opened again.
+          e.target.value = '';
+        }}
+      />
+      {/* Under the header, so what Save (or any change) did is in view, even on a phone. */}
+      <p className={styles.statusLine}>
+        <span role="status" data-testid="midi-status">
+          {status}
         </span>
-      </div>
+        {saved ? <Link to={'/songs/mine/' + saved.id}>Open saved song in My songs →</Link> : null}
+      </p>
       {p.tempos.length > 1 || p.meters.length > 1 ? (
         <p className={styles.warning}>
           This MIDI contains tempo or meter changes. Export preserves these markers; Studio playback
@@ -562,46 +508,34 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           ))}
           {track ? (
             <div className={styles.trackInspector}>
-              <label>
-                Track name{' '}
-                <input
+              <Field label="Track name">
+                <TextInput
+                  size="small"
                   aria-label="Track name"
                   value={track.name}
                   onChange={(e) => setTrack((t) => ({ ...t, name: e.target.value }))}
                 />
-              </label>
-              <label>
-                Instrument (GM program){' '}
-                <input
-                  type="number"
+              </Field>
+              <Field label="Instrument (GM program)">
+                <NumberInput
+                  size="small"
                   aria-label="Track program"
                   min={0}
                   max={127}
                   value={track.program}
-                  onChange={(e) =>
-                    setTrack((t) => ({
-                      ...t,
-                      program: Math.max(0, Math.min(127, +e.target.value || 0)),
-                    }))
-                  }
+                  onChange={(program) => setTrack((t) => ({ ...t, program }))}
                 />
-              </label>
-              <label>
-                Channel{' '}
-                <input
-                  type="number"
+              </Field>
+              <Field label="Channel">
+                <NumberInput
+                  size="small"
                   aria-label="Track channel"
                   min={1}
                   max={16}
                   value={track.channel + 1}
-                  onChange={(e) =>
-                    setTrack((t) => ({
-                      ...t,
-                      channel: Math.max(0, Math.min(15, (+e.target.value || 1) - 1)),
-                    }))
-                  }
+                  onChange={(channel) => setTrack((t) => ({ ...t, channel: channel - 1 }))}
                 />
-              </label>
+              </Field>
               <Button
                 size="small"
                 variant="ghost"
@@ -720,50 +654,47 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </div>
         ) : chosen ? (
           <div className={styles.toolbar}>
-            <label>
-              Pitch{' '}
-              <input
-                type="number"
+            <Field label="Pitch">
+              <NumberInput
+                size="small"
                 min={0}
                 max={127}
                 aria-label="Note pitch"
                 value={chosen.midi}
-                onChange={(e) => notePatch(chosen.id, { midi: +e.target.value })}
+                onChange={(midi) => notePatch(chosen.id, { midi })}
               />
-            </label>
-            <label>
-              Start (beats){' '}
-              <input
-                type="number"
+            </Field>
+            <Field label="Start (beats)">
+              <NumberInput
+                size="small"
                 min={0}
                 step={step || 0.01}
                 aria-label="Note start"
                 value={chosen.startBeat}
-                onChange={(e) => notePatch(chosen.id, { startBeat: +e.target.value })}
+                onChange={(startBeat) => notePatch(chosen.id, { startBeat })}
               />
-            </label>
-            <label>
-              Length (beats){' '}
-              <input
-                type="number"
+            </Field>
+            <Field label="Length (beats)">
+              <NumberInput
+                size="small"
                 min={0.01}
                 step={step || 0.01}
                 aria-label="Note length"
                 value={chosen.beats}
-                onChange={(e) => notePatch(chosen.id, { beats: +e.target.value })}
+                onChange={(beats) => notePatch(chosen.id, { beats })}
               />
-            </label>
-            <label>
-              Velocity {chosen.velocity}
-              <input
-                type="range"
+            </Field>
+            <Field label={<>Velocity {chosen.velocity}</>}>
+              <RangeInput
+                size="small"
+                className={styles.range}
                 min={1}
                 max={127}
                 aria-label="Note velocity"
                 value={chosen.velocity}
-                onChange={(e) => notePatch(chosen.id, { velocity: +e.target.value })}
+                onChange={(velocity) => notePatch(chosen.id, { velocity })}
               />
-            </label>
+            </Field>
             <Button
               onClick={() => {
                 update(
@@ -782,20 +713,19 @@ export function MidiWorkspace({ initial, song, onBack }: MidiWorkspaceProps) {
           </p>
         )}
       </div>
-      <p role="status" data-testid="midi-status" className={styles.dim}>
-        {status}
-      </p>
-      {saved ? (
-        <p className={styles.dim}>
-          <Link to={'/songs/mine/' + saved.id}>Open saved song in My Songs →</Link>
-        </p>
-      ) : null}
-      <p className={styles.warning}>
-        Import/export preserves MIDI notes, tracks, velocities, programs and tempo/meter markers.
-        Audio preview uses InHarmonia's piano sound; MIDI controller automation, sustain-pedal data
-        and pitch bends are not currently preserved. Saving as a practice Song produces a simplified
-        score, but preserves the full MIDI notes for playback and export.
-      </p>
+      <EditorHelp summary="What a .mid keeps">
+        <ul>
+          <li>
+            Notes, tracks, velocities, programs and tempo and meter markers come in and go out.
+          </li>
+          <li>Controller automation, sustain pedal and pitch bends are not kept yet.</li>
+          <li>Playback here uses Inharmonia's piano for every track.</li>
+          <li>
+            Saved to My songs, it becomes a simpler practice score, and keeps every MIDI note for
+            playing and export.
+          </li>
+        </ul>
+      </EditorHelp>
     </section>
   );
 }

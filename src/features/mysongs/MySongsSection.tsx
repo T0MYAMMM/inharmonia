@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { formatBytes } from '@/core/songs';
-import { expandForm } from '@/core/charts';
+import { expandForm, hasLyrics } from '@/core/charts';
 import { useMySongs } from '@/state/mySongs';
 import { exportItems } from '@/state/transfer';
 import { Segmented } from '@/ui/Segmented';
@@ -37,7 +37,12 @@ export function MySongsSection() {
       title: s.lesson.title,
       ...(recordings[s.id] ? { recordingBytes: recordings[s.id] } : {}),
     })),
-    ...charts.map((c) => ({ key: c.id, kind: 'chart' as const, title: c.chart.title })),
+    ...charts.map((c) => ({
+      key: c.id,
+      kind: 'chart' as const,
+      title: c.chart.title,
+      ...(hasLyrics(c.chart) ? { lyrics: true } : {}),
+    })),
   ];
 
   return (
@@ -58,11 +63,12 @@ export function MySongsSection() {
               </Link>
               <ExportDialog
                 candidates={candidates}
-                build={(keys, includeRecordings) =>
+                build={(keys, includeRecordings, includeLyrics) =>
                   exportItems({
                     songs: songs.filter((s) => keys.has(s.id)),
                     charts: charts.filter((c) => keys.has(c.id)),
                     includeRecordings,
+                    includeLyrics,
                   })
                 }
               />

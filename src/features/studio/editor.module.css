@@ -3,49 +3,11 @@
   gap: var(--space-3);
 }
 
-.title {
-  display: grid;
-  gap: 4px;
-  max-width: 28rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.title input {
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--ink);
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-}
-
-.inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.inline select {
-  font: inherit;
-  color: var(--ink);
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
 }
 
 .rollScroll {
@@ -60,25 +22,16 @@
   position: relative;
 }
 
+/* As tall as a small Select and 4px either side, so the chords fit on touch too. */
 .lane {
   position: relative;
+  height: calc(var(--control-height-small) + 8px);
   border-bottom: 1px solid var(--line);
 }
 
 .chordSelect {
   position: absolute;
-  top: 6px;
-  height: 28px;
-  min-width: 0;
-  padding: 0 4px;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--dusk-text);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  text-overflow: ellipsis;
+  top: 4px;
 }
 
 .roll {
@@ -170,13 +123,6 @@
   stroke-width: 2;
 }
 
-.help {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.45;
-}
-
 .save {
   display: grid;
   gap: var(--space-2);
@@ -187,26 +133,13 @@
 }
 
 .saveTitle {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: var(--card-title-size);
 }
 
 .small {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
-}
-
-.check {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  line-height: 1.4;
-}
-
-.check input {
-  margin-top: 3px;
-  accent-color: var(--ink);
 }
 
 .status {

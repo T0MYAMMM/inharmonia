@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   applyImport,
   previewImport,
@@ -6,9 +6,15 @@ import {
   type ImportPreview,
 } from '@/state/transfer';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { FilePicker } from '@/ui/FilePicker';
+import { Select } from '@/ui/Select';
+import { TextArea } from '@/ui/TextArea';
+import { useFileDrop } from '@/ui/useFileDrop';
 import styles from './transfer.module.css';
 
 const KIND = { song: 'Song', chart: 'Chart', progression: 'Progression' } as const;
+const ACCEPT = 'application/json,.json';
 
 /**
  * Bring songs, charts and progressions in from a file: pick one, drop one on
@@ -21,14 +27,12 @@ export function ImportControls({
   /** Lays out the area that accepts dropped files; place the import buttons inside it. */
   children: (buttons: ReactNode) => ReactNode;
 }) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLDialogElement | null>(null);
   const pasteRef = useRef<HTMLDialogElement | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [choices, setChoices] = useState<Record<number, DuplicateChoice>>({});
   const [pasted, setPasted] = useState('');
   const [result, setResult] = useState('');
-  const [over, setOver] = useState(false);
 
   const show = (text: string) => {
     setPreview(previewImport(text));
@@ -37,13 +41,22 @@ export function ImportControls({
     previewRef.current?.showModal();
   };
   const readFile = async (f: File | undefined) => {
-    if (f) show(await f.text());
+    if (!f) return;
+    let text: string;
+    try {
+      text = await f.text();
+    } catch (e) {
+      setResult(`This file couldn't be read: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    show(text);
   };
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setOver(false);
-    void readFile(e.dataTransfer.files[0]);
-  };
+  // The whole area takes a dropped export; anything else is refused in the status.
+  const { over, dropProps } = useFileDrop({
+    accept: ACCEPT,
+    onFiles: ([file]) => void readFile(file),
+    onReject: () => setResult("That isn't an Inharmonia export. Choose a .json file."),
+  });
   const doImport = async () => {
     if (!preview) return;
     try {
@@ -66,23 +79,19 @@ export function ImportControls({
     !preview || !!preview.fatal || preview.errors.length > 0 || preview.rows.length === 0;
 
   return (
-    <div
-      className={styles.drop}
-      data-over={over || undefined}
-      onDragOver={(e) => {
-        if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) {
-          e.preventDefault();
-          setOver(true);
-        }
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-    >
+    <div className={styles.drop} data-over={over || undefined} {...dropProps}>
       {children(
         <span className={styles.actions}>
-          <Button size="small" onClick={() => fileRef.current?.click()} data-testid="import-open">
+          <FilePicker
+            size="small"
+            accept={ACCEPT}
+            acceptDrop={false}
+            onFiles={([file]) => void readFile(file)}
+            data-testid="import-file"
+            buttonTestId="import-open"
+          >
             Import file
-          </Button>
+          </FilePicker>
           <Button
             size="small"
             variant="ghost"
@@ -94,19 +103,6 @@ export function ImportControls({
           >
             Paste JSON
           </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className={styles.file}
-            tabIndex={-1}
-            aria-hidden="true"
-            data-testid="import-file"
-            onChange={(e) => {
-              void readFile(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
           <span className={styles.status} role="status" data-testid="import-result">
             {result}
           </span>
@@ -121,7 +117,8 @@ export function ImportControls({
           <p className={styles.note}>
             Paste an Inharmonia export. You'll see what's in it before anything is saved.
           </p>
-          <textarea
+          <TextArea
+            mono
             className={styles.textarea}
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
@@ -189,12 +186,23 @@ export function ImportControls({
                     <span className={styles.itemTitle}>
                       {r.title}
                       {r.recording ? ' (with its recording)' : ''}
+                      {r.lyrics ? ' (with its lyrics)' : ''}
+                      {r.existing &&
+                      r.existingLyrics &&
+                      !r.lyrics &&
+                      choices[r.index] === 'replace' ? (
+                        <span
+                          className={styles.warn}
+                          data-testid={`import-drops-lyrics-${r.index}`}
+                        >
+                          Replacing drops the lyrics kept here.
+                        </span>
+                      ) : null}
                     </span>
                     {r.existing ? (
-                      <label className={styles.note}>
-                        Already here:{' '}
-                        <select
-                          className={styles.select}
+                      <Field label="Already here:" inline>
+                        <Select
+                          size="small"
                           value={choices[r.index] ?? 'skip'}
                           onChange={(e) =>
                             setChoices((c) => ({
@@ -207,8 +215,8 @@ export function ImportControls({
                           <option value="skip">Skip</option>
                           <option value="replace">Replace</option>
                           <option value="copy">Keep both</option>
-                        </select>
-                      </label>
+                        </Select>
+                      </Field>
                     ) : (
                       <span className={styles.note}>New</span>
                     )}

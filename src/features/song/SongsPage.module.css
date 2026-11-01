@@ -37,6 +37,13 @@
   letter-spacing: -0.03em;
 }
 
+/* On touch the piece's name is a 44px target. */
+@media (pointer: coarse) {
+  a.title {
+    padding-block: 4px;
+  }
+}
+
 .meta {
   color: var(--muted);
   font-weight: 600;
@@ -60,26 +67,11 @@
   margin-bottom: var(--space-4);
 }
 
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 0;
-}
-
-.select {
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ink);
-  padding: 7px 11px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  min-width: 0;
-  max-width: 100%;
+/* Under 960px the level has a line of its own and the other two share the next. */
+@media (max-width: 960px) {
+  .filters > :first-child {
+    flex-basis: 100%;
+  }
 }
 
 a.title {
@@ -91,9 +83,11 @@ a.title:hover {
   text-decoration: underline;
 }
 
+/* The versions side by side, equal widths, whatever their numbers say. */
 .levels {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 6px;
   margin-top: 4px;
 }

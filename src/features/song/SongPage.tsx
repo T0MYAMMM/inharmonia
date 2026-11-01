@@ -13,8 +13,16 @@ import {
 import { keyName, prettyAccidentals } from '@/core/notation';
 import { VOICING_STYLES } from '@/core/theory';
 import { exportItems } from '@/state/transfer';
+import { Field } from '@/ui/Field';
+import { Select } from '@/ui/Select';
 import { NotFoundPage } from '../not-found/NotFoundPage';
-import { ExportButtons } from '../transfer/Export';
+import page from '../page.module.css';
+import { PageHeader } from '../PageHeader';
+import { ExportMenu } from '../transfer/Export';
+import { sentTitle } from '@/core/handoff';
+import { NOTES, sentToStudio } from '../sendTo/names';
+import { SendToMenu } from '../sendTo/SendToMenu';
+import { useHere, useSend } from '../sendTo/useHandoff';
 import { creditLine, LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { LessonPlayer } from './LessonPlayer';
 import styles from './SongPage.module.css';
@@ -26,6 +34,8 @@ export function SongPage() {
   const { songId = '' } = useParams();
   const lesson = getSong(songId);
   const [params, setParams] = useSearchParams();
+  const send = useSend();
+  const here = useHere();
   const option = (name: string) => params.get(name) ?? '';
   const pattern = option('pattern');
   const octave = Number(option('octave'));
@@ -75,9 +85,9 @@ export function SongPage() {
     >
       <summary>Playing style &amp; arrangement</summary>
       <div className={styles.arrangementFields}>
-        <label>
-          Accompaniment
-          <select
+        <Field label="Accompaniment">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-pattern' : 'song-pattern'}
             value={options.pattern}
             onChange={(e) => update('pattern', e.target.value)}
@@ -88,11 +98,11 @@ export function SongPage() {
                 {p.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Chord octave
-          <select
+          </Select>
+        </Field>
+        <Field label="Chord octave">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-octave' : 'song-octave'}
             value={options.chordOctave}
             onChange={(e) => update('octave', e.target.value)}
@@ -102,11 +112,11 @@ export function SongPage() {
                 {octaveLabel(n)}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Chord voicing
-          <select
+          </Select>
+        </Field>
+        <Field label="Chord voicing">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-voicing' : 'song-voicing'}
             value={options.voicing}
             onChange={(e) => update('voicing', e.target.value)}
@@ -117,11 +127,11 @@ export function SongPage() {
                 {v.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Inversion
-          <select
+          </Select>
+        </Field>
+        <Field label="Inversion">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-inversion' : 'song-inversion'}
             value={options.inversion}
             onChange={(e) => update('inversion', e.target.value)}
@@ -130,11 +140,11 @@ export function SongPage() {
             <option value="0">Root position</option>
             <option value="1">First inversion</option>
             <option value="2">Second inversion</option>
-          </select>
-        </label>
-        <label>
-          Fill-ins
-          <select
+          </Select>
+        </Field>
+        <Field label="Fill-ins">
+          <Select
+            size={fullscreen ? 'small' : 'normal'}
             data-testid={fullscreen ? 'fullscreen-song-fill' : 'song-fill'}
             value={options.fill}
             onChange={(e) => update('fill', e.target.value)}
@@ -145,64 +155,87 @@ export function SongPage() {
                 {f.name}
               </option>
             ))}
-          </select>
-        </label>
-        <Button onClick={() => setParams(new URLSearchParams(), { replace: true })}>
+          </Select>
+        </Field>
+      </div>
+      <div className={styles.arrangementFoot}>
+        <p className={styles.note}>
+          These settings affect playback and practice only; the original song stays unchanged.
+          Fill-ins play only where they do not overlap the melody.
+        </p>
+        <Button size="small" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
           Reset arrangement
         </Button>
       </div>
-      <p className={styles.note}>
-        These settings affect playback and practice only; the original song stays unchanged.
-        Fill-ins play only where they do not overlap the melody.
-      </p>
     </details>
   );
+  const level = lesson.level ? LEVEL_NAMES[lesson.level] : null;
+  // The arrangement settings are in the address only when changed.
+  const arranged = ['pattern', 'octave', 'voicing', 'inversion', 'fill'].some((k) => params.has(k));
+  const toStudio = () =>
+    send({
+      kind: 'studio',
+      from: { to: here, label: lesson.title },
+      project: {
+        ...compiledToMidi(compiled),
+        title: sentTitle(lesson.title, level ? `song, ${level}` : 'song'),
+      },
+      said: sentToStudio(
+        `the song ${lesson.title}`,
+        [
+          prettyAccidentals(keyName(lesson.key)),
+          level ? `the ${level} version` : null,
+          arranged ? 'with the arrangement chosen here' : 'with its own arrangement',
+        ]
+          .filter(Boolean)
+          .join(', '),
+        'the song',
+      ),
+    });
   return (
     <>
-      <div className={styles.header}>
-        <p className={styles.meta}>
-          <Link to="/songs">Songs</Link>
-        </p>
-        <h1>{lesson.title}</h1>
-        <p className={styles.meta} data-testid="song-credit">
-          {creditLine(lesson.source)}
-        </p>
-        {versions.length > 1 ? (
-          <nav className={styles.levels} aria-label="Versions" data-testid="song-levels">
-            {versions.map((v) => (
-              <Link
-                key={v.id}
-                to={`/songs/${v.id}`}
-                className={styles.level}
-                aria-current={v.id === lesson.id ? 'page' : undefined}
-              >
-                {LEVEL_NAMES[v.level!]}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
-        {lesson.level ? <p className={styles.note}>{LEVEL_NOTES[lesson.level]}</p> : null}
-        <p className={styles.meta}>
-          {prettyAccidentals(keyName(lesson.key))}
-          {moved ? ` (written in ${prettyAccidentals(keyName(written))})` : ''},{' '}
-          {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
-          {lesson.covers ? `: ${lesson.covers} of the original` : ''}
-        </p>
-        {lesson.source.kind === 'public-domain' ? (
-          <p className={styles.note} data-testid="song-edition">
-            Notes from {lesson.source.edition}.
-          </p>
-        ) : null}
-        <ExportButtons build={() => exportItems({ builtInSongs: [lesson] })} />
-        <Button
-          size="small"
-          variant="ghost"
-          onClick={() => downloadMidi(compiledToMidi(compiled))}
-          data-testid="song-midi-export"
-        >
-          Export .mid
-        </Button>
-      </div>
+      <PageHeader
+        crumb={{ to: '/songs', label: 'Songs' }}
+        title={lesson.title}
+        lede={
+          <>
+            <p data-testid="song-credit">{creditLine(lesson.source)}</p>
+            <p>
+              {prettyAccidentals(keyName(lesson.key))}
+              {moved ? ` (written in ${prettyAccidentals(keyName(written))})` : ''},{' '}
+              {lesson.meter.beats}/{lesson.meter.unit}, {lesson.bars.length} bars
+              {lesson.covers ? `: ${lesson.covers} of the original` : ''}
+            </p>
+            {versions.length > 1 ? (
+              <nav className={styles.levels} aria-label="Versions" data-testid="song-levels">
+                {versions.map((v) => (
+                  <Link
+                    key={v.id}
+                    to={`/songs/${v.id}`}
+                    className={styles.level}
+                    aria-current={v.id === lesson.id ? 'page' : undefined}
+                  >
+                    {LEVEL_NAMES[v.level!]}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+            {lesson.level ? <p className={page.small}>{LEVEL_NOTES[lesson.level]}</p> : null}
+          </>
+        }
+        actions={
+          <>
+            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
+            <ExportMenu
+              build={() => exportItems({ builtInSongs: [lesson] })}
+              midi={{
+                download: () => downloadMidi(compiledToMidi(compiled)),
+                testId: 'song-midi-export',
+              }}
+            />
+          </>
+        }
+      />
       <LessonPlayer
         key={lesson.id}
         compiled={compiled}
@@ -211,6 +244,12 @@ export function SongPage() {
         settings={arrangementControls(false)}
         fullScreenSettings={arrangementControls(true)}
       />
+      {/* Attribution, not something to read before playing: at the end of the page. */}
+      {lesson.source.kind === 'public-domain' ? (
+        <p className={styles.source} data-testid="song-edition">
+          Source: {lesson.source.edition}.
+        </p>
+      ) : null}
     </>
   );
 }

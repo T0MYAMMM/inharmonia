@@ -15,9 +15,7 @@
 }
 
 .cardTitle {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-size: var(--card-title-size);
 }
 
 .fields,
@@ -43,41 +41,12 @@
   gap: 2px;
 }
 
-.card > .field {
+.start {
   justify-self: start;
-}
-
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-  min-width: 0;
-}
-
-.input,
-.select,
-.notes {
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ink);
-  padding: 7px 11px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  min-width: 0;
-}
-
-.input[aria-invalid='true'] {
-  border-style: dashed;
-  border-color: var(--ink);
 }
 
 .notes {
   min-height: 3.5rem;
-  font-weight: 400;
 }
 
 .slider {
@@ -111,8 +80,14 @@
   list-style: none;
 }
 
+/* A row's bars are as tall as its tallest, words or not. */
+.bars > li {
+  display: grid;
+}
+
 .bar {
   display: grid;
+  align-content: start;
   gap: 2px;
   width: 100%;
   padding: 8px 10px;
@@ -156,6 +131,20 @@
   white-space: nowrap;
 }
 
+.barLyric {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lyricField,
+.lyricField input {
+  width: 100%;
+}
+
 .barEditor {
   display: grid;
   gap: var(--space-2);
@@ -172,7 +161,7 @@
   gap: var(--space-2);
 }
 
-.slot .input {
+.chordInput {
   width: 8rem;
 }
 
@@ -189,15 +178,7 @@
 }
 
 .paste {
-  font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.9rem;
   min-height: 11rem;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface-sunk);
-  color: var(--ink);
   white-space: pre;
   overflow-wrap: normal;
 }
@@ -251,16 +232,24 @@
   font-weight: 400;
 }
 
+.keepLyrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-3);
+}
+
+.checkNote {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .inlineCheck {
   display: inline-flex;
   gap: 6px;
   margin-left: 8px;
   align-items: center;
   font-weight: 400;
-}
-
-.inlineCheck input {
-  accent-color: var(--ink);
 }
 
 .form {
@@ -286,8 +275,8 @@
 .formChip button {
   font: inherit;
   font-size: 0.85rem;
-  width: 26px;
-  height: 26px;
+  width: var(--control-height-small);
+  height: var(--control-height-small);
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -315,12 +304,6 @@
   gap: 4px;
 }
 
-.tags {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .userNotes {
   margin: 0;
   padding: 8px 12px;
@@ -329,12 +312,29 @@
   white-space: pre-line;
 }
 
-@media (max-width: 480px) {
+/*
+ * On a phone the title and a section's name take the whole width of their
+ * card, and the suggested keys share a line under their label.
+ */
+@media (max-width: 600px) {
+  .fields > :first-child,
+  .sectionHead > :first-child,
+  .keySuggest > :first-child {
+    flex-basis: 100%;
+  }
+
+  .fields > :first-child input,
+  .sectionHead > :first-child input {
+    width: 100%;
+  }
+
+  /* The paste review reads as one column: what was read, under what was pasted. */
   .reviewHead,
   .reviewRow {
     grid-template-columns: 1fr;
     gap: 2px;
   }
+
   .reviewHead span:first-child {
     display: none;
   }
@@ -352,10 +352,6 @@
   box-shadow: var(--shadow-card);
   margin-bottom: var(--space-4);
   min-width: 0;
-}
-
-.learn > .field {
-  justify-self: start;
 }
 
 .keyOptions {
@@ -387,4 +383,126 @@
   font-weight: 700;
   color: var(--dusk-text);
   overflow-wrap: anywhere;
+}
+
+/* ---- progressions in this song ---- */
+
+.harmony {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+  /* Clear of the player's controls, which stay at the top while scrolling. */
+  scroll-margin-top: 16rem;
+}
+
+@media (max-width: 600px) {
+  .harmony {
+    scroll-margin-top: var(--space-4);
+  }
+}
+
+.harmonySection {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.harmonySection + .harmonySection {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.harmonyHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.harmonyLabel {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* Eight bars to a line, as a lead sheet writes two lines of four; four on a phone. */
+.harmonyBars {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 820px) {
+  .harmonyBars {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.harmonyBar {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--surface-sunk);
+}
+
+.harmonyChord {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.harmonySymbol {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dusk-text);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.harmonySymbol[data-nc] {
+  color: var(--muted);
+}
+
+.harmonyNumeral {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.matches {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matches a {
+  font-weight: 700;
+}
+
+/* The progressions found, under the facts in the page's header. */
+.found a {
+  font-weight: 600;
+}
+
+/* What the save that led here did. */
+.saved {
+  color: var(--ink);
+  font-weight: 600;
 }

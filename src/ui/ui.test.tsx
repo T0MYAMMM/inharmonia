@@ -1,16 +1,26 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { useRef, useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { NoteStream } from '@/core/input';
 import { formatNote } from '@/core/notation';
 import { spelled } from '@/core/theory';
 import { KeyLights } from '@/state/keyLights';
+import { Checkbox, Radio } from './Checkbox';
+import { Field } from './Field';
+import { FilePicker } from './FilePicker';
 import { Keyboard } from './keyboard/Keyboard';
 import { DOCK_RANGE, dockRangeFor, isBlack, layoutKeys } from './keyboard/layout';
+import { Menu, MenuCheckItem, MenuItem, MenuSeparator } from './Menu';
 import { NoteLabel } from './NoteLabel';
+import { NumberInput } from './NumberInput';
+import { RangeInput } from './RangeInput';
 import { Segmented } from './Segmented';
+import { Select } from './Select';
+import { TextArea } from './TextArea';
+import { TextInput } from './TextInput';
 import { Toggle } from './Toggle';
+import { useDismiss } from './useDismiss';
 
 describe('keyboard layout', () => {
   it('lays out F#1 to G5 with a half-key lead-in', () => {
@@ -170,6 +180,21 @@ describe('Toggle', () => {
     await user.click(t);
     expect(t).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('comes small, to sit beside small Buttons', () => {
+    render(
+      <>
+        <Toggle pressed={false} onChange={() => undefined}>
+          Normal
+        </Toggle>
+        <Toggle size="small" pressed={false} onChange={() => undefined}>
+          Small
+        </Toggle>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Normal' })).not.toHaveClass('small');
+    expect(screen.getByRole('button', { name: 'Small' })).toHaveClass('small');
+  });
 });
 
 describe('NoteLabel', () => {
@@ -188,5 +213,524 @@ describe('NoteLabel', () => {
     expect(screen.getByRole('img', { name: '4 raised' })).toBeInTheDocument();
     rerender(<NoteLabel label={label} angka accidentalStyle="suffix" />);
     expect(container.textContent).toBe('4♯');
+  });
+});
+
+describe('Field', () => {
+  it('labels its control and describes it with the hint and error', () => {
+    render(
+      <Field label="Name" hint="Up to 40 letters" error="Name is empty">
+        <TextInput value="" onChange={() => {}} aria-describedby="more" />
+      </Field>,
+    );
+    const input = screen.getByRole('textbox', { name: 'Name' });
+    expect(input).toHaveAccessibleDescription('Up to 40 letters Name is empty');
+    expect(input.getAttribute('aria-describedby')).toMatch(/-hint .*-error more$/);
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('leaves a control without a hint undescribed and valid', () => {
+    render(
+      <Field label="Key">
+        <Select value="C" onChange={() => {}}>
+          <option value="C">C</option>
+        </Select>
+      </Field>,
+    );
+    const select = screen.getByRole('combobox', { name: 'Key' });
+    expect(select).not.toHaveAttribute('aria-describedby');
+    expect(select).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('keeps an id and aria-label the caller sets', () => {
+    render(
+      <Field label="Title" id="title">
+        <TextInput aria-label="MIDI title" defaultValue="x" />
+      </Field>,
+    );
+    expect(screen.getByRole('textbox', { name: 'MIDI title' })).toHaveAttribute('id', 'title');
+  });
+
+  it('names a group around a control that is not an input', () => {
+    render(
+      <Field label="Meter" group hint="Beats in a bar">
+        <button type="button">4/4</button>
+      </Field>,
+    );
+    expect(screen.getByRole('group', { name: 'Meter' })).toHaveAccessibleDescription(
+      'Beats in a bar',
+    );
+  });
+
+  it('labels a textarea and a range', () => {
+    render(
+      <>
+        <Field label="Notes">
+          <TextArea defaultValue="" mono />
+        </Field>
+        <Field label="Zoom">
+          <RangeInput value={2} min={1} max={4} onChange={() => {}} />
+        </Field>
+      </>,
+    );
+    expect(screen.getByRole('textbox', { name: 'Notes' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Zoom' })).toHaveValue('2');
+  });
+});
+
+describe('Select', () => {
+  it('is a native select: changes with the keyboard and by option', async () => {
+    const user = userEvent.setup();
+    function Demo() {
+      const [v, setV] = useState('a');
+      return (
+        <Field label="Pick">
+          <Select value={v} onChange={(e) => setV(e.target.value)} data-testid="pick" size="small">
+            <option value="a">A</option>
+            <option value="b">B</option>
+          </Select>
+        </Field>
+      );
+    }
+    render(<Demo />);
+    const select = screen.getByTestId('pick');
+    await user.selectOptions(select, 'b');
+    expect(select).toHaveValue('b');
+  });
+});
+
+describe('NumberInput', () => {
+  function Demo({ onChange = () => {} }: { onChange?: (v: number) => void }) {
+    const [v, setV] = useState(90);
+    return (
+      <Field label="Tempo">
+        <NumberInput
+          value={v}
+          min={20}
+          max={300}
+          onChange={(n) => {
+            setV(n);
+            onChange(n);
+          }}
+        />
+      </Field>
+    );
+  }
+
+  it('shows its range and sends numbers in range as you type', async () => {
+    const user = userEvent.setup();
+    const seen: number[] = [];
+    render(<Demo onChange={(n) => seen.push(n)} />);
+    expect(screen.getByText('20–300')).toBeInTheDocument();
+    const input = screen.getByRole('spinbutton', { name: 'Tempo' });
+    await user.clear(input);
+    await user.type(input, '140');
+    // "1" and "14" are below the range: not sent until blur.
+    expect(seen).toEqual([140]);
+    expect(input).toHaveValue(140);
+  });
+
+  it('clamps on blur and on Enter, and puts back a value that is not a number', async () => {
+    const user = userEvent.setup();
+    render(<Demo />);
+    const input = screen.getByRole('spinbutton', { name: 'Tempo' });
+    await user.clear(input);
+    await user.type(input, '999');
+    expect(input).toHaveValue(999);
+    await user.tab();
+    expect(input).toHaveValue(300);
+    await user.clear(input);
+    await user.type(input, '5{Enter}');
+    expect(input).toHaveValue(20);
+    await user.clear(input);
+    await user.tab();
+    expect(input).toHaveValue(20);
+  });
+
+  it('passes its range to the native input', () => {
+    render(<Demo />);
+    const input = screen.getByRole('spinbutton', { name: 'Tempo' });
+    expect(input).toHaveAttribute('min', '20');
+    expect(input).toHaveAttribute('max', '300');
+  });
+});
+
+describe('FilePicker', () => {
+  const midi = new File(['MThd'], 'song.mid', { type: 'audio/midi' });
+
+  it('is reached with Tab, named by its button, and shows the chosen file', async () => {
+    const user = userEvent.setup();
+    const got: File[][] = [];
+    render(
+      <>
+        <button type="button">Before</button>
+        <FilePicker accept=".mid,.midi" onFiles={(f) => got.push(f)} data-testid="file">
+          Open MIDI file
+        </FilePicker>
+      </>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Before' }));
+    await user.tab();
+    const input = screen.getByTestId('file');
+    expect(input).toHaveFocus();
+    expect(input).toHaveAccessibleName('Open MIDI file');
+    await user.upload(input, midi);
+    expect(got).toEqual([[midi]]);
+    expect(screen.getByText('song.mid')).toBeInTheDocument();
+    expect(input).toHaveValue('');
+  });
+
+  it('takes a dropped file that matches accept and ignores one that does not', () => {
+    const got: File[][] = [];
+    render(
+      <FilePicker accept=".mid,audio/midi" onFiles={(f) => got.push(f)} buttonTestId="drop">
+        Open
+      </FilePicker>,
+    );
+    const target = screen.getByTestId('drop');
+    const drop = (file: File) =>
+      fireEvent.drop(target, {
+        dataTransfer: { files: [file], items: [{ kind: 'file' }] },
+      });
+    fireEvent.dragOver(target, { dataTransfer: { files: [midi], items: [{ kind: 'file' }] } });
+    expect(target).toHaveAttribute('data-over', 'true');
+    drop(new File(['{}'], 'notes.json', { type: 'application/json' }));
+    expect(got).toEqual([]);
+    drop(midi);
+    expect(got).toEqual([[midi]]);
+    expect(target).not.toHaveAttribute('data-over');
+  });
+
+  it('leaves drops to the area around it when asked', () => {
+    const got: File[][] = [];
+    let dropped = 0;
+    render(
+      <div onDrop={() => dropped++}>
+        <FilePicker onFiles={(f) => got.push(f)} acceptDrop={false} buttonTestId="drop">
+          Open
+        </FilePicker>
+      </div>,
+    );
+    fireEvent.drop(screen.getByTestId('drop'), {
+      dataTransfer: { files: [midi], items: [{ kind: 'file' }] },
+    });
+    expect(got).toEqual([]);
+    expect(dropped).toBe(1);
+  });
+
+  const json = new File(['{}'], 'notes.json', { type: 'application/json' });
+  const dropOn = (target: HTMLElement, files: File[]) =>
+    fireEvent.drop(target, {
+      dataTransfer: { files, items: files.map(() => ({ kind: 'file' })) },
+    });
+
+  it('hands dropped files it does not take to onReject', () => {
+    const got: File[][] = [];
+    const refused: File[][] = [];
+    render(
+      <FilePicker
+        accept=".mid,audio/midi"
+        onFiles={(f) => got.push(f)}
+        onReject={(f) => refused.push(f)}
+        buttonTestId="drop"
+      >
+        Open
+      </FilePicker>,
+    );
+    dropOn(screen.getByTestId('drop'), [json, midi]);
+    expect(refused).toEqual([[json]]);
+    expect(got).toEqual([[midi]]);
+    expect(screen.queryByText(/can't be used here/)).not.toBeInTheDocument();
+  });
+
+  it('says so itself when nothing else hears about a refused file', () => {
+    render(
+      <FilePicker accept=".mid" onFiles={() => undefined} buttonTestId="drop">
+        Open
+      </FilePicker>,
+    );
+    dropOn(screen.getByTestId('drop'), [json]);
+    expect(screen.getByText("notes.json can't be used here.")).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+  });
+
+  it('stays highlighted while a drag crosses its own text', () => {
+    render(
+      <FilePicker onFiles={() => undefined} buttonTestId="drop">
+        <span>Open</span>
+      </FilePicker>,
+    );
+    const target = screen.getByTestId('drop');
+    fireEvent.dragOver(target, { dataTransfer: { files: [midi], items: [{ kind: 'file' }] } });
+    const ontoText = createEvent.dragLeave(target);
+    Object.defineProperty(ontoText, 'relatedTarget', { value: screen.getByText('Open') });
+    fireEvent(target, ontoText);
+    expect(target).toHaveAttribute('data-over', 'true');
+    fireEvent.dragLeave(target);
+    expect(target).not.toHaveAttribute('data-over');
+  });
+});
+
+describe('Menu', () => {
+  function FileMenu({ ran = [] as string[], undoable = true }) {
+    return (
+      <Menu label="File">
+        <MenuItem onSelect={() => ran.push('undo')} disabled={!undoable}>
+          Undo
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem onSelect={() => ran.push('new')}>New</MenuItem>
+        <MenuItem onSelect={() => ran.push('export')}>Export</MenuItem>
+      </Menu>
+    );
+  }
+  const item = (name: string) => screen.getByRole('menuitem', { name });
+
+  it('opens from its button and moves through the items with the arrow keys', async () => {
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    const button = screen.getByRole('button', { name: 'File' });
+    expect(button).toHaveAttribute('aria-haspopup', 'menu');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    await user.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menu', { name: 'File' })).toBeInTheDocument();
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(item('New')).toHaveFocus();
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(item('Export')).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(item('Undo')).toHaveFocus();
+    await user.keyboard('{End}');
+    expect(item('Export')).toHaveFocus();
+  });
+
+  it('opens at the last item with ArrowUp; Escape closes it and returns focus', async () => {
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    const button = screen.getByRole('button', { name: 'File' });
+    act(() => button.focus());
+    await user.keyboard('{ArrowUp}');
+    expect(item('Export')).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(item('Undo')).toHaveFocus();
+  });
+
+  it('runs a chosen item, closes, and returns focus; a disabled item does nothing', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    render(<FileMenu ran={ran} undoable={false} />);
+    const button = screen.getByRole('button', { name: 'File' });
+    await user.click(button);
+    expect(item('Undo')).toHaveAttribute('aria-disabled', 'true');
+    await user.keyboard('{Enter}');
+    expect(ran).toEqual([]);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(ran).toEqual(['new']);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+
+  it('ticks a check item with a click, Space or Enter, and stays open', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    function ExportMenu() {
+      const [lyrics, setLyrics] = useState(false);
+      return (
+        <Menu label="Export">
+          <MenuItem onSelect={() => ran.push(lyrics ? 'with' : 'without')}>Download</MenuItem>
+          <MenuSeparator />
+          <MenuCheckItem checked={lyrics} onChange={setLyrics} note="Left out unless ticked.">
+            Include lyrics
+          </MenuCheckItem>
+        </Menu>
+      );
+    }
+    render(<ExportMenu />);
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    const check = screen.getByRole('menuitemcheckbox', { name: 'Include lyrics' });
+    expect(check).toHaveAttribute('aria-checked', 'false');
+    expect(check).toHaveAccessibleDescription('Left out unless ticked.');
+    // The arrow keys reach it like any item.
+    await user.keyboard('{ArrowDown}');
+    expect(check).toHaveFocus();
+    await user.keyboard(' ');
+    expect(check).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(check).toHaveAttribute('aria-checked', 'false');
+    await user.click(check);
+    expect(check).toHaveAttribute('aria-checked', 'true');
+    expect(check).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(item('Download')).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(ran).toEqual(['with']);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('closes on a press outside and on Tab', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <FileMenu />
+        <button type="button">After</button>
+      </>,
+    );
+    const button = screen.getByRole('button', { name: 'File' });
+    await user.click(button);
+    await user.click(screen.getByRole('button', { name: 'After' }));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus();
+
+    await user.click(button);
+    await user.tab();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus();
+  });
+
+  it('names its menu after an icon-only button', async () => {
+    const user = userEvent.setup();
+    render(
+      <Menu label={<svg aria-hidden="true" />} aria-label="More" icon>
+        <MenuItem onSelect={() => undefined}>Save</MenuItem>
+      </Menu>,
+    );
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('menu', { name: 'More' })).toContainElement(item('Save'));
+  });
+
+  it('names an item by its words, and describes it by its note', async () => {
+    const user = userEvent.setup();
+    const ran: string[] = [];
+    render(
+      <Menu label="Send to">
+        <MenuItem onSelect={() => ran.push('studio')} note="Edit it on a piano roll">
+          Studio
+        </MenuItem>
+        <MenuItem onSelect={() => ran.push('chords')} note="Every bar is N.C." disabled>
+          Chords
+        </MenuItem>
+      </Menu>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Send to' }));
+    expect(item('Studio')).toHaveAccessibleDescription('Edit it on a piano roll');
+    expect(item('Chords')).toHaveAccessibleDescription('Every bar is N.C.');
+    expect(item('Chords')).toHaveAttribute('aria-disabled', 'true');
+    await user.keyboard('{End}{Enter}');
+    expect(ran).toEqual([]);
+    await user.keyboard('{Home}{Enter}');
+    expect(ran).toEqual(['studio']);
+  });
+
+  it('keeps the keys pressed in it from the page around it', async () => {
+    const user = userEvent.setup();
+    const keys: string[] = [];
+    render(
+      <div onKeyDown={(e) => keys.push(e.key)}>
+        <FileMenu />
+      </div>,
+    );
+    await user.click(screen.getByRole('button', { name: 'File' }));
+    await user.keyboard('{ArrowDown}{Delete}{Escape}');
+    expect(keys).toEqual([]);
+  });
+});
+
+describe('Checkbox and Radio', () => {
+  it('report checked state through their labels', async () => {
+    const user = userEvent.setup();
+    function Demo() {
+      const [on, setOn] = useState(false);
+      const [pick, setPick] = useState('a');
+      return (
+        <>
+          <Checkbox checked={on} onChange={setOn}>
+            Include recordings
+          </Checkbox>
+          {['a', 'b'].map((v) => (
+            <Radio
+              key={v}
+              name="r"
+              checked={pick === v}
+              onChange={() => setPick(v)}
+              labelProps={{ 'data-testid': `card-${v}` }}
+            >
+              Option {v}
+            </Radio>
+          ))}
+        </>
+      );
+    }
+    render(<Demo />);
+    await user.click(screen.getByText('Include recordings'));
+    expect(screen.getByRole('checkbox', { name: 'Include recordings' })).toBeChecked();
+    await user.click(screen.getByText('Option b'));
+    expect(screen.getByRole('radio', { name: 'Option b' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Option a' })).not.toBeChecked();
+    // labelProps land on the label, so a whole card can carry its test id.
+    expect(screen.getByTestId('card-b').tagName).toBe('LABEL');
+    expect(screen.getByTestId('card-b')).toContainElement(
+      screen.getByRole('radio', { name: 'Option b' }),
+    );
+  });
+});
+
+describe('useDismiss', () => {
+  function Popover({
+    open,
+    onOutside,
+    onEscape,
+  }: {
+    open: boolean;
+    onOutside: () => void;
+    onEscape?: () => void;
+  }) {
+    const ref = useRef<HTMLDivElement>(null);
+    useDismiss(ref, open, { onOutside, ...(onEscape ? { onEscape } : {}) });
+    return (
+      <>
+        <div ref={ref}>
+          <button type="button">Inside</button>
+        </div>
+        <button type="button">Outside</button>
+      </>
+    );
+  }
+
+  it('closes on a press outside, not inside', () => {
+    const onOutside = vi.fn();
+    render(<Popover open onOutside={onOutside} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Inside' }));
+    expect(onOutside).not.toHaveBeenCalled();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }));
+    expect(onOutside).toHaveBeenCalledOnce();
+  });
+
+  it('closes on Escape only when asked to, and does nothing while closed', () => {
+    const onOutside = vi.fn();
+    const onEscape = vi.fn();
+    const { rerender } = render(<Popover open onOutside={onOutside} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    rerender(<Popover open onOutside={onOutside} onEscape={onEscape} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onEscape).toHaveBeenCalledOnce();
+    rerender(<Popover open={false} onOutside={onOutside} onEscape={onEscape} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }));
+    expect(onEscape).toHaveBeenCalledOnce();
+    expect(onOutside).not.toHaveBeenCalled();
   });
 });

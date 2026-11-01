@@ -1,12 +1,24 @@
 import type { CompiledLesson } from '@/core/content/compile';
 import type { MidiProject, MidiTrack } from './smf';
 
-/** Convert any playable InHarmonia lesson to a real Standard MIDI File. */
+/** Track names by hand: a song's melody and accompaniment, or a chart's chords and fills. */
+const TRACK_NAMES = {
+  song: { rh: 'Right hand · melody', lh: 'Left hand · accompaniment' },
+  chords: { rh: 'Right hand · fills', lh: 'Chords' },
+} as const;
+
+/**
+ * Convert any playable InHarmonia lesson to a real Standard MIDI File. A
+ * chart or a progression plays all its chords in one part, both hands' notes
+ * in it, so that track is named Chords; a fill over it is the right hand's.
+ */
 export function compiledToMidi(compiled: CompiledLesson): MidiProject {
+  const { kind } = compiled.lesson;
+  const names = TRACK_NAMES[kind === 'chart' || kind === 'progression' ? 'chords' : 'song'];
   const tracks: MidiTrack[] = (['rh', 'lh'] as const)
     .map((hand, i) => ({
       id: hand,
-      name: hand === 'rh' ? 'Right hand · melody' : 'Left hand · accompaniment',
+      name: names[hand],
       channel: i,
       program: 0,
       muted: false,

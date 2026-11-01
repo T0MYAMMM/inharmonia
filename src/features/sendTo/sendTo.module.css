@@ -1,0 +1,91 @@
+/* The Send to menu and what it last could not do; the empty status takes no room. */
+.sendTo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.status:not(:empty) {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- a step before sending ---- */
+
+.dialog {
+  width: min(32rem, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100dvh - 2 * var(--gutter));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.body {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.title {
+  font-size: var(--card-title-size);
+}
+
+/* A form inside the dialog's body, spaced as the body is. */
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.notes {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The chords as they will be written: a bar a word. */
+.numerals {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 10px;
+  background: var(--surface-sunk);
+  font-weight: 700;
+  word-spacing: 0.4em;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.problem {
+  margin: 0;
+  font-weight: 600;
+}
