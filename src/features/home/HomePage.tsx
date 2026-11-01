@@ -73,6 +73,11 @@ const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boole
 /** The first song for someone new: white keys only, six notes, a tune everyone knows. */
 const WELCOME_SONG = `/songs/${FIRST_SONG}`;
 
+/** The Songs room draws that song's opening, as the built-in index has it. */
+const FIRST_PREVIEW = BUILT_IN_ENTRIES.find((e) =>
+  e.levels.some((l) => l.id === FIRST_SONG),
+)?.preview;
+
 const II_V_I = PROGRESSIONS.find((p) => p.id === 'ii-v-i');
 const RUN_UP = FILLS.find((f) => f.id === 'run-up');
 
@@ -80,7 +85,7 @@ const RUN_UP = FILLS.find((f) => f.id === 'run-up');
 function RoomArt({ room, week }: { room: Room; week: { key: string; practised: boolean }[] }) {
   switch (room) {
     case 'songs':
-      return <StaffBars preview={TWINKLE} />;
+      return FIRST_PREVIEW ? <StaffBars preview={FIRST_PREVIEW} /> : null;
     case 'chords':
       return <MiniKeys notes={[60, 64, 67, 71]} below={1} octaves={3} />;
     case 'progressions':
