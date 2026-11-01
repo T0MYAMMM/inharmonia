@@ -6,6 +6,7 @@ import { useDownloads } from '@/state/downloads';
 import { clearProgress, loadProgress, streak } from '@/state/progress';
 import { dueForReview, lastSevenDays, relativeDay } from '@/state/review';
 import { useUserProgressions } from '@/state/userProgressions';
+import { MetronomeSpot } from '@/ui/art/spots';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '../PageHeader';
 import {
@@ -54,6 +55,9 @@ export function ProgressPage() {
           title="Progress"
           lede="Nothing practised yet. When you finish a song, a drill round, a play-along or a fill, it shows up here with your best score, and comes back when it's worth another look."
         />
+        <div className={styles.spot}>
+          <MetronomeSpot width={220} />
+        </div>
         <h2 className={styles.h2}>Somewhere to start</h2>
         <SuggestionList items={starterExercises().slice(0, 4)} />
       </>

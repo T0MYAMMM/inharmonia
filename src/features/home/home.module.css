@@ -1,7 +1,8 @@
+/* The words on the left; on the right, the computer keys over the piano keys they play. */
 .welcome {
   display: grid;
-  gap: var(--space-3);
-  max-width: var(--text-width);
+  grid-template-columns: minmax(0, 40rem) 1fr;
+  gap: var(--space-3) var(--space-6);
   margin-bottom: var(--space-6);
   padding: var(--space-5);
   border-radius: var(--radius-card);
@@ -12,6 +13,35 @@
 
 .welcome h2 {
   margin: 0;
+}
+
+.welcome > :not(.welcomeArt) {
+  grid-column: 1;
+}
+
+.welcomeArt {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+  justify-self: center;
+  width: 220px;
+}
+
+.welcomeArt svg {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .welcome {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .welcomeArt {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    width: 176px;
+  }
 }
 
 .steps {
@@ -89,10 +119,65 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--space-4);
+  container-type: inline-size;
+}
+
+/*
+ * A card alone on the last row takes the whole row on its side: the drawing
+ * where the first column's would be, the words beside it, both lined up with
+ * the cards above. The card's own grid repeats the rooms' columns; its column
+ * gap reaches from one card's content to the next card's (two paddings, two
+ * borders and the gap between cards). The rooms make three columns from
+ * 872px wide (3 x 280px and two gaps), two from 576px; on one column, nothing
+ * changes.
+ */
+@container (872px <= width < 1168px) {
+  .rooms > li:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  .rooms > li:last-child:nth-child(3n + 1) > .room {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: calc(2 * var(--space-5) + 2px + var(--space-4));
+    align-content: center;
+  }
+
+  .rooms > li:last-child:nth-child(3n + 1) > .room > :first-child {
+    grid-row: 1 / span 2;
+    align-self: center;
+    margin: 0;
+  }
+
+  .rooms > li:last-child:nth-child(3n + 1) > .room > :not(:first-child) {
+    grid-column: 2 / -1;
+  }
+}
+
+@container (576px <= width < 872px) {
+  .rooms > li:last-child:nth-child(2n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  .rooms > li:last-child:nth-child(2n + 1) > .room {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: calc(2 * var(--space-5) + 2px + var(--space-4));
+    align-content: center;
+  }
+
+  .rooms > li:last-child:nth-child(2n + 1) > .room > :first-child {
+    grid-row: 1 / span 2;
+    align-self: center;
+    margin: 0;
+  }
+
+  .rooms > li:last-child:nth-child(2n + 1) > .room > :not(:first-child) {
+    grid-column: 2 / -1;
+  }
 }
 
 .room {
   display: grid;
+  align-content: start;
   gap: 6px;
   height: 100%;
   padding: var(--space-5);
