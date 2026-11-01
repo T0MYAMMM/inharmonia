@@ -123,6 +123,7 @@
 
 .room {
   display: grid;
+  align-content: start;
   gap: 6px;
   height: 100%;
   padding: var(--space-5);

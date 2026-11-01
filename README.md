@@ -699,3 +699,5 @@ linear gain) and are capped at full scale.
 - [pitchy](https://github.com/ianprime0509/pitchy) and fft.js, MIT.
 - [idb](https://github.com/jakearchibald/idb), ISC. Tests use
   [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB), Apache-2.0.
+- The settings (gear) icon is the `settings` icon from [Lucide](https://lucide.dev/), ISC,
+  copyright Lucide Contributors.
