@@ -111,8 +111,10 @@ the `key` it plays in; and a `preview`.
 The `preview` is the opening melody, for a drawing on a staff: `{ meter, bars }`, one string per
 bar, each note `"<note>:<beats>"` or `"r:<beats>"`, with `~` after a note tied to the next, and
 beats in the meter's unit (`"r:2 G4:0.5 G4:0.5"`). It starts at the first bar that sounds; when
-that bar starts with a rest it is a pickup, and two more bars follow it, otherwise two bars are
-taken. It comes from the Advanced version or the only one, and holds at most 24 notes and rests.
+that bar starts with a rest it is a pickup, and the bars after it follow. Those bars are at least
+two and at least six quarter notes long, and at most four: two bars of 3/4 or 4/4, three of 2/4,
+four of 3/8. It comes from the Advanced version or the only one, and holds at most 24 notes and
+rests.
 
 ## Importing
 

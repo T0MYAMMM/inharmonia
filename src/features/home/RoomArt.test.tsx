@@ -14,8 +14,9 @@ describe("Home's room drawings", () => {
   });
 
   it("the Songs room draws Twinkle's opening from the built-in index, in 2/4", () => {
+    // Three bars of two notes: six quarter notes.
     const { container } = render(<RoomArt room="songs" week={WEEK} />);
-    expect(container.querySelectorAll('ellipse')).toHaveLength(4);
+    expect(container.querySelectorAll('ellipse')).toHaveLength(6);
     expect([...container.querySelectorAll('text')].map((t) => t.textContent)).toEqual(['2', '4']);
   });
 });

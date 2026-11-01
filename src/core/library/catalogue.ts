@@ -30,21 +30,38 @@ export interface SongPreview {
 /** Notes and rests a preview holds at most. */
 export const PREVIEW_MAX_NOTES = 24;
 
+/**
+ * How many bars a preview takes after any pickup: at least two, and enough
+ * for six quarter-note beats (three bars of 2/4, four of 3/8), but no more
+ * than four. With a pickup, an index entry holds one bar more.
+ */
+export const PREVIEW_BARS = { min: 2, max: 4, quarters: 6 } as const;
+
 const token = (n: NoteSpec) =>
   `${n.note}:${Number(n.beats.toFixed(4))}${n.tie && n.note !== 'r' ? '~' : ''}`;
+
+/** The bars to take after any pickup, in this meter. */
+function barsFor(meter: Meter): number {
+  const quarters = (meter.beats * 4) / meter.unit;
+  let count = PREVIEW_BARS.min;
+  while (count < PREVIEW_BARS.max && count * quarters < PREVIEW_BARS.quarters) count++;
+  return count;
+}
 
 /**
  * The opening of a melody, as a preview. It starts at the first bar that
  * sounds, skipping an introduction that is all rests. When that bar starts
- * with a rest it is a pickup, and two more bars follow it; otherwise two bars
- * are taken. A bar with no melody is a whole-bar rest. At most
- * `PREVIEW_MAX_NOTES` notes and rests are kept; a bar the cap cuts ends early.
+ * with a rest it is a pickup, and the bars after it follow; otherwise the
+ * bars start there. Either way it takes at least two bars and six quarter
+ * notes' worth, at most four bars (`PREVIEW_BARS`). A bar with no melody is a
+ * whole-bar rest. At most `PREVIEW_MAX_NOTES` notes and rests are kept; a bar
+ * the cap cuts ends early.
  */
 export function previewOf(bars: readonly Bar[], meter: Meter): SongPreview {
   const sounds = (b: Bar) => (b.rh ?? []).some((n) => n.note !== 'r');
   const first = bars.findIndex(sounds);
-  const shown =
-    first < 0 ? [] : bars.slice(first, first + (bars[first]!.rh![0]!.note === 'r' ? 3 : 2));
+  const pickup = first >= 0 && bars[first]!.rh![0]!.note === 'r' ? 1 : 0;
+  const shown = first < 0 ? [] : bars.slice(first, first + pickup + barsFor(meter));
   const out: string[] = [];
   let left = PREVIEW_MAX_NOTES;
   for (const bar of shown) {
@@ -190,7 +207,8 @@ function readEntry(x: unknown): CatalogueEntry | null {
   }
   const p = x.preview;
   const pm = isObj(p) ? readMeter(p.meter) : null;
-  if (!isObj(p) || !pm || !Array.isArray(p.bars) || p.bars.length > 3) return null;
+  if (!isObj(p) || !pm || !Array.isArray(p.bars)) return null;
+  if (p.bars.length > PREVIEW_BARS.max + 1) return null;
   if (!p.bars.every((b) => typeof b === 'string' && b.length <= 400)) return null;
   return {
     piece,
