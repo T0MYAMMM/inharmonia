@@ -72,6 +72,7 @@ test.describe('drawings on cards', () => {
     ['', 'main a[data-room]'],
     ['fills', 'main li a[href*="/fills/"]'],
     ['progressions', 'main li a[href*="/progressions/"]'],
+    ['studio', 'main section[aria-labelledby^="way-"]'],
   ];
 
   for (const [route, cards] of CARDS) {
