@@ -47,7 +47,8 @@ test.describe('Send to Studio', () => {
     await makeChart(page);
     await page.getByTestId('transpose').selectOption('-5');
     const chartUrl = page.url();
-    await sendTo(page, 'Studio');
+    // On a chart, Send to sits under the player with Edit and Export.
+    await sendTo(page, 'Studio', page.getByTestId('chart-actions'));
 
     await expect(page).toHaveURL(/\/studio\?sent=[a-z0-9]{6}$/);
     await expect(
@@ -165,7 +166,7 @@ test.describe('Send to Studio', () => {
     await page.getByTestId('add-section').selectOption('Verse');
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-    await sendTo(page, 'Studio');
+    await sendTo(page, 'Studio', page.getByTestId('chart-actions'));
     await expect(studioTitle(page)).toHaveValue(`${title} (chart, C major)`);
     await expect(page.getByTestId('sent-back')).toHaveText(`← ${title}`);
     await expect(page.getByTestId('sent-said')).toContainText(`your chart ${title}:`);

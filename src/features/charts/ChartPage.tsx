@@ -215,38 +215,6 @@ export function ChartPage() {
             ) : null}
           </>
         }
-        actions={
-          // What you can do with the chart, then how it is shown: two rows on a phone.
-          <>
-            <Link
-              to={`/songs/charts/${record.id}/edit`}
-              className={buttonClass('secondary', 'small')}
-            >
-              Edit
-            </Link>
-            <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
-            <ExportMenu
-              lyrics={!!lyrics}
-              build={(includeLyrics) => exportItems({ charts: [record], includeLyrics })}
-            />
-            <Toggle
-              size="small"
-              pressed={view.showFunction}
-              onChange={(v) => void saveChart({ ...record, view: { ...view, showFunction: v } })}
-            >
-              Show function
-            </Toggle>
-            {lyrics ? (
-              <Toggle
-                size="small"
-                pressed={view.showLyrics}
-                onChange={(v) => void saveChart({ ...record, view: { ...view, showLyrics: v } })}
-              >
-                Show lyrics
-              </Toggle>
-            ) : null}
-          </>
-        }
       />
       <LessonPlayer
         key={record.id}
@@ -256,12 +224,47 @@ export function ChartPage() {
         {...(lyrics && view.showLyrics ? { lyrics } : {})}
         voicingHints
         belowControls={
-          // The key and how simple: worth setting, not needed before Play.
-          <LearnPanel
-            chart={chart}
-            view={view}
-            onChange={(v) => void saveChart({ ...record, view: v })}
-          />
+          <>
+            {/*
+             * What you can do with the chart, then how it is shown: under the
+             * player, so Play is in the first screen on a phone.
+             */}
+            <div className={styles.chartActions} data-testid="chart-actions">
+              <Link
+                to={`/songs/charts/${record.id}/edit`}
+                className={buttonClass('secondary', 'small')}
+              >
+                Edit
+              </Link>
+              <SendToMenu items={[{ room: 'studio', note: NOTES.studio, onSelect: toStudio }]} />
+              <ExportMenu
+                lyrics={!!lyrics}
+                build={(includeLyrics) => exportItems({ charts: [record], includeLyrics })}
+              />
+              <Toggle
+                size="small"
+                pressed={view.showFunction}
+                onChange={(v) => void saveChart({ ...record, view: { ...view, showFunction: v } })}
+              >
+                Show function
+              </Toggle>
+              {lyrics ? (
+                <Toggle
+                  size="small"
+                  pressed={view.showLyrics}
+                  onChange={(v) => void saveChart({ ...record, view: { ...view, showLyrics: v } })}
+                >
+                  Show lyrics
+                </Toggle>
+              ) : null}
+            </div>
+            {/* The key and how simple: worth setting, not needed before Play. */}
+            <LearnPanel
+              chart={chart}
+              view={view}
+              onChange={(v) => void saveChart({ ...record, view: v })}
+            />
+          </>
         }
       />
       <ProgressionsPanel sections={sections} viewKey={playKey} sectionTools={sectionTools} />
