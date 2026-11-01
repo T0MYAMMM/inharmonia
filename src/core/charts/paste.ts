@@ -65,8 +65,8 @@ export interface ParseSheetOptions {
 
 /** Bar lines, repeat marks, N.C., brackets and dashes: ignored when judging a line. */
 const STRUCTURAL = /^(?:\|+:?|:?\|+|%|x\s?\d+|\d+\s?x|n\.?\s?c\.?|[[\]()\-–—/:.~*]+)$/i;
-/** What a line of bars holding only N.C. is made of: bar lines, N.C., beat marks, % and x2. */
-const NO_CHORD_BARS = /^(?:\|+:?|:?\|+|n\.?c\.?|\.+|\/|%|x\d+|\d+x)$/i;
+/** Bar lines, beat marks, % and x2: all a line of only N.C. holds besides it. */
+const BAR_MARKS = /^(?:\|+:?|:?\|+|\.+|\/|%|x\d+|\d+x)$/i;
 const INLINE = /\[([^\]]{1,24})\]/g;
 
 /** Strip "(Am)" to "Am" before checking whether a token is a chord. */
@@ -77,28 +77,29 @@ function chordToken(t: string): string | null {
   return sym === NO_CHORD ? null : sym;
 }
 
+/** N.C. as sheets write it: "N.C.", "NC", "(N.C.)". */
+const isNoChord = (t: string) => normalizeChord(bare(t)) === NO_CHORD;
+
 /**
  * Is this a line of chords? At least 60% of its tokens (bar lines, repeat
  * marks, N.C., brackets and dashes not counted) must be chords, and there must
- * be two chords, or the spacing chord lines have (indent, wide gaps or bar
- * lines), so a one-word lyric line such as "A" or "Am" is not taken for one.
- * Bars holding only N.C. ("| N.C. | N.C. |") are a line of chords too: an a
- * cappella intro or a band break.
+ * be two chords, N.C. included, or the spacing chord lines have (indent, wide
+ * gaps or bar lines), so a one-word lyric line such as "A" or "Am" is not
+ * taken for one. A line of only N.C. ("N.C.", "| N.C. | N.C. |") is a line of
+ * chords too: an a cappella intro or a band break. N.C. inside a line of words
+ * ("Back home in N.C.") leaves it a lyric.
  */
 export function isChordLine(line: string): boolean {
   const text = line.replace(/\s+$/, '');
   const tokens = text.split(/\s+/).filter(Boolean);
-  const counted = tokens.filter((t) => !STRUCTURAL.test(t));
+  const silent = tokens.filter(isNoChord).length;
+  const counted = tokens.filter((t) => !STRUCTURAL.test(t) && !isNoChord(t));
   if (counted.length === 0)
-    return (
-      text.includes('|') &&
-      tokens.some((t) => normalizeChord(t) === NO_CHORD) &&
-      tokens.every((t) => NO_CHORD_BARS.test(t))
-    );
+    return silent > 0 && tokens.every((t) => isNoChord(t) || BAR_MARKS.test(t));
   const chords = counted.filter((t) => chordToken(t) !== null).length;
   if (chords / counted.length < 0.6) return false;
   const spaced = /^\s/.test(text) || /\S\s{2,}\S/.test(text) || text.includes('|');
-  return chords >= 2 || spaced;
+  return chords + silent >= 2 || spaced;
 }
 
 /**
@@ -228,7 +229,7 @@ export function parseSheet(
       };
     }
     if (isChordLine(body)) {
-      const tokens = body.split(/\s+/).filter((t) => t && !STRUCTURAL.test(t));
+      const tokens = body.split(/\s+/).filter((t) => t && !STRUCTURAL.test(t) && !isNoChord(t));
       const chords: string[] = [];
       const unknown: string[] = [];
       for (const t of tokens) {
@@ -241,10 +242,9 @@ export function parseSheet(
       const cols: number[] = [];
       for (const m of body.matchAll(/\S+/g)) {
         const t = m[0];
-        const entry =
-          normalizeChord(t) === NO_CHORD
-            ? NO_CHORD
-            : (chordToken(t) ?? (STRUCTURAL.test(t) ? null : bare(t)));
+        const entry = isNoChord(t)
+          ? NO_CHORD
+          : (chordToken(t) ?? (STRUCTURAL.test(t) ? null : bare(t)));
         if (entry === null) continue;
         all.push(entry);
         cols.push(offset + m.index);
