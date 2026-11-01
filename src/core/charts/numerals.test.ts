@@ -104,6 +104,13 @@ describe('chords as a progression for the builder', () => {
       expect(parseProgressionText(d.text, d.mode).issues, text).toEqual([]);
     }
   });
+
+  it('writes add11, add4 and 7sus2 chords as they are, numerals the builder reads', () => {
+    const d = toText('| Ebadd11 | Cmadd11 | Abadd4 | Bb7sus2 |', 4, { tonic: 'Eb', mode: 'major' });
+    expect(d.text).toBe('Iadd11 viadd11 IVadd4 V7sus2');
+    expect(d.notes).toEqual([]);
+    expect(parseProgressionText(d.text, d.mode).issues).toEqual([]);
+  });
 });
 
 describe('a progression as chords', () => {

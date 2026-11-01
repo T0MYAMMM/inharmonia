@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { compileLesson, validateLesson } from '../content/compile';
+import { buildFile, chartItem, parseFile, stringifyFile } from '../format';
 import { compiledToMidi } from '../midi/adapters';
 import {
   barWords,
@@ -8,6 +9,7 @@ import {
   chartToLesson,
   CHART_VERSION,
   cleanView,
+  DEFAULT_VIEW,
   emptyChart,
   expandForm,
   formatBars,
@@ -119,6 +121,23 @@ describe('chord symbols', () => {
     ['C9', 'C9'],
     ['C11', 'C11'],
     ['C13', 'C13'],
+    ['Ebadd11', 'Ebadd11'],
+    ['Eb(add11)', 'Ebadd11'],
+    ['E♭add11', 'Ebadd11'],
+    ['Ebadd4', 'Ebadd4'],
+    ['Eb(add4)', 'Ebadd4'],
+    ['Cadd11', 'Cadd11'],
+    ['Gadd11', 'Gadd11'],
+    ['Dadd4', 'Dadd4'],
+    ['Am(add11)', 'Amadd11'],
+    ['Amadd11', 'Amadd11'],
+    ['Cm(add4)', 'Cmadd4'],
+    ['Cadd11/E', 'Cadd11/E'],
+    ['B7sus2', 'B7sus2'],
+    ['E7sus2', 'E7sus2'],
+    ['B7(sus2)', 'B7sus2'],
+    ['E7sus4', 'E7sus4'],
+    ['B9sus4', 'B9sus4'],
     ['G/B', 'G/B'],
     ['Am7/G', 'Am7/G'],
     ['N.C.', NO_CHORD],
@@ -627,6 +646,31 @@ describe('charts as lessons', () => {
     const v1 = { ...chart(), version: 1 };
     expect(migrateChart(v1)).toEqual({ ...chart(), version: 2 });
     expect(hasLyrics(migrateChart(v1))).toBe(false);
+  });
+
+  it('exports add11, add4 and 7sus2 chords and imports them as written', () => {
+    const c = chart();
+    c.sections[0]!.bars = [
+      { chords: [{ symbol: 'Ebadd11', beats: 4 }] },
+      {
+        chords: [
+          { symbol: 'Amadd11', beats: 2 },
+          { symbol: 'Dadd4', beats: 2 },
+        ],
+      },
+      { chords: [{ symbol: 'B7sus2', beats: 4 }] },
+      { chords: [{ symbol: 'Cadd11/E', beats: 4 }] },
+    ];
+    expect(chartIssues(c)).toEqual([]);
+    const text = stringifyFile(
+      buildFile([chartItem({ id: 'mine-chart-1', chart: c, view: DEFAULT_VIEW })], [], new Date()),
+    );
+    expect(text).toContain('"Amadd11 Dadd4"');
+    const ctx = { patterns: new Set(Object.keys(PATTERNS)), fallbackPattern: 'arpeggio-8ths' };
+    const read = parseFile(text, ctx);
+    if ('fatal' in read) throw new Error(read.fatal);
+    expect(read.errors).toEqual([]);
+    expect(read.items[0]!.value).toEqual({ kind: 'chart', chart: c, view: DEFAULT_VIEW });
   });
 });
 
