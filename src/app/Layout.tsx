@@ -156,6 +156,7 @@ export function Layout() {
   );
 }
 
+/** Lucide's `settings` icon, ISC licence (see the README's Credits). */
 function GearIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
