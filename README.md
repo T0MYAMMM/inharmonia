@@ -43,12 +43,15 @@ reads it. Deep links like `/inharmonia/about` work.
 ### Offline and install
 
 The production build is a PWA (`vite-plugin-pwa`, configured in `vite.config.ts`). The service
-worker precaches the app, the self-hosted fonts and every piano sample in both formats, about
-4 MB in all. After the first visit, everything works offline, including deep links, which fall
-back to `index.html`. It updates itself in the background (`registerType: 'autoUpdate'`). The
-manifest and icons in `public/icons/` make it installable, and its scope and start URL follow
-`BASE_PATH`. `src/app/pwa.ts` registers the worker in production only, and the footer says
-"Ready to use offline" once it is.
+worker precaches the app (every room's code, Tone.js included), its styles, the self-hosted fonts,
+the icons and the library's index. Once it is installed and the page is idle,
+`src/app/sampleWarm.ts` caches the piano samples in the one format this browser plays (about 1.5 MB
+of Ogg, or 1.7 MB of MP3), unless the browser asks to save data; the worker reads them cache-first,
+and the piano caches them as it plays, too. After the first visit, everything works offline,
+including deep links, which fall back to `index.html`. It updates itself in the background
+(`registerType: 'autoUpdate'`). The manifest and icons in `public/icons/` make it installable, and
+its scope and start URL follow `BASE_PATH`. `src/app/pwa.ts` registers the worker in production
+only, and the footer says "Ready to use offline" once it is.
 
 ## Folder overview
 

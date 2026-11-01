@@ -1,7 +1,7 @@
 import type * as ToneNS from 'tone';
 import { MIX, mixVelocity } from '@config/mix';
 import { loadSample } from './sampleLoader';
-import { pickSampleFormat, sampleUrls } from './samples';
+import { browserSampleFormat, sampleUrls } from './samples';
 import type { TransportSink } from './transport';
 import type { TimelineEvent } from './timeline';
 
@@ -157,7 +157,7 @@ export class AudioEngine {
 
   private async loadSamples(): Promise<void> {
     const Tone = this.tone!;
-    const format = pickSampleFormat((t) => new Audio().canPlayType(t));
+    const format = browserSampleFormat();
     const urls = sampleUrls(this.baseUrl, format);
     const entries = Object.entries(urls);
     this.set({ samplesTotal: entries.length, samplesLoaded: 0 });

@@ -133,13 +133,28 @@ test('works offline after the first visit', async ({ page, context }) => {
   await page.reload();
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await expect(page.getByText('Ready to use offline.')).toBeVisible();
+  // The piano's samples are cached once the page is idle, in this browser's format.
+  const format = await page.evaluate(() =>
+    new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3',
+  );
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          async () => (await (await caches.open('inharmonia-samples-v1')).keys()).length,
+        ),
+      {
+        timeout: 20_000,
+      },
+    )
+    .toBe(30);
   await context.setOffline(true);
   await page.goto('fills/enclosure');
   await expect(page.getByRole('heading', { name: 'Enclosure' })).toBeVisible();
-  const sample = await page.evaluate(async () => {
-    const r = await fetch(`${location.origin}/inharmonia/samples/salamander/v1/C4.mp3`);
+  const sample = await page.evaluate(async (ext) => {
+    const r = await fetch(`${location.origin}/inharmonia/samples/salamander/v1/C4.${ext}`);
     return r.ok && (await r.arrayBuffer()).byteLength > 1000;
-  });
+  }, format);
   expect(sample).toBe(true);
   await context.setOffline(false);
 });
