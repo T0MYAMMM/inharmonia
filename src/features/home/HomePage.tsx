@@ -1,10 +1,23 @@
 import { Link } from 'react-router';
+import { FILLS } from '@/content/fills';
+import { PROGRESSIONS } from '@/content/progressions';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
-import { dueForReview } from '@/state/review';
+import { dueForReview, lastSevenDays } from '@/state/review';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
+import { CardArt } from '@/ui/art/CardArt';
+import { ChordWave } from '@/ui/art/ChordWave';
+import { FillRun } from '@/ui/art/FillRun';
+import { MiniKeys } from '@/ui/art/MiniKeys';
+import { TWINKLE } from '@/ui/art/previews';
+import type { Room } from '@/ui/art/rooms';
+import { StaffBars } from '@/ui/art/StaffBars';
+import { SungToNotes } from '@/ui/art/SungToNotes';
+import { VoiceLines } from '@/ui/art/VoiceLines';
+import { WeekDots } from '@/ui/art/WeekDots';
+import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
 import { describeExercise, nextNew } from '../progress/catalog';
@@ -12,30 +25,71 @@ import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
 
-const ROOMS = [
-  { to: '/songs', title: 'Songs', body: 'Listen through a piece, then practise it note by note.' },
+const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boolean }[] = [
+  {
+    to: '/songs',
+    room: 'songs',
+    title: 'Songs',
+    body: 'Listen through a piece, then practise it note by note.',
+  },
   {
     to: '/chords',
+    room: 'chords',
     title: 'Chords',
     body: 'Every quality, inversion and voicing, then a drill to test them.',
   },
   {
     to: '/progressions',
+    room: 'progressions',
     title: 'Progressions',
     body: 'Roman-numeral progressions in any key, comped, practised or played along.',
   },
   {
     to: '/fills',
+    room: 'fills',
     title: 'Fills and runs',
     body: 'Short fills between chords that speed up as you get them clean.',
   },
-  { to: '/ear', title: 'Ear training', body: 'Hear a chord or four, then name them.' },
+  { to: '/ear', room: 'ear', title: 'Ear training', body: 'Hear a chord or four, then name them.' },
+  {
+    to: '/studio',
+    room: 'studio',
+    title: 'Studio',
+    body: 'Make a song: sing it, compose it on a piano roll, or open a MIDI file.',
+    beta: true,
+  },
   {
     to: '/progress',
+    room: 'progress',
     title: 'Progress',
     body: 'Your best scores, streak, and what to look at today.',
   },
 ];
+
+const II_V_I = PROGRESSIONS.find((p) => p.id === 'ii-v-i');
+const RUN_UP = FILLS.find((f) => f.id === 'run-up');
+
+/** Each room drawn from what it holds. */
+function RoomArt({ room, week }: { room: Room; week: { key: string; practised: boolean }[] }) {
+  switch (room) {
+    case 'songs':
+      return <StaffBars preview={TWINKLE} />;
+    case 'chords':
+      return <MiniKeys notes={[60, 64, 67, 71]} below={1} octaves={3} />;
+    case 'progressions':
+      return II_V_I ? (
+        <VoiceLines numerals={II_V_I.steps.map((s) => s.numeral)} mode={II_V_I.mode} width={220} />
+      ) : null;
+    case 'fills':
+      return RUN_UP ? <FillRun fill={RUN_UP} /> : null;
+    case 'ear':
+      return <ChordWave notes={[60, 64, 67]} width={250} />;
+    case 'studio':
+      return <SungToNotes preview={TWINKLE} />;
+    case 'progress':
+      return <WeekDots days={week} />;
+  }
+}
 
 /** The computer keys' range, from the same map the keyboard uses. */
 const KEY_MAP = computerKeyMap();
@@ -52,6 +106,7 @@ export function HomePage() {
   const due = dueForReview(state, describe, { limit: 1 })[0]?.info ?? null;
   const next = due ?? nextNew((id) => id in state.exercises);
   const run = streak(state);
+  const week = lastSevenDays(state);
 
   return (
     <>
@@ -114,8 +169,14 @@ export function HomePage() {
       <ul className={styles.rooms}>
         {ROOMS.map((r) => (
           <li key={r.to}>
-            <Link to={r.to} className={styles.room}>
-              <span className={styles.roomTitle}>{r.title}</span>
+            <Link to={r.to} className={styles.room} data-room={r.room}>
+              <CardArt>
+                <RoomArt room={r.room} week={week} />
+              </CardArt>
+              <span className={styles.roomTitle}>
+                {r.title}
+                {r.beta ? <BetaBadge /> : null}
+              </span>
               <span className={page.muted}>{r.body}</span>
             </Link>
           </li>
