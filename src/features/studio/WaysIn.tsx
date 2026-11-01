@@ -1,5 +1,10 @@
 import { useState, type HTMLAttributes, type ReactNode } from 'react';
 import { parseMidi, type MidiProject } from '@/core/midi/smf';
+import { CardArt } from '@/ui/art/CardArt';
+import { MidiFilePage } from '@/ui/art/MidiFilePage';
+import { TWINKLE } from '@/ui/art/previews';
+import { SongRoll } from '@/ui/art/SongRoll';
+import { SungToNotes } from '@/ui/art/SungToNotes';
 import { Button } from '@/ui/Button';
 import { FilePicker } from '@/ui/FilePicker';
 import { useFileDrop } from '@/ui/useFileDrop';
@@ -44,6 +49,7 @@ export function WaysIn({ onSing, onNew, onOpen }: WaysInProps) {
         id="way-sing"
         title="Sing a take"
         text="Sing or hum a melody. Studio writes down the notes and suggests chords."
+        art={<SungToNotes preview={TWINKLE} />}
       >
         <Button onClick={onSing}>
           Set up the take <ArrowDownIcon />
@@ -53,6 +59,7 @@ export function WaysIn({ onSing, onNew, onOpen }: WaysInProps) {
         id="way-compose"
         title="Compose in MIDI"
         text="Start an empty multitrack piano roll, then draw the notes or play them in."
+        art={<SongRoll preview={TWINKLE} />}
       >
         <Button onClick={onNew} data-testid="studio-new-midi">
           New MIDI
@@ -62,6 +69,7 @@ export function WaysIn({ onSing, onNew, onOpen }: WaysInProps) {
         id="way-open"
         title="Edit a MIDI file"
         text="Bring in a .mid from a DAW or a converter, or drop it on this card."
+        art={<MidiFilePage preview={TWINKLE} />}
         note={
           // Both regions are always there; only their text comes and goes.
           <>
@@ -98,11 +106,14 @@ interface WayProps extends HTMLAttributes<HTMLElement> {
   note?: ReactNode;
   /** The action, on the card's bottom edge. */
   children: ReactNode;
+  /** A drawing of this way in, above the title. */
+  art: ReactNode;
 }
 
-function Way({ id, title, text, note, children, ...rest }: WayProps) {
+function Way({ id, title, text, note, children, art, ...rest }: WayProps) {
   return (
     <section className={styles.way} aria-labelledby={id} {...rest}>
+      <CardArt>{art}</CardArt>
       <h2 id={id} className={styles.cardTitle}>
         {title}
       </h2>
