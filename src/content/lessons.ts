@@ -36,13 +36,10 @@ export function loadSongFiles(files: Readonly<Record<string, string>>): Lesson[]
 
 const ALL = loadSongFiles(FILES);
 
-/** Songs available in the song player: Senja di Teras first, then the library by title. */
-export const SONGS: readonly Lesson[] = [
-  ...ALL.filter((s) => s.id === 'senja-di-teras'),
-  ...ALL.filter((s) => s.id !== 'senja-di-teras').sort(
-    (a, b) => a.title.localeCompare(b.title) || levelRank(a) - levelRank(b),
-  ),
-];
+/** Songs available in the song player, by title, each piece Easy to Advanced. */
+export const SONGS: readonly Lesson[] = [...ALL].sort(
+  (a, b) => a.title.localeCompare(b.title) || levelRank(a) - levelRank(b),
+);
 
 function levelRank(l: Lesson): number {
   return l.level === 'easy' ? 0 : l.level === 'medium' ? 1 : l.level === 'advanced' ? 2 : 3;

@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openSettings } from './helpers';
 
-const SONG = 'songs/senja-di-teras';
+/** Ode to Joy, Easy: C major, 24 bars of 4/4 in two sections, starting on E5. */
+const SONG = 'songs/ode-to-joy-easy';
 
-async function open(page: Page) {
-  await page.goto(SONG);
-  await expect(page.getByRole('heading', { name: 'Senja di Teras' })).toBeVisible();
+async function open(page: Page, query = '') {
+  await page.goto(SONG + query);
+  await expect(page.getByRole('heading', { name: 'Ode to Joy', level: 1 })).toBeVisible();
 }
 
 const lit = (page: Page, layer: string) =>
@@ -16,10 +17,10 @@ const lit = (page: Page, layer: string) =>
 test.describe('song player', () => {
   test('lists the song and opens it', async ({ page }) => {
     await page.goto('songs');
-    await page.getByRole('link', { name: /Senja di Teras/ }).click();
-    await expect(page.getByTestId('status-line')).toHaveText('Bar 1 of 16, Dmaj7');
-    await expect(page.getByRole('heading', { name: 'Verse' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Chorus' })).toBeVisible();
+    await page.getByRole('link', { name: 'Ode to Joy', exact: true }).click();
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 1 of 24, C');
+    await expect(page.getByRole('heading', { name: 'Theme' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ending' })).toBeVisible();
   });
 
   test('score view follows a single measure with zoom, navigation and overview', async ({
@@ -28,7 +29,7 @@ test.describe('song player', () => {
     await open(page);
     const score = page.locator('[data-score-view]');
     await expect(score).toHaveAttribute('data-score-view', 'overview');
-    await expect(score.locator('[data-bar]')).toHaveCount(16);
+    await expect(score.locator('[data-bar]')).toHaveCount(24);
 
     await page.getByRole('radio', { name: 'Follow Along' }).click();
     await expect(score).toHaveAttribute('data-score-view', 'follow');
@@ -41,13 +42,13 @@ test.describe('song player', () => {
     expect(after).toBeGreaterThan(before);
 
     await page.getByRole('button', { name: 'Next bar' }).click();
-    await expect(page.getByTestId('status-line')).toContainText('Bar 2 of 16');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 2 of 24');
     await expect(score.locator('[data-bar="1"]')).toBeVisible();
-    await page.getByRole('combobox', { name: 'Jump to section' }).selectOption('8');
-    await expect(page.getByTestId('status-line')).toContainText('Bar 9 of 16');
+    await page.getByRole('combobox', { name: 'Jump to section' }).selectOption('23');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 24 of 24');
 
     await page.getByRole('radio', { name: 'Overview' }).click();
-    await expect(score.locator('[data-bar]')).toHaveCount(16);
+    await expect(score.locator('[data-bar]')).toHaveCount(24);
   });
 
   test('Falling Notes plays in sync with the transport and survives mode changes', async ({
@@ -101,7 +102,7 @@ test.describe('song player', () => {
 
     await page.getByRole('radio', { name: 'Practice', exact: true }).click();
     await expect(dock).toHaveAttribute('data-falling', 'true');
-    await page.locator('[data-midi="69"]').click(); // Senja starts on A4; the same piano is playable.
+    await page.locator('[data-midi="76"]').click(); // Ode starts on E5; the same piano is playable.
     await expect(page.getByTestId('counts')).toHaveText('1 hit, 0 misses');
     await expect(page.getByTestId('play')).toBeDisabled();
     await page.getByRole('radio', { name: 'Overview' }).click();
@@ -295,10 +296,12 @@ test.describe('song player', () => {
   });
 
   test('listen: plays, lights the sounding hand notes, pauses', async ({ page }) => {
-    await open(page);
+    // The broken chord holds each note: the chord tones enter one by one.
+    await open(page, '?pattern=arpeggio-8ths');
     await page.getByTestId('play').click();
     await expect(page.getByTestId('play')).toHaveText('Pause');
-    // Senja uses a sustained arpeggio: the chord tones enter one by one.\n    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(0);\n    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(1);
+    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(0);
+    await expect.poll(async () => (await lit(page, 'lh')).length).toBeGreaterThan(1);
     await expect.poll(async () => (await lit(page, 'rh')).length).toBe(1);
     await page.getByTestId('play').click();
     await expect(page.getByTestId('play')).toHaveText('Play');
@@ -311,7 +314,7 @@ test.describe('song player', () => {
     await page.getByTestId('song-arrangement').locator('summary').click();
     await page.getByTestId('song-pattern').selectOption('block');
     await page.getByTestId('play').click();
-    await expect.poll(() => lit(page, 'lh')).toEqual([38, 45, 49, 54]);
+    await expect.poll(() => lit(page, 'lh')).toEqual([48, 52, 55]); // C: C3 E3 G3
   });
 
   test('listen: Space toggles play only when the page itself has focus', async ({
@@ -331,10 +334,10 @@ test.describe('song player', () => {
   test('listen: a bar starts playback from that bar, by click or keyboard', async ({ page }) => {
     await open(page);
     await page.locator('[data-bar="4"]').click();
-    await expect(page.getByTestId('status-line')).toContainText('Bar 5 of 16');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 5 of 24');
     await page.locator('[data-bar="12"]').focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByTestId('status-line')).toContainText('Bar 13 of 16');
+    await expect(page.getByTestId('status-line')).toContainText('Bar 13 of 24');
   });
 
   test('practice: waits for the right note, counts hits and misses', async ({ page, isMobile }) => {
@@ -349,7 +352,7 @@ test.describe('song player', () => {
     await expect(
       page.getByText('Play the melody. The left hand rolls in on each new chord.'),
     ).toBeVisible();
-    await expect.poll(() => lit(page, 'target')).toEqual([69]); // A4
+    await expect.poll(() => lit(page, 'target')).toEqual([76]); // E5
     const counts = page.getByTestId('counts');
     const pressKey = async (midi: number) => {
       const key = page.locator(`[data-midi="${midi}"]`);
@@ -361,13 +364,13 @@ test.describe('song player', () => {
     };
     await pressKey(60); // wrong
     await expect(counts).toHaveText('0 hits, 1 miss');
-    await expect.poll(() => lit(page, 'target')).toEqual([69]);
-    await pressKey(69); // A4, right
+    await expect.poll(() => lit(page, 'target')).toEqual([76]);
+    await pressKey(76); // E5, right
     await expect(counts).toHaveText('1 hit, 1 miss');
-    await expect.poll(() => lit(page, 'target')).toEqual([66]); // F#4
+    await expect.poll(() => lit(page, 'target')).toEqual([77]); // F5
     await expect(page.locator('[data-state="done"]')).toHaveCount(1);
     if (!isMobile) {
-      await page.keyboard.press('t'); // F#4 on the computer keyboard
+      await page.keyboard.press("'"); // F5 on the computer keyboard
       await expect(counts).toHaveText('2 hits, 1 miss');
     }
     await page.getByRole('button', { name: 'Start over' }).click();
@@ -379,14 +382,14 @@ test.describe('song player', () => {
     await page.getByRole('radio', { name: 'Practice' }).click();
     await page.locator('[data-bar="8"]').click();
     await expect(page.locator('[data-state="target"]')).toHaveAttribute('data-chip', 'rh-8-0');
-    await expect(page.getByTestId('status-line')).toHaveText('Bar 9 of 16, Gmaj7');
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 9 of 24, Dm');
   });
 
   test('not angka shows the do header and digits', async ({ page }) => {
     await open(page);
     await openSettings(page);
     await page.getByRole('radio', { name: 'Not angka' }).click();
-    await expect(page.getByText('do = D')).toBeVisible();
-    await expect(page.locator('[data-chip="rh-0-0"]')).toHaveText('5'); // A4 in D
+    await expect(page.getByText('do = C')).toBeVisible();
+    await expect(page.locator('[data-chip="rh-0-0"]')).toHaveText('3'); // E5 in C
   });
 });

@@ -3,9 +3,10 @@ import { describeExercise, nextNew, starterExercises } from './catalog';
 
 describe('exercise catalog', () => {
   it('names every kind of progress id', () => {
-    expect(describeExercise('senja-di-teras')).toMatchObject({
+    expect(describeExercise('ode-to-joy-medium')).toMatchObject({
+      title: 'Ode to Joy, Medium',
       kind: 'Song',
-      href: '/songs/senja-di-teras',
+      href: '/songs/ode-to-joy-medium',
     });
     expect(describeExercise('chord-drill')).toMatchObject({ title: 'Chord drill' });
     expect(describeExercise('progression:ii-v-i')).toMatchObject({
@@ -47,12 +48,15 @@ describe('exercise catalog', () => {
     expect(describeExercise('fill:nope')).toBeNull();
     expect(describeExercise('ear:chords:nope')).toBeNull();
     expect(describeExercise('whatever')).toBeNull();
+    // The original pieces left in this version; their progress stays hidden.
+    expect(describeExercise('senja-di-teras')).toBeNull();
+    expect(describeExercise('window-light-easy')).toBeNull();
   });
 
   it('suggests starters that all resolve, skipping what was tried', () => {
     for (const s of starterExercises()) expect(describeExercise(s.id), s.id).not.toBeNull();
-    expect(nextNew(() => false)!.id).toBe('senja-di-teras');
-    expect(nextNew((id) => id === 'senja-di-teras')!.id).toBe('chord-drill');
+    expect(nextNew(() => false)!.id).toBe('twinkle-twinkle-easy');
+    expect(nextNew((id) => id === 'twinkle-twinkle-easy')!.id).toBe('chord-drill');
     expect(nextNew(() => true)).toBeNull();
   });
 });

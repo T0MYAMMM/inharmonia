@@ -4,7 +4,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { PROGRESSIONS } from '@/content/progressions';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { SONGS } from '@/content/lessons';
 import { withLyric } from '../charts/lyrics';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, DEFAULT_VIEW, type ChordChart } from '../charts/types';
@@ -194,12 +194,7 @@ describe('meters', () => {
 describe('exports', () => {
   it('writes every built-in song and progression, valid and readable', () => {
     const items = [
-      songItem({
-        id: SENJA_DI_TERAS.id,
-        source: SENJA_DI_TERAS.source,
-        lesson: SENJA_DI_TERAS,
-        voicings: true,
-      }),
+      ...SONGS.map((s) => songItem({ id: s.id, source: s.source, lesson: s, voicings: true })),
       ...PROGRESSIONS.map(progressionItem),
     ];
     const text = stringifyFile(buildFile(items, [], at));
@@ -207,8 +202,9 @@ describe('exports', () => {
     expect(text).toContain('"note": "F#4"');
     expect(text).not.toMatch(/"midi"|"events"|"startBeat"/);
     expect(roundTrip(text)).toBe(text);
-    const senja = parsed(text).items[0]!;
-    expect(senja.source).toEqual({ kind: 'original', author: 'Inharmonia' });
+    const songs = parsed(text).items.filter((i) => i.kind === 'song');
+    expect(songs.map((i) => i.source)).toEqual(SONGS.map((s) => s.source));
+    expect(songs[0]!.source.kind).toBe('public-domain');
   });
 
   it('round-trips a chart with its view settings, exactly', () => {

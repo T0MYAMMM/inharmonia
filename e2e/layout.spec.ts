@@ -6,7 +6,7 @@ import { openMidiMore } from './studioHelpers';
 const ROUTES = [
   '',
   'songs',
-  'songs/senja-di-teras',
+  'songs/ode-to-joy-easy',
   'songs/mine/no-such-song',
   'songs/charts/new',
   'songs/charts/no-such-chart',
@@ -107,7 +107,7 @@ async function menuFits(page: Page) {
 test.describe('touch targets', () => {
   test.skip(({ isMobile }) => !isMobile, 'pointer: coarse is the phone project');
 
-  for (const route of ['songs/senja-di-teras', 'chords', 'progressions/ii-v-i', 'studio']) {
+  for (const route of ['songs/ode-to-joy-easy', 'chords', 'progressions/ii-v-i', 'studio']) {
     test(`/${route} has no control under 44px`, async ({ page }) => {
       await page.goto(route);
       expect(await smallTargets(page)).toEqual([]);
