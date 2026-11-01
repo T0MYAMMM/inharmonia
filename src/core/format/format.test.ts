@@ -4,7 +4,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { PROGRESSIONS } from '@/content/progressions';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { SONGS } from '@/content/lessons';
 import { withLyric } from '../charts/lyrics';
 import { parseBars } from '../charts/syntax';
 import { CHART_VERSION, DEFAULT_VIEW, type ChordChart } from '../charts/types';
@@ -194,12 +194,7 @@ describe('meters', () => {
 describe('exports', () => {
   it('writes every built-in song and progression, valid and readable', () => {
     const items = [
-      songItem({
-        id: SENJA_DI_TERAS.id,
-        source: SENJA_DI_TERAS.source,
-        lesson: SENJA_DI_TERAS,
-        voicings: true,
-      }),
+      ...SONGS.map((s) => songItem({ id: s.id, source: s.source, lesson: s, voicings: true })),
       ...PROGRESSIONS.map(progressionItem),
     ];
     const text = stringifyFile(buildFile(items, [], at));
@@ -207,8 +202,9 @@ describe('exports', () => {
     expect(text).toContain('"note": "F#4"');
     expect(text).not.toMatch(/"midi"|"events"|"startBeat"/);
     expect(roundTrip(text)).toBe(text);
-    const senja = parsed(text).items[0]!;
-    expect(senja.source).toEqual({ kind: 'original', author: 'Inharmonia' });
+    const songs = parsed(text).items.filter((i) => i.kind === 'song');
+    expect(songs.map((i) => i.source)).toEqual(SONGS.map((s) => s.source));
+    expect(songs[0]!.source.kind).toBe('public-domain');
   });
 
   it('round-trips a chart with its view settings, exactly', () => {
@@ -521,6 +517,74 @@ describe('songs made from a MIDI file', () => {
     ]);
     expect(file((p) => (p.tracks[0]!.notes[0]!.startBeat = 4 * 512 + 1))).toEqual([
       'Item 1 (Evening ferry), song.midi: is longer than 512 bars',
+    ]);
+  });
+
+  it('carry a catalogue song: its piece, level, summary and credit, and nothing for yours', () => {
+    const { song } = midiFile(midiProject(4));
+    const lesson = {
+      ...song.lesson,
+      title: 'Evening ferry',
+      piece: 'evening-ferry',
+      level: 'medium' as const,
+      summary: 'A slow tune for the crossing home.',
+    };
+    const source = { kind: 'original' as const, author: 'Ayu Lestari' };
+    const text = stringifyFile(
+      buildFile(
+        [songItem({ id: 'evening-ferry-medium', source, lesson, voicings: false })],
+        [],
+        at,
+      ),
+    );
+    expectSchema(text);
+    const item = JSON.parse(text).items[0];
+    expect(Object.keys(item.song)).toEqual(['piece', 'level', 'summary', 'midi']);
+    const back = parsed(text).items[0]!;
+    if (back.value.kind !== 'song') throw new Error('expected a song');
+    expect(back.source).toEqual(source);
+    expect(back.value.lesson).toMatchObject({
+      id: 'evening-ferry-medium',
+      source,
+      piece: 'evening-ferry',
+      level: 'medium',
+      summary: 'A slow tune for the crossing home.',
+    });
+    expect(back.value.lesson.midi).toEqual(song.lesson.midi);
+    expect(roundTrip(text)).toBe(text);
+
+    // The same fields on a song of yours are dropped: it is rebuilt as yours.
+    const mine = JSON.parse(text);
+    mine.items[0].source = { kind: 'user' };
+    const yours = parsed(JSON.stringify(mine)).items[0]!;
+    if (yours.value.kind !== 'song') throw new Error('expected a song');
+    expect(yours.value.lesson.piece).toBeUndefined();
+    expect(yours.value.lesson.level).toBeUndefined();
+    expect(yours.value.lesson.source).toEqual({ kind: 'user' });
+  });
+
+  it('name a catalogue field that is wrong, under song', () => {
+    const doc = JSON.parse(midiFile(midiProject(2)).text);
+    doc.items[0].source = { kind: 'original', author: 'Ayu Lestari' };
+    const errors = (patch: Record<string, unknown>) => {
+      const p = parseFile(
+        JSON.stringify({
+          ...doc,
+          items: [{ ...doc.items[0], song: { ...doc.items[0].song, ...patch } }],
+        }),
+        ctx,
+      );
+      if ('fatal' in p) throw new Error(p.fatal);
+      return p.errors.map(describeError);
+    };
+    expect(errors({ level: 'hard' })).toEqual([
+      'Item 1 (Evening ferry), song.level: should be easy, medium, advanced',
+    ]);
+    expect(errors({ piece: 'Evening Ferry' })).toEqual([
+      'Item 1 (Evening ferry), song.piece: should be a short id (lowercase letters, digits, dashes)',
+    ]);
+    expect(errors({ summary: 'x'.repeat(141) })).toEqual([
+      'Item 1 (Evening ferry), song.summary: should be text up to 140 characters',
     ]);
   });
 

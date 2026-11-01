@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MIX, dbToGain, mixVelocity, type Mix } from '@config/mix';
 import { PATTERNS } from '@/content/patterns';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { getSong } from '@/content/lessons';
 import { compileLesson } from './compile';
 
 describe('mix config', () => {
@@ -25,9 +25,12 @@ describe('mix config', () => {
       melody: { ...MIX.melody, velocity: 0.5, legato: 0.9 },
       leftHand: { ...MIX.leftHand, accentVelocity: 0.3, velocity: 0.2 },
     };
-    const c = compileLesson(SENJA_DI_TERAS, PATTERNS, { mix });
-    expect(c.events.find((e) => e.channel === 'rh')).toMatchObject({ velocity: 0.5, dur: 0.9 });
+    // Ode to Joy, Easy, with the broken chord: bar 1 is C twice, each accented.
+    const ode = { ...getSong('ode-to-joy-easy')!, lhPattern: 'arpeggio-8ths' };
+    const c = compileLesson(ode, PATTERNS, { mix });
+    // The first melody note is a half note: two beats at 0.9 legato.
+    expect(c.events.find((e) => e.channel === 'rh')).toMatchObject({ velocity: 0.5, dur: 1.8 });
     const lh = c.events.filter((e) => e.channel === 'lh' && e.beat < 4).map((e) => e.velocity);
-    expect(lh).toEqual([0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]);
+    expect(lh).toEqual([0.3, 0.2, 0.2, 0.2, 0.3, 0.2, 0.2, 0.2]);
   });
 });

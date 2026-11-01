@@ -59,8 +59,8 @@ test('MIDI Studio imports, edits polyphony and exports a standard MIDI file', as
   expect(result.tracks[0]!.notes.some((n) => n.velocity === 55)).toBe(true);
   await openMidiMore(page);
   await page.getByTestId('midi-save-song').click();
-  await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
-  await page.getByRole('link', { name: /Open saved song in My songs/ }).click();
+  await expect(page.getByRole('link', { name: /Open saved song in Your songs/ })).toBeVisible();
+  await page.getByRole('link', { name: /Open saved song in Your songs/ }).click();
   await expect(page.getByRole('heading', { name: 'test-arrangement', level: 1 })).toBeVisible();
   await page.getByTestId('export-menu').click();
   await expect(page.getByTestId('my-song-midi-export')).toBeVisible();
@@ -299,7 +299,7 @@ test('a song saved from a MIDI file comes back from its export with every track'
   await page.getByRole('button', { name: 'Mute Bass' }).click();
   await openMidiMore(page);
   await page.getByTestId('midi-save-song').click();
-  await expect(page.getByRole('link', { name: /Open saved song in My songs/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open saved song in Your songs/ })).toBeVisible();
 
   await page.goto('songs');
   await page.getByTestId('export-open').click();

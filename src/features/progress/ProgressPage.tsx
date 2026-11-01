@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
+import { useCatalogue } from '@/state/catalogue';
+import { useDownloads } from '@/state/downloads';
 import { clearProgress, loadProgress, streak } from '@/state/progress';
 import { dueForReview, lastSevenDays, relativeDay } from '@/state/review';
 import { useUserProgressions } from '@/state/userProgressions';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '../PageHeader';
-import { describeExercise, nextNew, starterExercises, type ExerciseInfo } from './catalog';
+import {
+  describeExercise,
+  nextNew,
+  songLookup,
+  starterExercises,
+  type ExerciseInfo,
+} from './catalog';
 import styles from './progress.module.css';
 
 const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' });
@@ -20,7 +29,14 @@ export function ProgressPage() {
   const state = loadProgress();
   void version;
   const now = new Date();
-  const describe = (id: string) => describeExercise(id, mine);
+  // Downloaded songs, and the catalogue's: a song removed from this device stays listed.
+  const kept = useDownloads().pieces;
+  const listed = useCatalogue().entries;
+  const songs = useMemo(
+    () => songLookup([...BUILT_IN_ENTRIES, ...kept.map((p) => p.entry)], listed),
+    [kept, listed],
+  );
+  const describe = (id: string) => describeExercise(id, mine, songs);
   const rows = Object.entries(state.exercises)
     .map(([id, p]) => ({ id, p, info: describe(id) }))
     .filter((r): r is { id: string; p: typeof r.p; info: ExerciseInfo } => r.info !== null)

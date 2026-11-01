@@ -12,7 +12,7 @@ async function refuseMic(page: Page, name: string) {
 test.describe('studio', () => {
   test('is in the nav and linked from Songs', async ({ page }) => {
     await page.goto('songs');
-    await page.getByRole('link', { name: 'Make your own in Studio' }).click();
+    await page.getByRole('link', { name: 'Open Studio' }).click();
     await expect(page.getByRole('heading', { name: 'Studio', level: 1 })).toBeVisible();
     await expect(
       page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Studio' }),

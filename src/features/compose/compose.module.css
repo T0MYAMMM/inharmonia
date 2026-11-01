@@ -1,0 +1,53 @@
+.form {
+  display: grid;
+  gap: var(--space-6);
+  max-width: var(--text-width);
+}
+
+.part {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.empty,
+.note {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+/* What is still missing, before Download: plain lines, not an alarm. */
+.issues {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--ink);
+}
+
+.ready {
+  font-weight: 600;
+}
+
+.send {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.said {
+  font-weight: 600;
+}

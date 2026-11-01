@@ -4,7 +4,7 @@ import { PATTERNS } from '@/content/patterns';
 import { compileLesson } from './compile';
 import { compileSongArrangement, DEFAULT_SONG_ARRANGEMENT } from './songArrangement';
 
-const song = getSong('morning-ferry-easy')!;
+const song = getSong('ode-to-joy-easy')!;
 
 describe('compileSongArrangement', () => {
   it('preserves the original lesson and playback by default', () => {

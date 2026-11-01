@@ -120,7 +120,7 @@ test.describe('lyrics in exports', () => {
     await preview.getByRole('button', { name: 'Cancel' }).click();
   });
 
-  test('My songs export leaves them out unless Include lyrics is ticked', async ({ page }) => {
+  test('Your songs export leaves them out unless Include lyrics is ticked', async ({ page }) => {
     await sungChart(page, 'Quiet harbours');
     await page.goto('songs/charts/new');
     await page.getByRole('button', { name: 'Cancel' }).click();

@@ -99,17 +99,22 @@ test.describe('chord drill', () => {
 test.describe('song practice with chords', () => {
   test('left hand: play each chord', async ({ page, isMobile }) => {
     test.skip(isMobile, 'computer keyboard input');
-    await page.goto('songs/senja-di-teras');
+    await page.goto('songs/ode-to-joy-easy');
     await page.getByRole('radio', { name: 'Practice' }).click();
     await page
       .getByRole('radiogroup', { name: 'Practice hand' })
       .getByRole('radio', { name: 'Left hand' })
       .click();
     await expect(page.getByText('Play each chord, in any octave or inversion.')).toBeVisible();
-    await expect.poll(() => lit(page, 'chordTarget')).toEqual([38, 45, 49, 54]);
-    const release = await holdChord(page, [62, 66, 69, 73]); // Dmaj7: D4 F#4 A4 C#5
+    await expect.poll(() => lit(page, 'chordTarget')).toEqual([48, 52, 55]); // C3 E3 G3
+    // Bar 1 is C, then C again; then bar 2 starts on F.
+    let release = await holdChord(page, [60, 64, 67]); // C: C4 E4 G4
     await expect(page.getByTestId('counts')).toHaveText('1 hit, 0 misses');
     await release();
-    await expect(page.getByTestId('status-line')).toHaveText('Bar 2 of 16, Bm7');
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 1 of 24, C');
+    release = await holdChord(page, [64, 67, 72]); // C again, first inversion
+    await expect(page.getByTestId('counts')).toHaveText('2 hits, 0 misses');
+    await release();
+    await expect(page.getByTestId('status-line')).toHaveText('Bar 2 of 24, F');
   });
 });

@@ -303,9 +303,9 @@ export function MidiWorkspace({ initial, song }: MidiWorkspaceProps) {
       const row = saved ? updateUserSong(saved, draft, now) : makeUserSong(newSongId(), draft, now);
       await saveSong(row);
       setSaved(row);
-      setStatus('Saved full MIDI and a representative practice score to My songs.');
+      setStatus('Saved full MIDI and a representative practice score to Your songs.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not save to My songs.');
+      setStatus(error instanceof Error ? error.message : 'Could not save to Your songs.');
     }
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -430,7 +430,7 @@ export function MidiWorkspace({ initial, song }: MidiWorkspaceProps) {
         <span role="status" data-testid="midi-status">
           {status}
         </span>
-        {saved ? <Link to={'/songs/mine/' + saved.id}>Open saved song in My songs →</Link> : null}
+        {saved ? <Link to={'/songs/mine/' + saved.id}>Open saved song in Your songs →</Link> : null}
       </p>
       {p.tempos.length > 1 || p.meters.length > 1 ? (
         <p className={styles.warning}>
@@ -721,7 +721,7 @@ export function MidiWorkspace({ initial, song }: MidiWorkspaceProps) {
           <li>Controller automation, sustain pedal and pitch bends are not kept yet.</li>
           <li>Playback here uses Inharmonia's piano for every track.</li>
           <li>
-            Saved to My songs, it becomes a simpler practice score, and keeps every MIDI note for
+            Saved to Your songs, it becomes a simpler practice score, and keeps every MIDI note for
             playing and export.
           </li>
         </ul>

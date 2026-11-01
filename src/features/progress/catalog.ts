@@ -1,7 +1,8 @@
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { FILLS, getFill } from '@/content/fills';
-import { getSong, SONGS } from '@/content/lessons';
 import { getProgression, PROGRESSIONS } from '@/content/progressions';
-import type { Lesson, Progression } from '@/core/content/types';
+import type { Progression, SongLevel } from '@/core/content/types';
+import type { CatalogueEntry } from '@/core/library/catalogue';
 import { CHORD_EAR_LEVELS, NOTE_EAR_LEVELS, PROGRESSION_EAR_LEVELS } from '@/core/practice';
 import { CHORD_DRILL_ID } from '../chords/drillId';
 
@@ -20,13 +21,49 @@ export interface ExerciseInfo {
   href: string;
 }
 
+/** A song by its id, as an index lists it, and whether it is on this device. */
+export interface SongRef {
+  id: string;
+  title: string;
+  level: SongLevel;
+  onDevice: boolean;
+}
+
+export type SongLookup = (id: string) => SongRef | undefined;
+
+/**
+ * Songs by id, from index entries: those on this device (built in or
+ * downloaded) and, where a page has it, the catalogue's, for a song that was
+ * removed or never downloaded.
+ */
+export function songLookup(
+  onDevice: readonly CatalogueEntry[],
+  catalogue: readonly CatalogueEntry[] = [],
+): SongLookup {
+  const songs = new Map<string, SongRef>();
+  for (const [entries, here] of [
+    [catalogue, false],
+    [onDevice, true],
+  ] as const)
+    for (const e of entries)
+      for (const l of e.levels)
+        songs.set(l.id, { id: l.id, title: e.title, level: l.level, onDevice: here });
+  return (id) => songs.get(id);
+}
+
+/** The built-in songs, which are always on this device. */
+export const BUILT_IN_SONGS: SongLookup = songLookup(BUILT_IN_ENTRIES);
+
 /**
  * What an exercise id in the progress store refers to, or null when it no
- * longer exists (a deleted progression, an exercise from an older version).
+ * longer exists (a deleted progression, a retired piece, an exercise from an
+ * older version). A catalogue song not on this device is still described,
+ * when `songs` knows the catalogue, and its link offers the download.
  */
 export function describeExercise(
   id: string,
   mine: readonly Progression[] = [],
+  songs: SongLookup = BUILT_IN_SONGS,
 ): ExerciseInfo | null {
   if (id === CHORD_DRILL_ID)
     return { id, title: 'Chord drill', kind: 'Chords', href: '/chords/drill' };
@@ -63,17 +100,26 @@ export function describeExercise(
       href: `/ear?exercise=${parts[1]}&level=${level.id}`,
     };
   }
-  const song = getSong(id);
-  if (song) return { id, title: songTitle(song), kind: 'Song', href: `/songs/${song.id}` };
+  const song = songs(id);
+  if (song)
+    return {
+      id,
+      title: songTitle(song),
+      kind: song.onDevice ? 'Song' : 'Song, not downloaded',
+      href: `/songs/${song.id}`,
+    };
   return null;
 }
+
+/** The first song to try: Twinkle, Easy, the song Home's welcome starts with. */
+export const FIRST_SONG = 'twinkle-twinkle-easy';
 
 /** Good first steps, in order, for "try something new". */
 export function starterExercises(): ExerciseInfo[] {
   const firstFill = FILLS.find((f) => f.level === 1)!;
   const list: ExerciseInfo[] = [
-    // Songs with one version first; library pieces come in at the end, Easy versions.
-    ...SONGS.filter((s) => !s.level).map(songStep),
+    // Twinkle first; the other built-in pieces come in at the end, Easy versions.
+    songStep(BUILT_IN_SONGS(FIRST_SONG)!),
     { id: CHORD_DRILL_ID, title: 'Chord drill', kind: 'Chords', href: '/chords/drill' },
     {
       id: `progression:${PROGRESSIONS[0]!.id}`,
@@ -105,19 +151,21 @@ export function starterExercises(): ExerciseInfo[] {
       kind: 'Progression',
       href: `/progressions/${p.id}`,
     })),
-    ...SONGS.filter((s) => s.level === 'easy').map(songStep),
+    ...BUILT_IN_ENTRIES.flatMap((e) => e.levels)
+      .filter((l) => l.level === 'easy' && l.id !== FIRST_SONG)
+      .map((l) => songStep(BUILT_IN_SONGS(l.id)!)),
   ];
   return list;
 }
 
 const LEVEL_NAMES = { easy: 'Easy', medium: 'Medium', advanced: 'Advanced' } as const;
 
-/** "Window Light, Easy" for a library version; the plain title otherwise. */
-export function songTitle(s: Lesson): string {
-  return s.level ? `${s.title}, ${LEVEL_NAMES[s.level]}` : s.title;
+/** "Ode to Joy, Easy". */
+export function songTitle(s: Pick<SongRef, 'title' | 'level'>): string {
+  return `${s.title}, ${LEVEL_NAMES[s.level]}`;
 }
 
-const songStep = (s: Lesson): ExerciseInfo => ({
+const songStep = (s: SongRef): ExerciseInfo => ({
   id: s.id,
   title: songTitle(s),
   kind: 'Song',

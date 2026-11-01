@@ -15,7 +15,10 @@ import styles from './mysongs.module.css';
 
 type Filter = 'all' | 'studio' | 'charts';
 
-/** Songs from Studio and chord charts, newest first, with export, import and filters. */
+/**
+ * Made by you, the last group in Your songs: songs from Studio and chord
+ * charts, newest first, with export, import and filters.
+ */
 export function MySongsSection() {
   const { status, songs, charts, recordings } = useMySongs();
   const [filter, setFilter] = useState<Filter>('all');
@@ -50,9 +53,9 @@ export function MySongsSection() {
       {(importButtons) => (
         <section className={styles.section} aria-labelledby="my-songs-title">
           <div className={styles.sectionHead}>
-            <h2 id="my-songs-title" className={styles.sectionTitle}>
-              My songs
-            </h2>
+            <h3 id="my-songs-title" className={styles.sectionTitle}>
+              Made by you
+            </h3>
             <div className={styles.actions}>
               <Link
                 to="/songs/charts/new"
