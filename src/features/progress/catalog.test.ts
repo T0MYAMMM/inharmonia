@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { describeExercise, nextNew, starterExercises } from './catalog';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
+import { parseIndex } from '@/core/library/catalogue';
+import CATALOGUE from '../../../public/library/index.json?raw';
+import { describeExercise, nextNew, songLookup, starterExercises } from './catalog';
 
 describe('exercise catalog', () => {
   it('names every kind of progress id', () => {
@@ -51,6 +54,27 @@ describe('exercise catalog', () => {
     // The original pieces left in this version; their progress stays hidden.
     expect(describeExercise('senja-di-teras')).toBeNull();
     expect(describeExercise('window-light-easy')).toBeNull();
+  });
+
+  it('names a catalogue song on this device, or offers it when it is not', () => {
+    const catalogue = parseIndex(CATALOGUE)!;
+    const minuet = catalogue.find((e) => e.piece === 'minuet-in-g')!;
+    // Home knows only the songs on this device.
+    expect(describeExercise('minuet-in-g-easy')).toBeNull();
+    const removed = songLookup(BUILT_IN_ENTRIES, catalogue);
+    expect(describeExercise('minuet-in-g-easy', [], removed)).toEqual({
+      id: 'minuet-in-g-easy',
+      title: 'Minuet in G, Easy',
+      kind: 'Song, not downloaded',
+      href: '/songs/minuet-in-g-easy',
+    });
+    const kept = songLookup([...BUILT_IN_ENTRIES, minuet], catalogue);
+    expect(describeExercise('minuet-in-g-advanced', [], kept)).toMatchObject({
+      title: 'Minuet in G, Advanced',
+      kind: 'Song',
+    });
+    expect(describeExercise('ode-to-joy-easy', [], removed)).toMatchObject({ kind: 'Song' });
+    expect(describeExercise('window-light-easy', [], removed)).toBeNull();
   });
 
   it('suggests starters that all resolve, skipping what was tried', () => {

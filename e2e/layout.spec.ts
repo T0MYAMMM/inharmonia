@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeMidi } from '../src/core/midi/smf';
+import { downloadSong } from './helpers';
 import { openMidiMore } from './studioHelpers';
 
 /** Every route, and the not-found states of the pages that load a saved item. */
@@ -7,6 +8,10 @@ const ROUTES = [
   '',
   'songs',
   'songs/ode-to-joy-easy',
+  // A catalogue song not downloaded: its download page.
+  'songs/minuet-in-g-easy',
+  // A retired piece.
+  'songs/senja-di-teras',
   'songs/mine/no-such-song',
   'songs/charts/new',
   'songs/charts/no-such-chart',
@@ -311,7 +316,7 @@ test.describe('Play on a phone', () => {
   }
 
   for (const [name, route] of [
-    ['a song', 'songs/minuet-in-g-easy'],
+    ['a song', 'songs/fur-elise-easy'],
     ['a fill', 'fills/step-up'],
     ['a progression', 'progressions/ii-v-i'],
   ] as const) {
@@ -320,6 +325,12 @@ test.describe('Play on a phone', () => {
       await playInFirstScreen(page);
     });
   }
+
+  test('on a downloaded song, Play is in the first screen', async ({ page }) => {
+    await downloadSong(page, 'minuet-in-g-easy');
+    await page.reload();
+    await playInFirstScreen(page);
+  });
 
   test('on a chord chart, Play is in the first screen', async ({ page }) => {
     await makeChart(page);

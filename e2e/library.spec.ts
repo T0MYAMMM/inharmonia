@@ -8,7 +8,7 @@ test.describe('song library', () => {
     const heights = await cards.evaluateAll((els) =>
       els.map((el) => Math.round(el.getBoundingClientRect().height)),
     );
-    expect(heights.length).toBeGreaterThan(5);
+    expect(heights.length).toBeGreaterThanOrEqual(3);
     expect(new Set(heights).size).toBe(1);
   });
 
@@ -25,19 +25,18 @@ test.describe('song library', () => {
     await expect(card.getByRole('link', { name: /^Advanced/ })).toContainText('24 bars');
     await expect(card).toContainText('Ludwig van Beethoven, first published 1826');
     // The written key on the card; a picked level shows the key that version plays in.
-    const brahms = songs.getByTestId('piece-brahms-lullaby');
-    await expect(brahms).toContainText('E♭ major, 3/4');
+    await expect(card).toContainText('D major, 4/4');
 
     await page.getByRole('radio', { name: 'Advanced' }).click();
     await expect(page).toHaveURL(/level=advanced/);
-    await expect(brahms).toContainText('E♭ major, 3/4');
+    await expect(card).toContainText('D major, 4/4');
     await expect(card.getByRole('link', { name: 'Ode to Joy' })).toHaveAttribute(
       'href',
       /ode-to-joy-advanced$/,
     );
 
     await page.getByRole('radio', { name: 'Easy' }).click();
-    await expect(brahms).toContainText('F major, 3/4');
+    await expect(card).toContainText('C major, 4/4');
     await page.getByRole('radio', { name: 'Advanced' }).click();
     await page.getByTestId('songs-search').fill('joy');
     await expect(songs.getByRole('listitem')).toHaveCount(1);
@@ -48,16 +47,16 @@ test.describe('song library', () => {
     await expect(songs.getByRole('listitem')).toHaveCount(2);
   });
 
-  test('nine pieces fit one page, with no pager', async ({ page }) => {
+  test('the built-in pieces fit one page, with no pager', async ({ page }) => {
     await page.goto('songs');
-    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(9);
+    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(3);
     await expect(page.getByRole('navigation', { name: 'Song pages' })).toHaveCount(0);
     await page.goto('songs?page=99');
-    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(9);
+    await expect(page.getByTestId('songs').getByRole('listitem')).toHaveCount(3);
   });
 
-  test('every version of every library piece opens and plays', async ({ page }) => {
-    // Three versions per piece, so the sweep grows with the library.
+  test('every version of every built-in piece opens and plays', async ({ page }) => {
+    // Catalogue songs are swept by the unit tests, so this stays the same size.
     test.setTimeout(180_000);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
@@ -75,7 +74,7 @@ test.describe('song library', () => {
       if ((await next.count()) === 0 || (await next.isDisabled())) break;
       await next.click();
     }
-    expect(hrefs.length).toBeGreaterThanOrEqual(24);
+    expect(hrefs).toHaveLength(9);
     for (const href of hrefs) {
       await page.goto(href.replace(/^\/inharmonia\//, ''));
       await expect(page.getByTestId('song-levels')).toBeVisible();

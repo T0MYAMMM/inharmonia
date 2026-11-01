@@ -26,6 +26,8 @@ export interface LibraryInput {
   sources: Readonly<Record<string, string>>;
   /** Files in the catalogue folder other than its index, by file name. */
   catalogue: Readonly<Record<string, string>>;
+  /** The names of the files in the built-in folder, to find one that shouldn't be there. */
+  builtInFiles: readonly string[];
   /** Pieces that are built in rather than in the catalogue. */
   builtIns: readonly string[];
   /** The year the public-domain rules are checked for. */
@@ -127,6 +129,10 @@ export function buildLibrary(input: LibraryInput): LibraryOutput {
     else if (!fromSource.has(piece)) add(piece, CATALOGUE_DIR, normalise(text, input.ctx) ?? text);
   }
 
+  // Only built-in pieces are bundled: a catalogue song there would be bundled too.
+  for (const name of input.builtInFiles)
+    if (name.endsWith('.json') && name !== INDEX_FILE && !files.has(`${BUILT_IN_DIR}/${name}`))
+      issues.push(`${BUILT_IN_DIR}/${name}: only built-in pieces go here (see config/library.ts)`);
   for (const piece of input.builtIns)
     if (!fromSource.has(piece))
       issues.push(`${piece} is built in, so it needs ${BUILT_IN_DIR}/sources/${piece}.piece`);
