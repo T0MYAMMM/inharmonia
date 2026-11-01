@@ -80,6 +80,20 @@ test.describe('loading', () => {
     expect(errors).toEqual([]);
   });
 
+  test('leaving a room that plays by its links loads no audio', async ({ page }) => {
+    const audio = audioRequests(page);
+    await page.goto('songs/ode-to-joy-easy');
+    await expect(page.getByTestId('play')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: 'Songs' })
+      .click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Songs' })).toBeVisible();
+    await page.waitForTimeout(1000);
+    expect(audio).toEqual([]);
+  });
+
   test('in a room that plays, the first tap starts the piano', async ({ page }) => {
     const audio = audioRequests(page);
     await page.goto('chords');

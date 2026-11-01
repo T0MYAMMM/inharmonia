@@ -44,6 +44,41 @@ describe('armAudio', () => {
     done();
   });
 
+  it('ignores a tap or click on a link or in a nav, and stays armed', () => {
+    const done = armAudio();
+    const link = document.createElement('a');
+    link.href = '/songs';
+    link.textContent = 'Songs';
+    link.addEventListener('click', (e) => e.preventDefault());
+    const nav = document.createElement('nav');
+    const navButton = document.createElement('button');
+    nav.append(navButton);
+    document.body.append(link, nav);
+    for (const type of ['pointerup', 'touchend', 'click'])
+      link.dispatchEvent(new Event(type, { bubbles: true }));
+    navButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(unlock).not.toHaveBeenCalled();
+
+    const button = document.createElement('button');
+    document.body.append(button);
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(unlock).toHaveBeenCalledTimes(1);
+    link.remove();
+    nav.remove();
+    button.remove();
+    done();
+  });
+
+  it('ignores keys that move focus or modify, and stays armed', () => {
+    const done = armAudio();
+    for (const key of ['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'Escape'])
+      window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    expect(unlock).not.toHaveBeenCalled();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(unlock).toHaveBeenCalledTimes(1);
+    done();
+  });
+
   it('keeps listening until the context is running, then lets go', () => {
     const done = armAudio();
     gesture('pointerup');
