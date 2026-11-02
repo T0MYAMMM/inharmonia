@@ -33,7 +33,7 @@ export const NOTES = {
   progressionsFromSequence: 'Write it as Roman numerals, in a key you choose',
   progressionsFromSection: (label: string) => `Save the ${label} as my progression`,
   songsInKey: (key: string) => `Start a chart in ${key}`,
-  songsFromSequence: 'Save it as a chart in My songs',
+  songsFromSequence: 'Save it as a chart in Your songs',
   nothing: 'Every bar is N.C.: nothing to send',
 } as const;
 
@@ -68,4 +68,4 @@ export const LEVEL_WORDS = {
 
 /** What Studio says was sent to it: from what, as what, and that the source stays. */
 export const sentToStudio = (what: string, facts: string, source: string) =>
-  `Sent from ${what}: ${facts}. Save keeps a copy in My songs; ${source} stays as it is.`;
+  `Sent from ${what}: ${facts}. Save keeps a copy in Your songs; ${source} stays as it is.`;

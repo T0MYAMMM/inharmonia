@@ -21,8 +21,7 @@ const step = (
 export const ARPEGGIO_8THS: PatternSpec = {
   id: 'arpeggio-8ths',
   name: 'Broken chord',
-  description:
-    'Up and back through the voicing in 8ths, each note held. The Senja di Teras left hand.',
+  description: 'Up and back through the voicing in 8ths, each note held.',
   cycleBeats: 4,
   // 1-2-3-4-3-2-3-4, each note held until the chord changes (pedal feel).
   steps: [0, 1, 2, 3, 2, 1, 2, 3].map((v, i) => step(i * 0.5, 'chord', [v], i === 0)),

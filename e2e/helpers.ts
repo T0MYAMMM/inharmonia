@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** The volume, note-name and theme controls sit behind the settings (gear) button. */
 export async function openSettings(page: Page): Promise<void> {
@@ -48,4 +48,11 @@ export async function holdChord(page: Page, midis: number[]) {
 export function holdChordAnyOctave(page: Page, midis: number[]) {
   const folded = [...new Set(midis.map((m) => 60 + (((m % 12) + 12) % 12)))].sort((a, b) => a - b);
   return holdChord(page, folded);
+}
+
+/** Download a catalogue song from its page, and wait for its player. */
+export async function downloadSong(page: Page, id: string): Promise<void> {
+  await page.goto(`songs/${id}`);
+  await page.getByTestId('song-download').click();
+  await expect(page.getByTestId('play')).toBeVisible();
 }

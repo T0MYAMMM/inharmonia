@@ -168,7 +168,7 @@ function FillTrainer({
   exercise: FillExercise;
   exerciseId: string;
   settings: React.ReactNode;
-  /** What the fill does, in a sentence or two: under the controls, not needed before Play. */
+  /** What the fill does, in a sentence or two: at the end, not needed before Play. */
   about: string;
 }) {
   const [ctrl] = useState(
@@ -267,8 +267,8 @@ function FillTrainer({
 
   return (
     <>
+      {/* Play above the strip, so it is in the first screen on a phone; the key and change last. */}
       <div className={styles.panel}>
-        {settings}
         <div className={songStyles.row}>
           <Segmented
             label="Mode"
@@ -291,16 +291,6 @@ function FillTrainer({
           </span>
         </div>
       </div>
-
-      <FillStrip
-        exercise={exercise}
-        notation={notation}
-        accidentalStyle={accidentalStyle}
-        activeHit={snap.activeHit}
-        doneBefore={snap.doneBefore}
-        practice={practice}
-        chordIndex={snap.chordIndex}
-      />
 
       <div className={styles.controls}>
         {practice ? (
@@ -399,6 +389,17 @@ function FillTrainer({
           {snap.announcement}
         </p>
       </div>
+
+      <FillStrip
+        exercise={exercise}
+        notation={notation}
+        accidentalStyle={accidentalStyle}
+        activeHit={snap.activeHit}
+        doneBefore={snap.doneBefore}
+        practice={practice}
+        chordIndex={snap.chordIndex}
+      />
+      <div className={styles.settings}>{settings}</div>
       <p className={styles.about}>{about}</p>
       <KeyboardDock focus={exercise.range} showTarget={practice || speed} />
     </>

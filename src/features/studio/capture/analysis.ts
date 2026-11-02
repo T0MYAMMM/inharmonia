@@ -12,22 +12,33 @@ export interface Analyzer {
   dispose(): void;
 }
 
-/** Runs analysis in a Web Worker. */
-export function createWorkerAnalyzer(): Analyzer {
-  const worker = new Worker(new URL('./analysis.worker.ts', import.meta.url), { type: 'module' });
+/**
+ * Runs analysis in a Web Worker. The worker (and its code) starts with the
+ * first take, when the microphone opens, not when Studio does.
+ */
+export function createWorkerAnalyzer(
+  start: () => Worker = () =>
+    new Worker(new URL('./analysis.worker.ts', import.meta.url), { type: 'module' }),
+): Analyzer {
+  let worker: Worker | null = null;
   const live = new Set<(f: PitchFrame[]) => void>();
   const pending = new Map<number, (r: { frames: PitchFrame[]; events: NoteEvent[] }) => void>();
   let next = 1;
-  worker.onmessage = (e: MessageEvent<AnalysisResponse>) => {
-    const m = e.data;
-    if (m.type === 'live-frames') for (const l of live) l(m.frames);
-    else {
-      pending.get(m.id)?.({ frames: m.frames, events: m.events });
-      pending.delete(m.id);
-    }
+  const started = (): Worker => {
+    if (worker) return worker;
+    worker = start();
+    worker.onmessage = (e: MessageEvent<AnalysisResponse>) => {
+      const m = e.data;
+      if (m.type === 'live-frames') for (const l of live) l(m.frames);
+      else {
+        pending.get(m.id)?.({ frames: m.frames, events: m.events });
+        pending.delete(m.id);
+      }
+    };
+    return worker;
   };
   const send = (m: AnalysisRequest, transfer: Transferable[] = []) =>
-    worker.postMessage(m, transfer);
+    started().postMessage(m, transfer);
   return {
     startLive: (sampleRate) => send({ type: 'live-start', sampleRate }),
     pushLive: (data) => send({ type: 'live-block', data }),
@@ -42,7 +53,10 @@ export function createWorkerAnalyzer(): Analyzer {
         const copy = samples.slice();
         send({ type: 'analyze', id, samples: copy, sampleRate }, [copy.buffer]);
       }),
-    dispose: () => worker.terminate(),
+    dispose: () => {
+      worker?.terminate();
+      worker = null;
+    },
   };
 }
 

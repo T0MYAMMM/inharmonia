@@ -81,7 +81,7 @@ test.describe('my songs', () => {
     await page.getByTestId('save-song').click();
     await page
       .getByTestId('save-status')
-      .getByRole('link', { name: 'Open it in My songs' })
+      .getByRole('link', { name: 'Open it in Your songs' })
       .click();
 
     await expect(page.getByRole('heading', { name: 'Arpeggio study', level: 1 })).toBeVisible();

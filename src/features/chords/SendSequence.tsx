@@ -130,7 +130,7 @@ export function ToProgression({
 }
 
 /**
- * Before the sequence is saved as a chart in My songs: its title, ready
+ * Before the sequence is saved as a chart in Your songs: its title, ready
  * with its first chords, so Enter is enough. Saved as the sequence plays,
  * its style and Show function kept, then the chart opens.
  */
@@ -186,7 +186,7 @@ function ChartForm({ seq, onClose }: { seq: ChordSequence; onClose: () => void }
   return (
     <form className={dialog.form} onSubmit={(e) => void save(e)} noValidate>
       <p className={dialog.note}>
-        A new chart in My songs: {seq.bars.length} bar{seq.bars.length === 1 ? '' : 's'} in{' '}
+        A new chart in Your songs: {seq.bars.length} bar{seq.bars.length === 1 ? '' : 's'} in{' '}
         {keyWords(key)}, played as the sequence plays.
       </p>
       <Field label="Title" error={missing ? 'Give it a title.' : undefined}>

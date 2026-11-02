@@ -75,9 +75,14 @@ export interface FileSong {
 
 /**
  * A song made from a MIDI file: its whole project, every track, in the shape
- * Studio keeps it. The practice score is rebuilt from it on import.
+ * Studio keeps it. The practice score is rebuilt from it on import. A
+ * catalogue song made in Studio also says which piece it is a version of,
+ * which version, and its one-line summary; its credit is the item's source.
  */
 export interface FileMidiSong {
+  piece?: string;
+  level?: SongLevel;
+  summary?: string;
   midi: MidiProject;
 }
 

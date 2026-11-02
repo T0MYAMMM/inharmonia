@@ -120,7 +120,7 @@ test.describe('lyrics in exports', () => {
     await preview.getByRole('button', { name: 'Cancel' }).click();
   });
 
-  test('My songs export leaves them out unless Include lyrics is ticked', async ({ page }) => {
+  test('Your songs export leaves them out unless Include lyrics is ticked', async ({ page }) => {
     await sungChart(page, 'Quiet harbours');
     await page.goto('songs/charts/new');
     await page.getByRole('button', { name: 'Cancel' }).click();
@@ -203,9 +203,9 @@ test.describe('Send to', () => {
       await expect(page.locator('main')).not.toContainText(MARK);
     };
 
-    // The chart as it plays, to Studio.
+    // The chart as it plays, to Studio: Send to is under the player.
     await page
-      .locator('header')
+      .getByTestId('chart-actions')
       .getByRole('button', { name: /^Send to/ })
       .click();
     await page.getByRole('menuitem', { name: 'Studio' }).click();

@@ -77,6 +77,25 @@
   }
 }
 
+/* Under the player, before the score: the version's note, then Send to and Export. */
+.afterPlayer {
+  display: grid;
+  gap: var(--space-3);
+  max-width: var(--text-width);
+  margin-bottom: var(--space-5);
+}
+
+.afterPlayer > p {
+  color: var(--muted);
+}
+
+.afterActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
 /* Where the notes come from, at the end of the page. */
 .source {
   max-width: var(--text-width);
@@ -238,4 +257,18 @@
   .fullScreenHeading {
     font-size: 0.82rem;
   }
+}
+
+/* A download or update that didn't work: what happened, and what to do. */
+.problem {
+  max-width: var(--text-width);
+  margin: 0 0 var(--space-4);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--wrong-soft);
+}
+
+/* Holds the page's place while the song is looked for, so the footer stays put. */
+.waiting {
+  min-height: 60vh;
 }

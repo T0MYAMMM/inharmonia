@@ -22,10 +22,15 @@
 .controls {
   display: grid;
   gap: var(--space-3);
-  margin-top: var(--space-4);
+  margin: var(--space-4) 0 var(--space-5);
 }
 
-/* What the fill does, under the controls: worth reading, not needed before Play. */
+/* The key and the change, under the strip they shape. */
+.settings {
+  margin-top: var(--space-5);
+}
+
+/* What the fill does, at the end: worth reading, not needed before Play. */
 .about {
   max-width: var(--text-width);
   margin-top: var(--space-5);

@@ -1,12 +1,15 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { useEffect, useId, useRef, useState } from 'react';
+import { Suspense, useEffect, useId, useRef, useState } from 'react';
 import { BetaBadge } from '@/ui/BetaBadge';
 import { Segmented } from '@/ui/Segmented';
 import { useDismiss } from '@/ui/useDismiss';
 import { VolumeSlider } from '@/ui/VolumeSlider';
 import { useSettings, type ThemeChoice } from '@/state/settings';
 import { useOfflineReady } from './pwa';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 import type { NotationSystem } from '@/core/notation';
+import { roomOf } from '@/ui/art/rooms';
+import '@/ui/art/rooms.css';
 import styles from './Layout.module.css';
 
 const THEMES = [
@@ -42,6 +45,7 @@ export function Layout() {
   const controlsId = useId();
   const offline = useOfflineReady();
   const settingsRef = useRef<HTMLDivElement>(null);
+  const place = roomOf(pathname);
 
   // The settings menu closes on Escape, on a click elsewhere, and on navigation.
   useDismiss(settingsRef, settingsOpen, {
@@ -68,7 +72,12 @@ export function Layout() {
   }, [pathname]);
 
   return (
-    <div className={styles.shell}>
+    <div
+      className={styles.shell}
+      data-room={place.room ?? undefined}
+      data-index={place.index || undefined}
+      data-wash={place.wash || undefined}
+    >
       <a className={styles.skip} href="#main">
         Skip to content
       </a>
@@ -130,7 +139,12 @@ export function Layout() {
         </div>
       </header>
       <main id="main" ref={mainRef} tabIndex={-1} className={styles.main}>
-        <Outlet />
+        <RouteErrorBoundary resetKey={pathname}>
+          {/* Only a cold deep link shows this: moving between rooms keeps the old page up. */}
+          <Suspense fallback={<div className={styles.pending} aria-busy="true" />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
@@ -148,6 +162,7 @@ export function Layout() {
   );
 }
 
+/** Lucide's `settings` icon, ISC licence (see the README's Credits). */
 function GearIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

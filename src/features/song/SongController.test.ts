@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
-import { SENJA_DI_TERAS } from '@/content/songs/senjaDiTeras';
+import { getSong } from '@/content/lessons';
 import { FakeClock, Transport } from '@/core/audio';
 import type { AudioEngine } from '@/core/audio/engine';
 import { compileLesson } from '@/core/content/compile';
@@ -9,7 +9,12 @@ import { NoteStream } from '@/core/input';
 import { KeyLights } from '@/state/keyLights';
 import { SongController } from './SongController';
 
-const compiled = compileLesson(SENJA_DI_TERAS, PATTERNS);
+/**
+ * Ode to Joy, Medium (D major, 24 bars, 100 bpm) with the broken-chord left
+ * hand, as ?pattern=arpeggio-8ths plays it. At 100 bpm a beat is 0.6 seconds.
+ */
+const ODE = { ...getSong('ode-to-joy-medium')!, lhPattern: 'arpeggio-8ths' };
+const compiled = compileLesson(ODE, PATTERNS);
 
 function setup() {
   const clock = new FakeClock();
@@ -78,55 +83,55 @@ describe('SongController, Listen', () => {
     env = setup();
   });
 
-  it('starts at 76 bpm with loop, melody and left hand on', () => {
+  it('starts at 100 bpm with loop, melody and left hand on', () => {
     expect(env.ctrl.snapshot).toMatchObject({
       mode: 'listen',
-      tempo: 76,
+      tempo: 100,
       loop: true,
       rhOn: true,
       lhOn: true,
     });
-    expect(env.transport.loopRegion).toEqual({ start: 0, end: 64 });
+    expect(env.transport.loopRegion).toEqual({ start: 0, end: 96 });
   });
 
   it('lights the notes actually sounding in the broken-chord accompaniment', () => {
     env.ctrl.playPause();
-    env.clock.advance(0.1); // beat 0.13: only the first arpeggio note has started
+    env.clock.advance(0.1); // beat 0.17: only the first arpeggio note has started
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([38]); // D2
-    env.clock.advance(0.4); // beat 0.63: the second note joins, first is sustained
+    expect(lit(env.lights, 'lh')).toEqual([50]); // D3
+    env.clock.advance(0.4); // beat 0.83: the second note joins, first is sustained
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'rh')).toEqual([69]);
-    expect(lit(env.lights, 'lh')).toEqual([38, 45]); // D2 and A2, not all Dmaj7 tones
+    expect(lit(env.lights, 'rh')).toEqual([66]);
+    expect(lit(env.lights, 'lh')).toEqual([50, 54]); // D3 and F#3, not all D tones
     expect(env.ctrl.snapshot.activeChipId).toBe('rh-0-0');
-    env.clock.advance(0.8); // beat 1.65: all four notes have entered
+    env.clock.advance(0.3); // beat 1.33: all three notes have entered
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([38, 45, 49, 54]);
+    expect(lit(env.lights, 'lh')).toEqual([50, 54, 57]);
   });
 
   it('matches block-chord attacks and releases after choosing another arrangement', () => {
     env.ctrl.load(
-      compileSongArrangement(SENJA_DI_TERAS, {
+      compileSongArrangement(ODE, {
         ...DEFAULT_SONG_ARRANGEMENT,
         pattern: 'block',
         chordOctave: 1,
       }),
     );
     env.ctrl.playPause();
-    env.clock.advance(0.2); // beat 0.25: all chord tones sustain
+    env.clock.advance(0.15); // beat 0.25: all chord tones sustain
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([50, 57, 61, 66]);
-    env.clock.advance(0.54); // beat 0.94: the 0.9 beat notes have released
+    expect(lit(env.lights, 'lh')).toEqual([62, 66, 69]);
+    env.clock.advance(0.42); // beat 0.95: the 0.9 beat notes have released
     env.ctrl.renderFrame();
     expect(lit(env.lights, 'lh')).toEqual([]);
-    env.clock.advance(0.1); // beat 1.06: the next attack
+    env.clock.advance(0.07); // beat 1.07: the next attack
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([50, 57, 61, 66]);
+    expect(lit(env.lights, 'lh')).toEqual([62, 66, 69]);
   });
 
   it('does not display a chord during rests in an accompaniment pattern', () => {
     env.ctrl.load(
-      compileSongArrangement(SENJA_DI_TERAS, {
+      compileSongArrangement(ODE, {
         ...DEFAULT_SONG_ARRANGEMENT,
         pattern: 'alberti',
       }),
@@ -134,10 +139,10 @@ describe('SongController, Listen', () => {
     env.ctrl.playPause();
     env.clock.advance(0.1);
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([38]);
-    env.clock.advance(0.4);
+    expect(lit(env.lights, 'lh')).toEqual([50]);
+    env.clock.advance(0.2);
     env.ctrl.renderFrame();
-    expect(lit(env.lights, 'lh')).toEqual([54]);
+    expect(lit(env.lights, 'lh')).toEqual([57]);
   });
 
   it('keeps the chip marked but clears keys when paused, and resumes from there', () => {
@@ -179,8 +184,8 @@ describe('SongController, Listen', () => {
 
   it('stops after the last beat with loop off and resets to 0', () => {
     env.ctrl.setLoop(false);
-    env.ctrl.selectBar(15);
-    env.clock.advance(4 * (60 / 76) + 0.2);
+    env.ctrl.selectBar(23);
+    env.clock.advance(4 * (60 / 100) + 0.2);
     env.ctrl.renderFrame();
     expect(env.transport.state).toBe('stopped');
     expect(env.ctrl.snapshot).toMatchObject({ activeChipId: null, bar: 0 });
@@ -211,8 +216,8 @@ describe('SongController, Practice', () => {
     expect(env.transport.state).toBe('stopped');
     expect(env.ctrl.snapshot).toMatchObject({ mode: 'practice', bar: 2, activeChipId: null });
     expect(env.ctrl.snapshot.targetChipId).toBe('rh-2-0');
-    expect(lit(env.lights, 'target')).toEqual([64]); // E4
-    expect(lit(env.lights, 'lh')).toEqual([40, 47, 50, 55]); // Em7: E2 B2 D3 G3
+    expect(lit(env.lights, 'target')).toEqual([62]); // D4
+    expect(lit(env.lights, 'lh')).toEqual([55, 59, 62]); // G: G3 B3 D4
   });
 
   it('play and restart do nothing in practice', () => {
@@ -230,10 +235,13 @@ describe('SongController, Practice', () => {
       c[0],
       Number((c[1] as number).toFixed(3)),
     ]);
-    expect(rolled.map((r) => r[0])).toEqual([38, 45, 49, 54]);
+    expect(rolled.map((r) => r[0])).toEqual([50, 54, 57]);
     expect(rolled[1]![1] - rolled[0]![1]).toBeCloseTo(0.035, 3);
     env.audio.playAt.mockClear();
-    env.pressTarget(); // F#4, same chord: no roll
+    env.pressTarget(); // G4 starts bar 1's second D, so it rolls again
+    expect(env.audio.playAt.mock.calls.map((c) => c[0])).toEqual([50, 54, 57]);
+    env.audio.playAt.mockClear();
+    env.pressTarget(); // A4, same chord: no roll
     expect(env.audio.playAt).not.toHaveBeenCalled();
   });
 
@@ -280,7 +288,7 @@ describe('SongController, Practice', () => {
   it('hear it plays the target note', () => {
     env.ctrl.setMode('practice');
     env.ctrl.hearIt();
-    expect(env.audio.playAt).toHaveBeenCalledWith(69, expect.any(Number), 0.55, 0.5);
+    expect(env.audio.playAt).toHaveBeenCalledWith(66, expect.any(Number), 0.55, 0.5);
   });
 
   it('back to listen clears the target and parks at the target bar', () => {
@@ -307,12 +315,12 @@ describe('SongController, left-hand and both-hands practice', () => {
       targetChordId: 'chord-0-0',
       targetChipId: null,
     });
-    expect(lit(env.lights, 'chordTarget')).toEqual([38, 45, 49, 54]);
+    expect(lit(env.lights, 'chordTarget')).toEqual([50, 54, 57]);
     expect(lit(env.lights, 'target')).toEqual([]);
-    env.playChord([50, 54, 57, 61]); // Dmaj7 an octave up: any inversion is fine
-    expect(env.ctrl.snapshot).toMatchObject({ hits: 1, targetChordId: 'chord-1-0' });
-    // Bar 1 melody (A4 F#4 E4 F#4 A4) plays along.
-    expect(env.audio.playAt.mock.calls.map((c) => c[0])).toEqual([69, 66, 64, 66, 69]);
+    env.playChord([62, 66, 69]); // D an octave up: any octave is fine
+    expect(env.ctrl.snapshot).toMatchObject({ hits: 1, targetChordId: 'chord-0-1' });
+    // The melody under that first D (a held F#4) plays along.
+    expect(env.audio.playAt.mock.calls.map((c) => c[0])).toEqual([66]);
   });
 
   it('left hand: a non-chord tone is a miss; with melody off nothing plays along', () => {
@@ -320,20 +328,22 @@ describe('SongController, left-hand and both-hands practice', () => {
     env.ctrl.setHand('rh', false);
     env.press(51);
     expect(env.ctrl.snapshot.misses).toBe(1);
-    env.playChord([50, 54, 57, 61]);
+    env.playChord([62, 66, 69]);
     expect(env.audio.playAt).not.toHaveBeenCalled();
   });
 
   it('both hands: needs the chord with the first note of each chord', () => {
     env.ctrl.setHands('both');
-    expect(lit(env.lights, 'target')).toEqual([69]);
-    expect(lit(env.lights, 'lh')).toEqual([38, 45, 49, 54]);
-    env.press(69); // melody alone is not enough here
+    expect(lit(env.lights, 'target')).toEqual([66]);
+    expect(lit(env.lights, 'lh')).toEqual([50, 54, 57]);
+    env.press(66); // melody alone is not enough here
     expect(env.ctrl.snapshot.hits).toBe(0);
-    env.playChord([50, 54, 61, 69]);
+    env.playChord([50, 57, 66]);
     expect(env.ctrl.snapshot).toMatchObject({ hits: 1, misses: 0, targetChipId: 'rh-0-1' });
-    env.press(66); // F#4, same chord: melody alone is enough
+    env.playChord([50, 54, 57, 67]); // G4 starts the second D: the chord again
     expect(env.ctrl.snapshot.hits).toBe(2);
+    env.press(69); // A4, same chord: melody alone is enough
+    expect(env.ctrl.snapshot.hits).toBe(3);
   });
 
   it('switching hands keeps the place and resets the counts', () => {
@@ -346,6 +356,6 @@ describe('SongController, left-hand and both-hands practice', () => {
   it('hear it plays the chord in left-hand practice', () => {
     env.ctrl.setHands('lh');
     env.ctrl.hearIt();
-    expect(env.audio.playAt.mock.calls.map((c) => c[0])).toEqual([38, 45, 49, 54]);
+    expect(env.audio.playAt.mock.calls.map((c) => c[0])).toEqual([50, 54, 57]);
   });
 });

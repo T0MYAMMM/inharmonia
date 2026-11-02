@@ -1,5 +1,7 @@
-import type { ContentSource, Lesson, SongLevel } from '@/core/content/types';
-import { TRADITIONAL } from '@/core/content/publicDomain';
+import { composerName } from '@/core/content/credit';
+import type { Lesson, SongLevel } from '@/core/content/types';
+
+export { creditLine } from '@/core/content/credit';
 
 export const LEVEL_NAMES: Record<SongLevel, string> = {
   easy: 'Easy',
@@ -14,20 +16,7 @@ export const LEVEL_NOTES: Record<SongLevel, string> = {
   advanced: "The fuller piece as written, original chords, and the piece's own left-hand figure.",
 };
 
-/** "Ludwig van Beethoven, first published 1826", "Traditional, first published 1761", "Original, by Inharmonia". */
-export function creditLine(s: ContentSource): string {
-  switch (s.kind) {
-    case 'public-domain':
-      return `${s.composer === TRADITIONAL ? 'Traditional' : s.composer}, first published ${s.firstPublished}`;
-    case 'original':
-      return `Original, by ${s.author ?? 'Inharmonia'}`;
-    default:
-      return '';
-  }
-}
-
 /** Who to file a piece under in the composer filter. */
 export function composerOf(l: Lesson): string {
-  if (l.source.kind === 'public-domain') return l.source.composer;
-  return 'Original pieces';
+  return composerName(l.source);
 }
