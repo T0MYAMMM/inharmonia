@@ -15,6 +15,7 @@
 
 .card {
   display: flex;
+  margin: 0;
   flex-direction: column;
   gap: 6px;
   padding: var(--space-5);
@@ -39,7 +40,9 @@
 
 /* On touch the piece's name is a 44px target. */
 @media (pointer: coarse) {
-  a.title {
+  a.title,
+  .title a {
+    display: inline-block;
     padding-block: 4px;
   }
 }
@@ -74,13 +77,88 @@
   }
 }
 
-a.title {
+a.title,
+.title a {
   color: var(--ink);
   text-decoration: none;
 }
 
-a.title:hover {
+a.title:hover,
+.title a:hover {
   text-decoration: underline;
+}
+
+/* The three parts of the page: your songs, making your own, the catalogue. */
+.section {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.section > h2 {
+  scroll-margin-top: var(--space-4);
+}
+
+.note {
+  max-width: var(--text-width);
+  color: var(--muted);
+}
+
+/* Studio, between your songs and the catalogue: a panel, one line, one button. */
+.make {
+  justify-items: start;
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface-sunk);
+}
+
+.makeTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Download, Update, Remove, or where the piece is, under its versions. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.onDevice {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height-small);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.problem {
+  margin-top: var(--space-2);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--wrong-soft);
+  font-size: 0.9rem;
+}
+
+.offline,
+.unreachable {
+  max-width: var(--text-width);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.unreachable {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
 }
 
 /* The versions side by side, equal widths, whatever their numbers say. */

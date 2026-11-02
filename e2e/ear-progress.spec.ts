@@ -70,7 +70,9 @@ test.describe('progress and home', () => {
     await expect(page.getByRole('heading', { name: 'New here?' })).toHaveCount(0);
     await page.goto('progress');
     await expect(page.getByText('Nothing practised yet.')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Senja di Teras/ })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Twinkle, Twinkle, Little Star, Easy/ }),
+    ).toBeVisible();
   });
 
   test('suggests what to review and can clear it all', async ({ page }) => {
@@ -89,7 +91,7 @@ test.describe('progress and home', () => {
                 bestTempo: 75,
                 lastPracticed: old,
               },
-              'senja-di-teras': {
+              'ode-to-joy-easy': {
                 attempts: 1,
                 bestAccuracy: 1,
                 bestTempo: null,

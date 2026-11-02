@@ -106,7 +106,7 @@ export function MidiHeader(props: MidiHeaderProps) {
             {fileItems}
             <MenuSeparator />
             <MenuItem onSelect={props.onSave} data-testid="midi-save-song">
-              Save to My songs
+              Save to Your songs
             </MenuItem>
           </Menu>
         </ToolGroup>
@@ -138,7 +138,7 @@ export function MidiHeader(props: MidiHeaderProps) {
             {fileItems}
           </Menu>
           <Button onClick={props.onSave} data-testid="midi-save-song">
-            Save to My songs
+            Save to Your songs
           </Button>
         </ToolGroup>
       </>

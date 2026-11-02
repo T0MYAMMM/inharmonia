@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { BASE_MIDI, computerKeyMap, OCTAVE_KEYS } from '@/core/input';
-import { audio, lights, notes } from '@/app/services';
+import { armAudio, audio, lights, notes } from '@/app/services';
 import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
 import { Keyboard } from './Keyboard';
@@ -30,6 +30,8 @@ export function KeyboardDock({
   roll,
   fullScreenControls,
 }: KeyboardDockProps) {
+  // Every room with a keyboard plays: the first gesture here starts audio.
+  useEffect(() => armAudio(), []);
   const shift = useComputerKeys();
   const showHints = useSettings((s) => s.showKeyHints);
   const base = BASE_MIDI + 12 * shift;

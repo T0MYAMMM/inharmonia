@@ -48,7 +48,7 @@ describe('MidiHeader', () => {
     ]);
     await user.click(screen.getByRole('menuitem', { name: 'Export .mid' }));
     expect(props.onExport).toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Save to My songs' }));
+    await user.click(screen.getByRole('button', { name: 'Save to Your songs' }));
     expect(props.onSave).toHaveBeenCalled();
   });
 
@@ -143,10 +143,10 @@ describe('below 760px', () => {
       'New MIDI',
       'Open MIDI file',
       'Export .mid',
-      'Save to My songs',
+      'Save to Your songs',
     ]);
     expect(screen.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('aria-disabled', 'true');
-    await user.click(screen.getByRole('menuitem', { name: 'Save to My songs' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Save to Your songs' }));
     expect(props.onSave).toHaveBeenCalled();
   });
 

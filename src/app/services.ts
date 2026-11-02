@@ -3,6 +3,7 @@ import { Transport, WorkerTicker } from '@/core/audio';
 import { ComputerKeys, NoteStream, WebMidiInput } from '@/core/input';
 import { KeyLights, PRESS_FLASH_MS } from '@/state/keyLights';
 import { useSettings } from '@/state/settings';
+import { scheduleSampleWarm } from './sampleWarm';
 
 /**
  * App-wide singletons. Everything here is plain TypeScript; React components
@@ -75,14 +76,62 @@ export function installMidiAutoConnect(): void {
   if (useSettings.getState().midiEnabled) void connectMidi();
 }
 
-/** Start audio on the first gesture anywhere, so the first note is not lost to loading. */
-export function installAudioUnlock(target: Window = window): () => void {
-  const unlock = () => {
-    void audio.unlock();
-    target.removeEventListener('pointerdown', unlock, true);
-    target.removeEventListener('keydown', unlock, true);
+/**
+ * The gestures that can start audio. A touch's pointerdown is not a user
+ * activation (its pointerup and touchend are), so a tap is caught on the way up.
+ */
+const UNLOCK_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'] as const;
+
+/** Keys that move focus or only modify another key: not a reason to start audio. */
+const PASSING_KEYS = new Set(['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'Escape']);
+
+/**
+ * A gesture on its way somewhere else: following a link, using a nav, moving
+ * focus. Leaving a room that plays shouldn't load the piano.
+ */
+function isPassing(e: Event): boolean {
+  if (e instanceof KeyboardEvent && PASSING_KEYS.has(e.key)) return true;
+  return Boolean((e.target as Element | null)?.closest?.('a[href], nav'));
+}
+
+let arms = 0;
+let armedOn: Window | null = null;
+
+function onGesture(e: Event): void {
+  // Stay armed for the next gesture.
+  if (isPassing(e)) return;
+  void audio.unlock();
+  // Keep listening until the context is running: a gesture can create it
+  // without the browser letting it start.
+  const ctx = audio.context();
+  if (!ctx || ctx.state === 'running') disarm();
+}
+
+function disarm(): void {
+  if (!armedOn) return;
+  for (const type of UNLOCK_EVENTS) armedOn.removeEventListener(type, onGesture, true);
+  armedOn = null;
+}
+
+/**
+ * Start audio on the next gesture anywhere on the page, so the first note is
+ * not lost to loading. Called by the rooms that play, from an effect: Tone and
+ * the piano load only there, and the first such room also has the samples
+ * cached for offline use. Returns the cleanup; the listener goes when the
+ * last room that armed it closes, or once audio is running.
+ */
+export function armAudio(target: Window = window): () => void {
+  scheduleSampleWarm();
+  arms++;
+  if (!armedOn && audio.context()?.state !== 'running') {
+    armedOn = target;
+    for (const type of UNLOCK_EVENTS) target.addEventListener(type, onGesture, true);
+  }
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    arms--;
+    if (arms === 0) disarm();
   };
-  target.addEventListener('pointerdown', unlock, true);
-  target.addEventListener('keydown', unlock, true);
-  return unlock;
 }

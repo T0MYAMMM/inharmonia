@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { mixVelocity } from '@config/mix';
-import { audio, getTransport } from '@/app/services';
+import { armAudio, audio, getTransport } from '@/app/services';
 import { PATTERNS } from '@/content/patterns';
 import { compileLesson } from '@/core/content/compile';
 import type { Lesson } from '@/core/content/types';
@@ -81,6 +81,8 @@ function makeController() {
 }
 
 export function StudioPage() {
+  // A room that plays: the first gesture here starts audio.
+  useEffect(() => armAudio(), []);
   const [ctrl] = useState(makeController);
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
   const studio = useSettings((s) => s.studio);
@@ -191,7 +193,8 @@ export function StudioPage() {
           <MidiWorkspace key={midiSession.key} initial={midiSession.project} />
         </div>
       ) : null}
-      <div hidden={draft !== null || editing !== null || midiSession !== null}>
+      {/* Studio's own page: while an editor hides it, the room's wash and line go too. */}
+      <div hidden={draft !== null || editing !== null || midiSession !== null} data-room-index>
         <PageHeader
           title={
             <>

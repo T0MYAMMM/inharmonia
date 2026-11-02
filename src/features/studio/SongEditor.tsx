@@ -79,7 +79,7 @@ export interface SongEditorProps {
   onTry?: (lesson: Lesson) => void;
 }
 
-/** The Studio editor: fix notes and chords, compare with your take, and save to My songs. */
+/** The Studio editor: fix notes and chords, compare with your take, and save to Your songs. */
 export function SongEditor(props: SongEditorProps) {
   const notation = useSettings((s) => s.notation);
   const [history, setHistory] = useState<History<SongDraft>>(() => historyOf(props.initial));
@@ -223,7 +223,7 @@ export function SongEditor(props: SongEditorProps) {
       setSong(next);
       setSavedDraft(draft);
       setSaving('saved');
-      setSaid(`Saved ${next.lesson.title} to My songs.`);
+      setSaid(`Saved ${next.lesson.title} to Your songs.`);
       props.onSaved(next);
     } catch {
       setSaving('failed');
@@ -386,7 +386,7 @@ export function SongEditor(props: SongEditorProps) {
 
       <section className={styles.save} aria-labelledby="save-title">
         <h2 id="save-title" className={styles.saveTitle}>
-          {song ? 'Save changes' : 'Save to My songs'}
+          {song ? 'Save changes' : 'Save to Your songs'}
         </h2>
         <p className={styles.small}>
           Your songs stay in this browser on this device. They are never uploaded or shared. Use
@@ -408,7 +408,7 @@ export function SongEditor(props: SongEditorProps) {
             disabled={saving === 'saving' || (!!song && !dirty && keep === kept)}
             data-testid="save-song"
           >
-            {saving === 'saving' ? 'Saving…' : song ? 'Save changes' : 'Save to My songs'}
+            {saving === 'saving' ? 'Saving…' : song ? 'Save changes' : 'Save to Your songs'}
           </Button>
           {props.onTry ? (
             <Button onClick={() => props.onTry!(toLesson(draft, `try-${song?.id ?? 'draft'}`))}>
@@ -418,7 +418,7 @@ export function SongEditor(props: SongEditorProps) {
           <span role="status" className={styles.status} data-testid="save-status">
             {saving === 'saved' && song ? (
               <>
-                Saved. <Link to={`/songs/mine/${song.id}`}>Open it in My songs</Link>
+                Saved. <Link to={`/songs/mine/${song.id}`}>Open it in Your songs</Link>
               </>
             ) : saving === 'failed' ? (
               'Could not save: this browser is not letting Inharmonia store data. Check that site data is allowed.'

@@ -1,7 +1,7 @@
 import type * as ToneNS from 'tone';
 import { MIX, mixVelocity } from '@config/mix';
 import { loadSample } from './sampleLoader';
-import { pickSampleFormat, sampleUrls } from './samples';
+import { browserSampleFormat, sampleUrls } from './samples';
 import type { TransportSink } from './transport';
 import type { TimelineEvent } from './timeline';
 
@@ -27,6 +27,18 @@ type Tone = typeof ToneNS;
  * gentle compressor and the limiter keep loud chords from clipping.
  */
 export const MASTER_DB = 6;
+
+/**
+ * A scheduled note or click asked for before Tone has loaded is held, then
+ * played when it has; one due more than this long ago, seconds, is dropped.
+ */
+export const EARLY_STALE_S = 0.5;
+
+/** A sound scheduled before Tone loaded, in audio-clock seconds. */
+type EarlySound =
+  | { kind: 'note'; midi: number; time: number; duration: number; velocity: number }
+  | { kind: 'click'; time: number; accent: boolean };
+
 type Listener = (s: AudioSnapshot) => void;
 
 const midiToFreq = (m: number) => 440 * 2 ** ((m - 69) / 12);
@@ -60,6 +72,7 @@ export class AudioEngine {
   /** Which instrument each live-held note started on, so noteOff releases the right one. */
   private held = new Map<number, 'synth' | 'piano'>();
   private pending: { midi: number; velocity: number; at: number }[] = [];
+  private early: EarlySound[] = [];
   private listeners = new Set<Listener>();
   private snapshot: AudioSnapshot = {
     status: 'locked',
@@ -138,12 +151,13 @@ export class AudioEngine {
 
     this.set({ status: 'synth', instrument: 'synth' });
     this.flushPending();
+    this.flushEarly();
     void this.loadSamples();
   }
 
   private async loadSamples(): Promise<void> {
     const Tone = this.tone!;
-    const format = pickSampleFormat((t) => new Audio().canPlayType(t));
+    const format = browserSampleFormat();
     const urls = sampleUrls(this.baseUrl, format);
     const entries = Object.entries(urls);
     this.set({ samplesTotal: entries.length, samplesLoaded: 0 });
@@ -174,6 +188,34 @@ export class AudioEngine {
     // Play notes pressed while Tone was loading, unless they are stale.
     for (const p of this.pending) if (now - p.at < 250) this.noteOn(p.midi, p.velocity);
     this.pending = [];
+  }
+
+  /**
+   * Keep a sound scheduled while Tone loads, and let stale ones go so the
+   * queue stays short if loading fails. Before unlock there is no clock to
+   * hold it against, so it is dropped, as it always was.
+   */
+  private hold(sound: EarlySound): void {
+    if (!this.raw) return;
+    const now = this.now();
+    this.early = this.early.filter((e) => now - e.time <= EARLY_STALE_S);
+    this.early.push(sound);
+  }
+
+  /**
+   * Play what was scheduled while Tone loaded: on time if that is still to
+   * come, now if it is a little late, not at all if it is stale.
+   */
+  private flushEarly(): void {
+    const now = this.now();
+    const early = this.early;
+    this.early = [];
+    for (const e of early) {
+      if (now - e.time > EARLY_STALE_S) continue;
+      const at = Math.max(e.time, now);
+      if (e.kind === 'note') this.playAt(e.midi, at, e.duration, e.velocity);
+      else this.click(at, e.accent);
+    }
   }
 
   /** The shared AudioContext, once unlocked (microphone capture runs on it too). */
@@ -272,6 +314,10 @@ export class AudioEngine {
   // ---- scheduled playback ----------------------------------------------------
 
   playAt(midi: number, time: number, duration: number, velocity = 0.7): void {
+    if (!this.tone) {
+      this.hold({ kind: 'note', midi, time, duration, velocity });
+      return;
+    }
     const freq = midiToFreq(midi);
     const dur = Math.max(0.05, duration);
     if (this.sampler) this.sampler.triggerAttackRelease(freq, dur, time, velocity);
@@ -279,6 +325,10 @@ export class AudioEngine {
   }
 
   click(time: number, accent: boolean): void {
+    if (!this.tone) {
+      this.hold({ kind: 'click', time, accent });
+      return;
+    }
     const v = accent ? MIX.metronome.accentVelocity : MIX.metronome.velocity;
     this.clickSynth?.triggerAttackRelease(
       accent ? 1760 : 1320,
@@ -289,6 +339,7 @@ export class AudioEngine {
   }
 
   releaseAll(): void {
+    this.early = [];
     const t = this.tone?.immediate();
     this.sampler?.releaseAll(t);
     this.synth?.releaseAll(t);

@@ -1,41 +1,83 @@
+import { lazy, Suspense, useMemo } from 'react';
 import { Link } from 'react-router';
+import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
 import { loadProgress, streak } from '@/state/progress';
-import { dueForReview } from '@/state/review';
+import { dueForReview, lastSevenDays } from '@/state/review';
+import { useDownloads } from '@/state/downloads';
 import { useSettings } from '@/state/settings';
 import { useUserProgressions } from '@/state/userProgressions';
+import { CardArt } from '@/ui/art/CardArt';
+import { KeysSpot } from '@/ui/art/spots';
+import type { Room } from '@/ui/art/rooms';
+import { BetaBadge } from '@/ui/BetaBadge';
 import { Button } from '@/ui/Button';
 import { buttonClass } from '@/ui/buttonClass';
-import { describeExercise, nextNew } from '../progress/catalog';
+import { describeExercise, FIRST_SONG, nextNew, songLookup } from '../progress/catalog';
 import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import styles from './home.module.css';
 
-const ROOMS = [
-  { to: '/songs', title: 'Songs', body: 'Listen through a piece, then practise it note by note.' },
+const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boolean }[] = [
+  {
+    to: '/songs',
+    room: 'songs',
+    title: 'Songs',
+    body: 'Listen through a piece, then practise it note by note.',
+  },
   {
     to: '/chords',
+    room: 'chords',
     title: 'Chords',
     body: 'Every quality, inversion and voicing, then a drill to test them.',
   },
   {
     to: '/progressions',
+    room: 'progressions',
     title: 'Progressions',
     body: 'Roman-numeral progressions in any key, comped, practised or played along.',
   },
   {
     to: '/fills',
+    room: 'fills',
     title: 'Fills and runs',
     body: 'Short fills between chords that speed up as you get them clean.',
   },
-  { to: '/ear', title: 'Ear training', body: 'Hear a chord or four, then name them.' },
+  { to: '/ear', room: 'ear', title: 'Ear training', body: 'Hear a chord or four, then name them.' },
+  {
+    to: '/studio',
+    room: 'studio',
+    title: 'Studio',
+    body: 'Make a song: sing it, compose it on a piano roll, or open a MIDI file.',
+    beta: true,
+  },
   {
     to: '/progress',
+    room: 'progress',
     title: 'Progress',
     body: 'Your best scores, streak, and what to look at today.',
   },
 ];
+
+/** The first song for someone new: white keys only, six notes, a tune everyone knows. */
+const WELCOME_SONG = `/songs/${FIRST_SONG}`;
+
+/**
+ * The rooms' drawings load after the page, so the first screen doesn't wait
+ * for them. A chunk that doesn't arrive (or is missing after a deploy, while
+ * preloadError.ts reloads) leaves the panels empty rather than the page broken.
+ */
+const RoomArt = lazy(() =>
+  import('./RoomArt').then(
+    (m) => ({ default: m?.RoomArt ?? NoArt }),
+    () => ({ default: NoArt }),
+  ),
+);
+
+function NoArt() {
+  return null;
+}
 
 /** The computer keys' range, from the same map the keyboard uses. */
 const KEY_MAP = computerKeyMap();
@@ -48,10 +90,17 @@ export function HomePage() {
   const mine = useUserProgressions((s) => s.items);
   const state = loadProgress();
   const practised = Object.keys(state.exercises).length > 0;
-  const describe = (id: string) => describeExercise(id, mine);
+  // Songs on this device only: Home never fetches the catalogue.
+  const kept = useDownloads().pieces;
+  const songs = useMemo(
+    () => songLookup([...BUILT_IN_ENTRIES, ...kept.map((p) => p.entry)]),
+    [kept],
+  );
+  const describe = (id: string) => describeExercise(id, mine, songs);
   const due = dueForReview(state, describe, { limit: 1 })[0]?.info ?? null;
   const next = due ?? nextNew((id) => id in state.exercises);
   const run = streak(state);
+  const week = lastSevenDays(state);
 
   return (
     <>
@@ -63,6 +112,9 @@ export function HomePage() {
       {!dismissed && !practised ? (
         <section className={styles.welcome} aria-labelledby="welcome-title">
           <h2 id="welcome-title">New here?</h2>
+          <div className={styles.welcomeArt}>
+            <KeysSpot />
+          </div>
           <ol className={styles.steps}>
             <li>
               <strong>Find the keys.</strong> Tap the piano, use your computer keyboard (
@@ -72,8 +124,8 @@ export function HomePage() {
             </li>
             <li>
               <strong>Listen, then play.</strong>{' '}
-              <Link to="/songs/senja-di-teras">Senja di Teras</Link> plays through first; Practice
-              then waits for each note.
+              <Link to={WELCOME_SONG}>Twinkle, Twinkle, Little Star</Link> plays through first, in
+              its Easy version; Practice then waits for each note.
             </li>
             <li>
               <strong>Learn a chord or two.</strong> The <Link to="/chords">chord library</Link>{' '}
@@ -82,8 +134,8 @@ export function HomePage() {
             </li>
           </ol>
           <div className={styles.welcomeActions}>
-            <Link to="/songs/senja-di-teras" className={buttonClass('primary')}>
-              Start with Senja di Teras
+            <Link to={WELCOME_SONG} className={buttonClass('primary')}>
+              Start with Twinkle, Twinkle
             </Link>
             <Button variant="ghost" onClick={() => set({ welcomeDismissed: true })}>
               Got it
@@ -114,8 +166,16 @@ export function HomePage() {
       <ul className={styles.rooms}>
         {ROOMS.map((r) => (
           <li key={r.to}>
-            <Link to={r.to} className={styles.room}>
-              <span className={styles.roomTitle}>{r.title}</span>
+            <Link to={r.to} className={styles.room} data-room={r.room}>
+              <CardArt>
+                <Suspense fallback={null}>
+                  <RoomArt room={r.room} week={week} />
+                </Suspense>
+              </CardArt>
+              <span className={styles.roomTitle}>
+                {r.title}
+                {r.beta ? <BetaBadge /> : null}
+              </span>
               <span className={page.muted}>{r.body}</span>
             </Link>
           </li>

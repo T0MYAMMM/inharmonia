@@ -36,6 +36,43 @@
    * states that must show on every surface, named here once, not decoration.
    */
   --focus: var(--dusk);
+  /*
+   * Pencil: drawings whose colour means nothing (a room's drawings outside its
+   * room, spot illustrations, guides). Mixed from ink, so it is a grey in both
+   * themes and never reads as amber or dusk. --pencil is at least 3:1 on
+   * surface and bg; --pencil-faint is for guides (staff lines) and sits below that.
+   */
+  --pencil: color-mix(in srgb, var(--ink) 56%, var(--surface));
+  --pencil-faint: color-mix(in srgb, var(--ink) 16%, var(--surface));
+  /*
+   * A soft colour per room, for its drawings and the wash on its index page:
+   * tint (the panel behind a drawing), line (at least 3:1 on the tint) and deep
+   * (at least 4.5:1 on the tint). Hues stay clear of amber and dusk, at low
+   * chroma; Ear training's heather is greyer still, being the nearest to dusk.
+   * Only src/ui/art reads these: never a keyboard, a score or a practice tile.
+   * tokens.test.ts checks the contrast and the distance from amber and dusk.
+   */
+  --room-songs-tint: oklch(0.935 0.022 336);
+  --room-songs-line: oklch(0.56 0.065 336);
+  --room-songs-deep: oklch(0.42 0.07 336);
+  --room-chords-tint: oklch(0.935 0.022 150);
+  --room-chords-line: oklch(0.56 0.065 150);
+  --room-chords-deep: oklch(0.42 0.07 150);
+  --room-progressions-tint: oklch(0.935 0.022 318);
+  --room-progressions-line: oklch(0.56 0.065 318);
+  --room-progressions-deep: oklch(0.42 0.07 318);
+  --room-fills-tint: oklch(0.935 0.022 180);
+  --room-fills-line: oklch(0.56 0.065 180);
+  --room-fills-deep: oklch(0.42 0.07 180);
+  --room-ear-tint: oklch(0.935 0.018 296);
+  --room-ear-line: oklch(0.56 0.051 296);
+  --room-ear-deep: oklch(0.42 0.055 296);
+  --room-studio-tint: oklch(0.935 0.022 205);
+  --room-studio-line: oklch(0.56 0.065 205);
+  --room-studio-deep: oklch(0.42 0.07 205);
+  --room-progress-tint: oklch(0.935 0.022 115);
+  --room-progress-line: oklch(0.56 0.065 115);
+  --room-progress-deep: oklch(0.42 0.07 115);
 
   --key-white: #fbfcfd;
   --key-white-edge: #b9c3cc;
@@ -139,6 +176,27 @@
     --key-pressed: #b9c3cf;
     --shadow-card: 0 1px 0 rgb(0 0 0 / 20%), 0 10px 28px -18px rgb(0 0 0 / 60%);
     --shadow-dock: 0 -12px 30px -18px rgb(0 0 0 / 70%);
+    --room-songs-tint: oklch(0.3 0.026 336);
+    --room-songs-line: oklch(0.7 0.06 336);
+    --room-songs-deep: oklch(0.86 0.05 336);
+    --room-chords-tint: oklch(0.3 0.026 150);
+    --room-chords-line: oklch(0.7 0.06 150);
+    --room-chords-deep: oklch(0.86 0.05 150);
+    --room-progressions-tint: oklch(0.3 0.026 318);
+    --room-progressions-line: oklch(0.7 0.06 318);
+    --room-progressions-deep: oklch(0.86 0.05 318);
+    --room-fills-tint: oklch(0.3 0.026 180);
+    --room-fills-line: oklch(0.7 0.06 180);
+    --room-fills-deep: oklch(0.86 0.05 180);
+    --room-ear-tint: oklch(0.3 0.02 296);
+    --room-ear-line: oklch(0.7 0.048 296);
+    --room-ear-deep: oklch(0.86 0.04 296);
+    --room-studio-tint: oklch(0.3 0.026 205);
+    --room-studio-line: oklch(0.7 0.06 205);
+    --room-studio-deep: oklch(0.86 0.05 205);
+    --room-progress-tint: oklch(0.3 0.026 115);
+    --room-progress-line: oklch(0.7 0.06 115);
+    --room-progress-deep: oklch(0.86 0.05 115);
   }
 }
 
@@ -165,4 +223,25 @@
   --key-pressed: #b9c3cf;
   --shadow-card: 0 1px 0 rgb(0 0 0 / 20%), 0 10px 28px -18px rgb(0 0 0 / 60%);
   --shadow-dock: 0 -12px 30px -18px rgb(0 0 0 / 70%);
+  --room-songs-tint: oklch(0.3 0.026 336);
+  --room-songs-line: oklch(0.7 0.06 336);
+  --room-songs-deep: oklch(0.86 0.05 336);
+  --room-chords-tint: oklch(0.3 0.026 150);
+  --room-chords-line: oklch(0.7 0.06 150);
+  --room-chords-deep: oklch(0.86 0.05 150);
+  --room-progressions-tint: oklch(0.3 0.026 318);
+  --room-progressions-line: oklch(0.7 0.06 318);
+  --room-progressions-deep: oklch(0.86 0.05 318);
+  --room-fills-tint: oklch(0.3 0.026 180);
+  --room-fills-line: oklch(0.7 0.06 180);
+  --room-fills-deep: oklch(0.86 0.05 180);
+  --room-ear-tint: oklch(0.3 0.02 296);
+  --room-ear-line: oklch(0.7 0.048 296);
+  --room-ear-deep: oklch(0.86 0.04 296);
+  --room-studio-tint: oklch(0.3 0.026 205);
+  --room-studio-line: oklch(0.7 0.06 205);
+  --room-studio-deep: oklch(0.86 0.05 205);
+  --room-progress-tint: oklch(0.3 0.026 115);
+  --room-progress-line: oklch(0.7 0.06 115);
+  --room-progress-deep: oklch(0.86 0.05 115);
 }

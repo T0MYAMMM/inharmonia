@@ -1,6 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import { progressionIssues } from '@/core/content/progressionText';
-import { cleanSource } from '@/core/format';
+import { cleanSource } from '@/core/format/source';
 import { LESSON_SCHEMA_VERSION, type Progression } from '@/core/content/types';
 import {
   NAMESPACE,
