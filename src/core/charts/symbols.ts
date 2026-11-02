@@ -17,11 +17,11 @@ const CHORD_SHAPE = new RegExp(`^${ROOT}[^\\s]*$`);
  * - 7-5, 7-9, 7+5, 7+9 → 7b5, 7b9, 7#5, 7#9
  * - parentheses dropped: C7(b9) → C7b9, C(add9) → Cadd9
  * - 6/9 → 69 (not a slash chord)
- * - N.C., NC, n.c. → N.C.
+ * - N.C., NC, n.c., (N.C.) → N.C.
  */
 export function normalizeChord(token: string): string | null {
   const t = token.trim();
-  if (/^n\.?\s?c\.?$/i.test(t)) return NO_CHORD;
+  if (/^\(?n\.?\s?c\.?\)?$/i.test(t)) return NO_CHORD;
   let s = normalizeAccidentals(t);
   if (!CHORD_SHAPE.test(s)) return null;
   // A bare "o" for diminished ("Go") is far more often a word; write "G°" or "Gdim".

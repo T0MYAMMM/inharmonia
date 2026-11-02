@@ -1,5 +1,20 @@
-import { Chord, Interval } from 'tonal';
+import { Chord, ChordType, Interval } from 'tonal';
 import { chroma, normalizeAccidentals, pitchClassName } from './pitch';
+
+/**
+ * Chords that chord sheets use and tonal does not know, added to its
+ * dictionary once. add4 keeps the fourth inside the octave and add11 puts it
+ * above, as tonal's own madd4 and m7add11 do. Charts read them; the chord
+ * library (`CHORD_QUALITIES`) does not list them.
+ */
+const EXTRA_CHORDS: readonly (readonly [intervals: string, alias: string])[] = [
+  ['1P 3M 4P 5P', 'add4'],
+  ['1P 3M 5P 11P', 'add11'],
+  ['1P 3m 5P 11P', 'madd11'],
+  ['1P 2M 5P 7m', '7sus2'],
+];
+for (const [intervals, alias] of EXTRA_CHORDS)
+  if (ChordType.get(alias).empty) ChordType.add(intervals.split(' '), [alias]);
 
 export interface ChordInfo {
   /** Symbol as given, normalized to ASCII accidentals ("F#m7", "A/C#"). */

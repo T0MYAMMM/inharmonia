@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '@/content/patterns';
 import { compileLesson, validateLesson } from '../content/compile';
+import { buildFile, chartItem, parseFile, stringifyFile } from '../format';
 import { compiledToMidi } from '../midi/adapters';
 import {
   barWords,
@@ -8,6 +9,7 @@ import {
   chartToLesson,
   CHART_VERSION,
   cleanView,
+  DEFAULT_VIEW,
   emptyChart,
   expandForm,
   formatBars,
@@ -119,11 +121,29 @@ describe('chord symbols', () => {
     ['C9', 'C9'],
     ['C11', 'C11'],
     ['C13', 'C13'],
+    ['Ebadd11', 'Ebadd11'],
+    ['Eb(add11)', 'Ebadd11'],
+    ['E♭add11', 'Ebadd11'],
+    ['Ebadd4', 'Ebadd4'],
+    ['Eb(add4)', 'Ebadd4'],
+    ['Cadd11', 'Cadd11'],
+    ['Gadd11', 'Gadd11'],
+    ['Dadd4', 'Dadd4'],
+    ['Am(add11)', 'Amadd11'],
+    ['Amadd11', 'Amadd11'],
+    ['Cm(add4)', 'Cmadd4'],
+    ['Cadd11/E', 'Cadd11/E'],
+    ['B7sus2', 'B7sus2'],
+    ['E7sus2', 'E7sus2'],
+    ['B7(sus2)', 'B7sus2'],
+    ['E7sus4', 'E7sus4'],
+    ['B9sus4', 'B9sus4'],
     ['G/B', 'G/B'],
     ['Am7/G', 'Am7/G'],
     ['N.C.', NO_CHORD],
     ['NC', NO_CHORD],
     ['n.c.', NO_CHORD],
+    ['(N.C.)', NO_CHORD],
   ])('%s reads as %s', (input, out) => {
     expect(normalizeChord(input)).toBe(out);
   });
@@ -196,6 +216,12 @@ describe('bar syntax', () => {
     ]);
   });
 
+  it('reads N.C. in brackets as no chord', () => {
+    const { bars, issues } = parseBars('| (N.C.) | C |', 4);
+    expect(issues).toEqual([]);
+    expect(bars.map((b) => b.chords[0]!.symbol)).toEqual([NO_CHORD, 'C']);
+  });
+
   it('reads dots as beats, and three chords in 3/4', () => {
     expect(parseBars('| C . . G |', 4).bars[0]!.chords).toEqual([
       { symbol: 'C', beats: 3 },
@@ -261,6 +287,27 @@ describe('chord line detection', () => {
     ['Am', false],
     ['Am I la la', false],
     ['| C | G |', true],
+    ['| N.C. |', true],
+    ['| N.C. | N.C. |', true],
+    ['|: NC :| x2', true],
+    ['| N.C. / / / | % |', true],
+    ['| (N.C.) |', true],
+    ['N.C.', true],
+    ['NC', true],
+    ['   N.C.', true],
+    ['N.C.  N.C.', true],
+    ['(N.C.)', true],
+    ['N.C. G', true],
+    ['N.C.   G   D', true],
+    ['C  (N.C.)  G', true],
+    ['Back home in N.C.', false],
+    ['N.C. is where I live', false],
+    ['N.C., here I come', false],
+    ["N.C.'s coast", false],
+    ['Lincoln, N.C.', false],
+    ['Am I in N.C.', false],
+    ['|', false],
+    ['| - |', false],
     ['N.C.  |  C', true],
     ['(Am)  (G)', true],
     ['C - G - Am x2', true],
@@ -483,6 +530,109 @@ describe('pasting a chord sheet', () => {
     expect(sections[0]!.bars.map((b) => b.chords[0]!.symbol)).toEqual(['C', 'G', NO_CHORD, 'F']);
   });
 
+  const symbols = (s: { bars: { chords: { symbol: string }[] }[] }) =>
+    s.bars.map((b) => b.chords.map((c) => c.symbol).join(' '));
+
+  it('reads bars of only N.C. inside a section as bars, not a lyric', () => {
+    const sheet = parseSheet(
+      ['[Intro]', '| N.C. | N.C. |', '', '[Verse]', '| C | G |', '| N.C. |', '| Am | F |'].join(
+        '\n',
+      ),
+      4,
+    );
+    expect(sheet.lines.filter((l) => l.kind === 'bars').map((l) => l.n)).toEqual([2, 5, 6, 7]);
+    expect(sheet.lyricLines).toBe(0);
+    const { sections, form } = sheetToChart(sheet, { beatsPerBar: 4 });
+    expect(sections.map((s) => [s.label, symbols(s)])).toEqual([
+      ['Intro', [NO_CHORD, NO_CHORD]],
+      ['Verse', ['C', 'G', NO_CHORD, 'Am', 'F']],
+    ]);
+    expect(form).toHaveLength(2);
+  });
+
+  it('reads a sheet of one N.C. bar line as one silent bar', () => {
+    const sheet = parseSheet('| N.C. |', 4);
+    expect(sheet.lines).toMatchObject([{ kind: 'bars', chords: [NO_CHORD], unknown: [] }]);
+    const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
+    expect(sections.map((s) => [s.label, symbols(s)])).toEqual([['Section', [NO_CHORD]]]);
+  });
+
+  it('reads N.C. bars after a header colon, and their repeat mark', () => {
+    const sheet = parseSheet('Intro: | N.C. | x2', 4);
+    expect(sheet.lines[0]).toMatchObject({ kind: 'header', chords: [NO_CHORD, NO_CHORD] });
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
+      [NO_CHORD, NO_CHORD],
+    ]);
+    const plain = parseSheet('Intro: N.C.', 4);
+    expect(plain.lines[0]).toMatchObject({ kind: 'header', chords: [NO_CHORD] });
+    expect(plain.lyricLines).toBe(0);
+  });
+
+  it('reads N.C. over lyrics as a chord line, alone or with chords, and drops the lyric', () => {
+    const sheet = parseSheet(
+      [
+        '[Intro]',
+        'N.C.',
+        'la la la lyric line here',
+        '',
+        '[Verse]',
+        'N.C. G',
+        'la la placeholder words',
+        'N.C.   G   D',
+        '(N.C.)',
+      ].join('\n'),
+      4,
+    );
+    expect(sheet.lines.map((l) => l.kind)).toEqual([
+      'header',
+      'chords',
+      'lyric',
+      'blank',
+      'header',
+      'chords',
+      'lyric',
+      'chords',
+      'chords',
+    ]);
+    expect(sheet.lyricLines).toBe(2);
+    expect(sheet.lines.flatMap((l) => l.unknown)).toEqual([]);
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
+      [NO_CHORD],
+      [NO_CHORD, 'G', NO_CHORD, 'G', 'D', NO_CHORD],
+    ]);
+    expectNoLyrics(sheet);
+  });
+
+  it('keeps the words under a line of only N.C. on its bar, when asked', () => {
+    const sheet = parseSheet('N.C.\nla la la lyric line here', 4, { keepLyrics: true });
+    const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
+    expect(sections[0]!.bars).toEqual([
+      { chords: [{ symbol: NO_CHORD, beats: 4 }], lyric: 'la la la lyric line here' },
+    ]);
+  });
+
+  it('leaves a lyric line with N.C. in its words a lyric', () => {
+    const sheet = parseSheet(
+      ['C   G', 'Back home in N.C.', 'N.C. is where I live', "Lincoln, N.C.'s coast"].join('\n'),
+      4,
+    );
+    expect(sheet.lines.map((l) => l.kind)).toEqual(['chords', 'lyric', 'lyric', 'lyric']);
+    expect(sheet.lyricLines).toBe(3);
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([['C', 'G']]);
+  });
+
+  it('reads add11, add4 and 7sus2 chords from a sheet, normalised', () => {
+    const sheet = parseSheet(
+      ['[Intro]', '| N.C. |', '[Verse]', 'Eb(add11)   B7sus2   Am(add11)   Dadd4'].join('\n'),
+      4,
+    );
+    expect(sheet.lines.flatMap((l) => l.unknown)).toEqual([]);
+    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
+      [NO_CHORD],
+      ['Ebadd11', 'B7sus2', 'Amadd11', 'Dadd4'],
+    ]);
+  });
+
   it('starts an unnamed section for chords before any header', () => {
     const { sections } = sheetToChart(parseSheet('C   G\nla la', 4), { beatsPerBar: 4 });
     expect(sections[0]).toMatchObject({ label: 'Section', type: 'custom' });
@@ -627,6 +777,31 @@ describe('charts as lessons', () => {
     const v1 = { ...chart(), version: 1 };
     expect(migrateChart(v1)).toEqual({ ...chart(), version: 2 });
     expect(hasLyrics(migrateChart(v1))).toBe(false);
+  });
+
+  it('exports add11, add4 and 7sus2 chords and imports them as written', () => {
+    const c = chart();
+    c.sections[0]!.bars = [
+      { chords: [{ symbol: 'Ebadd11', beats: 4 }] },
+      {
+        chords: [
+          { symbol: 'Amadd11', beats: 2 },
+          { symbol: 'Dadd4', beats: 2 },
+        ],
+      },
+      { chords: [{ symbol: 'B7sus2', beats: 4 }] },
+      { chords: [{ symbol: 'Cadd11/E', beats: 4 }] },
+    ];
+    expect(chartIssues(c)).toEqual([]);
+    const text = stringifyFile(
+      buildFile([chartItem({ id: 'mine-chart-1', chart: c, view: DEFAULT_VIEW })], [], new Date()),
+    );
+    expect(text).toContain('"Amadd11 Dadd4"');
+    const ctx = { patterns: new Set(Object.keys(PATTERNS)), fallbackPattern: 'arpeggio-8ths' };
+    const read = parseFile(text, ctx);
+    if ('fatal' in read) throw new Error(read.fatal);
+    expect(read.errors).toEqual([]);
+    expect(read.items[0]!.value).toEqual({ kind: 'chart', chart: c, view: DEFAULT_VIEW });
   });
 });
 
