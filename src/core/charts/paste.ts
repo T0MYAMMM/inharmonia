@@ -1,7 +1,9 @@
 import { tidyLyric, withLyric } from './lyrics';
+import { rebar } from './rebar';
 import { parseHeader, sectionTypeOf, type SectionType } from './sections';
 import { NO_CHORD, normalizeChord } from './symbols';
 import { parseBars } from './syntax';
+import { estimateSheetTiming, expandTabs, type LineChord, type LineTiming } from './timing';
 import { evenBeats, LIMITS, type ChartBar, type ChartSection, type ChordChart } from './types';
 
 /**
@@ -37,7 +39,16 @@ export interface PastedLine {
   cut?: boolean;
   /** Kept lyrics only, on a lyric line: the line number of the chords it sits under. */
   under?: number;
+  /**
+   * On a line of chords with words under it (or inline chords in words): how
+   * long each chord lasts, estimated from where it sits over the words. Only
+   * the estimate is kept, never the words, unless lyrics are kept.
+   */
+  estimate?: LineTiming;
 }
+
+/** How a line of chords becomes bars: estimated from its lyrics, or one or two chords a bar. */
+export type LineBars = 'estimated' | 'one' | 'two';
 
 export interface PastedSection {
   label: string;
@@ -61,6 +72,11 @@ export interface ParseSheetOptions {
    * as they are read, and only counted.
    */
   keepLyrics?: boolean;
+  /**
+   * Scale every estimated length: ½ halves them, 2 doubles them (the Half and
+   * Double in the review). Default 1.
+   */
+  scale?: number;
 }
 
 /** Bar lines, repeat marks, N.C., brackets and dashes: ignored when judging a line. */
@@ -100,6 +116,44 @@ export function isChordLine(line: string): boolean {
   if (chords / counted.length < 0.6) return false;
   const spaced = /^\s/.test(text) || /\S\s{2,}\S/.test(text) || text.includes('|');
   return chords + silent >= 2 || spaced;
+}
+
+/** A line of one chord and nothing else, such as "G" or "Am7". */
+function loneChord(line: string): boolean {
+  const t = line.trim();
+  return t !== '' && !/\s/.test(t) && chordToken(t) !== null;
+}
+
+/** A line of words: not chords, not a section name, not a lone chord. */
+const isWords = (line: string | undefined): line is string =>
+  !!line && /\p{L}/u.test(line) && !isChordLine(line) && !parseHeader(line) && !loneChord(line);
+
+/**
+ * Lines (1-based) that hold one chord and nothing else, at the start of the
+ * line, over a line of words: chord sites write a chord that lasts the whole
+ * line that way. `isChordLine` can't tell "G" from a one-word lyric on its
+ * own, so the lines around it decide. It is a chord line when the line under
+ * it is words, the line above is the start, a blank line, a section name, or
+ * words that already sit under a line of chords (so it starts a new pair), and
+ * the sheet has other lines of chords or at least two such lines. "A" or "Am"
+ * in a run of lyrics stays a lyric.
+ */
+export function loneChordLines(lines: readonly string[]): Set<number> {
+  const lone = new Set<number>();
+  const chordsAt = (i: number) => i >= 0 && (lone.has(i) || isChordLine(lines[i]!));
+  lines.forEach((line, i) => {
+    if (!loneChord(line) || isChordLine(line) || parseHeader(line) || !isWords(lines[i + 1]))
+      return;
+    const prev = lines[i - 1];
+    const starts =
+      prev === undefined ||
+      !prev.trim() ||
+      parseHeader(prev) !== null ||
+      (isWords(prev) && chordsAt(i - 2));
+    if (starts) lone.add(i);
+  });
+  const others = lines.some((l) => isChordLine(l));
+  return others || lone.size >= 2 ? new Set([...lone].map((i) => i + 1)) : new Set();
 }
 
 /**
@@ -156,6 +210,14 @@ function barColumns(body: string, offset: number): number[] {
 
 const REPEAT_MARK = /^(?:x\s?\d+|\d+\s?x)$/i;
 
+/** Words of several chords in one bar, joined and cut to fit. */
+const joinWords = (words: readonly (string | undefined)[]) =>
+  fit(words.filter(Boolean).join(' ')).words;
+
+/** The way a line becomes bars unless asked otherwise: estimated when it can be. */
+export const defaultLineBars = (line: PastedLine): LineBars =>
+  line.estimate ? 'estimated' : 'one';
+
 /**
  * The words in each bar of a line with kept lyrics: one chord a bar, or two
  * (`per`), joined; a bar-line line's words are already by bar.
@@ -164,15 +226,40 @@ export function barWords(line: PastedLine, per: 1 | 2 = 1): (string | undefined)
   const words = line.words ?? [];
   if (line.bars) return line.bars.map((_, i) => words[i]);
   const out: (string | undefined)[] = [];
-  for (let i = 0; i < line.chords.length; i += per)
-    out.push(
-      tidyLyric(
-        words
-          .slice(i, i + per)
-          .filter(Boolean)
-          .join(' '),
-      ),
-    );
+  for (let i = 0; i < line.chords.length; i += per) out.push(joinWords(words.slice(i, i + per)));
+  return out;
+}
+
+/**
+ * The bars a line of chords becomes, with its kept words: bar lines as typed;
+ * otherwise estimated from the lyrics (each chord's words on the bar where it
+ * starts), or one or two chords a bar.
+ */
+export function lineBars(line: PastedLine, how: LineBars, beatsPerBar: number): ChartBar[] {
+  if (line.bars) {
+    const words = barWords(line);
+    return line.bars.map((b, i) => withLyric(b, words[i]));
+  }
+  if (how === 'estimated' && line.estimate) {
+    const bars = rebar(line.estimate.chords, beatsPerBar);
+    if (!line.words) return bars;
+    const byBar: (string | undefined)[][] = bars.map(() => []);
+    let beat = 0;
+    line.estimate.chords.forEach((c, i) => {
+      byBar[Math.floor(beat / beatsPerBar)]?.push(line.words?.[i]);
+      beat += c.beats;
+    });
+    return bars.map((b, i) => withLyric(b, joinWords(byBar[i]!)));
+  }
+  const per = how === 'two' ? 2 : 1;
+  const words = line.words ? barWords(line, per) : [];
+  const out: ChartBar[] = [];
+  for (let i = 0; i < line.chords.length; i += per) {
+    const symbols = line.chords.slice(i, i + per);
+    const beats = evenBeats(symbols.length, beatsPerBar);
+    const bar = { chords: symbols.map((symbol, k) => ({ symbol, beats: beats[k]! })) };
+    out.push(withLyric(bar, words[i / per]));
+  }
   return out;
 }
 
@@ -181,8 +268,10 @@ export function barWords(line: PastedLine, per: 1 | 2 = 1): (string | undefined)
  * lines (| C | G |) and section headers ([Verse], Chorus:, Reff 2x, Bait 2).
  * Lyrics are dropped as they are read, so only chords, section labels and
  * structure are kept, unless `keepLyrics` asks to keep each lyric line with
- * the chords right above it. Pasted sheets carry no timing, so each chord
- * becomes a bar until adjusted.
+ * the chords right above it. Pasted sheets carry no bar lines, but a lyric
+ * line under a line of chords (or words around inline chords) says where each
+ * chord changes: that is read, in passing, into an estimate of how long each
+ * chord lasts (`estimate`), and the words are dropped unless kept.
  */
 export function parseSheet(
   text: string,
@@ -195,8 +284,15 @@ export function parseSheet(
   let lyricLines = 0;
   let keptLines = 0;
   let current: number | null = null;
-  /** Columns of each chord (or bar) on a line of chords, by line number: kept lyrics only. */
+  /** Columns of each chord (or bar) on a line of chords, by line number. */
   const columns = new Map<number, number[]>();
+  /** Chords and their columns on a line of chords (not bar lines), by line number, for timing. */
+  const placed = new Map<number, LineChord[]>();
+  /**
+   * Lines to time, with their words, read only for this call: the whole sheet
+   * is timed at the end, at one speed. The words go no further.
+   */
+  const toTime: { line: PastedLine; chords: LineChord[]; lyric: string }[] = [];
   const ensureSection = () => {
     if (current === null) {
       sections.push({ label: 'Section', type: 'custom', repeat: 1 });
@@ -210,12 +306,13 @@ export function parseSheet(
     body: string,
     offset = 0,
     extra: Partial<PastedLine> = {},
+    lone = false,
   ): PastedLine | null => {
     if (body.includes('|') && isChordLine(body)) {
       const { bars } = parseBars(body, beatsPerBar);
       const chords = bars.flatMap((b) => b.chords.map((c) => c.symbol));
       const unknown = chords.filter((c) => c !== NO_CHORD && !normalizeChord(c));
-      if (keep) columns.set(n, barColumns(body, offset));
+      columns.set(n, barColumns(body, offset));
       return {
         n,
         kind: 'bars',
@@ -228,7 +325,7 @@ export function parseSheet(
         ...extra,
       };
     }
-    if (isChordLine(body)) {
+    if (lone || isChordLine(body)) {
       const tokens = body.split(/\s+/).filter((t) => t && !STRUCTURAL.test(t) && !isNoChord(t));
       const chords: string[] = [];
       const unknown: string[] = [];
@@ -249,7 +346,11 @@ export function parseSheet(
         all.push(entry);
         cols.push(offset + m.index);
       }
-      if (keep) columns.set(n, cols);
+      columns.set(n, cols);
+      placed.set(
+        n,
+        all.map((symbol, i) => ({ symbol, col: cols[i]! })),
+      );
       return {
         n,
         kind: 'chords',
@@ -264,9 +365,10 @@ export function parseSheet(
     return null;
   };
 
-  text.split(/\r?\n/).forEach((raw, i) => {
+  const rows = text.split(/\r?\n/).map(expandTabs);
+  const lone = loneChordLines(rows);
+  rows.forEach((line, i) => {
     const n = i + 1;
-    const line = raw.replace(/\t/g, '    ');
     if (!line.trim()) {
       lines.push({
         n,
@@ -301,7 +403,7 @@ export function parseSheet(
       const kept = keep && hasWords ? cutLyric(plain, cols) : null;
       if (kept) keptLines++;
       else if (hasWords) lyricLines++;
-      lines.push({
+      const inlineLine: PastedLine = {
         n,
         kind: 'inline',
         chords: inlineChords,
@@ -310,7 +412,14 @@ export function parseSheet(
         lyricsRemoved: hasWords && !kept,
         section: ensureSection(),
         ...(kept ? { words: kept.words, ...(kept.cut ? { cut: true } : {}) } : {}),
-      });
+      };
+      if (hasWords)
+        toTime.push({
+          line: inlineLine,
+          chords: inlineChords.map((symbol, k) => ({ symbol, col: cols[k]! })),
+          lyric: plain,
+        });
+      lines.push(inlineLine);
       return;
     }
 
@@ -343,14 +452,18 @@ export function parseSheet(
       return;
     }
 
-    const chordLine = readChords(n, line);
+    const chordLine = readChords(n, line, 0, {}, lone.has(n));
     if (chordLine) {
       lines.push(chordLine);
       return;
     }
-    // Kept only right under a line of chords that has no words yet.
+    // Right under a line of chords: the words time its chords, then are dropped unless kept.
     const above = lines.at(-1);
-    const cols = keep && above?.n === n - 1 && !above.words ? columns.get(above.n) : undefined;
+    const under = above?.n === n - 1 ? above : undefined;
+    const timed = under && !toTime.some((t) => t.line === under) ? placed.get(under.n) : undefined;
+    if (under && timed?.length && /\p{L}/u.test(line))
+      toTime.push({ line: under, chords: timed, lyric: line });
+    const cols = keep && under && !under.words ? columns.get(under.n) : undefined;
     if (above && cols?.length) {
       const { words, cut } = cutLyric(line, cols);
       above.words = above.bars ? above.bars.map((_, i) => words[i]) : words;
@@ -379,21 +492,27 @@ export function parseSheet(
       section: current,
     });
   });
+  const estimates = estimateSheetTiming(toTime, beatsPerBar, { scale: options.scale ?? 1 });
+  toTime.forEach((t, i) => (t.line.estimate = estimates[i]));
   return { lines, sections, lyricLines, keptLines };
 }
 
 export interface SheetToChartOptions {
   beatsPerBar: number;
-  /** Line numbers to read two chords to a bar instead of one. */
-  twoPerBar?: ReadonlySet<number>;
+  /**
+   * How each line of chords becomes bars, by line number. A line not listed
+   * takes `defaultLineBars`: estimated if it had words, else one chord a bar.
+   */
+  lineBars?: ReadonlyMap<number, LineBars>;
   /** Fresh section ids. */
   newId?: () => string;
 }
 
 /**
- * Turn a parsed sheet into chart sections and a form. Each chord is a bar
- * (or two to a bar on lines asked for), bar lines keep their bars, and kept
- * lyrics go on the bars they sat under. A section that repeats an earlier
+ * Turn a parsed sheet into chart sections and a form. Lines with words are
+ * timed from them (or one or two chords a bar, on lines asked for), other
+ * lines take a bar a chord, bar lines keep their bars, and kept lyrics go on
+ * the bars where their words start. A section that repeats an earlier
  * one, by label with no chords of its own or with the same bars (words
  * included, so a second verse with its own words stays its own section),
  * appears in the form again instead of being entered twice.
@@ -408,18 +527,8 @@ export function sheetToChart(
     const bars: ChartBar[] = [];
     for (const line of sheet.lines) {
       if (line.section !== si || line.chords.length === 0) continue;
-      const per = opts.twoPerBar?.has(line.n) ? 2 : 1;
-      const words = line.words ? barWords(line, per) : [];
-      if (line.bars) {
-        bars.push(...line.bars.map((b, i) => withLyric(b, words[i])));
-        continue;
-      }
-      for (let i = 0; i < line.chords.length; i += per) {
-        const symbols = line.chords.slice(i, i + per);
-        const beats = evenBeats(symbols.length, opts.beatsPerBar);
-        const bar = { chords: symbols.map((symbol, k) => ({ symbol, beats: beats[k]! })) };
-        bars.push(withLyric(bar, words[i / per]));
-      }
+      const how = opts.lineBars?.get(line.n) ?? defaultLineBars(line);
+      bars.push(...lineBars(line, how, opts.beatsPerBar));
     }
     return { ...s, bars: bars.slice(0, LIMITS.barsPerSection) };
   });
