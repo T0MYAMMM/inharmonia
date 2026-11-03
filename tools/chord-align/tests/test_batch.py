@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 import soundfile as sf
 
+from chord_align import batch
 from chord_align.audio import AUDIO_SUFFIXES
 from chord_align.batch import (
     COMBINED,
@@ -14,6 +15,7 @@ from chord_align.batch import (
     ManifestError,
     audio_in,
     combined,
+    import_files,
     match_all,
     match_name,
     rank,
@@ -174,6 +176,38 @@ def test_combined_ids_are_unique() -> None:
     assert [i["id"] for i in data["items"]] == ["song", "song-2"]
 
 
+def test_past_500_charts_the_import_file_is_split() -> None:
+    items = [{"id": f"song-{n % 700}", "kind": "chart"} for n in range(1001)]
+    files = import_files(items)
+    assert [name for name, _ in files] == [
+        "aligned-charts-1.json",
+        "aligned-charts-2.json",
+        "aligned-charts-3.json",
+    ]
+    assert [len(data["items"]) for _, data in files] == [500, 500, 1]
+    ids = [i["id"] for _, data in files for i in data["items"]]
+    assert len(set(ids)) == 1001
+    assert [name for name, _ in import_files(items[:500])] == [COMBINED]
+
+
+def test_no_charts_read_is_said_never_silent(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    audio = tmp_path / "audio"
+    audio.mkdir()
+    (audio / "Sheila on 7 - Dan.m4a").write_bytes(b"")
+    charts = tmp_path / "charts"
+    charts.mkdir()
+    (charts / "notes.json").write_text('{"todo": []}', encoding="utf-8")
+    out = tmp_path / "out"
+    assert main(["batch", str(audio), str(charts), "--out", str(out)]) == 1
+    assert "no charts were read" in capsys.readouterr().err
+    summary = (out / SUMMARY).read_text(encoding="utf-8")
+    assert "1 recordings, 0 charts read." in summary
+    assert (
+        f"**No charts were read** from {charts}: 1 .json or .txt files found, none of them a chart" in summary
+    )
+    assert "- notes.json: neither an Inharmonia export nor a research chart." in summary
+
+
 def _write_song(folder: Path, name: str, spec_name: str) -> dict[str, Any]:
     spec = by_name(spec_name)
     audio = render(spec)
@@ -182,8 +216,14 @@ def _write_song(folder: Path, name: str, spec_name: str) -> dict[str, Any]:
 
 
 @pytest.mark.slow
-def test_a_batch_of_two_songs_end_to_end(tmp_path: Path) -> None:
+@pytest.mark.parametrize("per_file", [None, 1])
+def test_a_batch_of_two_songs_end_to_end(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, per_file: int | None
+) -> None:
     require_node()
+    if per_file:
+        # As if a file held one chart: the import is split, and the summary says so.
+        monkeypatch.setattr(batch, "PER_FILE", per_file)
     audio = tmp_path / "audio"
     charts = tmp_path / "charts"
     out = tmp_path / "out"
@@ -222,11 +262,17 @@ def test_a_batch_of_two_songs_end_to_end(tmp_path: Path) -> None:
         assert (out / f"{name}.report.md").is_file()
         data = json.loads((out / f"{name}.suggestions.json").read_text(encoding="utf-8"))
         assert data["suggestions"] == [] and data["applied"] is False
-    # One file to import, holding both charts, read by the app's own reader.
-    checked = check_output(out / COMBINED)
+    if per_file:
+        names = ["aligned-charts-1.json", "aligned-charts-2.json"]
+        assert "aligned charts in 2 files, as one file holds up to 1: " + ", ".join(names) in summary
+        assert not (out / COMBINED).exists()
+    else:
+        names = [COMBINED]
+    # The files to import, holding both charts, read by the app's own reader.
+    checked = check_output(*(out / n for n in names))
     assert checked.returncode == 0, checked.stderr
-    assert "imports (2 charts)" in checked.stdout
-    items = json.loads((out / COMBINED).read_text(encoding="utf-8"))["items"]
+    assert checked.stdout.count("imports (") == len(names)
+    items = [i for n in names for i in json.loads((out / n).read_text(encoding="utf-8"))["items"]]
     assert [i["chart"]["tempo"] for i in items] == [70, 120]
     assert items[0]["chart"]["sections"][0]["bars"] == list(by_name("even-70").sections[0].truth)
     # No audio is ever written to the outputs.

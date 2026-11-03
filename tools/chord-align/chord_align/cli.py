@@ -198,14 +198,21 @@ def _batch(argv: list[str]) -> int:
         apply_suggestions=ns.apply_suggestions,
     )
     try:
-        rows, unmatched = run_batch(ns.audio, ns.charts, ns.out, manifest=ns.manifest, opts=opts)
+        done = run_batch(ns.audio, ns.charts, ns.out, manifest=ns.manifest, opts=opts)
     except (ChartError, AudioError, ManifestError) as e:
         print(f"chord-align batch: {e}", file=sys.stderr)
         return 1
-    aligned = sum(r.result is not None for r in rows)
-    print(f"Aligned {aligned} of {len(rows)} songs; {len(unmatched)} recordings not matched.")
+    if not done.charts:
+        print(f"chord-align batch: no charts were read from {ns.charts}; see the summary.", file=sys.stderr)
+        print(f"Wrote {ns.out / 'summary.md'}.")
+        return 1
+    aligned = sum(r.result is not None for r in done.rows)
+    print(f"Read {done.charts} charts. Aligned {aligned} of {len(done.rows)} songs; ", end="")
+    print(f"{len(done.unmatched)} recordings not matched.")
+    if len(done.written) > 1:
+        print(f"The aligned charts are in {len(done.written)} files: {', '.join(done.written)}.")
     print(f"Wrote {ns.out / 'summary.md'}.")
-    return 0 if aligned == len(rows) else 1
+    return 0 if aligned == len(done.rows) else 1
 
 
 if __name__ == "__main__":
