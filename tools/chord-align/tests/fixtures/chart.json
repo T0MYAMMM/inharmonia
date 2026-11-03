@@ -1,0 +1,73 @@
+{
+  "format": "inharmonia",
+  "version": 3,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "kind": "chart",
+      "id": "first-chart",
+      "title": "First chart",
+      "source": { "kind": "user" },
+      "chart": {
+        "key": { "tonic": "C", "mode": "major" },
+        "tempo": 84,
+        "meter": { "beats": 4, "unit": 4 },
+        "sections": [
+          {
+            "id": "intro",
+            "label": "Intro",
+            "type": "intro",
+            "repeat": 1,
+            "bars": ["C", "G/B", "Am7", "F"]
+          },
+          {
+            "id": "verse",
+            "label": "Bait",
+            "type": "verse",
+            "repeat": 2,
+            "bars": ["Am F", "C . . G", "Am", "Am"],
+            "lyrics": ["one", "two", "three", "four"]
+          },
+          {
+            "id": "chorus",
+            "label": "Reff",
+            "type": "chorus",
+            "repeat": 1,
+            "bars": ["F", "G", "C . . G", "N.C."]
+          }
+        ],
+        "form": ["intro", "verse", "chorus", "verse", "chorus"],
+        "notes": "Slow down in the last chorus."
+      },
+      "view": {
+        "transpose": 0,
+        "simplify": "original",
+        "style": "triad-root",
+        "showFunction": false,
+        "showLyrics": true
+      }
+    },
+    {
+      "kind": "chart",
+      "id": "waltz",
+      "title": "Waltz",
+      "source": { "kind": "user" },
+      "chart": {
+        "key": { "tonic": "F#", "mode": "minor" },
+        "tempo": 120,
+        "meter": { "beats": 3, "unit": 4 },
+        "sections": [
+          {
+            "id": "a",
+            "label": "A",
+            "type": "verse",
+            "repeat": 1,
+            "bars": ["F#m", "Bm C#7", "D E F#m"]
+          }
+        ],
+        "form": ["a", "a"],
+        "notes": ""
+      }
+    }
+  ]
+}
