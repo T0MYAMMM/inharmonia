@@ -33,16 +33,22 @@ def scored(name: str) -> tuple[Score, Result]:
     return _SCORES[name]
 
 
-def check_output(*files: Path) -> subprocess.CompletedProcess[str]:
-    """Run the app's own reader on output files; skip if Node is not set up here.
+def require_node() -> str:
+    """The npx path; skips the test if Node is not set up here.
 
     Set CHORD_ALIGN_REQUIRE_NODE=1 (CI does) to fail instead of skipping.
     """
     npx = shutil.which("npx")
     if npx is None or not (REPO / "node_modules").is_dir():
         if os.environ.get("CHORD_ALIGN_REQUIRE_NODE") == "1":
-            pytest.fail("Node and the repo's node_modules are needed for check-output")
+            pytest.fail("Node and the repo's node_modules are needed for the app's reader")
         pytest.skip("Node or node_modules missing: run `npm ci` at the repo root")
+    return npx
+
+
+def check_output(*files: Path) -> subprocess.CompletedProcess[str]:
+    """Run the app's own reader on output files; skip if Node is not set up here."""
+    npx = require_node()
     return subprocess.run(
         [
             npx,
