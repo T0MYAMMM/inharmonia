@@ -43,6 +43,13 @@ test.describe('chord charts', () => {
     await expect(review.getByRole('row').filter({ hasText: 'Lyrics removed' })).toHaveCount(3);
     await expect(review).toContainText('Section: Reff ×2');
     await expect(review).toContainText("Can't read: Hx");
+    // Read the lines with words one chord a bar, as typed.
+    for (const n of [5, 10])
+      await page
+        .getByRole('radiogroup', { name: `Bar lengths, line ${n}` })
+        .getByRole('radio', { name: '1 a bar' })
+        .click();
+    await expect(page.getByTestId('estimate-note')).toHaveCount(0);
     await page.getByTestId('paste-use').click();
 
     await expect(page.getByTestId('chart-issues')).toContainText(
@@ -127,9 +134,10 @@ test.describe('chord charts', () => {
       'Lyrics kept from 2 lines, on this device only. 1 line left out: lyrics are kept only right under their chords. 1 chord could not be read: fix it in the grid before saving.',
     );
     const review = page.getByTestId('paste-review');
+    // The words go on the bar where they start, in the bars estimated from them.
     await expect(review.getByRole('row').filter({ hasText: 'Lyrics kept' })).toHaveText([
-      /la la la lyric line here\s*Lyrics kept: la la \| la lyric \| line \| here/,
-      /lyric line here la la\s*Lyrics kept: lyric \| line \| here \| la la/,
+      /la la la lyric line here\s*Lyrics kept: la la \| la lyric \| line here \| –/,
+      /lyric line here la la\s*Lyrics kept: lyric \| line here \| la la \| –/,
     ]);
     await expect(review.getByRole('row').filter({ hasText: 'Left out' })).toHaveText(
       /la la la la\s*Left out: no chords right above it/,
@@ -191,6 +199,10 @@ test.describe('chord charts', () => {
       );
     await page.getByTestId('keep-lyrics').check();
     await page.getByTestId('paste-read').click();
+    await page
+      .getByRole('radiogroup', { name: 'Bar lengths, line 2' })
+      .getByRole('radio', { name: '1 a bar' })
+      .click();
     await page.getByTestId('paste-use').click();
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: 'Harbour words', level: 1 })).toBeVisible();
@@ -278,10 +290,10 @@ test.describe('chord charts', () => {
       'Lyrics removed from 1 line. Only chords and section names are kept.',
     );
     const review = page.getByTestId('paste-review');
-    await expect(review.getByRole('row').filter({ hasText: '| N.C. |' })).toContainText(
-      'Chords: N.C.',
-    );
-    await expect(review).toContainText('Chords: E♭add11 B7sus2');
+    await expect(review.locator('[data-kind="bars"]').first()).toContainText('Bars: | N.C. |');
+    await expect(review).toContainText('Bars: | E♭add11 | B7sus2 |');
+    // The outro's silence lasts as long as its words.
+    await expect(review.locator('[data-kind="chords"]')).toContainText('Bars: | N.C. | N.C. |');
     await expect(review.getByRole('row').filter({ hasText: 'Lyrics removed' })).toHaveText(
       /la la la\s*Lyrics removed/,
     );
@@ -290,12 +302,13 @@ test.describe('chord charts', () => {
     await page.getByTestId('chart-key').selectOption('E major');
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: 'Quiet start', level: 1 })).toBeVisible();
-    await expect(page.getByText('E major, 4/4, 4 bars, 80 bpm')).toBeVisible();
+    await expect(page.getByText('E major, 4/4, 5 bars, 80 bpm')).toBeVisible();
 
-    await expect(page.locator('[data-bar="0"]')).toContainText('Bar 1 of 4, N.C.');
+    await expect(page.locator('[data-bar="0"]')).toContainText('Bar 1 of 5, N.C.');
     await expect(page.locator('[data-bar="1"]')).toContainText('E♭add11');
     await expect(page.locator('[data-bar="2"]')).toContainText('B7sus2');
-    await expect(page.locator('[data-bar="3"]')).toContainText('Bar 4 of 4, N.C.');
+    await expect(page.locator('[data-bar="3"]')).toContainText('Bar 4 of 5, N.C.');
+    await expect(page.locator('[data-bar="4"]')).toContainText('Bar 5 of 5, N.C.');
     await page.getByRole('button', { name: 'Show function' }).click();
     await expect(page.locator('[data-bar="2"]')).toContainText('V7sus2');
 
@@ -324,5 +337,59 @@ test.describe('chord charts', () => {
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: 'Typed chart', level: 1 })).toBeVisible();
     await expect(page.getByText('C major, 4/4, 7 bars, 80 bpm')).toBeVisible();
+  });
+
+  test('pasted bars are estimated from the lyrics, and a line can be read one a bar', async ({
+    page,
+  }) => {
+    await page.goto('songs/charts/new');
+    await page.getByTestId('chart-title').fill('Harbour lanterns');
+    await page
+      .getByTestId('paste-text')
+      .fill(
+        [
+          '[Verse]',
+          'C              G',
+          'lanterns drift along the harbour wall',
+          'Am        F       C       G',
+          'slow boats coming home tonight, la la',
+        ].join('\n'),
+      );
+    await page.getByTestId('paste-read').click();
+    // The words are read for timing, then dropped.
+    await expect(page.getByTestId('lyrics-notice')).toHaveText(
+      'Lyrics removed from 2 lines. Only chords and section names are kept.',
+    );
+    await expect(page.getByTestId('estimate-note')).toHaveText(
+      'Bar lengths are estimated from the lyrics. Check them by ear.',
+    );
+    const first = page.getByRole('radiogroup', { name: 'Bar lengths, line 2' });
+    const second = page.getByRole('radiogroup', { name: 'Bar lengths, line 4' });
+    await expect(first.getByRole('radio', { name: 'Estimated' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(page.getByTestId('read-2')).toContainText('Bars: | C | G | G | G |');
+    await expect(page.getByTestId('read-4')).toContainText('Bars: | Am F | F C | G | G |');
+    // Nothing reaches sideways, at any width.
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(0);
+
+    // By keyboard: focus the chosen option, and arrow along to "1 a bar".
+    await second.getByRole('radio', { name: 'Estimated' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(second.getByRole('radio', { name: '1 a bar' })).toBeFocused();
+    await expect(page.getByTestId('read-4')).toContainText('Bars: | Am | F | C | G |');
+    await page.getByTestId('paste-use').click();
+
+    await expect(page.getByTestId('section-0').getByRole('listitem')).toHaveCount(8);
+    await expect(page.getByTestId('bar-0-0')).toContainText('C');
+    await expect(page.getByTestId('bar-0-1')).toContainText('G');
+    await expect(page.getByTestId('bar-0-4')).toContainText('Am');
+    await page.getByTestId('chart-save').click();
+    await expect(page.getByText('C major, 4/4, 8 bars, 80 bpm')).toBeVisible();
   });
 });
