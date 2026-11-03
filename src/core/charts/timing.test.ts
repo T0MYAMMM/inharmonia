@@ -8,8 +8,9 @@ import {
   type LineChord,
   type LineTiming,
 } from './timing';
-import { barMatch, beatAccuracy, scoreAll, timingVectors } from './timing.eval';
+import { barMatch, beatAccuracy, scoreAll, timingVectors, type TimingVector } from './timing.eval';
 import { TIMING_FIXTURES } from './timing.fixtures';
+import VECTORS from './timing.vectors.json';
 
 /** Chords over a lyric, as a sheet shows them: each chord's column is where it is written. */
 function line(chords: string, lyric: string, beatsPerBar = 4) {
@@ -197,6 +198,27 @@ describe('estimateLineTiming', () => {
 });
 
 describe('timing on the evaluation set', () => {
+  const vectors = VECTORS as TimingVector[];
+
+  it('reproduces every vector in timing.vectors.json exactly', () => {
+    expect(vectors.length).toBeGreaterThan(50);
+    for (const { input, output } of vectors)
+      expect(estimateLineTiming(input.chords, input.lyric, input.beatsPerBar)).toEqual(output);
+  });
+
+  it('has vectors that match the fixtures (npm run eval:timing -- --write-vectors)', () => {
+    expect(timingVectors(TIMING_FIXTURES)).toEqual(vectors);
+  });
+
+  it('keeps every line whole: beats of at least 1 that fill 1, 2, 4 or 8 bars', () => {
+    for (const { input, output } of vectors) {
+      expect([1, 2, 4, 8]).toContain(output.bars);
+      expect(output.chords.map((c) => c.symbol)).toEqual(input.chords.map((c) => c.symbol));
+      expect(output.chords.every((c) => Number.isInteger(c.beats) && c.beats >= 1)).toBe(true);
+      expect(output.chords.reduce((s, c) => s + c.beats, 0)).toBe(output.bars * input.beatsPerBar);
+    }
+  });
+
   it('has at least 12 public-domain songs, in 4/4 and 3/4, and Indonesian lines', () => {
     const english = TIMING_FIXTURES.filter((f) => !f.source.startsWith('Original'));
     expect(english.length).toBeGreaterThanOrEqual(12);
@@ -235,7 +257,6 @@ describe('timing on the evaluation set', () => {
   });
 
   it('hardly moves when every chord is written a column or two off', () => {
-    const vectors = timingVectors(TIMING_FIXTURES);
     for (const [shift, least] of [
       [-2, 0.95],
       [-1, 0.98],
