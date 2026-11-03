@@ -244,6 +244,13 @@
   font-size: 0.9rem;
 }
 
+/* The note on estimated bars, with Half and Double beside it. */
+.estimate {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
 /* How a line of chords becomes bars: under what it was read as. */
 .lineBars {
   display: block;
