@@ -75,7 +75,8 @@ src/
     content/            the lesson content format, compiler, progression realizer, text parser, fills
     transcription/      voice to notes: pitch frames, segmentation, key, quantization, fixtures, eval
     songs/              your songs: the editable draft, edits and undo, kept recordings
-    charts/             chord charts: symbols, section names, bar syntax, paste parser, key, compile
+    charts/             chord charts: symbols, section names, bar syntax, paste parser, chord timing
+                        from lyrics (fixtures, eval, vectors), key, compile
     format/             the readable JSON file format for export, import and transfer
     library/            pieces: the .piece format, the Easy/Medium/Advanced generator, the catalogue
                         index and its rules, and the build behind npm run songs
@@ -90,7 +91,7 @@ e2e/                    Playwright tests
 docs/format/            the file format (JSON Schema, notes, one example per kind), the song index and
                         the piece source format
 docs/composing.md       how a composer's song gets into the catalogue
-scripts/                build-songs.ts (npm run songs) and the transcription eval
+scripts/                build-songs.ts (npm run songs), the transcription eval and the chord timing eval
 docs/screenshots/       screenshots attached to each phase's pull request
 ```
 
@@ -605,6 +606,19 @@ same fixtures with thresholds, so a regression fails `npm run check`.
 
 No fixture, test, doc or screenshot uses audio or notes from existing songs.
 
+### Evaluating chord timing
+
+`npm run eval:timing` reads 15 chord sheets (`src/core/charts/timing.fixtures.ts`) the way a paste
+does and compares each line's bars with the bars the song really has. Thirteen are public-domain
+songs (traditional, or words published before 1929) in 4/4 and 3/4, written with the sloppiness
+of pasted sheets: chords nudged a column or two, tabs mixed with spaces, words before the first
+chord, chords over blank space. Two are Indonesian songs written for the set. It prints, per song
+and overall, beat accuracy (beats with the right chord) and bar-count match, for the estimate and
+for one chord a bar. Overall, the estimate gets 86.2% of beats and 89.2% of bar counts right,
+against 48.5% and 16.9% for one chord a bar. Swing Low is the known miss: its short 2-bar lines
+read as 4. `-- --lines` shows every line's bars; `-- --write-vectors` rewrites
+`timing.vectors.json` after a deliberate change. The unit tests pin these numbers.
+
 ## Chord charts
 
 A chord chart is a song you already know, written as its chords so you can learn to accompany
@@ -638,11 +652,23 @@ entered once and played as often as it comes back.
   chords or chord-like spacing, so a one-word lyric such as "A" stays a lyric. A review table
   shows how every line was read before anything is used. The notes field is never filled from a
   pasted sheet. There is no URL import and nothing is fetched: charts are typed or pasted by you.
+- **Bar lengths from the lyrics** (`src/core/charts/timing.ts`). A sheet has no bar lines, but the
+  column a chord sits over says where in the words it changes. For a line of chords with a lyric
+  line right under it (or inline chords in words), each chord's length is estimated from the
+  syllables up to the next chord (English and Indonesian are counted by their own rules), the line
+  is given a whole number of bars (usually 2 or 4) and the chords whole beats on a 2-beat grid,
+  and `rebar.ts` packs them into bars, splitting a chord across a bar line where it must. Words
+  are read for this in passing and dropped unless you keep them. The review table shows the bars
+  each line makes, with a choice per line of **Estimated**, **1 a bar** or **2 a bar** (lines with
+  words start on Estimated), and says "Bar lengths are estimated from the lyrics. Check them by
+  ear." A line with no words under it gets a bar a chord, as before; bar lines keep their bars.
+  The steps are written out at the top of `timing.ts` for other implementations, which can check
+  themselves against `timing.vectors.json`.
 - **Lyrics only if you ask, and only here.** By default lyric lines are dropped as the sheet is
   read; only their count is kept, for the notice "Lyrics removed from N lines". Tick **Keep
   lyrics** (unticked every time) to keep each lyric line on the bars it sat under: the line is
-  cut at the chords right above it, each cut moved back to the start of its word, and a line
-  with no chords right above it is left out. In the editor, a bar's **Lyrics** field holds its
+  cut at the chords right above it, each cut moved back to the start of its word, the words go
+  on the bar where they start, and a line with no chords right above it is left out. In the editor, a bar's **Lyrics** field holds its
   words, one line, up to 120 characters; Enter goes on to the next bar.
   - Lyrics are kept only in this browser's storage on this device. They are never uploaded, never
     in a share link, and never sent to Studio, Chords or Progressions by **Send to**.
