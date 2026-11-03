@@ -7,7 +7,9 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from chord_align.audio import SAMPLE_RATE, AudioError, ffmpeg_command, load_audio
+from chord_align.audio import AUDIO_SUFFIXES, SAMPLE_RATE, AudioError, ffmpeg_command, load_audio
+
+needs_ffmpeg = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
 
 
 def _tone(sr: int, seconds: float = 1.0) -> np.ndarray:
@@ -68,3 +70,57 @@ def test_undecodable_file(tmp_path: Path) -> None:
 def test_missing_file(tmp_path: Path) -> None:
     with pytest.raises(AudioError, match="no such file"):
         load_audio(tmp_path / "nothing.wav")
+
+
+def test_ffmpeg_takes_the_first_audio_stream_alone() -> None:
+    cmd = ffmpeg_command(Path("clip.mp4"), 22_050)
+    assert cmd[cmd.index("-map") + 1] == "0:a:0"
+    assert {"-vn", "-sn", "-dn"} <= set(cmd)
+
+
+def test_the_formats_a_batch_looks_for() -> None:
+    assert set(AUDIO_SUFFIXES) == {".mp4", ".m4a", ".mp3", ".wav", ".flac", ".webm"}
+
+
+def _encode(args: list[str], out: Path) -> None:
+    import subprocess
+
+    done = subprocess.run(
+        ["ffmpeg", "-nostdin", "-loglevel", "error", *args, str(out)], capture_output=True, check=False
+    )
+    if done.returncode != 0:
+        pytest.skip(f"this ffmpeg cannot write {out.suffix}")
+
+
+def _wav(tmp_path: Path) -> Path:
+    wav = tmp_path / "a.wav"
+    sf.write(wav, _tone(SAMPLE_RATE, 2.0), SAMPLE_RATE)
+    return wav
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("suffix", [".mp3", ".webm"])
+def test_mp3_and_webm_go_through_ffmpeg(tmp_path: Path, suffix: str) -> None:
+    out = tmp_path / f"a{suffix}"
+    _encode(["-i", str(_wav(tmp_path))], out)
+    assert abs(len(load_audio(out)) / SAMPLE_RATE - 2.0) < 0.1
+
+
+@needs_ffmpeg
+def test_a_music_video_gives_its_sound_only(tmp_path: Path) -> None:
+    mp4 = tmp_path / "clip.mp4"
+    picture = ["-f", "lavfi", "-i", "color=c=black:s=64x64:d=2"]
+    _encode([*picture, "-i", str(_wav(tmp_path)), "-c:v", "mpeg4", "-c:a", "aac", "-shortest"], mp4)
+    y = load_audio(mp4)
+    assert abs(len(y) / SAMPLE_RATE - 2.0) < 0.15
+    # The tone came through: the strongest frequency is still 440 Hz.
+    spectrum = np.abs(np.fft.rfft(y[:SAMPLE_RATE]))
+    assert abs(int(np.argmax(spectrum)) - 440) <= 2
+
+
+@needs_ffmpeg
+def test_a_wav_that_is_not_really_one_falls_back_to_ffmpeg(tmp_path: Path) -> None:
+    m4a = tmp_path / "a.m4a"
+    _encode(["-i", str(_wav(tmp_path))], m4a)
+    misnamed = m4a.rename(tmp_path / "really-aac.wav")
+    assert abs(len(load_audio(misnamed)) / SAMPLE_RATE - 2.0) < 0.1
