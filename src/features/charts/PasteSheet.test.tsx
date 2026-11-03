@@ -49,8 +49,8 @@ describe('PasteSheet', () => {
     const rows = within(screen.getByTestId('paste-review')).getAllByRole('row');
     expect(rows.map((r) => r.textContent)).toEqual([
       'You pastedRead as',
-      'C       GBars: | C | C G | G | G | (rough)Estimated1 a bar2 a bar',
-      'la la la lyricLyrics kept: la la la | lyric | – | –',
+      'C       GBars: | C . . G | G |Estimated1 a bar2 a bar',
+      'la la la lyricLyrics kept: la la la lyric | –',
       'placeholderLeft out: no chords right above it',
     ]);
 
@@ -63,7 +63,7 @@ describe('PasteSheet', () => {
     await user.click(screen.getByTestId('paste-use'));
     expect(
       onUse.mock.calls[0]![0].sections[0].bars.map((b: { lyric?: string }) => b.lyric),
-    ).toEqual(['la la la', 'lyric', undefined, undefined]);
+    ).toEqual(['la la la lyric', undefined]);
 
     unmount();
     renderPaste();
@@ -92,7 +92,7 @@ describe('PasteSheet', () => {
     await user.click(screen.getByTestId('paste-read'));
     const group = screen.getByRole('radiogroup', { name: 'Bar lengths, line 1' });
     expect(within(group).getByRole('radio', { name: 'Estimated' })).toBeChecked();
-    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C \| C G \| G \| G \|/);
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C G \| G \|/);
     expect(screen.getByTestId('estimate-note')).toHaveTextContent(
       'Bar lengths are estimated from the lyrics. Check them by ear.',
     );
@@ -111,12 +111,7 @@ describe('PasteSheet', () => {
     expect(within(group).getByRole('radio', { name: 'Estimated' })).toHaveFocus();
     await user.click(screen.getByTestId('paste-use'));
     const bars = onUse.mock.calls[0]![0].sections[0].bars as { chords: { symbol: string }[] }[];
-    expect(bars.map((b) => b.chords.map((c) => c.symbol).join(' '))).toEqual([
-      'C',
-      'C G',
-      'G',
-      'G',
-    ]);
+    expect(bars.map((b) => b.chords.map((c) => c.symbol).join(' '))).toEqual(['C G', 'G']);
   });
 
   it('offers one or two a bar on a busy line with no lyrics, and nothing on a plain one', async () => {

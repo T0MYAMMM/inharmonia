@@ -4,15 +4,19 @@ import type { TimedChord } from './rebar';
 export { rebar, type TimedChord } from './rebar';
 
 /**
- * Estimate how long each chord on one line of a chord sheet lasts, from where
- * it sits over the lyric line under it. Pure and deterministic: the same steps
- * are ported to other tools and checked against `timing.vectors.json`, so
- * every step below uses only + − × ÷ and comparisons on doubles. "Round" means
+ * Estimate how long each chord on a chord sheet lasts, from where it sits over
+ * the lyric line under it. Pure and deterministic: the same steps are ported
+ * to other tools and checked against `timing.vectors.json`, so every step
+ * below uses only + − × ÷ and comparisons on doubles. "Round" means
  * floor(x + 0.5), and every tie goes to the candidate tried first.
  *
- * Input: the chords in order, each with its symbol and the column it starts
- * at; the lyric line under them; beats per bar (3 or 4). Both lines must have
- * their tabs expanded the same way first (`expandTabs`: stops every 4 columns).
+ * Input: the sheet's lines of chords that have words (lines without words are
+ * left alone: a bar a chord). Each line is its chords in order, each with its
+ * symbol and the column it starts at, and the lyric line under it. Then beats
+ * per bar (3 or 4), and a scale (1; ½ halves every length, 2 doubles it). Both
+ * lines of a pair must have their tabs expanded the same way first
+ * (`expandTabs`: stops every 4 columns). Steps 1 to 6 are per line; step 7
+ * looks at the whole sheet, because a song has one speed.
  *
  * 1. Words. Every run of letters in the lyric (apostrophes inside a run are
  *    kept, so "don't" is one word; hyphens and other marks split words) is a
@@ -56,16 +60,29 @@ export { rebar, type TimedChord } from './rebar';
  *    plus HOLD (a line ends on a held note); a chord after the words gets TAIL
  *    or its distance, whichever is larger.
  *
- * 7. The bar count. For each B in 4, 2, 1, 8 (in that order), skipping any
- *    with fewer beats than chords: T = B × beatsPerBar beats, r = T / total
- *    weight (beats a syllable), and the chords' ideal starts are their summed
- *    weights × r. Place them on whole beats (step 8), and cost B as
- *      PRIOR[B]
- *      + W_RATE × outside(r, RATE_LOW, RATE_HIGH)
- *      + W_CHORD × outside(T / chords, CHORD_LOW, CHORD_HIGH)
- *      + W_PLACE × (mean |start − ideal| / r)
- *    where outside(x, lo, hi) is lo/x − 1 below lo, x/hi − 1 above hi, else 0.
- *    The cheapest B wins.
+ * 7. Bar counts, with one speed for the sheet.
+ *    a. For each line and each B in BARS (in that order), skipping any with
+ *       fewer beats than chords: T = B × beatsPerBar beats; ρ = T / the line's
+ *       total weight, the speed (beats a syllable) that B means for the line;
+ *       the chords' ideal starts are their summed weights × ρ. Place them on
+ *       whole beats (step 8), and give B the line cost
+ *         PRIOR[B]
+ *         + W_CHORD × outside(T / chords, CHORD_LOW, CHORD_HIGH)
+ *         + W_PLACE × (mean |start − ideal| / ρ)
+ *       where outside(x, lo, hi) is lo/x − 1 below lo, x/hi − 1 above hi, else 0.
+ *    b. The sheet's speed r is one of those ρ, tried line by line and B by B
+ *       in the same order. Each line costs its cheapest B at r, adding
+ *       W_FIT × apart(ρ, r) to each B's line cost, where apart(x, y) is x/y − 1
+ *       when x ≥ y, else y/x − 1. The sheet costs the sum over its lines plus
+ *       lines × W_RATE × apart(r, RATE): songs are sung at about RATE beats a
+ *       syllable, so of two speeds a factor of 2 apart, the one nearer RATE
+ *       wins. The cheapest r wins.
+ *    c. Each line takes its cheapest B at r × scale, as in b. The scale
+ *       changes the sheet's speed, not each line: halved or doubled, a line
+ *       refits its bars, so one too crowded to halve keeps its length.
+ *    Doubling every length (2 bars of quarter notes or 4 of half notes) can't
+ *    be told apart from the words, so PRIOR doesn't favour 2 or 4: that is what
+ *    the scale, Half and Double in the paste review, is for.
  *
  * 8. Placing on beats (dynamic programming). The first chord starts on beat 0.
  *    Each later chord starts on a whole beat after the previous one, leaving
@@ -75,9 +92,9 @@ export { rebar, type TimedChord } from './rebar';
  *    beats 2 and 3. Keep the cheapest path; on a tie the earlier start wins.
  *    Each chord lasts until the next starts; the last until beat T.
  *
- * 9. Confidence is "good" when the runner-up bar count costs at least MARGIN
- *    more and the mean placing error (as in step 7) is at most CLOSE; else
- *    "rough".
+ * 9. Confidence, per line, is "good" when its runner-up B at r (as in 7b)
+ *    costs at least MARGIN more and its mean placing error (as in 7a) is at
+ *    most CLOSE; else "rough".
  */
 
 export interface LineChord {
@@ -94,18 +111,24 @@ export interface LineTiming {
   confidence: 'good' | 'rough';
 }
 
-/** Tuning, named in the steps above. */
+/** A line of chords and the words under it, for `estimateSheetTiming`. */
+export interface TimingLine {
+  chords: readonly LineChord[];
+  lyric: string;
+}
+
+/** Tuning, named in the steps above. Set on the "tune" fixtures only. */
 export const TIMING = {
   HOLD: 3,
   TAIL: 3,
   MIN_SPAN: 0.5,
-  BARS: [4, 2, 1, 8],
-  PRIOR: { 1: 1, 2: 0.2, 4: 0, 8: 0.6 } as Record<number, number>,
-  RATE_LOW: 0.7,
-  RATE_HIGH: 2.2,
+  BARS: [2, 4, 1, 8],
+  PRIOR: { 1: 1, 2: 0, 4: 0, 8: 0.6 } as Record<number, number>,
+  RATE: 0.9,
   CHORD_LOW: 2,
   CHORD_HIGH: 16,
   W_RATE: 2,
+  W_FIT: 2,
   W_CHORD: 1,
   W_PLACE: 0.5,
   GRID_HALF: 0.4,
@@ -266,6 +289,7 @@ function placeOf(col: number, words: readonly Word[], total: number, cpsy: numbe
 
 const outside = (x: number, lo: number, hi: number) =>
   x < lo ? lo / x - 1 : x > hi ? x / hi - 1 : 0;
+const apart = (x: number, y: number) => (x >= y ? x / y - 1 : y / x - 1);
 
 function grid(q: number, beatsPerBar: number): number {
   const beat = q % beatsPerBar;
@@ -321,18 +345,20 @@ function oneABar(chords: readonly LineChord[], beatsPerBar: number): LineTiming 
   };
 }
 
-/**
- * How long each chord lasts on a line of chords over a line of lyrics, and how
- * many bars the line takes. See the steps at the top of this file.
- */
-export function estimateLineTiming(
-  chords: readonly LineChord[],
-  lyric: string,
-  beatsPerBar: number,
-): LineTiming {
-  if (chords.length === 0) return { chords: [], bars: 0, confidence: 'rough' };
-  const words = wordsOf(lyric);
-  if (words.length === 0) return oneABar(chords, beatsPerBar);
+/** One way to time a line: B bars, its speed, its starts and its cost (step 7a). */
+interface Option {
+  bars: number;
+  rho: number;
+  starts: number[];
+  cost: number;
+  error: number;
+}
+
+/** Steps 1 to 7a for one line: its options, or none when it has no words. */
+function lineOptions(line: TimingLine, beatsPerBar: number): Option[] | null {
+  const { chords } = line;
+  const words = wordsOf(line.lyric);
+  if (words.length === 0) return null;
   const last = words.at(-1)!;
   const total = last.before + last.syllables;
   const cpsy = Math.max(1, (last.end - words[0]!.start) / total);
@@ -352,35 +378,93 @@ export function estimateLineTiming(
     run += w;
   }
 
-  // Step 7: the bar count.
-  let best: { bars: number; starts: number[]; cost: number; error: number } | null = null;
-  let runnerUp = Infinity;
+  const options: Option[] = [];
   for (const bars of TIMING.BARS) {
     const T = bars * beatsPerBar;
     if (T < chords.length) continue;
-    const r = T / sum;
-    const ideal = marks.map((m) => m * r);
+    const rho = T / sum;
+    const ideal = marks.map((m) => m * rho);
     const starts = place(ideal, T, beatsPerBar);
     let off = 0;
     for (let i = 0; i < starts.length; i++) off += Math.abs(starts[i]! - ideal[i]!);
-    const error = off / chords.length / r;
+    const error = off / chords.length / rho;
     const cost =
       TIMING.PRIOR[bars]! +
-      TIMING.W_RATE * outside(r, TIMING.RATE_LOW, TIMING.RATE_HIGH) +
       TIMING.W_CHORD * outside(T / chords.length, TIMING.CHORD_LOW, TIMING.CHORD_HIGH) +
       TIMING.W_PLACE * error;
-    if (!best || cost < best.cost) {
-      if (best) runnerUp = Math.min(runnerUp, best.cost);
-      best = { bars, starts, cost, error };
-    } else runnerUp = Math.min(runnerUp, cost);
+    options.push({ bars, rho, starts, cost, error });
   }
-  if (!best) return oneABar(chords, beatsPerBar);
+  return options;
+}
 
-  const T = best.bars * beatsPerBar;
-  const timed = chords.map((c, i) => ({
-    symbol: c.symbol,
-    beats: (best.starts[i + 1] ?? T) - best.starts[i]!,
-  }));
-  const good = runnerUp - best.cost >= TIMING.MARGIN && best.error <= TIMING.CLOSE;
-  return { chords: timed, bars: best.bars, confidence: good ? 'good' : 'rough' };
+/** A line's cheapest option at speed r, and what the runner-up costs (step 7b). */
+function pick(options: readonly Option[], r: number) {
+  let best: Option | null = null;
+  let bestCost = Infinity;
+  let runnerUp = Infinity;
+  for (const o of options) {
+    const cost = o.cost + TIMING.W_FIT * apart(o.rho, r);
+    if (cost < bestCost) {
+      runnerUp = bestCost;
+      best = o;
+      bestCost = cost;
+    } else if (cost < runnerUp) runnerUp = cost;
+  }
+  return { best: best!, cost: bestCost, runnerUp };
+}
+
+export interface SheetTimingOptions {
+  /** ½ halves every length, 2 doubles it (step 7c). Default 1. */
+  scale?: number;
+}
+
+/**
+ * How long each chord lasts on each line of chords over words in a sheet, and
+ * how many bars each line takes, with one speed for the whole sheet. See the
+ * steps at the top of this file. Lines with no words get a bar a chord.
+ */
+export function estimateSheetTiming(
+  lines: readonly TimingLine[],
+  beatsPerBar: number,
+  { scale = 1 }: SheetTimingOptions = {},
+): LineTiming[] {
+  const all = lines.map((l) => (l.chords.length === 0 ? null : lineOptions(l, beatsPerBar)));
+  const timed = all.filter((o): o is Option[] => !!o && o.length > 0);
+
+  // Step 7b: the sheet's speed.
+  let r = 1;
+  let best = Infinity;
+  for (const options of timed)
+    for (const { rho } of options) {
+      let cost = timed.length * TIMING.W_RATE * apart(rho, TIMING.RATE);
+      for (const o of timed) cost += pick(o, rho).cost;
+      if (cost < best) {
+        best = cost;
+        r = rho;
+      }
+    }
+
+  return lines.map((line, i) => {
+    const options = all[i];
+    if (line.chords.length === 0) return { chords: [], bars: 0, confidence: 'rough' };
+    if (!options?.length) return oneABar(line.chords, beatsPerBar);
+    // Step 7c, then 8 and 9.
+    const { best: o, cost, runnerUp } = pick(options, r * scale);
+    const T = o.bars * beatsPerBar;
+    const chords = line.chords.map((c, k) => ({
+      symbol: c.symbol,
+      beats: (o.starts[k + 1] ?? T) - o.starts[k]!,
+    }));
+    const good = runnerUp - cost >= TIMING.MARGIN && o.error <= TIMING.CLOSE;
+    return { chords, bars: o.bars, confidence: good ? 'good' : 'rough' };
+  });
+}
+
+/** One line on its own: a sheet of one line (see `estimateSheetTiming`). */
+export function estimateLineTiming(
+  chords: readonly LineChord[],
+  lyric: string,
+  beatsPerBar: number,
+): LineTiming {
+  return estimateSheetTiming([{ chords, lyric }], beatsPerBar)[0]!;
 }

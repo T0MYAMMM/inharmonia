@@ -3,7 +3,7 @@ import { rebar } from './rebar';
 import { parseHeader, sectionTypeOf, type SectionType } from './sections';
 import { NO_CHORD, normalizeChord } from './symbols';
 import { parseBars } from './syntax';
-import { estimateLineTiming, expandTabs, type LineChord, type LineTiming } from './timing';
+import { estimateSheetTiming, expandTabs, type LineChord, type LineTiming } from './timing';
 import { evenBeats, LIMITS, type ChartBar, type ChartSection, type ChordChart } from './types';
 
 /**
@@ -72,6 +72,11 @@ export interface ParseSheetOptions {
    * as they are read, and only counted.
    */
   keepLyrics?: boolean;
+  /**
+   * Scale every estimated length: ½ halves them, 2 doubles them (the Half and
+   * Double in the review). Default 1.
+   */
+  scale?: number;
 }
 
 /** Bar lines, repeat marks, N.C., brackets and dashes: ignored when judging a line. */
@@ -283,6 +288,11 @@ export function parseSheet(
   const columns = new Map<number, number[]>();
   /** Chords and their columns on a line of chords (not bar lines), by line number, for timing. */
   const placed = new Map<number, LineChord[]>();
+  /**
+   * Lines to time, with their words, read only for this call: the whole sheet
+   * is timed at the end, at one speed. The words go no further.
+   */
+  const toTime: { line: PastedLine; chords: LineChord[]; lyric: string }[] = [];
   const ensureSection = () => {
     if (current === null) {
       sections.push({ label: 'Section', type: 'custom', repeat: 1 });
@@ -393,14 +403,7 @@ export function parseSheet(
       const kept = keep && hasWords ? cutLyric(plain, cols) : null;
       if (kept) keptLines++;
       else if (hasWords) lyricLines++;
-      const estimate = hasWords
-        ? estimateLineTiming(
-            inlineChords.map((symbol, k) => ({ symbol, col: cols[k]! })),
-            plain,
-            beatsPerBar,
-          )
-        : undefined;
-      lines.push({
+      const inlineLine: PastedLine = {
         n,
         kind: 'inline',
         chords: inlineChords,
@@ -409,8 +412,14 @@ export function parseSheet(
         lyricsRemoved: hasWords && !kept,
         section: ensureSection(),
         ...(kept ? { words: kept.words, ...(kept.cut ? { cut: true } : {}) } : {}),
-        ...(estimate ? { estimate } : {}),
-      });
+      };
+      if (hasWords)
+        toTime.push({
+          line: inlineLine,
+          chords: inlineChords.map((symbol, k) => ({ symbol, col: cols[k]! })),
+          lyric: plain,
+        });
+      lines.push(inlineLine);
       return;
     }
 
@@ -451,9 +460,9 @@ export function parseSheet(
     // Right under a line of chords: the words time its chords, then are dropped unless kept.
     const above = lines.at(-1);
     const under = above?.n === n - 1 ? above : undefined;
-    const timed = under && !under.estimate ? placed.get(under.n) : undefined;
+    const timed = under && !toTime.some((t) => t.line === under) ? placed.get(under.n) : undefined;
     if (under && timed?.length && /\p{L}/u.test(line))
-      under.estimate = estimateLineTiming(timed, line, beatsPerBar);
+      toTime.push({ line: under, chords: timed, lyric: line });
     const cols = keep && under && !under.words ? columns.get(under.n) : undefined;
     if (above && cols?.length) {
       const { words, cut } = cutLyric(line, cols);
@@ -483,6 +492,8 @@ export function parseSheet(
       section: current,
     });
   });
+  const estimates = estimateSheetTiming(toTime, beatsPerBar, { scale: options.scale ?? 1 });
+  toTime.forEach((t, i) => (t.line.estimate = estimates[i]));
   return { lines, sections, lyricLines, keptLines };
 }
 
