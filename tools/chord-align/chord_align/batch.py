@@ -59,6 +59,11 @@ _COVER_WORDS = {
 _COVER_PHRASES = {("nada", "asli"): -2}
 #: A one-word title this short must have the artist in the name too.
 SHORT_TITLE = 3
+#: Typos allowed in an artist's name (letters and digits, spaces left out), by its length:
+#: none up to 4 ("Padi" is not "pada"), one up to 6, two from 7 on. "Shelia on 7" is Sheila on 7;
+#: "Dewa19" is Dewa 19.
+ARTIST_TYPOS = ((4, 0), (6, 1))
+ARTIST_TYPOS_LONG = 2
 
 
 def words(text: str) -> list[str]:
@@ -91,6 +96,47 @@ def rank(name: str, artist: str | None = None) -> int:
     return score
 
 
+def typos(a: str, b: str) -> int:
+    """Edits from ``a`` to ``b``: letters added, dropped, changed or swapped (two side by side)."""
+    prev2: list[int] = []
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, start=1):
+        cur = [i] + [0] * len(b)
+        for j, cb in enumerate(b, start=1):
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb))
+            if i > 1 and j > 1 and ca == b[j - 2] and a[i - 2] == cb:
+                cur[j] = min(cur[j], prev2[j - 2] + 1)
+        prev2, prev = prev, cur
+    return prev[-1]
+
+
+def _allowed_typos(name: str) -> int:
+    return next((n for longest, n in ARTIST_TYPOS if len(name) <= longest), ARTIST_TYPOS_LONG)
+
+
+def artist_in(tokens: list[str], artist: str | None) -> int:
+    """How surely the file name holds the artist: 2 as written, 1 with a typo or two, 0 not at all.
+
+    Words are compared with their spaces left out, so "Dewa19" is "Dewa 19".
+    """
+    target = words(artist or "")
+    if not target:
+        return 0
+    if _has_phrase(tokens, target):
+        return 2
+    joined = "".join(target)
+    allowed = _allowed_typos(joined)
+    best = 0
+    for size in range(max(1, len(target) - 1), len(target) + 2):
+        for i in range(len(tokens) - size + 1):
+            window = "".join(tokens[i : i + size])
+            if window == joined:
+                return 2
+            if allowed and abs(len(window) - len(joined)) <= allowed and typos(window, joined) <= allowed:
+                best = 1
+    return best
+
+
 @dataclass(frozen=True)
 class Match:
     """A recording's chart, or why it has none."""
@@ -99,17 +145,24 @@ class Match:
     chart: ChartSource | None
     #: "manifest" or "name"; for no chart, the reason.
     how: str
+    #: Other charts of the same song (title and artist) that matched as well, not used.
+    others: tuple[ChartSource, ...] = ()
 
 
 def match_name(audio: Path, charts: list[ChartSource]) -> Match:
-    """The chart whose title the file name holds; the artist breaks a tie, the longest title wins."""
+    """The chart whose title the file name holds; the artist breaks a tie, the longest title wins.
+
+    The title must be there word for word. The artist may have a typo or two
+    (``artist_in``). A one-word title of ``SHORT_TITLE`` letters or fewer
+    ("Dan", also a word in Indonesian) needs the artist too.
+    """
     tokens = words(audio.stem)
-    scored: list[tuple[tuple[bool, int], ChartSource]] = []
+    scored: list[tuple[tuple[int, int], ChartSource]] = []
     for c in charts:
         title = words(c.title)
         if not _has_phrase(tokens, title):
             continue
-        by_artist = bool(c.artist) and _has_phrase(tokens, words(c.artist or ""))
+        by_artist = artist_in(tokens, c.artist)
         if len(title) == 1 and len(title[0]) <= SHORT_TITLE and not by_artist:
             continue
         scored.append(((by_artist, len(title)), c))
@@ -120,7 +173,9 @@ def match_name(audio: Path, charts: list[ChartSource]) -> Match:
     names = sorted({_song(c) for c in top})
     if len(names) > 1:
         return Match(audio, None, f"it could be {' or '.join(names)}; name it in a manifest")
-    return Match(audio, top[0], "name")
+    # The same song in several research folders: the first file is used, the others named.
+    ordered = sorted(top, key=lambda c: str(c.path))
+    return Match(audio, ordered[0], "name", tuple(ordered[1:]))
 
 
 def _song(c: ChartSource) -> str:
@@ -251,6 +306,8 @@ class Row:
     song: str
     recording: str
     others: list[str] = field(default_factory=list)
+    chart: ChartSource | None = None
+    other_charts: tuple[ChartSource, ...] = ()
     report: str | None = None
     result: Result | None = None
     error: str | None = None
@@ -270,6 +327,17 @@ def _skipped_cell(r: Result) -> str:
     return "; ".join(kept) or "–"
 
 
+def _where(chart: ChartSource | None, base: Path | None) -> str:
+    if chart is None:
+        return "?"
+    if base is not None:
+        try:
+            return str(chart.path.relative_to(base))
+        except ValueError:
+            pass
+    return chart.path.name
+
+
 def _cell(text: str) -> str:
     return text.replace("|", "\\|").replace("\n", " ")
 
@@ -279,8 +347,9 @@ def summary(
     unmatched: list[Match],
     unread: list[tuple[Path, str]],
     counts: str,
+    charts_dir: Path | None = None,
 ) -> str:
-    """``summary.md``: a line per song, then the recordings not matched and the charts not read."""
+    """``summary.md``: a line per song, the charts used, the recordings not matched, the charts not read."""
     lines = ["# Batch alignment", "", counts, ""]
     lines += [
         "| Song | Recording used | Tempo | Key and transposition | Confidence | Sections written "
@@ -305,6 +374,16 @@ def summary(
         )
     if not rows:
         lines.append("| – | – | – | – | – | – | – | no recording matched a chart |")
+    if rows:
+        lines += ["", "## Charts used", ""]
+        for row in rows:
+            line = f"- {row.song}: {_where(row.chart, charts_dir)}"
+            if row.other_charts:
+                line += (
+                    f" (the same song is also in {', '.join(_where(c, charts_dir) for c in row.other_charts)}"
+                    "; name one in a manifest to use it)"
+                )
+            lines.append(line + ".")
     lines += ["", "## Recordings not matched", ""]
     lines += [f"- {m.audio.name}: {m.how}." for m in unmatched] or ["None."]
     lines += ["", "## Chart files not read", ""]
@@ -409,7 +488,13 @@ def run_batch(
         while name in names:
             name, n = f"{slug(_song(song.chart))}-{n}", n + 1
         names.add(name)
-        row = Row(_song(song.chart), song.used.audio.name, [m.audio.name for m in song.recordings[1:]])
+        row = Row(
+            _song(song.chart),
+            song.used.audio.name,
+            [m.audio.name for m in song.recordings[1:]],
+            song.chart,
+            song.used.others,
+        )
         log.info("aligning song %d", len(rows) + 1)
         try:
             result = align_song(song, opts)
@@ -446,5 +531,6 @@ def run_batch(
             f"\n\n**No charts were read** from {charts_path}: {len(files)} .json or .txt files found"
             + (", none of them a chart (see “Chart files not read”)." if files else ".")
         )
-    (out_dir / SUMMARY).write_text(summary(rows, unmatched, unread, counts), encoding="utf-8")
+    where = charts_path if charts_path.is_dir() else charts_path.parent
+    (out_dir / SUMMARY).write_text(summary(rows, unmatched, unread, counts, where), encoding="utf-8")
     return Batch(rows, unmatched, len(charts), written)
