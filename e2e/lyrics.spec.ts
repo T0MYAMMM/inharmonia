@@ -74,12 +74,13 @@ test.describe('lyrics in exports', () => {
       ).toHaveAccessibleDescription('In the file: keep it to yourself.');
       await page.getByTestId('export-download').click();
     });
-    // Each chord's column falls inside a word: the word goes to that chord's bar.
+    // Each chord's column falls inside a word: the word goes to that chord's bar, and the
+    // words of chords that start in one bar (as estimated from them) share it.
     expect(JSON.parse(sung.text).items[0].chart.sections[0].lyrics).toEqual([
       MARK,
-      'lanterns drift',
-      'past quiet',
+      'lanterns drift past quiet',
       'harbours',
+      '',
     ]);
     await expect(
       page.getByRole('status').filter({ hasText: 'inharmonia-chart-quiet-harbours' }),
@@ -104,8 +105,7 @@ test.describe('lyrics in exports', () => {
     await copies.first().click();
     await expect(page.locator('[data-score-view]').getByTestId('bar-lyric')).toHaveText([
       MARK,
-      'lanterns drift',
-      'past quiet',
+      'lanterns drift past quiet',
       'harbours',
     ]);
 
