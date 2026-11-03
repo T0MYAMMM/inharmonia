@@ -608,16 +608,35 @@ No fixture, test, doc or screenshot uses audio or notes from existing songs.
 
 ### Evaluating chord timing
 
-`npm run eval:timing` reads 15 chord sheets (`src/core/charts/timing.fixtures.ts`) the way a paste
-does and compares each line's bars with the bars the song really has. Thirteen are public-domain
-songs (traditional, or words published before 1929) in 4/4 and 3/4, written with the sloppiness
-of pasted sheets: chords nudged a column or two, tabs mixed with spaces, words before the first
-chord, chords over blank space. Two are Indonesian songs written for the set. It prints, per song
-and overall, beat accuracy (beats with the right chord) and bar-count match, for the estimate and
-for one chord a bar. Overall, the estimate gets 86.2% of beats and 89.2% of bar counts right,
-against 48.5% and 16.9% for one chord a bar. Swing Low is the known miss: its short 2-bar lines
-read as 4. `-- --lines` shows every line's bars; `-- --write-vectors` rewrites
-`timing.vectors.json` after a deliberate change. The unit tests pin these numbers.
+`npm run eval:timing` reads 25 chord sheets (`src/core/charts/timing.fixtures.ts`) the way a paste
+does and compares each line's bars with the bars the song really has. They are public-domain songs
+(traditional, or words published before 1929) in 4/4 and 3/4, from hymns in half notes to
+quarter- and eighth-note songs with 2-bar lines and a chord every 2 beats, plus two Indonesian
+songs written for the set, all with the sloppiness of pasted sheets: chords nudged a column or
+two, tabs mixed with spaces, a lone chord at the start of a line, words before the first chord,
+chords over blank space. The set is split: 19 **tune** sheets set the constants in `timing.ts`; 6
+**test** sheets were written down before the constants were last set and never used to set them.
+For each half it prints, per song and overall, for the estimate and for one chord a bar: beat
+accuracy (beats with the right chord; a wrong bar count costs), bar-count match, a scale-free
+score (the right chord at the same place in the line, both stretched to one length, so a line read
+at double length still scores) and the lines read at twice or half their bars. A last row scores
+each song at its best of Half, as estimated and Double: what one click in the review gets back.
+
+|                           | beats |  bars | scale-free | ×2 lines |
+| ------------------------- | ----: | ----: | ---------: | -------: |
+| tune, estimated           | 78.6% | 84.0% |      92.4% | 13 of 81 |
+| tune, one chord a bar     | 49.9% | 19.8% |      88.2% | 29 of 81 |
+| tune, with Half or Double | 84.5% | 92.6% |      92.1% |  6 of 81 |
+| test, estimated           | 59.2% | 66.7% |      91.7% |  8 of 24 |
+| test, one chord a bar     | 61.7% | 54.2% |      96.9% |  8 of 24 |
+| test, with Half or Double | 88.9% | 95.8% |      89.6% |  1 of 24 |
+
+Whether a line is 2 bars of quarter notes or 4 of half notes can't be read from its words, so most
+misses are whole songs read at double or half length (Saints, Red River Valley and Old Smoky at
+half; She'll Be Coming 'Round the Mountain at double), which Half or Double puts right.
+`-- --only tune` (or `test`) prints one half, `-- --lines` every line's bars, and
+`-- --write-vectors` rewrites `timing.vectors.json` after a deliberate change. The unit tests pin
+these numbers.
 
 ## Chord charts
 
@@ -655,13 +674,18 @@ entered once and played as often as it comes back.
 - **Bar lengths from the lyrics** (`src/core/charts/timing.ts`). A sheet has no bar lines, but the
   column a chord sits over says where in the words it changes. For a line of chords with a lyric
   line right under it (or inline chords in words), each chord's length is estimated from the
-  syllables up to the next chord (English and Indonesian are counted by their own rules), the line
-  is given a whole number of bars (usually 2 or 4) and the chords whole beats on a 2-beat grid,
-  and `rebar.ts` packs them into bars, splitting a chord across a bar line where it must. Words
-  are read for this in passing and dropped unless you keep them. The review table shows the bars
-  each line makes, with a choice per line of **Estimated**, **1 a bar** or **2 a bar** (lines with
-  words start on Estimated), and says "Bar lengths are estimated from the lyrics. Check them by
-  ear." A line with no words under it gets a bar a chord, as before; bar lines keep their bars.
+  syllables up to the next chord (English and Indonesian are counted by their own rules). A song
+  is sung at one speed, so one speed (beats a syllable) is chosen for the whole sheet, and each
+  line gets the whole number of bars (usually 2 or 4) that fits it, the chords whole beats on a
+  2-beat grid; `rebar.ts` packs them into bars, splitting a chord across a bar line where it must.
+  Words are read for this in passing and dropped unless you keep them. The review table shows the
+  bars each line makes, with a choice per line of **Estimated**, **1 a bar** or **2 a bar** (lines
+  with words start on Estimated), and says "Bar lengths are estimated from the lyrics. Check them
+  by ear." Whether a line is 2 bars of quarter notes or 4 of half notes can't be told from its
+  words, so **Half** and **Double** under the table read every estimated line at half or double
+  the speed in one click. A line with no words under it gets a bar a chord, as before; bar lines
+  keep their bars. A chord alone at the start of a line, over a line of words, is read as a line
+  of chords (not a one-word lyric such as "A" in a run of words).
   The steps are written out at the top of `timing.ts` for other implementations, which can check
   themselves against `timing.vectors.json`.
 - **Lyrics only if you ask, and only here.** By default lyric lines are dropped as the sheet is
