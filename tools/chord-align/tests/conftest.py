@@ -11,7 +11,7 @@ import pytest
 
 from chord_align.evaluate import Score, score
 from chord_align.pipeline import Result
-from chord_align.renders import RENDERS
+from chord_align.renders import ALL_RENDERS
 
 TOOL = Path(__file__).resolve().parents[1]
 REPO = TOOL.parents[1]
@@ -29,7 +29,7 @@ _SCORES: dict[str, tuple[Score, Result]] = {}
 def scored(name: str) -> tuple[Score, Result]:
     """Render, align and score once per test session."""
     if name not in _SCORES:
-        _SCORES[name] = score(next(r for r in RENDERS if r.name == name))
+        _SCORES[name] = score(next(r for r in ALL_RENDERS if r.name == name))
     return _SCORES[name]
 
 
