@@ -1,5 +1,8 @@
 import type { TimedChord } from './rebar';
 
+// Packing timed chords into bars belongs with timing them.
+export { rebar, type TimedChord } from './rebar';
+
 /**
  * Estimate how long each chord on one line of a chord sheet lasts, from where
  * it sits over the lyric line under it. Pure and deterministic: the same steps
