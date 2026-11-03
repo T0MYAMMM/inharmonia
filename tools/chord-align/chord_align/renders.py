@@ -8,8 +8,9 @@ Band renders (``band-*``) sound more like a recording: strummed guitar, a
 walking bass, a melody with non-chord tones, syncopated drums, tempo drift of
 ±3%, a slowing at the end, reverb and noise. Among them: a capo recording, a
 chart whose lengths are all half the truth (written 2+2, played 4+4), the same
-with the chart's tempo halved too, a recording with one section more than the
-chart, one with a section less, and a wrong chart.
+with the chart's tempo halved too, a ballad at 63 whose chart says 126, a
+pickup with pushed changes, a quiet verse over a pedal bass, a recording with
+one section more than the chart, one with a section less, and a wrong chart.
 """
 
 from __future__ import annotations
@@ -228,6 +229,63 @@ BAND_RENDERS: tuple[RenderSpec, ...] = (
         ),
         form=("verse", "chorus", "verse", "chorus"),
         seed=18,
+        **(_BAND | {"exact": True}),
+    ),
+    RenderSpec(
+        name="band-ballad-63",
+        tempo=63,
+        meter=4,
+        key=("D", "major"),
+        # A slow ballad, a chord a bar, whose chart guesses double the tempo.
+        chart_tempo=126,
+        sections=(
+            _band_section("verse", "Bait", "verse", ["D", "Bm", "G", "A", "D", "F#m", "G", "A"], 4),
+            _band_section("chorus", "Reff", "chorus", ["G", "A", "F#m", "Bm", "Em", "A", "D", "D"], 4),
+        ),
+        form=("verse", "chorus", "verse", "chorus"),
+        seed=23,
+        **(_BAND | {"exact": True}),
+    ),
+    RenderSpec(
+        name="band-pickup-90",
+        tempo=90,
+        meter=4,
+        key=("Ab", "major"),
+        # A beat of the first chord before the first bar, and the guitar pushing
+        # each change half a beat early.
+        pickup=1,
+        push=True,
+        sections=(
+            _band_section("intro", "Intro", "intro", ["Ab", "Db", "Ab", "Db"], 4),
+            _band_section("verse", "Verse", "verse", ["Ab", "Db", "Ab", "Db", "Cm", "Db", "Cm", "Db"], 4),
+            _band_section("chorus", "Reff", "chorus", ["Fm", "Db", "Eb", "Ab", "Fm", "Db", "Eb", "Eb"], 4),
+        ),
+        form=("intro", "verse", "chorus", "verse", "chorus"),
+        seed=21,
+        **(_BAND | {"exact": True}),
+    ),
+    RenderSpec(
+        name="band-soft-verse-90",
+        tempo=90,
+        meter=4,
+        key=("Ab", "major"),
+        # A quiet verse with no drums, the melody on top and an Ab held in the
+        # bass under its changing chords, between a loud intro and chorus.
+        sections=(
+            _band_section("intro", "Intro", "intro", ["Ab", "Db", "Ab", "Db"], 4),
+            SectionSpec(
+                "verse",
+                "Verse",
+                "verse",
+                ("Ab", "Db", "Ab", "Db", "Cm", "Db", "Cm", "Db"),
+                ("Ab", "Db", "Ab", "Db", "Cm", "Db", "Cm", "Db"),
+                level=0.35,
+                pedal="Ab",
+            ),
+            _band_section("chorus", "Reff", "chorus", ["Fm", "Db", "Eb", "Ab", "Fm", "Db", "Eb", "Eb"], 4),
+        ),
+        form=("intro", "verse", "chorus", "verse", "chorus"),
+        seed=22,
         **(_BAND | {"exact": True}),
     ),
     RenderSpec(

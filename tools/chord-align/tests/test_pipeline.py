@@ -77,6 +77,41 @@ def test_lengths_written_at_half_the_truth_are_doubled_not_the_tempo_halved() ->
 
 
 @pytest.mark.slow
+def test_a_ballad_at_63_with_a_chord_a_bar_is_not_read_at_126() -> None:
+    score, result = scored("band-ballad-63")
+    assert result.tempo == 63
+    assert score.bars_exact
+    verse = next(s for s in result.sections if s.section_id == "verse")
+    assert verse.lengths is not None and set(verse.lengths.lengths) == {4}
+    # The report names the other octave.
+    assert result.other_octave is not None and round(result.other_octave[0]) == 126
+    assert "The other octave would be 126 bpm with 8 beats a chord" in build_report(result)
+
+
+@pytest.mark.slow
+def test_a_pickup_does_not_shift_the_bars() -> None:
+    _, result = scored("band-pickup-90")
+    intro = next(s for s in result.sections if s.section_id == "intro")
+    assert intro.bars == ["Ab", "Db", "Ab", "Db"]
+    # The pickup was heard: the intro's first chord started before the first bar.
+    first = int(result.alignment.starts[0])
+    assert (first - result.phase) % 4 != 0
+    assert intro.lengths is not None and intro.lengths.off_downbeat == [0]
+
+
+@pytest.mark.slow
+def test_a_quiet_verse_over_a_pedal_keeps_its_chords() -> None:
+    # The Laskar Pelangi verse: Ab Db Ab Db Cm Db Cm Db, a bar each, quiet, over an
+    # Ab held in the bass. It once came out as 20 2 8 1 1 1 1 2.
+    score, result = scored("band-soft-verse-90")
+    verse = next(s for s in result.sections if s.section_id == "verse")
+    assert verse.lengths is not None
+    assert verse.lengths.occurrences == [[4] * 8, [4] * 8]
+    assert verse.bars == ["Ab", "Db", "Ab", "Db", "Cm", "Db", "Cm", "Db"]
+    assert score.beat_accuracy >= 0.95
+
+
+@pytest.mark.slow
 def test_form_changes_are_found_and_reported() -> None:
     _, extra = scored("band-extra-100")
     assert [x.split(" (")[0] for x in extra.played_twice] == ["Chorus"]
@@ -154,9 +189,11 @@ def test_musical_priors_know_nothing_of_the_chart() -> None:
     assert tempo_cost(60) == tempo_cost(100) == tempo_cost(160) == 0
     assert tempo_cost(42) > 0 and tempo_cost(168) > 0
     assert tempo_cost(42) > tempo_cost(168)
-    assert rhythm_cost(np.array([2, 4, 8])) == 0
+    assert rhythm_cost(np.array([2, 4, 4])) == 0
+    assert rhythm_cost(np.array([3, 3])) == 0
+    assert 0 < rhythm_cost(np.array([8, 8])) < rhythm_cost(np.array([16, 16]))
+    assert rhythm_cost(np.array([4, 4])) < rhythm_cost(np.array([8, 8]))  # a ballad: 63 over 126
     assert rhythm_cost(np.array([1, 1, 2])) > 0
-    assert rhythm_cost(np.array([16, 16])) > 0
 
 
 def test_skip_reasons() -> None:
