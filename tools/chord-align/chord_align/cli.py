@@ -36,6 +36,11 @@ def _align_parser() -> argparse.ArgumentParser:
         help="also set the key: the sounding key, or, for a transposed recording, the view's transpose",
     )
     p.add_argument(
+        "--lengths-trusted",
+        action="store_true",
+        help="the chart's lengths are real, not guesses: use them as a guide for lengths and tempo",
+    )
+    p.add_argument(
         "--min-confidence",
         type=float,
         default=MIN_CONFIDENCE,
@@ -100,7 +105,14 @@ def _align(argv: list[str]) -> int:
         # The chart is checked before any audio is read.
         chart = read_chart(load_file(ns.chart), ns.item)
         samples = load_audio(ns.audio)
-        result = run(chart, samples, SAMPLE_RATE, set_key=ns.set_key, min_confidence=ns.min_confidence)
+        result = run(
+            chart,
+            samples,
+            SAMPLE_RATE,
+            set_key=ns.set_key,
+            min_confidence=ns.min_confidence,
+            lengths_trusted=ns.lengths_trusted,
+        )
     except ChartError as e:
         print(f"chord-align: {ns.chart.name}: {e}", file=sys.stderr)
         return 1
