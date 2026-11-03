@@ -87,14 +87,21 @@ chord-align batch ~/Music/songs charts/ --out aligned/ --manifest pairs.csv
 
 The first folder holds the recordings (not its subfolders). The second is a chart file or a
 folder of them, searched all the way down: Inharmonia exports (every chart in them), research
-JSON and `.txt` sheets. `index.json` files are skipped.
+JSON and `.txt` sheets, any number of them. Symlinked folders are followed, each real folder
+once, so a link back up the tree cannot loop. `index.json` files and hidden folders are skipped.
+If no chart is read, the summary says so and the command fails.
 
 - **Matching.** A recording goes with the chart whose title is in its file name, word for word,
   whatever else the name holds: `NIDJI - Laskar Pelangi (Official Music Video).mp4`,
   `Laskar Pelangi - Nada Asli Nidji (Capo 1).m4a` and `laskar pelangi (lyrics).mp3` all find
   Laskar Pelangi. The longest title wins, and the artist's name settles two charts with one
-  title. A one-word title of three letters or fewer needs the artist too. A recording that fits
-  no chart, or two equally, is listed and left alone, never guessed.
+  title. A one-word title of three letters or fewer needs the artist too: `Dan` is also a word.
+  The artist may be misspelt a little, as names often are: spaces aside, one letter wrong (or two
+  side by side swapped) in a name of 5 or 6 letters, two from 7 on, none in a shorter one. So
+  `Shelia on 7 - Dan.m4a` finds Dan by Sheila on 7, and `Dewa19` is Dewa 19. A recording that
+  fits no chart, or two songs equally, is listed and left alone, never guessed. When the same
+  song is in several folders (chords-id, chords-ug), the first file by path is used, and the
+  summary names the others.
 - **A manifest** overrides the matching for the files it lists: a CSV with the header
   `audio,chart`. The audio is a file name in the recordings folder or a path. The chart is a
   chart's id, its file (relative to the charts folder), or its title, as `Laskar Pelangi` or
@@ -106,11 +113,13 @@ JSON and `.txt` sheets. `index.json` files are skipped.
 
 It writes into `--out`:
 
-- `aligned-charts.json`: every aligned chart in one file to import;
+- `aligned-charts.json`: every aligned chart in one file to import. A file holds up to 500
+  charts, so past that they go into `aligned-charts-1.json`, `aligned-charts-2.json` and on, and
+  the summary names them;
 - for each song, `<song>.report.md` and `<song>.suggestions.json`;
 - `summary.md`: a line per song (the recording used, tempo, key and transposition, confidence,
-  sections written, suggestions, and what was skipped and why), then the recordings not matched
-  and the chart files that could not be read.
+  sections written, suggestions, and what was skipped and why), then the chart file each song
+  used, the recordings not matched and the chart files that could not be read.
 
 Charts read in a batch have their lyrics taken out, so the combined file holds none. The other
 options (`--set-key`, `--lengths-trusted`, `--min-confidence`, `--apply-suggestions`) apply to
