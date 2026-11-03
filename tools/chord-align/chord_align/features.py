@@ -58,15 +58,35 @@ def analyse(y: np.ndarray, sr: int) -> Signal:
     """HPSS, onset strength, harmonic chroma and loudness, frame by frame."""
     harmonic, _ = librosa.effects.hpss(y)
     onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=HOP)
-    chroma = librosa.feature.chroma_cqt(
-        y=harmonic, sr=sr, hop_length=HOP, fmin=librosa.note_to_hz("C3"), n_octaves=5
-    )
-    bass = librosa.feature.chroma_cqt(
-        y=harmonic, sr=sr, hop_length=HOP, fmin=librosa.note_to_hz("C1"), n_octaves=2
-    )
+    chroma = _log_chroma(harmonic, sr, "C3", 5)
+    bass = _log_chroma(harmonic, sr, "C1", 2)
     rms = librosa.feature.rms(y=harmonic, hop_length=HOP)[0]
     n = min(len(onset_env), chroma.shape[1], bass.shape[1], len(rms))
     return Signal(sr, len(y) / sr, onset_env[:n], chroma[:, :n], bass[:, :n], rms[:n])
+
+
+#: Log compression of the constant-Q magnitudes before they fold into chroma, so
+#: one loud voice (a melody over a quiet verse) does not drown the chord.
+LOG_GAIN = 100.0
+
+
+def _log_chroma(y: np.ndarray, sr: int, lowest: str, octaves: int) -> np.ndarray:
+    """Chroma from log-compressed constant-Q magnitudes, three bins a semitone."""
+    bins = 36
+    cqt = np.abs(
+        librosa.cqt(
+            y,
+            sr=sr,
+            hop_length=HOP,
+            fmin=librosa.note_to_hz(lowest),
+            n_bins=bins * octaves,
+            bins_per_octave=bins,
+        )
+    )
+    compressed = np.log1p(LOG_GAIN * cqt / (cqt.max() or 1.0))
+    return librosa.feature.chroma_cqt(
+        C=compressed, sr=sr, hop_length=HOP, fmin=librosa.note_to_hz(lowest), bins_per_octave=bins
+    )
 
 
 def track_beats(signal: Signal, prior_bpm: float) -> np.ndarray:
@@ -113,11 +133,25 @@ def beat_period(times: np.ndarray) -> float:
     return float(slope)
 
 
-def candidate_grids(times: np.ndarray, duration: float) -> list[tuple[str, np.ndarray]]:
-    """The tracked grid and its double- and half-tempo versions."""
+def onset_salience(signal: Signal, times: np.ndarray) -> float:
+    """Mean onset strength on the beats of a grid: the true beats carry the kicks and strums."""
+    frames = librosa.time_to_frames(times, sr=signal.sr, hop_length=HOP)
+    frames = frames[(frames >= 0) & (frames < len(signal.onset_env))]
+    return float(np.mean(signal.onset_env[frames])) if len(frames) else 0.0
+
+
+def candidate_grids(times: np.ndarray, signal: Signal) -> list[tuple[str, np.ndarray]]:
+    """The tracked grid, double it, and half it.
+
+    Half the beats can be every first or every second tracked beat; the one whose
+    beats land on the stronger onsets is kept, since the cost of the alignment
+    barely tells the two phases apart.
+    """
     mids = (times[:-1] + times[1:]) / 2
     doubled = np.sort(np.concatenate([times, mids]))
-    return [("tracked", times), ("double", doubled), ("half", times[::2]), ("half-odd", times[1::2])]
+    halves = [times[::2], times[1::2]]
+    half = max(halves, key=lambda h: onset_salience(signal, h))
+    return [("tracked", times), ("double", doubled), ("half", half)]
 
 
 def beat_features(signal: Signal, times: np.ndarray, tempo: float) -> BeatFeatures:

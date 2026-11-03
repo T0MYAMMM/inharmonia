@@ -15,12 +15,11 @@ Two things, both read from beat chroma:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cache
 
 import numpy as np
 
 from .symbols import ChordPCs, parse_symbol
-from .tonality import MAJOR_NAMES, chord_root_name, similarities, template
+from .tonality import chord_root_name, similarities, template, triads
 
 #: A shortfall up to this much counts in full; from ``SHORT_NONE`` on, not at all.
 SHORT_FULL = 0.04
@@ -29,12 +28,6 @@ SHORT_NONE = 0.15
 CLEAR = 0.5
 #: Gain in fit needed to hear a bar as two chords rather than one.
 SPLIT_GAIN = 0.06
-
-
-@cache
-def triads() -> tuple[ChordPCs, ...]:
-    """The 24 major and minor triads, named with the file's spellings."""
-    return tuple(parse_symbol(f"{name}{q}") for name in MAJOR_NAMES for q in ("", "m"))
 
 
 def pooled(chroma: np.ndarray, weight: np.ndarray, start: int, end: int) -> tuple[np.ndarray, float]:
