@@ -127,7 +127,7 @@ def test_load_one_reads_a_sheet_before_any_audio(tmp_path: Path) -> None:
     data, item = load_one(_research(tmp_path, bpm=None, meter="4/4", originalKey="unknown"))
     chart = read_chart(data, item)
     assert chart.meter == 4
-    assert chart.tempo == 80  # the app's default for a new chart
+    assert chart.tempo == 90  # as research charts have always been read
     assert chart.key_tonic == "Eb" and chart.key_mode == "minor"  # guessed from the chords
 
 
