@@ -25,6 +25,8 @@ import type { FileItem } from '../../src/core/format/types';
 
 /** Larger than any chord sheet: refuse it before reading. */
 const MAX_BYTES = 1024 * 1024;
+/** A research chart with no bpm: 90, as pm/chords/to-inharmonia.ts has always made it. */
+const RESEARCH_TEMPO = 90;
 
 interface ResearchSong {
   title?: unknown;
@@ -112,7 +114,7 @@ function fromResearch(raw: string): { chart: ChordChart; artist: string | null }
     chart: {
       ...chart,
       key: keyOf(song.originalKey) ?? chart.key,
-      tempo: typeof bpm === 'number' && bpm >= 30 && bpm <= 240 ? Math.round(bpm) : chart.tempo,
+      tempo: typeof bpm === 'number' && bpm >= 30 && bpm <= 240 ? Math.round(bpm) : RESEARCH_TEMPO,
     },
     artist,
   };
