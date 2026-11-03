@@ -29,6 +29,8 @@ import {
   sheetToChart,
   suggestKeys,
   type ChordChart,
+  type LineBars,
+  type ParsedSheet,
 } from '.';
 
 // Every fixture here is invented: made-up progressions and placeholder lyric text.
@@ -318,6 +320,15 @@ describe('chord line detection', () => {
   });
 });
 
+/** Every line of chords as typed, one chord a bar (or as `override` says): the old reading. */
+const asTyped = (sheet: ParsedSheet, override: [number, LineBars][] = []) => ({
+  beatsPerBar: 4,
+  lineBars: new Map<number, LineBars>([
+    ...sheet.lines.map((l) => [l.n, 'one'] as [number, LineBars]),
+    ...override,
+  ]),
+});
+
 describe('pasting a chord sheet', () => {
   const OVER = [
     '[Intro]',
@@ -342,7 +353,7 @@ describe('pasting a chord sheet', () => {
     const sheet = parseSheet(OVER, 4);
     expect(sheet.lyricLines).toBe(4);
     expect(sheet.lines.filter((l) => l.kind === 'lyric').map((l) => l.n)).toEqual([6, 8, 12, 14]);
-    const { sections, form } = sheetToChart(sheet, { beatsPerBar: 4 });
+    const { sections, form } = sheetToChart(sheet, asTyped(sheet));
     expect(
       sections.map((s) => [s.label, s.type, s.bars.map((b) => b.chords[0]!.symbol).join(' ')]),
     ).toEqual([
@@ -385,7 +396,7 @@ describe('pasting a chord sheet', () => {
     expect(sheet.lines[0]).toMatchObject({ kind: 'chords', unknown: ['Hx'] });
     expect(sheet.lines[1]!.dense).toBe(true);
     const one = sheetToChart(sheet, { beatsPerBar: 4 });
-    const two = sheetToChart(sheet, { beatsPerBar: 4, twoPerBar: new Set([2]) });
+    const two = sheetToChart(sheet, { beatsPerBar: 4, lineBars: new Map([[2, 'two']]) });
     expect(one.sections[0]!.bars).toHaveLength(12);
     expect(two.sections[0]!.bars).toHaveLength(8);
     expect(two.sections[0]!.bars.at(-1)!.chords.map((c) => c.symbol)).toEqual(['Am', 'F']);
@@ -424,7 +435,7 @@ describe('pasting a chord sheet', () => {
       [12, 11],
       [14, 13],
     ]);
-    const { sections, form } = sheetToChart(sheet, { beatsPerBar: 4 });
+    const { sections, form } = sheetToChart(sheet, asTyped(sheet));
     // C at column 0 and G at 11 cut "la la la lyric line here" inside "lyric":
     // the cut moves back to the start of the word, so words stay whole.
     expect(sections.map((s) => [s.label, s.bars.map((b) => b.lyric ?? null)])).toEqual([
@@ -445,7 +456,7 @@ describe('pasting a chord sheet', () => {
     const sheet = parseSheet('[Verse]\n     C     G       Am\npick up la la', 4, {
       keepLyrics: true,
     });
-    const bars = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    const bars = sheetToChart(sheet, asTyped(sheet)).sections[0]!.bars;
     expect(bars.map((b) => b.lyric ?? null)).toEqual(['pick up la', 'la', null]);
   });
 
@@ -488,7 +499,7 @@ describe('pasting a chord sheet', () => {
     const sheet = parseSheet('C    G    Am   F    C    G\nla   la   la   here la   line', 4, {
       keepLyrics: true,
     });
-    const bars = sheetToChart(sheet, { beatsPerBar: 4, twoPerBar: new Set([1]) }).sections[0]!.bars;
+    const bars = sheetToChart(sheet, asTyped(sheet, [[1, 'two']])).sections[0]!.bars;
     expect(bars.map((b) => b.lyric)).toEqual(['la la', 'la here', 'la line']);
   });
 
@@ -517,9 +528,11 @@ describe('pasting a chord sheet', () => {
     const long = Array.from({ length: 30 }, () => 'lyric').join(' ');
     const sheet = parseSheet(`C${' '.repeat(149)}G\n${long}`, 4, { keepLyrics: true });
     expect(sheet.lines[0]!.cut).toBe(true);
-    const [first, second] = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    const [first, second] = sheetToChart(sheet, asTyped(sheet)).sections[0]!.bars;
     expect(first!.lyric).toBe(Array.from({ length: 20 }, () => 'lyric').join(' '));
     expect(second!.lyric).toBe('lyric lyric lyric lyric lyric');
+    expect(chartIssues({ ...emptyChart('x'), ...sheetToChart(sheet, asTyped(sheet)) })).toEqual([]);
+    // Estimated, the words still fit their bars.
     expect(chartIssues({ ...emptyChart('x'), ...sheetToChart(sheet, { beatsPerBar: 4 }) })).toEqual(
       [],
     );
@@ -596,7 +609,7 @@ describe('pasting a chord sheet', () => {
     ]);
     expect(sheet.lyricLines).toBe(2);
     expect(sheet.lines.flatMap((l) => l.unknown)).toEqual([]);
-    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([
+    expect(sheetToChart(sheet, asTyped(sheet)).sections.map(symbols)).toEqual([
       [NO_CHORD],
       [NO_CHORD, 'G', NO_CHORD, 'G', 'D', NO_CHORD],
     ]);
@@ -605,9 +618,17 @@ describe('pasting a chord sheet', () => {
 
   it('keeps the words under a line of only N.C. on its bar, when asked', () => {
     const sheet = parseSheet('N.C.\nla la la lyric line here', 4, { keepLyrics: true });
-    const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
+    const { sections } = sheetToChart(sheet, asTyped(sheet));
     expect(sections[0]!.bars).toEqual([
       { chords: [{ symbol: NO_CHORD, beats: 4 }], lyric: 'la la la lyric line here' },
+    ]);
+    // Estimated, the silence lasts as long as the words, which sit on its first bar.
+    const timed = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+    expect(timed.length).toBeGreaterThan(1);
+    expect(timed.every((b) => b.chords.every((c) => c.symbol === NO_CHORD))).toBe(true);
+    expect(timed.map((b) => b.lyric ?? null)).toEqual([
+      'la la la lyric line here',
+      ...timed.slice(1).map(() => null),
     ]);
   });
 
@@ -618,7 +639,7 @@ describe('pasting a chord sheet', () => {
     );
     expect(sheet.lines.map((l) => l.kind)).toEqual(['chords', 'lyric', 'lyric', 'lyric']);
     expect(sheet.lyricLines).toBe(3);
-    expect(sheetToChart(sheet, { beatsPerBar: 4 }).sections.map(symbols)).toEqual([['C', 'G']]);
+    expect(sheetToChart(sheet, asTyped(sheet)).sections.map(symbols)).toEqual([['C', 'G']]);
   });
 
   it('reads add11, add4 and 7sus2 chords from a sheet, normalised', () => {
@@ -636,6 +657,103 @@ describe('pasting a chord sheet', () => {
   it('starts an unnamed section for chords before any header', () => {
     const { sections } = sheetToChart(parseSheet('C   G\nla la', 4), { beatsPerBar: 4 });
     expect(sections[0]).toMatchObject({ label: 'Section', type: 'custom' });
+  });
+
+  describe('timed from the lyrics', () => {
+    const SHEET = ['[Verse]', 'C          G', 'la la la lyric line here', 'Am   F   C   G'].join(
+      '\n',
+    );
+
+    it('estimates a line with words under it, and keeps one chord a bar for one without', () => {
+      const sheet = parseSheet(SHEET, 4);
+      expect(sheet.lines[1]!.estimate).toMatchObject({
+        chords: [{ symbol: 'C' }, { symbol: 'G' }],
+      });
+      expect(sheet.lines[3]!.estimate).toBeUndefined();
+      const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
+      expect(formatBars(sections[0]!.bars, 4, 99)).toBe('| C | C G | G | G | Am | F | C | G |');
+    });
+
+    it('reads the words only for timing: none are kept unless asked', () => {
+      const sheet = parseSheet(SHEET, 4);
+      expect(sheet.lines[1]!.estimate).toBeDefined();
+      expectNoLyrics(sheet);
+      expectNoLyrics(sheetToChart(sheet, { beatsPerBar: 4 }));
+    });
+
+    it('reads one or two chords a bar on lines asked for, as before', () => {
+      const sheet = parseSheet(SHEET, 4);
+      const one = sheetToChart(sheet, { beatsPerBar: 4, lineBars: new Map([[2, 'one']]) });
+      expect(formatBars(one.sections[0]!.bars, 4, 99)).toBe('| C | G | Am | F | C | G |');
+      const two = sheetToChart(sheet, { beatsPerBar: 4, lineBars: new Map([[2, 'two']]) });
+      expect(formatBars(two.sections[0]!.bars, 4, 99)).toBe('| C G | Am | F | C | G |');
+    });
+
+    it('puts kept words on the bar where they start', () => {
+      const sheet = parseSheet(SHEET, 4, { keepLyrics: true });
+      const bars = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+      expect(bars.slice(0, 4).map((b) => b.lyric ?? null)).toEqual([
+        'la la la',
+        'lyric line here',
+        null,
+        null,
+      ]);
+    });
+
+    it('joins the words of chords that start in one bar', () => {
+      const sheet = parseSheet('[C]la [G]la [Am]la [F]la la la la la la la la la', 4, {
+        keepLyrics: true,
+      });
+      const bars = sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars;
+      expect(bars[0]!.chords.length).toBeGreaterThan(1);
+      expect(bars[0]!.lyric).toMatch(/^la la/);
+      // Every word once, in order, across the bars.
+      expect(tidyLyric(bars.map((b) => b.lyric ?? '').join(' '))).toBe(
+        Array.from({ length: 12 }, () => 'la').join(' '),
+      );
+    });
+
+    it('estimates inline chords from the words between them', () => {
+      const sheet = parseSheet('[C]Swing along the river road, my [G7]darling', 4);
+      expect(sheet.lines[0]).toMatchObject({ kind: 'inline', lyricsRemoved: true });
+      expect(sheet.lines[0]!.estimate!.chords.map((c) => c.symbol)).toEqual(['C', 'G7']);
+      expectNoLyrics(sheet);
+    });
+
+    it('times chords after a header colon from the words under them', () => {
+      const sheet = parseSheet('Reff:  C          G\n       la la la lyric line here', 4);
+      expect(sheet.lines[0]).toMatchObject({ kind: 'header', chords: ['C', 'G'] });
+      expect(sheet.lines[0]!.estimate!.chords.map((c) => c.symbol)).toEqual(['C', 'G']);
+    });
+
+    it('keeps bar lines as typed, words under them or not', () => {
+      const sheet = parseSheet('| C . G . | Am |\nla la la lyric line', 4);
+      expect(sheet.lines[0]!.estimate).toBeUndefined();
+      expect(formatBars(sheetToChart(sheet, { beatsPerBar: 4 }).sections[0]!.bars, 4)).toBe(
+        '| C G | Am |',
+      );
+    });
+
+    it('lines tabs up with stops every 4 columns', () => {
+      const tabbed = parseSheet('C\t    G\nla la la lyric', 4, { keepLyrics: true });
+      const spaced = parseSheet('C       G\nla la la lyric', 4, { keepLyrics: true });
+      expect(tabbed.lines[0]!.words).toEqual(['la la la', 'lyric']);
+      expect(tabbed.lines[0]!.estimate).toEqual(spaced.lines[0]!.estimate);
+    });
+
+    it('builds charts that pass the chart checks, in 3/4 too', () => {
+      for (const beats of [3, 4] as const) {
+        const sheet = parseSheet(SHEET, beats, { keepLyrics: true });
+        const c: ChordChart = {
+          ...emptyChart('x'),
+          meter: { beats, unit: 4 },
+          ...sheetToChart(sheet, { beatsPerBar: beats }),
+        };
+        expect(chartIssues(c)).toEqual([]);
+        for (const b of c.sections.flatMap((x) => x.bars))
+          expect(b.chords.reduce((n, ch) => n + ch.beats, 0)).toBe(beats);
+      }
+    });
   });
 });
 

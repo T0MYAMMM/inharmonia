@@ -63,7 +63,7 @@ describe('PasteSheet', () => {
     await user.click(screen.getByTestId('paste-use'));
     expect(
       onUse.mock.calls[0]![0].sections[0].bars.map((b: { lyric?: string }) => b.lyric),
-    ).toEqual(['la la la', 'lyric']);
+    ).toEqual(['la la la', 'lyric', undefined, undefined]);
 
     unmount();
     renderPaste();
