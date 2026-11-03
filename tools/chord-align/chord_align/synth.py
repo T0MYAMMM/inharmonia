@@ -44,6 +44,10 @@ class SectionSpec:
     truth: tuple[str, ...]
     guess: tuple[str, ...]
     repeat: int = 1
+    #: Band renders: how loud the band plays (below 0.8 the drums stop).
+    level: float = 1.0
+    #: Band renders: a bass note held under the whole section (a pedal).
+    pedal: str | None = None
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,10 @@ class RenderSpec:
     exact: bool = True
     #: A form change the tool must report: ("twice" or "left out", section label).
     form_change: tuple[str, str] | None = None
+    #: Beats of the first chord played before the first bar (a pickup).
+    pickup: int = 0
+    #: Band renders: the guitar's last up-strum before a change already plays the next chord.
+    push: bool = False
 
     @property
     def plays(self) -> tuple[str, ...]:
@@ -130,14 +138,21 @@ def chart_file(spec: RenderSpec, which: str = "guess") -> dict[str, Any]:
 
 def played_chords(spec: RenderSpec) -> list[tuple[str, int]]:
     """The true chords in the order the render plays them, as (symbol, whole beats)."""
+    return [(sym, beats) for sym, beats, _ in _played(spec)]
+
+
+def _played(spec: RenderSpec) -> list[tuple[str, int, SectionSpec | None]]:
+    """(symbol, beats, section) in play order; a pickup comes first, in no section."""
     by_id = {s.id: s for s in spec.sections}
-    out: list[tuple[str, int]] = []
+    out: list[tuple[str, int, SectionSpec | None]] = []
     for sid in spec.plays:
         s = by_id[sid]
         for _ in range(s.repeat):
             for i, text in enumerate(s.truth):
                 for chord in parse_bar(text, spec.meter, f"{s.id}[{i}]"):
-                    out.append((chord.symbol, int(chord.beats)))
+                    out.append((chord.symbol, int(chord.beats), s))
+    if spec.pickup and out:
+        out.insert(0, (out[0][0], spec.pickup, None))
     return out
 
 
@@ -251,7 +266,9 @@ def _guitar_voicing(chord: ChordPCs, shift: int) -> list[int]:
 def render(spec: RenderSpec, sr: int = SR) -> Render:
     """Play the true chart."""
     rng = np.random.default_rng(spec.seed)
-    chords = played_chords(spec)
+    played = _played(spec)
+    chords = [(sym, beats) for sym, beats, _ in played]
+    section_of = [sec for _, beats, sec in played for _ in range(beats)]
     labels = [sym for sym, beats in chords for _ in range(beats)]
     times = beat_times(spec, len(labels))
     y = np.zeros(int((times[-1] + 2.0) * sr))
@@ -271,7 +288,7 @@ def render(spec: RenderSpec, sr: int = SR) -> Render:
     for b in range(len(labels)):
         period = float(times[b + 1] - times[b])
         n = round(period * sr)
-        pos = b % spec.meter
+        pos = (b - spec.pickup) % spec.meter
         chord = pcs_of[labels[b]]
         run_start = runs[chord_at[b]][0]
         if not spec.band:
@@ -284,7 +301,7 @@ def render(spec: RenderSpec, sr: int = SR) -> Render:
                 assert low is not None
                 _add(y, times[b], _tone(_midi_freq(36 + (low + spec.transpose) % 12), n, sr, amp * 1.4), sr)
             continue
-        _band_beat(y, spec, sr, rng, b, pos, n, chord, runs, chord_at, pcs_of, at)
+        _band_beat(y, spec, sr, rng, b, pos, n, chord, runs, chord_at, pcs_of, at, section_of[b])
     if spec.band:
         _melody(y, spec, sr, rng, labels, pcs_of, at)
     if spec.reverb:
@@ -310,8 +327,10 @@ def _band_beat(
     chord_at: list[int],
     pcs_of: dict[str, ChordPCs],
     at: Any,
+    section: SectionSpec | None,
 ) -> None:
     """Drums, strummed guitar and walking bass for one beat."""
+    level = section.level if section is not None else 1.0
     eighths = (0, 1)
     # Drums: hats on every eighth, a backbeat, kicks with an anticipation.
     for half in eighths:
@@ -320,12 +339,17 @@ def _band_beat(
         slot = 2 * pos + half
         kicks = (0, 3, 4) if spec.meter == 4 else (0,)
         snares = (2, 6) if spec.meter == 4 else (2, 4)
+        if level < 0.8:
+            continue  # a soft section: no drums
         if slot in kicks:
             _add(y, t, _kick(n, sr, 0.55), sr)
         if slot in snares:
             _add(y, t, _snare(sr, 0.3, rng), sr)
     if chord.is_no_chord:
         return
+    run_start, run_len, _ = runs[chord_at[b]]
+    nxt = chord_at[b] + 1
+    last_beat = b == run_start + run_len - 1 and nxt < len(runs)
     # Guitar: D - D U - U D U in 4/4, D - D U D U in 3/4.
     pattern = (
         {0: "D", 2: "D", 3: "U", 5: "U", 6: "D", 7: "U"}
@@ -340,11 +364,13 @@ def _band_beat(
         t0 = at(b + half / 2)
         dur = round(sr * (at(b + half / 2 + 1) - t0)) + int(0.03 * sr)
         notes = voicing if stroke == "D" else voicing[:1:-1][:4]
-        amp = 0.09 if stroke == "D" else 0.06
+        if spec.push and half == 1 and last_beat and not pcs_of[runs[nxt][2]].is_no_chord:
+            pushed = _guitar_voicing(pcs_of[runs[nxt][2]], spec.transpose)
+            notes = pushed if stroke == "D" else pushed[:1:-1][:4]
+        amp = (0.09 if stroke == "D" else 0.06) * level
         for j, m in enumerate(notes):
             _add(y, t0 + 0.011 * j, _pluck(_midi_freq(m), dur, sr, amp), sr)
     # Walking bass: root, then third or fifth, and an approach into the next chord.
-    run_start, run_len, _ = runs[chord_at[b]]
     j = b - run_start
     root = (chord.bass if chord.bass is not None and j == 0 else chord.root) or 0
     pcs = sorted(chord.pcs)
@@ -354,7 +380,7 @@ def _band_beat(
     fifth = (
         next((p for p in pcs if (p - chord.root) % 12 in (6, 7, 8)), root) if chord.root is not None else root
     )
-    nxt = chord_at[b] + 1
+    # (next_root comes from the run after this one, as nxt above)
     next_root = None
     if nxt < len(runs):
         nc = pcs_of[runs[nxt][2]]
@@ -365,8 +391,10 @@ def _band_beat(
         pc = (next_root + (1 if rng.random() < 0.5 else -1)) % 12
     else:
         pc = fifth if j % 2 else third
+    if section is not None and section.pedal is not None:
+        pc = parse_symbol(section.pedal).root or 0
     m = 33 + (pc + spec.transpose - 9) % 12
-    _add(y, at(b), _tone(_midi_freq(m), n, sr, 0.32, decay=0.5), sr)
+    _add(y, at(b), _tone(_midi_freq(m), n, sr, 0.32 * level, decay=0.5), sr)
 
 
 def _melody(
