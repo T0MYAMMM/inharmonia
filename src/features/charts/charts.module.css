@@ -515,3 +515,109 @@
   color: var(--ink);
   font-weight: 600;
 }
+
+/* Tap timing: a section's chord lengths set by tapping along. */
+.tap {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.tapNow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  min-width: 0;
+}
+
+.tapChord {
+  font-size: clamp(2.5rem, 12vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.tapNext {
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.tapNext b {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.tapCount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tapBeats {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.tapBeats > span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+}
+
+.tapBeats > span[data-on] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.tapButton {
+  min-height: 72px;
+  width: 100%;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tapButton:active {
+  background: color-mix(in srgb, var(--primary) 85%, var(--bg));
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.compareSide {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.compareTitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tapProblem {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 12px;
+  border: 1px dashed var(--ink);
+  font-size: 0.9rem;
+}
