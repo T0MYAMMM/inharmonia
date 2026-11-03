@@ -219,8 +219,44 @@ def build_report(result: Result, *, min_confidence: float = MIN_CONFIDENCE) -> s
     lines += skipped or ["Nothing."]
     lines.append("")
 
+    lines += suggestions_section(result)
     lines += _heard_section(result, rows)
     return "\n".join(lines)
+
+
+def suggestions_section(result: Result) -> list[str]:
+    """The suggested chord changes, the evidence for each, and whether they were written."""
+    lines = ["## Suggested chord changes", ""]
+    found = result.suggestions
+    if not found:
+        return [*lines, "None: wherever the chords can be heard clearly, they agree with the chart.", ""]
+    applied = any(s.applied for s in found)
+    lines += [
+        "Where the recording clearly and repeatedly plays another chord: in at least two playings, "
+        "or in a section played once, clearly. Margin is how much better the heard chord fits than "
+        "the chart's (0 to 1).",
+        "",
+        "| Section | Played | Bar | Chart | Suggested | Evidence |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for s in found:
+        lines.append(
+            f"| {s.section} | {s.playings}× | {s.bar} | {s.chart} | {s.suggested} | heard in {s.heard_in} "
+            f"of {s.playings} playing{'s' if s.playings != 1 else ''}, margin {s.margin:.2f} |"
+        )
+    lines.append("")
+    if applied:
+        lines.append(
+            "Applied (--apply-suggestions): the chart was written with these chords, and aligned "
+            "again with them."
+        )
+    else:
+        lines.append(
+            "Not applied: the chart keeps its own chords. Check them by ear; "
+            "--apply-suggestions writes them in."
+        )
+    lines.append("")
+    return lines
 
 
 def agreement(rows: list[BarRow]) -> tuple[int, int, int]:
