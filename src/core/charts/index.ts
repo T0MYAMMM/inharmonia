@@ -3,6 +3,7 @@ export * from './sections';
 export * from './symbols';
 export * from './syntax';
 export * from './paste';
+export * from './timing';
 export * from './key';
 export * from './compile';
 export * from './record';
