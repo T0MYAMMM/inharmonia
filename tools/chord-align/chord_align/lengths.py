@@ -68,6 +68,11 @@ def nearest_downbeat(beat: int, phase: int, beats_per_bar: int) -> int:
     return phase + int(np.floor((beat - phase + beats_per_bar / 2) / beats_per_bar)) * beats_per_bar
 
 
+def next_downbeat(beat: int, phase: int, beats_per_bar: int) -> int:
+    """The first downbeat at or after ``beat``."""
+    return phase + int(np.ceil((beat - phase) / beats_per_bar)) * beats_per_bar
+
+
 def bar_lengths(al: Alignment, phase: int, beats_per_bar: int) -> np.ndarray:
     """Each run's length on the bar grid, the grid the report's bar table shows.
 
@@ -75,7 +80,9 @@ def bar_lengths(al: Alignment, phase: int, beats_per_bar: int) -> np.ndarray:
     playing's: a first chord that starts a beat early (a pickup, a push) or late
     loses or gains that beat, and the chord before it gives or takes it. Changes
     inside a playing stay where they were heard. So the bars written follow the
-    downbeats, not the first chord's start.
+    downbeats, not the first chord's start. The song's last chord fades rather
+    than changes, so it ends on the nearest downbeat, and never before the end
+    of the bar it starts in.
     """
     out = al.lengths.astype(int).copy()
     n = len(al.events)
@@ -86,6 +93,11 @@ def bar_lengths(al: Alignment, phase: int, beats_per_bar: int) -> np.ndarray:
         end = int(al.ends[last])
         if last + 1 < n and al.starts[last + 1] == al.ends[last]:
             end = nearest_downbeat(int(al.starts[last + 1]), phase, beats_per_bar)
+        elif last + 1 == n:
+            # The song's last chord: to the nearest downbeat, and at least to the
+            # end of the bar it starts in.
+            bar_end = next_downbeat(int(al.starts[last]) + 1, phase, beats_per_bar)
+            end = max(nearest_downbeat(end, phase, beats_per_bar), bar_end)
         cuts = [start, *(int(al.starts[k]) for k in range(f + 1, last + 1)), end]
         for k in range(f, last + 1):
             out[k] = max(1, cuts[k - f + 1] - cuts[k - f])
