@@ -10,6 +10,7 @@ from chord_align.lengths import (
     consensus,
     is_outlier,
     nearest_downbeat,
+    next_downbeat,
     rounded,
     unambiguous,
     whole_bars,
@@ -108,6 +109,32 @@ def test_bars_follow_the_downbeats_not_a_first_chord_that_starts_early() -> None
     assert lengths["intro"].off_downbeat == [0]
     bars = bars_from_lengths(["Ab", "Db", "Ab", "Db"], lengths["intro"].lengths, 4)
     assert written_bars(bars, 4) == ["Ab", "Db", "Ab", "Db"]
+
+
+def test_the_songs_last_chord_fills_its_bar_when_it_fades_early() -> None:
+    # The Laskar Pelangi outro: Ab Db Ab Db Eb Ab, the last Ab heard for 2 beats
+    # of its 4 before the fade. It must not lend 2 beats to the first Ab instead.
+    events = _events("outro", ["Ab", "Db", "Ab", "Db", "Eb", "Ab"], 1)
+    al = _path([4, 4, 4, 2, 2, 2], 6)
+    result = consensus(events, al, 0, 4, unambiguous(events, al))["outro"]
+    assert result.lengths == [4, 4, 4, 2, 2, 4]
+    assert result.bar_fix is None
+    bars = bars_from_lengths([e.symbol for e in events], result.lengths, 4)
+    assert written_bars(bars, 4) == ["Ab", "Db", "Ab", "Db Eb", "Ab"]
+
+
+def test_a_last_chord_ringing_a_beat_on_keeps_its_bars() -> None:
+    # Reverb carries the last chord a beat into the next bar: no extra bar.
+    events = _events("v", ["C", "G"], 1)
+    al = _path([4, 9], 2)
+    assert consensus(events, al, 0, 4, unambiguous(events, al))["v"].lengths == [4, 8]
+
+
+def test_next_downbeat() -> None:
+    assert next_downbeat(8, 0, 4) == 8
+    assert next_downbeat(9, 0, 4) == 12
+    assert next_downbeat(330, 2, 4) == 330
+    assert next_downbeat(331, 2, 4) == 334
 
 
 def test_nearest_downbeat() -> None:
