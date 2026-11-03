@@ -1,0 +1,2306 @@
+[
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 1
+        },
+        {
+          "symbol": "G7",
+          "col": 8
+        },
+        {
+          "symbol": "C",
+          "col": 19
+        },
+        {
+          "symbol": "G",
+          "col": 29
+        }
+      ],
+      "lyric": "Amazing grace, how sweet the sound",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 3
+        },
+        {
+          "symbol": "G7",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 2
+        },
+        {
+          "symbol": "G",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 5
+        },
+        {
+          "symbol": "D7",
+          "col": 25
+        }
+      ],
+      "lyric": "That saved a wretch like me,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 6
+        },
+        {
+          "symbol": "D7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 2
+        },
+        {
+          "symbol": "G7",
+          "col": 11
+        },
+        {
+          "symbol": "C",
+          "col": 21
+        },
+        {
+          "symbol": "G",
+          "col": 28
+        }
+      ],
+      "lyric": "I once was lost, but now am found,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 3
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 1
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "Em",
+          "col": 4
+        },
+        {
+          "symbol": "D7",
+          "col": 15
+        },
+        {
+          "symbol": "G",
+          "col": 21
+        }
+      ],
+      "lyric": "Was blind, but now I see.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "Em",
+          "beats": 3
+        },
+        {
+          "symbol": "D7",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 27
+        },
+        {
+          "symbol": "C",
+          "col": 38
+        }
+      ],
+      "lyric": "Silent night, holy night, all is calm, all is bright,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 5
+        },
+        {
+          "symbol": "G7",
+          "beats": 1
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 2
+        },
+        {
+          "symbol": "C",
+          "col": 18
+        }
+      ],
+      "lyric": "Round yon Virgin, Mother and Child,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 9
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 16
+        }
+      ],
+      "lyric": "Holy Infant so tender and mild,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 5
+        },
+        {
+          "symbol": "C",
+          "beats": 7
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 17
+        }
+      ],
+      "lyric": "Sleep in heavenly peace,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 10
+        },
+        {
+          "symbol": "C",
+          "col": 17
+        }
+      ],
+      "lyric": "Sleep in heavenly peace.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "G7",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 40
+        }
+      ],
+      "lyric": "I come from Alabama with my banjo on my knee,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 12
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 28
+        },
+        {
+          "symbol": "C",
+          "col": 45
+        }
+      ],
+      "lyric": "I'm going to Louisiana,  my true love for to see.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 8
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 14
+        },
+        {
+          "symbol": "G7",
+          "col": 27
+        }
+      ],
+      "lyric": "Oh! Susanna,  oh don't you cry for me,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 4
+        },
+        {
+          "symbol": "G7",
+          "col": 32
+        },
+        {
+          "symbol": "C",
+          "col": 44
+        }
+      ],
+      "lyric": "For I come from Alabama with my banjo on my knee.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 8
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 12
+        }
+      ],
+      "lyric": "Oh when the saints go marching in,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 12
+        },
+        {
+          "symbol": "D7",
+          "col": 31
+        }
+      ],
+      "lyric": "Oh when the saints go marching in,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 8
+        },
+        {
+          "symbol": "D7",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 11
+        },
+        {
+          "symbol": "G7",
+          "col": 19
+        },
+        {
+          "symbol": "C",
+          "col": 30
+        }
+      ],
+      "lyric": "Oh Lord, I want to be in that number,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 12
+        },
+        {
+          "symbol": "D7",
+          "col": 22
+        },
+        {
+          "symbol": "G",
+          "col": 31
+        }
+      ],
+      "lyric": "Oh when the saints go marching in.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 4
+        },
+        {
+          "symbol": "D7",
+          "beats": 4
+        },
+        {
+          "symbol": "G",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "Bb",
+          "col": 12
+        },
+        {
+          "symbol": "F",
+          "col": 16
+        }
+      ],
+      "lyric": "Swing low, sweet chariot,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "Bb",
+          "beats": 2
+        },
+        {
+          "symbol": "F",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 2
+        },
+        {
+          "symbol": "C7",
+          "col": 23
+        }
+      ],
+      "lyric": "Coming for to carry me home,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 10
+        },
+        {
+          "symbol": "C7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "Bb",
+          "col": 12
+        },
+        {
+          "symbol": "F",
+          "col": 17
+        }
+      ],
+      "lyric": "Swing low, sweet chariot,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "Bb",
+          "beats": 2
+        },
+        {
+          "symbol": "F",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C7",
+          "col": 14
+        },
+        {
+          "symbol": "F",
+          "col": 24
+        }
+      ],
+      "lyric": "Coming for to carry me home.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 6
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 1
+        },
+        {
+          "symbol": "C7",
+          "col": 38
+        }
+      ],
+      "lyric": "I looked over Jordan and what did I see,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 12
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C7",
+          "col": 12
+        },
+        {
+          "symbol": "F",
+          "col": 24
+        }
+      ],
+      "lyric": "Coming for to carry me home?",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C7",
+          "beats": 6
+        },
+        {
+          "symbol": "F",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 7
+        },
+        {
+          "symbol": "C7",
+          "col": 25
+        },
+        {
+          "symbol": "F",
+          "col": 40
+        },
+        {
+          "symbol": "Bb",
+          "col": 57
+        }
+      ],
+      "lyric": "Should auld acquaintance be forgot, and never brought to mind?",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "Bb",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 7
+        },
+        {
+          "symbol": "C7",
+          "col": 25
+        },
+        {
+          "symbol": "Bb",
+          "col": 40
+        },
+        {
+          "symbol": "C7",
+          "col": 48
+        },
+        {
+          "symbol": "F",
+          "col": 58
+        }
+      ],
+      "lyric": "Should auld acquaintance be forgot, and days of auld lang syne?",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        },
+        {
+          "symbol": "Bb",
+          "beats": 2
+        },
+        {
+          "symbol": "C7",
+          "beats": 2
+        },
+        {
+          "symbol": "F",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 4
+        },
+        {
+          "symbol": "C7",
+          "col": 23
+        },
+        {
+          "symbol": "F",
+          "col": 33
+        }
+      ],
+      "lyric": "For auld lang syne, my dear, for auld lang syne,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 6
+        },
+        {
+          "symbol": "C7",
+          "beats": 2
+        },
+        {
+          "symbol": "F",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 6
+        },
+        {
+          "symbol": "C7",
+          "col": 20
+        },
+        {
+          "symbol": "Bb",
+          "col": 38
+        },
+        {
+          "symbol": "C7",
+          "col": 43
+        },
+        {
+          "symbol": "F",
+          "col": 48
+        }
+      ],
+      "lyric": "We'll take a cup o' kindness yet, for auld lang syne.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        },
+        {
+          "symbol": "Bb",
+          "beats": 2
+        },
+        {
+          "symbol": "C7",
+          "beats": 2
+        },
+        {
+          "symbol": "F",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 41
+        }
+      ],
+      "lyric": "Yankee Doodle went to town a-riding on a pony,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 12
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 16
+        },
+        {
+          "symbol": "G7",
+          "col": 31
+        },
+        {
+          "symbol": "C",
+          "col": 45
+        }
+      ],
+      "lyric": "Stuck a feather in his cap and called it macaroni.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 27
+        }
+      ],
+      "lyric": "Yankee Doodle keep it up,  Yankee Doodle dandy,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 7
+        },
+        {
+          "symbol": "C",
+          "beats": 9
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 15
+        },
+        {
+          "symbol": "G7",
+          "col": 34
+        },
+        {
+          "symbol": "C",
+          "col": 52
+        }
+      ],
+      "lyric": "Mind the music and the step,  and with the girls be handy.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 10
+        }
+      ],
+      "lyric": "From this valley they say you are going,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 8
+        },
+        {
+          "symbol": "G7",
+          "col": 40
+        }
+      ],
+      "lyric": "We will miss your bright eyes and sweet smile,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 10
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 9
+        },
+        {
+          "symbol": "C7",
+          "col": 21
+        },
+        {
+          "symbol": "F",
+          "col": 32
+        }
+      ],
+      "lyric": "For they say you are taking the sunshine",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "C7",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 9
+        },
+        {
+          "symbol": "G7",
+          "col": 24
+        },
+        {
+          "symbol": "C",
+          "col": 34
+        }
+      ],
+      "lyric": "That has brightened our pathway a while.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 4
+        }
+      ],
+      "lyric": "The Camptown ladies sing this song, doo-dah! doo-dah!",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 4
+        },
+        {
+          "symbol": "G7",
+          "col": 42
+        },
+        {
+          "symbol": "C",
+          "col": 58
+        }
+      ],
+      "lyric": "The Camptown racetrack's five miles long, oh, the doo-dah day!",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 8
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 24
+        }
+      ],
+      "lyric": "Goin' to run all night, goin' to run all day,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "F",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 2
+        },
+        {
+          "symbol": "G7",
+          "col": 35
+        },
+        {
+          "symbol": "C",
+          "col": 55
+        }
+      ],
+      "lyric": "I bet my money on the bobtail nag, somebody bet on the bay.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 8
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 3
+        },
+        {
+          "symbol": "C",
+          "col": 29
+        }
+      ],
+      "lyric": "Oh give me a home where the buffalo roam,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 9
+        },
+        {
+          "symbol": "D7",
+          "col": 34
+        }
+      ],
+      "lyric": "Where the deer and the antelope play,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 8
+        },
+        {
+          "symbol": "D7",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 6
+        },
+        {
+          "symbol": "C",
+          "col": 25
+        }
+      ],
+      "lyric": "Where seldom is heard a discouraging word,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 5
+        },
+        {
+          "symbol": "C",
+          "beats": 7
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 9
+        },
+        {
+          "symbol": "D7",
+          "col": 22
+        },
+        {
+          "symbol": "G",
+          "col": 32
+        }
+      ],
+      "lyric": "And the skies are not cloudy all day.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 3
+        },
+        {
+          "symbol": "D7",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 5
+        },
+        {
+          "symbol": "C7",
+          "col": 43
+        }
+      ],
+      "lyric": "In a cavern, in a canyon, excavating for a mine,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 9
+        },
+        {
+          "symbol": "C7",
+          "beats": 3
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 21
+        },
+        {
+          "symbol": "C7",
+          "col": 36
+        },
+        {
+          "symbol": "F",
+          "col": 51
+        }
+      ],
+      "lyric": "Dwelt a miner, forty-niner, and his daughter Clementine.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "C7",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 6
+        },
+        {
+          "symbol": "C7",
+          "col": 50
+        }
+      ],
+      "lyric": "Oh my darling, oh my darling, oh my darling Clementine,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 9
+        },
+        {
+          "symbol": "C7",
+          "beats": 3
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 26
+        },
+        {
+          "symbol": "C7",
+          "col": 41
+        },
+        {
+          "symbol": "F",
+          "col": 54
+        }
+      ],
+      "lyric": "Thou art lost and gone forever, dreadful sorry, Clementine.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "C7",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 3
+        },
+        {
+          "symbol": "F",
+          "col": 15
+        },
+        {
+          "symbol": "C",
+          "col": 24
+        }
+      ],
+      "lyric": "My Bonnie lies over the ocean,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 3
+        },
+        {
+          "symbol": "D7",
+          "col": 15
+        },
+        {
+          "symbol": "G",
+          "col": 24
+        }
+      ],
+      "lyric": "My Bonnie lies over the sea,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "D7",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 3
+        },
+        {
+          "symbol": "F",
+          "col": 15
+        },
+        {
+          "symbol": "C",
+          "col": 24
+        }
+      ],
+      "lyric": "My Bonnie lies over the ocean,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 3
+        },
+        {
+          "symbol": "G7",
+          "col": 17
+        },
+        {
+          "symbol": "C",
+          "col": 27
+        }
+      ],
+      "lyric": "Oh bring back my Bonnie to me.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 3
+        },
+        {
+          "symbol": "G7",
+          "beats": 3
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 12
+        },
+        {
+          "symbol": "D7",
+          "col": 34
+        }
+      ],
+      "lyric": "Down in the valley, the valley so low,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 6
+        },
+        {
+          "symbol": "D7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "col": 15
+        },
+        {
+          "symbol": "G",
+          "col": 35
+        }
+      ],
+      "lyric": "Hang your head over, hear the wind blow.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "beats": 6
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 0
+        },
+        {
+          "symbol": "D7",
+          "col": 26
+        }
+      ],
+      "lyric": "Hear the wind blow, dear, hear the wind blow;",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 5
+        },
+        {
+          "symbol": "D7",
+          "beats": 7
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "col": 15
+        },
+        {
+          "symbol": "G",
+          "col": 35
+        }
+      ],
+      "lyric": "Hang your head over, hear the wind blow.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "beats": 6
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "Am",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 9
+        },
+        {
+          "symbol": "C",
+          "col": 15
+        }
+      ],
+      "lyric": "                Selamat malam, kawan,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "Am",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 2
+        },
+        {
+          "symbol": "Am",
+          "col": 12
+        }
+      ],
+      "lyric": "Angin senja datang perlahan,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "Am",
+          "beats": 12
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "G",
+          "col": 9
+        },
+        {
+          "symbol": "C",
+          "col": 14
+        },
+        {
+          "symbol": "Am",
+          "col": 18
+        }
+      ],
+      "lyric": "Membawa kabar dari pantai,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 4
+        },
+        {
+          "symbol": "G",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "Am",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "Dm",
+          "col": 0
+        },
+        {
+          "symbol": "G",
+          "col": 18
+        }
+      ],
+      "lyric": "Burung pulang ke sarangnya,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "Dm",
+          "beats": 8
+        },
+        {
+          "symbol": "G",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 9
+        },
+        {
+          "symbol": "G",
+          "col": 15
+        },
+        {
+          "symbol": "C",
+          "col": 19
+        },
+        {
+          "symbol": "G",
+          "col": 39
+        }
+      ],
+      "lyric": "Hatiku tenang, damai sampai pagi.     ",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "F",
+          "beats": 1
+        },
+        {
+          "symbol": "G",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 5
+        },
+        {
+          "symbol": "G",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 0
+        },
+        {
+          "symbol": "D7",
+          "col": 9
+        },
+        {
+          "symbol": "G",
+          "col": 16
+        }
+      ],
+      "lyric": "Tidurlah anakku sayang,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 3
+        },
+        {
+          "symbol": "D7",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G",
+          "col": 6
+        },
+        {
+          "symbol": "D7",
+          "col": 15
+        }
+      ],
+      "lyric": "Bulan bersinar terang,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 3
+        },
+        {
+          "symbol": "D7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 17
+        },
+        {
+          "symbol": "G",
+          "col": 24
+        }
+      ],
+      "lyric": "Mimpi yang indah datang perlahan,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 5
+        },
+        {
+          "symbol": "C",
+          "beats": 1
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "col": 0
+        },
+        {
+          "symbol": "G",
+          "col": 10
+        }
+      ],
+      "lyric": "Esok kita bermain lagi.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "beats": 3
+        },
+        {
+          "symbol": "G",
+          "beats": 9
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  }
+]
