@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from .heard import fits
 from .pipeline import MIN_CONFIDENCE, Result
 from .tonality import signed_shift, transpose_key
@@ -63,16 +65,26 @@ def bar_rows(result: Result) -> list[BarRow]:
 
 
 def _tempo_line(result: Result) -> str:
-    line = f"- Tempo: {result.tempo} bpm (the chart said {result.chart.tempo:g})."
+    median = float(np.median(result.alignment.lengths)) if len(result.alignment.lengths) else 0.0
+    line = (
+        f"- Tempo: {result.tempo} bpm (the chart said {result.chart.tempo:g}), "
+        f"{median:g} beats a chord typically."
+    )
     if result.grid == "double":
         line += (
             f" The beat tracker heard {result.tracked_tempo:.0f} bpm; double that fits the chords "
             "and a usual tempo better."
         )
-    elif result.grid.startswith("half"):
+    elif result.grid == "half":
         line += (
             f" The beat tracker heard {result.tracked_tempo:.0f} bpm; half that fits the chords "
             "and a usual tempo better."
+        )
+    if result.other_octave is not None:
+        tempo, length = result.other_octave
+        line += (
+            f" The other octave would be {tempo:.0f} bpm with {length:g} beats a chord; "
+            "if that is how the song is counted, halve or double the lengths."
         )
     return line
 
@@ -191,7 +203,8 @@ def build_report(result: Result, *, min_confidence: float = MIN_CONFIDENCE) -> s
         if s.lengths.off_downbeat:
             times = ", ".join(str(k + 1) for k in s.lengths.off_downbeat)
             adjustments.append(
-                f"- {s.label}: time {times} started off a downbeat (a pickup, or a bar of odd length)."
+                f"- {s.label}: time {times} started off a downbeat (a pickup, a push, or a bar of odd "
+                "length); its bars are written from the downbeat."
             )
     if adjustments:
         lines += ["## Adjustments", "", *adjustments, ""]

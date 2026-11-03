@@ -39,9 +39,13 @@ SHIFTS_TRIED = 3
 #: Preferred tempo range, and how much each octave outside it costs.
 TEMPO_RANGE = (60.0, 160.0)
 TEMPO_WEIGHT = 0.5
-#: Typical chord lengths in beats, and how much each octave outside costs.
+#: Chord lengths in beats: preferred, and still usual (beyond it, each octave
+#: costs ``RHYTHM_WEIGHT``). Between 4 and 8, each octave costs ``RHYTHM_LONG``,
+#: so when two octaves both fit, the one with chords of 2 to 4 beats wins.
+RHYTHM_PREFERRED = (2.0, 4.0)
 RHYTHM_RANGE = (2.0, 8.0)
 RHYTHM_WEIGHT = 0.1
+RHYTHM_LONG = 0.08
 #: The tracker's second, neutral starting tempo.
 NEUTRAL_BPM = 100.0
 #: Cost of moving off the tracker's own beat level: a finer grid always fits at
@@ -96,6 +100,8 @@ class Result:
     coverage: float = 1.0
     #: The sounding key fits clearly better than the chart's own (moved by ``shift``).
     key_clear: bool = False
+    #: The best reading an octave away: its tempo and median chord length in beats.
+    other_octave: tuple[float, float] | None = None
     lengths_trusted: bool = False
     key: tuple[str, str] | None = None
     transpose: int | None = None
@@ -142,12 +148,17 @@ def tempo_cost(bpm: float) -> float:
 
 
 def rhythm_cost(lengths: np.ndarray) -> float:
-    """Nothing when the typical (median) chord lasts 2 to 8 beats; octaves outside cost."""
+    """Nothing when the typical (median) chord lasts 2 to 4 beats; more the further outside.
+
+    4 to 8 beats is usual but costs a little, so a ballad at 63 bpm with a chord
+    a bar reads as 63 with 4 beats a chord, not 126 with 8.
+    """
     if not len(lengths):
         return 0.0
     m = float(np.median(lengths))
     lo, hi = RHYTHM_RANGE
-    return RHYTHM_WEIGHT * (max(0.0, np.log2(lo / m)) + max(0.0, np.log2(m / hi)))
+    cost = RHYTHM_WEIGHT * (max(0.0, np.log2(lo / m)) + max(0.0, np.log2(m / hi)))
+    return cost + RHYTHM_LONG * min(max(0.0, np.log2(m / RHYTHM_PREFERRED[1])), 1.0)
 
 
 def skip_reason(section: Section, bars: list[str], confidence: float, min_confidence: float) -> str | None:
@@ -207,9 +218,10 @@ def run(
     candidates = [
         (bpm, name, times)
         for bpm, beats in trackings
-        for name, times in features.candidate_grids(beats, signal.duration)
+        for name, times in features.candidate_grids(beats, signal)
     ]
     best: _Try | None = None
+    tries: list[tuple[float, float, float]] = []  # score, tempo, median chord length
     for tracked_bpm, name, times in candidates:
         if len(times) < 4:
             continue
@@ -219,7 +231,7 @@ def run(
         feats = features.beat_features(signal, grid, tempo)
         ranked = tonality.rank_shifts([vocab[i] for i in idx], [1.0] * len(idx), feats.chroma, feats.energy)
         max_run = longest_run(chart.meter) * (2 if name == "double" else 1)
-        scale = 2.0 if name == "double" else 0.5 if name.startswith("half") else 1.0
+        scale = 2.0 if name == "double" else 0.5 if name == "half" else 1.0
         prior = (
             written_prior(written * scale, max_run)
             if lengths_trusted
@@ -240,11 +252,14 @@ def run(
                 span = max(int(al.ends[-1] - al.starts[0]), 1)
                 score += TRUSTED_SPAN_WEIGHT * abs(np.log2(span / (written.sum() * scale)))
             log.info("grid %s (%.0f bpm), shift %d: score %.4f", name, tempo, shift, score)
+            tries.append((score, tempo, float(np.median(al.lengths))))
             if best is None or score < best.score:
                 best = _Try(score, tracked_bpm, name, scale, feats, shift, ranked, al)
     if best is None:
         raise ValueError("the recording is too short for this chart")
     feats, shift, al = best.feats, best.shift, best.al
+    other = [t for t in tries if 1.8 < max(t[1], feats.tempo) / min(t[1], feats.tempo) < 2.2]
+    other_octave = min(other)[1:] if other else None
 
     # Second pass: what the unambiguous playings of each section say becomes a
     # firmer prior for runs whose edges cannot be heard, and chord changes lean
@@ -364,6 +379,7 @@ def run(
         confidence=covered * (float(scores.sum() / judged_all) if judged_all else 0.0),
         coverage=coverage,
         key_clear=key_clear,
+        other_octave=other_octave,
         heard=heard.heard_bars(
             feats.chroma, weight, phase, chart.meter, shift, (chart.key_tonic, chart.key_mode)
         ),
