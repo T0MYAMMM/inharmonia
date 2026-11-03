@@ -1,8 +1,10 @@
 """Load a recording as mono samples at the analysis rate.
 
-WAV and FLAC are read directly. Anything else (m4a, mp3, ...) goes through
-``ffmpeg``, run with an argument list and never a shell, reading only the local
-file. Audio never leaves the machine.
+WAV and FLAC are read directly. Anything else (mp4, m4a, mp3, webm, ...) goes
+through ``ffmpeg``, as does a WAV or FLAC that cannot be read directly. ffmpeg
+is run with an argument list and never a shell, reads only the local file, and
+takes the first audio stream alone (a video's picture is never decoded). Audio
+never leaves the machine.
 """
 
 from __future__ import annotations
@@ -19,6 +21,8 @@ log = logging.getLogger(__name__)
 
 SAMPLE_RATE = 22_050
 _DIRECT = {".wav", ".flac"}
+#: The recordings a batch looks for in a folder.
+AUDIO_SUFFIXES = (".mp4", ".m4a", ".mp3", ".wav", ".flac", ".webm")
 
 
 class AudioError(RuntimeError):
@@ -30,7 +34,12 @@ def load_audio(path: Path, sr: int = SAMPLE_RATE) -> np.ndarray:
     if not path.is_file():
         raise AudioError(f"no such file: {path}")
     if path.suffix.lower() in _DIRECT:
-        return _load_direct(path, sr)
+        try:
+            return _load_direct(path, sr)
+        except AudioError:
+            if shutil.which("ffmpeg") is None:
+                raise
+            log.info("%s: not readable directly, trying ffmpeg", path.suffix)
     return _load_ffmpeg(path, sr)
 
 
@@ -59,7 +68,12 @@ def ffmpeg_command(path: Path, sr: int) -> list[str]:
         # "file:" keeps ffmpeg to the local file, whatever the name looks like.
         "-i",
         f"file:{path.resolve()}",
+        # The first audio stream only: no picture, subtitles or data.
+        "-map",
+        "0:a:0",
         "-vn",
+        "-sn",
+        "-dn",
         "-ac",
         "1",
         "-ar",
