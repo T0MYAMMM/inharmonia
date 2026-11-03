@@ -7,7 +7,7 @@ import pytest
 import soundfile as sf
 
 from chord_align.cli import default_out, main
-from chord_align.renders import RENDERS, by_name
+from chord_align.renders import ALL_RENDERS, by_name
 from chord_align.synth import chart_file, render
 
 from .conftest import FIXTURES, check_output, scored
@@ -57,14 +57,14 @@ def test_set_key_with_no_transposition_writes_the_sounding_key(tmp_path: Path) -
 @pytest.mark.slow
 def test_every_render_output_imports_in_the_app(tmp_path: Path) -> None:
     files = []
-    for spec in RENDERS:
+    for spec in ALL_RENDERS:
         _, result = scored(spec.name)
         path = tmp_path / f"{spec.name}.json"
         path.write_text(json.dumps(result.output(), indent=2), encoding="utf-8")
         files.append(path)
     checked = check_output(*files)
     assert checked.returncode == 0, checked.stderr
-    assert checked.stdout.count("imports") == len(RENDERS)
+    assert checked.stdout.count("imports") == len(ALL_RENDERS)
 
 
 def test_check_output_refuses_a_bad_file(tmp_path: Path) -> None:
@@ -98,6 +98,22 @@ def test_missing_audio(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> No
 
 def test_bad_min_confidence(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["a.wav", "c.json", "--min-confidence", "2"]) == 2
+
+
+@pytest.mark.slow
+def test_lengths_trusted_uses_the_chart_lengths(tmp_path: Path) -> None:
+    # With the chart's (correct) lengths trusted, the result is the same.
+    spec = by_name("uneven-96")
+    audio = render(spec)
+    wav = tmp_path / "u.wav"
+    sf.write(wav, audio.y, audio.sr)
+    chart = tmp_path / "u.json"
+    chart.write_text(json.dumps(chart_file(spec, "truth")), encoding="utf-8")
+    out = tmp_path / "u.out.json"
+    assert main([str(wav), str(chart), "--out", str(out), "--lengths-trusted"]) == 0
+    raw = json.loads(out.read_text(encoding="utf-8"))["items"][0]["chart"]
+    assert raw["sections"][0]["bars"] == list(spec.sections[0].truth)
+    assert "--lengths-trusted" in out.with_suffix(".md").read_text(encoding="utf-8")
 
 
 @pytest.mark.slow
