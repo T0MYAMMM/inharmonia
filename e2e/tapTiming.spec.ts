@@ -43,6 +43,8 @@ test.describe('tap timing', () => {
     // Hold the clock still, then start: beat 0 is a bar of count-in from now.
     await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
     await page.getByTestId('tap-start').click();
+    // Start waits for audio to run; the clock stands still meanwhile.
+    await expect(page.getByTestId('tap-button')).toBeVisible();
     const start = await pageNow(page);
     const beat = 60 / 80;
     const downbeat = start + 0.06 + 4 * beat;
@@ -61,7 +63,7 @@ test.describe('tap timing', () => {
     };
     await tapOn(6, 0.07);
     await expect(page.getByTestId('tap-current')).toHaveText('G');
-    await expect(page.getByTestId('tap-count')).toContainText('Bar 2, change 1 of 3');
+    await expect(page.getByTestId('tap-count')).toContainText('Bar 2, change 2 of 3');
     // One too many, taken back.
     await tapOn(7, 0);
     await expect(page.getByTestId('tap-current')).toHaveText('Am');
@@ -69,12 +71,20 @@ test.describe('tap timing', () => {
     await expect(page.getByTestId('tap-current')).toHaveText('G');
     await tapOn(8, -0.06);
     await tapOn(11, 0.05);
+    // F held to an End tap two bars on.
+    await expect(page.getByTestId('tap-button')).toHaveText('End');
+    await expect(page.getByTestId('tap-count')).toContainText('last chord');
+    await tapOn(20, -0.04);
 
-    await expect(page.getByTestId('tap-summary')).toHaveText('Verse: 3 bars, was 4.');
+    await expect(page.getByTestId('tap-summary')).toHaveText('Verse: 5 bars, was 4.');
+    await expect(page.getByTestId('tap-said')).toHaveText('Verse: 5 bars, was 4.');
+    await expect(page.getByTestId('tap-apply')).toBeFocused();
     await expect(page.getByTestId('tap-new').getByRole('listitem')).toHaveText([
       '1C, 4 beats',
       '2C, 2 beatsG, 2 beats',
       '3Am, 3 beatsF, 1 beat',
+      '4F, 4 beats',
+      '5F, 4 beats',
     ]);
     await expect(page.getByTestId('tap-old').getByRole('listitem')).toHaveCount(4);
     await noSideways(page);
@@ -88,11 +98,11 @@ test.describe('tap timing', () => {
     await page.getByTestId('chart-save').click();
     await expect(page.getByRole('heading', { name: 'Tide table', level: 1 })).toBeVisible();
     await page.reload();
-    await expect(page.getByText(/4\/4, 3 bars, 80 bpm/)).toBeVisible();
+    await expect(page.getByText(/4\/4, 5 bars, 80 bpm/)).toBeVisible();
     await page.getByRole('link', { name: 'Edit' }).click();
     await expect(
       page.getByRole('list', { name: 'Bars of Verse' }).getByRole('listitem'),
-    ).toHaveText(['1C', '2CG', '3AmF']);
+    ).toHaveText(['1C', '2CG', '3AmF', '4F', '5F']);
 
     if (!isMobile) return;
     // On a phone, Play is still in the first screen of the chart.
@@ -119,12 +129,13 @@ test.describe('tap timing', () => {
     await page.getByTestId('tap-open-0').click();
     await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
     await page.getByTestId('tap-start').click();
+    await expect(page.getByTestId('tap-button')).toBeVisible();
     await page.clock.runFor(3060 + 2 * 750);
     await page.getByTestId('tap-button').dispatchEvent('pointerdown', { button: 0 });
     await expect(page.getByTestId('tap-current')).toHaveText('G');
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('tap-said')).toHaveText(
-      'Stopped after 1 of 3 changes. The rest keep their lengths.',
+      'Stopped after 1 of 3 changes; the rest keep their lengths. Verse: 3 bars, was 4.',
     );
     await page.getByTestId('tap-discard').click();
     await expect(
