@@ -20,5 +20,12 @@
       "@config/*": ["./config/*"]
     }
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e", "config", "scripts"]
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "e2e",
+    "config",
+    "scripts",
+    "tools/chord-align/*.ts"
+  ]
 }
