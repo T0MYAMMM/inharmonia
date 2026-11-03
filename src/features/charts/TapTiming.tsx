@@ -16,6 +16,7 @@ import {
 import { prettyChord } from '@/core/notation';
 import { usePrefersReducedMotion } from '@/app/hooks';
 import { Button } from '@/ui/Button';
+import { buttonClass } from '@/ui/buttonClass';
 import { FilePicker } from '@/ui/FilePicker';
 import { Segmented } from '@/ui/Segmented';
 import { Slider } from '@/ui/Slider';
@@ -43,9 +44,11 @@ interface Beat {
 
 type Phase =
   | { name: 'setup' }
+  /** The metronome waiting for audio to run. */
+  | { name: 'starting' }
   | { name: 'beat' }
   | { name: 'tapping'; grid: BeatGrid }
-  | { name: 'result'; grid: BeatGrid };
+  | { name: 'result'; grid: BeatGrid; bars: ChartBar[] };
 
 const chordName = (s: string) => (s === NO_CHORD ? s : prettyChord(s));
 const clockTime = (s: number) =>
@@ -98,7 +101,10 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     [source],
   );
 
+  // Bumped by each start and stop, so a metronome that starts late is let go.
+  const run = useRef(0);
   const silence = useCallback(() => {
+    run.current++;
     metronome.current?.stop();
     metronome.current = null;
     if (player.current?.src) player.current.pause();
@@ -120,10 +126,21 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     setTaps([]);
     setBeatNow(null);
     if (source === 'metronome') {
-      const m = startMetronome(tempo, beatsPerBar, LIMITS.barsPerSection + 1);
-      metronome.current = m;
-      setPhase({ name: 'tapping', grid: m.grid });
-      setSaid(`Counting in. First chord ${chordName(chords[0]!.symbol)}.`);
+      const token = run.current;
+      setPhase({ name: 'starting' });
+      startMetronome(tempo, beatsPerBar, LIMITS.barsPerSection + 1).then(
+        (m) => {
+          if (token !== run.current) return m.stop();
+          metronome.current = m;
+          setPhase({ name: 'tapping', grid: m.grid });
+          setSaid(`Counting in. First chord ${chordName(chords[0]!.symbol)}.`);
+        },
+        () => {
+          if (token !== run.current) return;
+          setPhase({ name: 'setup' });
+          setSaid('The metronome would not start. Try again.');
+        },
+      );
     } else if (grid) {
       // A bar before the first downbeat, to hear it coming.
       startFile(grid.downbeat - grid.period * beatsPerBar);
@@ -140,32 +157,43 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     setSaid(`Tap the beat for ${BEAT_TAP_BARS} bars, starting on the section's first beat.`);
   };
 
+  /** The section's bars from these taps on this grid. */
+  const barsFrom = useCallback(
+    (list: readonly number[], grid: BeatGrid) => {
+      const starts = snapTaps(list, grid, source === 'file' ? beat?.taps : undefined);
+      return retime(bars, timedFromStarts(chords, starts, beatsPerBar), beatsPerBar);
+    },
+    [source, beat, bars, chords, beatsPerBar],
+  );
+
   const finish = useCallback(
-    (grid: BeatGrid, done: number) => {
+    (grid: BeatGrid, list: readonly number[]) => {
       silence();
-      if (done === 0) {
+      if (list.length === 0) {
         setPhase({ name: 'setup' });
         setSaid('Stopped.');
         return;
       }
-      setPhase({ name: 'result', grid });
+      const next = barsFrom(list, grid);
+      setPhase({ name: 'result', grid, bars: next });
+      const summary = barsSummary(label, next.length, bars.length);
       setSaid(
-        done === changes
-          ? 'Done. Here are the new bars.'
-          : `Stopped after ${done} of ${changes} changes. The rest keep their lengths.`,
+        list.length >= changes
+          ? summary
+          : `Stopped after ${list.length} of ${changes} changes; the rest keep their lengths. ${summary}`,
       );
     },
-    [silence, changes],
+    [silence, barsFrom, label, bars.length, changes],
   );
 
   const stop = useCallback(() => {
-    if (phase.name === 'tapping') finish(phase.grid, taps.length);
+    if (phase.name === 'tapping') finish(phase.grid, taps);
     else if (phase.name === 'beat') {
       silence();
       setPhase({ name: 'setup' });
       setSaid('Stopped.');
     }
-  }, [phase, taps.length, finish, silence]);
+  }, [phase, taps, finish, silence]);
 
   const stopLatest = useRef(stop);
   useEffect(() => {
@@ -194,7 +222,12 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     } else if (phase.name === 'tapping') {
       const next = [...taps, t];
       setTaps(next);
-      if (next.length >= changes) finish(phase.grid, next.length);
+      // The changes, then one more tap for where the last chord ends.
+      if (next.length > changes) finish(phase.grid, next);
+      else if (next.length === changes)
+        setSaid(
+          `Last chord, ${chordName(chords[changes]!.symbol)}. Tap End where it stops, or press Esc to end it with its bar.`,
+        );
       else
         setSaid(
           `Chord ${next.length + 1} of ${chords.length}, ${chordName(chords[next.length]!.symbol)}.`,
@@ -261,30 +294,25 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     return () => cancelAnimationFrame(frame);
   }, [phase, now, source, beatsPerBar]);
 
-  // ---- the result -----------------------------------------------------------
-
-  const result = useMemo(() => {
-    if (phase.name !== 'result') return null;
-    const starts = snapTaps(taps, phase.grid, source === 'file' ? beat?.taps : undefined);
-    return retime(bars, timedFromStarts(chords, starts, beatsPerBar), beatsPerBar);
-  }, [phase, taps, source, beat, bars, chords, beatsPerBar]);
-
-  // Focus follows the step: the Tap button while tapping, the result once done.
+  // Focus follows the step: the Tap button while tapping, Apply once done.
   const resultRef = useRef<HTMLParagraphElement>(null);
+  const applyRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (phase.name === 'beat' || phase.name === 'tapping') tapButton.current?.focus();
-    else if (phase.name === 'result') resultRef.current?.focus();
+    else if (phase.name === 'result')
+      (applyRef.current?.disabled ? resultRef : applyRef).current?.focus();
   }, [phase.name]);
 
   // ---- what you see ---------------------------------------------------------
 
   let view: ReactNode;
-  if (phase.name === 'result' && result) {
+  if (phase.name === 'result') {
+    const result = phase.bars;
     const fits = fitsSection(result);
     view = (
       <>
         <p className={styles.notice} ref={resultRef} tabIndex={-1} data-testid="tap-summary">
-          {label}: {result.length} bar{result.length === 1 ? '' : 's'}, was {bars.length}.
+          {barsSummary(label, result.length, bars.length)}
         </p>
         <div className={styles.compare}>
           <BarList title="Now" bars={bars} testId="tap-old" />
@@ -299,15 +327,16 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
           </p>
         ) : null}
         <div className={styles.row}>
-          <Button
-            variant="primary"
-            size="small"
+          <button
+            ref={applyRef}
+            type="button"
+            className={buttonClass('primary', 'small')}
             onClick={() => onApply(result)}
             disabled={!fits}
             data-testid="tap-apply"
           >
             Apply
-          </Button>
+          </button>
           <Button size="small" onClick={() => startTapping(phase.grid)} data-testid="tap-restart">
             Restart
           </Button>
@@ -320,8 +349,15 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
   } else if (phase.name === 'beat' || phase.name === 'tapping') {
     const tapping = phase.name === 'tapping';
     const counting = tapping && (beatNow === null || beatNow < 0);
-    const current = chords[taps.length];
+    const current = chords[Math.min(taps.length, changes)];
     const next = chords[taps.length + 1];
+    const atEnd = tapping && taps.length >= changes;
+    const progress =
+      taps.length === 0
+        ? `first change of ${changes}`
+        : atEnd
+          ? 'last chord'
+          : `change ${taps.length + 1} of ${changes}`;
     const inBar = beatNow !== null ? ((beatNow % beatsPerBar) + beatsPerBar) % beatsPerBar : -1;
     view = (
       <>
@@ -353,7 +389,7 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
             <span>
               {counting
                 ? 'Counting in'
-                : `Bar ${Math.floor((beatNow ?? 0) / beatsPerBar) + 1}, change ${taps.length} of ${changes}`}
+                : `Bar ${Math.floor((beatNow ?? 0) / beatsPerBar) + 1}, ${progress}`}
             </span>
             {!reduced ? (
               <span className={styles.tapBeats} aria-hidden="true">
@@ -381,11 +417,12 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
           }}
           data-testid="tap-button"
         >
-          Tap
+          {atEnd ? 'End' : 'Tap'}
         </button>
         <p className={styles.note}>
-          Space or Tap {tapping ? 'when the chord changes' : 'on each beat'}. Backspace undoes, Esc
-          stops.
+          {atEnd
+            ? 'Space or End where the last chord stops, or Esc to end it with its bar.'
+            : `Space or Tap ${tapping ? 'when the chord changes' : 'on each beat'}. Backspace undoes, Esc stops.`}
         </p>
         <div className={styles.row}>
           <Button size="small" onClick={undo} data-testid="tap-undo">
@@ -432,8 +469,13 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
           <>
             <p className={styles.note}>A bar to count in, then the first chord.</p>
             <div className={styles.row}>
-              <Button variant="primary" onClick={() => startTapping()} data-testid="tap-start">
-                Start
+              <Button
+                variant="primary"
+                onClick={() => startTapping()}
+                disabled={phase.name === 'starting'}
+                data-testid="tap-start"
+              >
+                {phase.name === 'starting' ? 'Getting the sound ready…' : 'Start'}
               </Button>
               {cancel}
             </div>
@@ -542,6 +584,10 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
     </div>
   );
 }
+
+/** "Verse: 3 bars, was 4." */
+const barsSummary = (label: string, now: number, was: number) =>
+  `${label}: ${now} bar${now === 1 ? '' : 's'}, was ${was}.`;
 
 /** A section's bars, read only, as in the editor. */
 function BarList({

@@ -3,12 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyChart, parseBars, withLyric, type ChordChart } from '@/core/charts';
 import { ChartEditor } from './ChartEditor';
+import { warmAudio } from './tapSource';
 
 // Tap timing's clock, moved by hand, and a metronome that only says where its beat is.
 const tap = vi.hoisted(() => ({ clock: 0 }));
 vi.mock('./tapSource', () => ({
   tapNow: () => tap.clock,
-  startMetronome: (bpm: number, beatsPerBar: number) => ({
+  warmAudio: vi.fn(),
+  startMetronome: async (bpm: number, beatsPerBar: number) => ({
     grid: { downbeat: tap.clock + (beatsPerBar * 60) / bpm, period: 60 / bpm },
     stop: () => undefined,
   }),
@@ -145,6 +147,8 @@ describe('tap timing in the chart editor', () => {
     const { saved, lyrics } = renderEditor();
     expect(screen.getByTestId('tap-open-0')).toBeEnabled();
     await user.click(screen.getByTestId('tap-open-0'));
+    // Opening is a gesture: audio starts then, ready for the count-in.
+    expect(warmAudio).toHaveBeenCalled();
     expect(screen.queryByRole('list', { name: 'Bars of Verse' })).toBeNull();
     tap.clock = 10;
     await user.click(screen.getByTestId('tap-start'));
@@ -154,6 +158,7 @@ describe('tap timing in the chart editor', () => {
       await act(() => Promise.resolve());
       await user.keyboard(' ');
     }
+    await user.keyboard('{Escape}');
     await user.click(screen.getByTestId('tap-apply'));
     expect(screen.getByTestId('tap-applied-0')).toHaveTextContent(
       'New timing in place. Save to keep it.',
