@@ -9,6 +9,7 @@ from chord_align.tonality import (
     harmony_weight,
     intro_costs,
     key_scores,
+    pedal_beats,
     rank_shifts,
     shifted,
     signed_shift,
@@ -72,6 +73,31 @@ def test_the_bass_note_tells_a_chord_from_one_inside_it() -> None:
     bass[0] = 1.0
     costs = chord_costs(chords, _chroma(["C"]), np.array([1.0]), bass)
     assert costs[0, 0] < costs[1, 0]
+
+
+def test_another_chord_tone_in_the_bass_is_fine() -> None:
+    # Db with Ab (its fifth) in the bass costs barely more than with Db.
+    chords = [parse_symbol("Db")]
+    heard = _chroma(["Db"])
+    bass = np.zeros((12, 1))
+    bass[8] = 1.0
+    with_fifth = chord_costs(chords, heard, np.array([1.0]), bass)[0, 0]
+    bass[:] = 0
+    bass[1] = 1.0
+    with_root = chord_costs(chords, heard, np.array([1.0]), bass)[0, 0]
+    assert with_fifth - with_root < 0.05
+
+
+def test_a_pedal_under_changing_chords_is_not_heard() -> None:
+    heard = _chroma(["Ab", "Ab", "Db", "Db", "Ab", "Ab", "Db", "Db", "Cm", "Cm"])
+    bass = np.zeros((12, 10))
+    bass[8] = 1.0  # Ab held throughout
+    assert pedal_beats(bass, heard).all()
+    # Under Cm, the Ab pedal no longer makes Ab the cheaper chord.
+    costs = chord_costs([parse_symbol("Ab"), parse_symbol("Cm")], heard, np.ones(10), bass)
+    assert costs[1, 9] < costs[0, 9]
+    # A held bass under one held chord is not a pedal.
+    assert not pedal_beats(bass, _chroma(["Ab"] * 10)).any()
 
 
 def test_key_scores_rank_every_key() -> None:

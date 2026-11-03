@@ -66,9 +66,52 @@ def best_similarity(chords: list[ChordPCs], chroma: np.ndarray) -> np.ndarray:
     return np.vstack([similarities(chords, chroma), similarities(list(common_chords()), chroma)]).max(axis=0)
 
 
-#: Weight of the bass note: a chord whose root (or slash bass) is not the loudest
-#: bass note costs up to this much more.
+#: Weight of the bass note: a chord none of whose tones is in the bass costs up to
+#: this much more.
 BASS_WEIGHT = 0.2
+#: How well another chord tone in the bass (an inversion, a walking line, a pedal
+#: on the fifth) counts, against the root or slash bass itself.
+BASS_OTHER_TONE = 0.8
+
+
+#: Beats either side looked at to find a pedal, and the share of them that must hold the note.
+PEDAL_REACH = 4
+PEDAL_HOLD = 0.85
+
+
+def pedal_beats(bass: np.ndarray, chroma: np.ndarray) -> np.ndarray:
+    """(beats,) True where the bass holds one note while the chords above it change.
+
+    A pedal says nothing about which chord is playing, so the bass is not heard
+    there. A held bass under one held chord is not a pedal.
+    """
+    n = bass.shape[1]
+    low = np.argmax(bass, axis=0)
+    has_bass = bass.max(axis=0) > 0
+    above = np.argmax(similarities(list(triads()), chroma), axis=0)
+    out = np.zeros(n, dtype=bool)
+    for b in range(n):
+        lo, hi = max(0, b - PEDAL_REACH), min(n, b + PEDAL_REACH + 1)
+        held = np.mean((low[lo:hi] == low[b]) & has_bass[lo:hi])
+        out[b] = bool(has_bass[b] and held >= PEDAL_HOLD and len(set(above[lo:hi])) >= 2)
+    return out
+
+
+@cache
+def triads() -> tuple[ChordPCs, ...]:
+    """The 24 major and minor triads, named with the file's spellings."""
+    return tuple(parse_symbol(f"{name}{q}") for name in MAJOR_NAMES for q in ("", "m"))
+
+
+def bass_fit(chord: ChordPCs, bass: np.ndarray) -> np.ndarray:
+    """Per beat, 0 to 1: how much of the bass is the chord's root (or slash bass) or another tone."""
+    low = chord.bass if chord.bass is not None else chord.root
+    assert low is not None
+    fit = bass[low]
+    for p in chord.pcs:
+        if p != low:
+            fit = np.maximum(fit, BASS_OTHER_TONE * bass[p])
+    return fit
 
 
 def chord_costs(
@@ -82,11 +125,14 @@ def chord_costs(
     quiet beat no chord can be heard, so every chord costs 1. N.C. is the
     reverse: cheap when quiet, dear when loud. A loud beat that no chord fits
     (noise, a drum break) counts as quiet: N.C. means low energy or no template.
-    With ``bass`` (the bass band's chroma), a chord also costs a little when its
-    root, or its slash bass, is not what the bass plays.
+    With ``bass`` (the bass band's chroma), a chord also costs a little when the
+    bass plays none of its tones, and a touch when it plays a tone other than
+    the root (or slash bass). Where the bass holds a pedal under changing
+    chords, it is not heard (``pedal_beats``).
     """
     best = best_similarity(chords, chroma)
     w = harmony_weight(energy, best)
+    heard_bass = None if bass is None else ~pedal_beats(bass, chroma)
     out = np.empty((len(chords), chroma.shape[1]))
     for i, chord in enumerate(chords):
         if chord.is_no_chord:
@@ -94,9 +140,7 @@ def chord_costs(
         else:
             shortfall = np.maximum(best - template(chord) @ chroma, 0.0)
             if bass is not None:
-                low = chord.bass if chord.bass is not None else chord.root
-                assert low is not None
-                shortfall = shortfall + BASS_WEIGHT * (1.0 - bass[low])
+                shortfall = shortfall + BASS_WEIGHT * heard_bass * (1.0 - bass_fit(chord, bass))
             out[i] = w * shortfall + (1.0 - w) * 1.0
     return out
 
