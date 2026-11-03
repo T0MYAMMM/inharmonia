@@ -114,9 +114,11 @@ export function tapChords(bars: readonly ChartBar[]): ChartChord[] {
 
 /**
  * The chords with their tapped lengths. `starts` is from `snapTaps`, one per
- * chord reached. A chord that has a start after it lasts until then; the last
- * chord runs to the end of its bar. Stopped early, the chord last reached and
- * those after it keep their lengths, in whole beats.
+ * chord reached, and one more if the end was tapped. A chord that has a start
+ * after it lasts until then. The last chord runs to the end of its bar, or,
+ * with the end tapped, to the end of the bar the end falls in, so it can be
+ * held for bars. Stopped early, the chord last reached and those after it
+ * keep their lengths, in whole beats.
  */
 export function timedFromStarts(
   chords: readonly ChartChord[],
@@ -124,12 +126,13 @@ export function timedFromStarts(
   beatsPerBar: number,
 ): TimedChord[] {
   const out: TimedChord[] = [];
+  const barEnd = (beat: number) => Math.ceil(beat / beatsPerBar) * beatsPerBar;
   let at = 0;
   chords.forEach((c, i) => {
     const start = i < starts.length ? starts[i]! : at;
     const last = i === chords.length - 1;
     const beats = last
-      ? (Math.floor(start / beatsPerBar) + 1) * beatsPerBar - start
+      ? barEnd(i + 1 < starts.length ? starts[i + 1]! : start + 1) - start
       : i + 1 < starts.length
         ? starts[i + 1]! - start
         : Math.max(1, Math.ceil(c.beats));

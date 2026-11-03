@@ -127,6 +127,25 @@ describe('the section as tapped', () => {
     expect(timedFromStarts(chords, [0, 2, 3, 6], 3).at(-1)).toEqual({ symbol: 'F', beats: 3 });
   });
 
+  it('holds the last chord to the end tap, rounded up to its bar', () => {
+    const chords = tapChords(parseBars('| C | G | Am | F |', 4).bars);
+    // F from beat 8 to an end tapped on beat 16: two bars.
+    expect(timedFromStarts(chords, [0, 2, 4, 8, 16], 4).at(-1)).toEqual({ symbol: 'F', beats: 8 });
+    // An end mid-bar fills that bar.
+    expect(timedFromStarts(chords, [0, 2, 4, 8, 13], 4).at(-1)).toEqual({ symbol: 'F', beats: 8 });
+    // An end in the chord's own bar is the bar's end, as without one.
+    expect(timedFromStarts(chords, [0, 2, 4, 9, 10], 4).at(-1)).toEqual({ symbol: 'F', beats: 3 });
+    expect(
+      show(
+        retime(
+          parseBars('| C | G | Am | F |', 4).bars,
+          timedFromStarts(chords, [0, 4, 6, 8, 16], 4),
+          4,
+        ),
+      ),
+    ).toBe('C:4 | G:2 Am:2 | F:4 | F:4');
+  });
+
   it('keeps the lengths of chords not reached, stopped early', () => {
     const chords = tapChords(parseBars('| C | G | Am F G |', 4).bars);
     // C, G and Am reached; Am, F and G keep theirs (F a whole beat, G to the bar's end).
