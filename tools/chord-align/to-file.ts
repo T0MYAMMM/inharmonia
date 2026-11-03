@@ -167,7 +167,8 @@ function main(): void {
   }
   if (items.length) writeFileSync(outPath, stringifyFile(buildFile(items, [], new Date())));
   console.log(JSON.stringify({ items: read, skipped }));
-  process.exit(items.length ? 0 : 1);
+  // exitCode, not exit(): exit() can cut a long stdout short when it is a pipe.
+  process.exitCode = items.length ? 0 : 1;
 }
 
 main();

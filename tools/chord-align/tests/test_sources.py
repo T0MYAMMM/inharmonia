@@ -163,3 +163,17 @@ def test_without_lyrics_leaves_the_file_as_it_was(chart_data: dict[str, Any]) ->
     clean = without_lyrics(chart_data)
     assert "lyrics" in chart_data["items"][0]["chart"]["sections"][0]
     assert all("lyrics" not in s for s in clean["items"][0]["chart"]["sections"])
+
+
+def test_hundreds_of_charts_come_back_in_one_call(tmp_path: Path) -> None:
+    # Enough that the bridge's report on stdout runs past a pipe's buffer.
+    require_node()
+    paths = []
+    for n in range(500):
+        p = tmp_path / f"song-{n}.json"
+        p.write_text(json.dumps({"title": f"Song number {n}", "artist": "A band", "chart": "| C | G |"}))
+        paths.append(p)
+    charts, skipped = convert(paths)
+    assert skipped == []
+    assert len(charts) == 500
+    assert {c.title for c in charts} == {f"Song number {n}" for n in range(500)}
