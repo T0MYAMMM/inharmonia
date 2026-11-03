@@ -66,7 +66,14 @@ def best_similarity(chords: list[ChordPCs], chroma: np.ndarray) -> np.ndarray:
     return np.vstack([similarities(chords, chroma), similarities(list(common_chords()), chroma)]).max(axis=0)
 
 
-def chord_costs(chords: list[ChordPCs], chroma: np.ndarray, energy: np.ndarray) -> np.ndarray:
+#: Weight of the bass note: a chord whose root (or slash bass) is not the loudest
+#: bass note costs up to this much more.
+BASS_WEIGHT = 0.2
+
+
+def chord_costs(
+    chords: list[ChordPCs], chroma: np.ndarray, energy: np.ndarray, bass: np.ndarray | None = None
+) -> np.ndarray:
     """Cost of each chord on each beat, (len(chords), beats), 0 = as good as any chord.
 
     A chord costs how far its similarity falls short of the best common chord on
@@ -75,6 +82,8 @@ def chord_costs(chords: list[ChordPCs], chroma: np.ndarray, energy: np.ndarray) 
     quiet beat no chord can be heard, so every chord costs 1. N.C. is the
     reverse: cheap when quiet, dear when loud. A loud beat that no chord fits
     (noise, a drum break) counts as quiet: N.C. means low energy or no template.
+    With ``bass`` (the bass band's chroma), a chord also costs a little when its
+    root, or its slash bass, is not what the bass plays.
     """
     best = best_similarity(chords, chroma)
     w = harmony_weight(energy, best)
@@ -84,6 +93,10 @@ def chord_costs(chords: list[ChordPCs], chroma: np.ndarray, energy: np.ndarray) 
             out[i] = 0.05 + 0.9 * w
         else:
             shortfall = np.maximum(best - template(chord) @ chroma, 0.0)
+            if bass is not None:
+                low = chord.bass if chord.bass is not None else chord.root
+                assert low is not None
+                shortfall = shortfall + BASS_WEIGHT * (1.0 - bass[low])
             out[i] = w * shortfall + (1.0 - w) * 1.0
     return out
 
@@ -140,6 +153,25 @@ class Key:
         return f"{self.tonic} {self.mode}"
 
 
+_SHARP_NAMES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+_FLAT_NAMES = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
+_SHARP_KEYS = {("G", "major"), ("D", "major"), ("A", "major"), ("E", "major"), ("B", "major")}
+_SHARP_KEYS |= {("F#", "major"), ("E", "minor"), ("B", "minor"), ("F#", "minor"), ("C#", "minor")}
+_SHARP_KEYS |= {("G#", "minor")}
+_FLAT_KEYS = {("F", "major"), ("Bb", "major"), ("Eb", "major"), ("Ab", "major"), ("Db", "major")}
+_FLAT_KEYS |= {("D", "minor"), ("G", "minor"), ("C", "minor"), ("F", "minor"), ("Bb", "minor")}
+_FLAT_KEYS |= {("Eb", "minor")}
+
+
+def chord_root_name(pc: int, key: tuple[str, str]) -> str:
+    """A root's name as the key spells it: C# in E major, Db in Ab major."""
+    if key in _SHARP_KEYS:
+        return _SHARP_NAMES[pc % 12]
+    if key in _FLAT_KEYS:
+        return _FLAT_NAMES[pc % 12]
+    return MINOR_NAMES[pc % 12]
+
+
 def key_name(pc: int, mode: str) -> str:
     """The tonic name the file accepts for this pitch class and mode."""
     return (MAJOR_NAMES if mode == "major" else MINOR_NAMES)[pc % 12]
@@ -150,16 +182,27 @@ def key_pc(tonic: str, mode: str) -> int:
     return (MAJOR_NAMES if mode == "major" else MINOR_NAMES).index(tonic)
 
 
-def sounding_key(chroma: np.ndarray, energy: np.ndarray) -> Key:
-    """Krumhansl–Schmuckler: the key whose profile best fits the mean chroma."""
+def key_scores(chroma: np.ndarray, energy: np.ndarray, chords: np.ndarray | None = None) -> list[Key]:
+    """Krumhansl–Schmuckler: every key scored by how well its profile fits the music, best first.
+
+    The music is the loudness-weighted mean chroma and, when given, ``chords``:
+    the aligned chords' own pitch-class profile, which keeps a melody that
+    dwells on the fifth from pulling the key there.
+    """
     mean = chroma @ loudness_weight(energy)
-    best = Key("C", "major", -2.0)
-    for pc in range(12):
-        for mode, profile in (("major", KK_MAJOR), ("minor", KK_MINOR)):
-            score = _corr(mean, np.roll(profile, pc))
-            if score > best.score:
-                best = Key(key_name(pc, mode), mode, score)
-    return best
+    if chords is not None and np.linalg.norm(chords) > 0:
+        mean = mean / (np.linalg.norm(mean) or 1.0) + chords / np.linalg.norm(chords)
+    keys = [
+        Key(key_name(pc, mode), mode, _corr(mean, np.roll(profile, pc)))
+        for pc in range(12)
+        for mode, profile in (("major", KK_MAJOR), ("minor", KK_MINOR))
+    ]
+    return sorted(keys, key=lambda k: -k.score)
+
+
+def sounding_key(chroma: np.ndarray, energy: np.ndarray, chords: np.ndarray | None = None) -> Key:
+    """The best-fitting key (see ``key_scores``)."""
+    return key_scores(chroma, energy, chords)[0]
 
 
 def transpose_key(tonic: str, mode: str, shift: int) -> str:
