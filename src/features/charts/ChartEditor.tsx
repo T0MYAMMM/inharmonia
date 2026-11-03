@@ -14,6 +14,7 @@ import {
   SECTION_NAMES,
   sectionTypeOf,
   suggestKeys,
+  tapChords,
   withLyric,
   type ChartBar,
   type ChartSection,
@@ -29,6 +30,7 @@ import { Slider } from '@/ui/Slider';
 import { TextArea } from '@/ui/TextArea';
 import { TextInput } from '@/ui/TextInput';
 import { PasteSheet } from './PasteSheet';
+import { TapTiming } from './TapTiming';
 import styles from './charts.module.css';
 
 const KEYS = [
@@ -54,6 +56,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   // Enter in a bar's lyrics moves on to the next bar's, ready to type.
   const [typingLyrics, setTypingLyrics] = useState(false);
   const [textFor, setTextFor] = useState<string | null>(null);
+  // The section being timed by tapping along, and the one just timed.
+  const [tapFor, setTapFor] = useState<string | null>(null);
+  const [tapped, setTapped] = useState<string | null>(null);
   const [pasting, setPasting] = useState(initial.sections.length === 0);
   const bpb = chart.meter.beats;
   const issues = chartIssues(chart);
@@ -329,6 +334,20 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
               }}
               onCancel={() => setTextFor(null)}
             />
+          ) : tapFor === s.id ? (
+            <TapTiming
+              label={s.label}
+              bars={s.bars}
+              beatsPerBar={bpb}
+              tempo={chart.tempo}
+              onApply={(bars) => {
+                setBars(s.id, () => bars);
+                setSelected(null);
+                setTapFor(null);
+                setTapped(s.id);
+              }}
+              onCancel={() => setTapFor(null)}
+            />
           ) : (
             <>
               <ol className={styles.bars} aria-label={`Bars of ${s.label}`}>
@@ -419,12 +438,32 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                 <Button
                   size="small"
                   variant="ghost"
-                  onClick={() => setTextFor(s.id)}
+                  onClick={() => {
+                    setTextFor(s.id);
+                    setTapFor(null);
+                  }}
                   data-testid={`edit-text-${si}`}
                 >
                   Edit as text
                 </Button>
+                <Button
+                  size="small"
+                  variant="ghost"
+                  onClick={() => {
+                    setTapFor(s.id);
+                    setTextFor(null);
+                    setTapped(null);
+                  }}
+                  disabled={tapChords(s.bars).length < 2}
+                  title={tapChords(s.bars).length < 2 ? 'One chord: nothing to tap.' : undefined}
+                  data-testid={`tap-open-${si}`}
+                >
+                  Tap timing
+                </Button>
               </div>
+              <p className={styles.notice} role="status" data-testid={`tap-applied-${si}`}>
+                {tapped === s.id ? 'New timing in place. Save to keep it.' : ''}
+              </p>
             </>
           )}
         </section>
