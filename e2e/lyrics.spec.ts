@@ -19,6 +19,11 @@ async function sungChart(page: Page, title: string) {
   await page.getByTestId('paste-text').fill(SHEET);
   await page.getByTestId('keep-lyrics').check();
   await page.getByTestId('paste-read').click();
+  // One chord a bar, so each chord's words fill a bar of their own.
+  await page
+    .getByRole('radiogroup', { name: 'Bar lengths, line 2' })
+    .getByRole('radio', { name: '1 a bar' })
+    .click();
   await page.getByTestId('paste-use').click();
   await page.getByTestId('chart-save').click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
@@ -74,13 +79,12 @@ test.describe('lyrics in exports', () => {
       ).toHaveAccessibleDescription('In the file: keep it to yourself.');
       await page.getByTestId('export-download').click();
     });
-    // Each chord's column falls inside a word: the word goes to that chord's bar, and the
-    // words of chords that start in one bar (as estimated from them) share it.
+    // Each chord's column falls inside a word: the word goes to that chord's bar.
     expect(JSON.parse(sung.text).items[0].chart.sections[0].lyrics).toEqual([
       MARK,
-      'lanterns drift past quiet',
+      'lanterns drift',
+      'past quiet',
       'harbours',
-      '',
     ]);
     await expect(
       page.getByRole('status').filter({ hasText: 'inharmonia-chart-quiet-harbours' }),
@@ -105,7 +109,8 @@ test.describe('lyrics in exports', () => {
     await copies.first().click();
     await expect(page.locator('[data-score-view]').getByTestId('bar-lyric')).toHaveText([
       MARK,
-      'lanterns drift past quiet',
+      'lanterns drift',
+      'past quiet',
       'harbours',
     ]);
 
