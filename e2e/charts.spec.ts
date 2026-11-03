@@ -136,8 +136,8 @@ test.describe('chord charts', () => {
     const review = page.getByTestId('paste-review');
     // The words go on the bar where they start, in the bars estimated from them.
     await expect(review.getByRole('row').filter({ hasText: 'Lyrics kept' })).toHaveText([
-      /la la la lyric line here\s*Lyrics kept: la la \| la lyric \| line here \| –/,
-      /lyric line here la la\s*Lyrics kept: lyric \| line here \| la la \| –/,
+      /la la la lyric line here\s*Lyrics kept: la la la lyric \| line here/,
+      /lyric line here la la\s*Lyrics kept: lyric line here \| la la/,
     ]);
     await expect(review.getByRole('row').filter({ hasText: 'Left out' })).toHaveText(
       /la la la la\s*Left out: no chords right above it/,
@@ -361,7 +361,7 @@ test.describe('chord charts', () => {
       'Lyrics removed from 2 lines. Only chords and section names are kept.',
     );
     await expect(page.getByTestId('estimate-note')).toHaveText(
-      'Bar lengths are estimated from the lyrics. Check them by ear.',
+      'Bar lengths are estimated from the lyrics. Check them by ear. If every line is twice too long or too short, try Half or Double.',
     );
     const first = page.getByRole('radiogroup', { name: 'Bar lengths, line 2' });
     const second = page.getByRole('radiogroup', { name: 'Bar lengths, line 4' });
@@ -369,6 +369,12 @@ test.describe('chord charts', () => {
       'aria-checked',
       'true',
     );
+    // Both lines read at one speed: 2 bars of words each.
+    await expect(page.getByTestId('read-2')).toContainText('Bars: | C G | G |');
+    await expect(page.getByTestId('read-4')).toContainText('Bars: | Am F C . | G |');
+    // Twice too short? Double reads every estimated line twice as long, in one click.
+    const lengths = page.getByRole('radiogroup', { name: 'Estimated lengths' });
+    await lengths.getByRole('radio', { name: 'Double' }).click();
     await expect(page.getByTestId('read-2')).toContainText('Bars: | C | G | G | G |');
     await expect(page.getByTestId('read-4')).toContainText('Bars: | Am F | F C | G | G |');
     // Nothing reaches sideways, at any width.
@@ -385,6 +391,7 @@ test.describe('chord charts', () => {
     await expect(page.getByTestId('read-4')).toContainText('Bars: | Am | F | C | G |');
     await page.getByTestId('paste-use').click();
 
+    // Doubled, the first line's 4 bars, then the second's one chord a bar.
     await expect(page.getByTestId('section-0').getByRole('listitem')).toHaveCount(8);
     await expect(page.getByTestId('bar-0-0')).toContainText('C');
     await expect(page.getByTestId('bar-0-1')).toContainText('G');
