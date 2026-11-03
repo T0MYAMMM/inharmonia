@@ -75,18 +75,22 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
   const [from, setFrom] = useState(0);
   const [duration, setDuration] = useState(0);
   const [beat, setBeat] = useState<Beat | null>(null);
+  const [beatNow, setBeatNow] = useState<number | null>(null);
   const player = useRef<HTMLAudioElement>(null);
   const metronome = useRef<Metronome | null>(null);
   const tapButton = useRef<HTMLButtonElement>(null);
 
   // The file is let go when another is chosen and when the panel closes.
   useEffect(() => (file ? () => URL.revokeObjectURL(file.url) : undefined), [file]);
-  useEffect(() => {
+  // Slower without going lower. Loading a file resets the rate to the default, so both are set.
+  const setRate = useCallback(() => {
     const el = player.current;
     if (!el) return;
     el.preservesPitch = true;
+    el.defaultPlaybackRate = speed / 100;
     el.playbackRate = speed / 100;
-  }, [speed, file]);
+  }, [speed]);
+  useEffect(setRate, [setRate, file]);
 
   /** Seconds on the clock taps are read on: the song's own time while a file plays. */
   const now = useCallback(
@@ -104,6 +108,7 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
   const startFile = (at: number) => {
     const el = player.current;
     if (!el) return;
+    setRate();
     el.currentTime = Math.max(0, at);
     void el.play()?.catch(() => setSaid('The file would not play. Try another.'));
   };
@@ -113,6 +118,7 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
   const startTapping = (grid?: BeatGrid) => {
     silence();
     setTaps([]);
+    setBeatNow(null);
     if (source === 'metronome') {
       const m = startMetronome(tempo, beatsPerBar, LIMITS.barsPerSection + 1);
       metronome.current = m;
@@ -239,7 +245,6 @@ export function TapTiming({ label, bars, beatsPerBar, tempo, onApply, onCancel }
   }, [live, tap, undo, stop]);
 
   // The beat you are on, for the count and the beat marks.
-  const [beatNow, setBeatNow] = useState<number | null>(null);
   useEffect(() => {
     if (phase.name !== 'tapping') return;
     const { grid } = phase;
