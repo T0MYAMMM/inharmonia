@@ -36,6 +36,15 @@ const ESTIMATED: SegmentedOption<LineBars>[] = [
 ];
 const AS_TYPED = ESTIMATED.slice(1);
 
+/** Half and Double change the speed every estimated line is read at. */
+const SCALES = [
+  { value: 'half', label: 'Half' },
+  { value: 'as', label: 'As estimated' },
+  { value: 'double', label: 'Double' },
+] as const satisfies readonly SegmentedOption<string>[];
+type Scale = (typeof SCALES)[number]['value'];
+const SCALE: Record<Scale, number> = { half: 0.5, as: 1, double: 2 };
+
 /**
  * Paste a chord sheet and review what was read, line by line, next to what you
  * pasted, as the bars it will make. Where words sit under the chords, each
@@ -51,10 +60,11 @@ export function PasteSheet(props: PasteSheetProps) {
   /** Lines read another way than their default, by line number. */
   const [chosen, setChosen] = useState<Map<number, LineBars>>(new Map());
   const [keep, setKeep] = useState(false);
+  const [scale, setScale] = useState<Scale>('as');
   const noteId = useId();
   const pasted = text.split(/\r?\n/);
-  const read = (keepLyrics: boolean) =>
-    setSheet(parseSheet(text, props.beatsPerBar, { keepLyrics }));
+  const read = (keepLyrics: boolean, at: Scale = scale) =>
+    setSheet(parseSheet(text, props.beatsPerBar, { keepLyrics, scale: SCALE[at] }));
   const howOf = (l: PastedLine) => chosen.get(l.n) ?? defaultLineBars(l);
   const estimated = sheet?.lines.some((l) => l.estimate && howOf(l) === 'estimated') ?? false;
 
@@ -125,7 +135,8 @@ export function PasteSheet(props: PasteSheetProps) {
               variant="primary"
               disabled={!text.trim()}
               onClick={() => {
-                read(keep);
+                read(keep, 'as');
+                setScale('as');
                 setChosen(new Map());
               }}
               data-testid="paste-read"
@@ -180,9 +191,21 @@ export function PasteSheet(props: PasteSheetProps) {
               ))}
           </div>
           {estimated ? (
-            <p className={styles.note} data-testid="estimate-note">
-              Bar lengths are estimated from the lyrics. Check them by ear.
-            </p>
+            <div className={styles.estimate}>
+              <p className={styles.note} data-testid="estimate-note">
+                Bar lengths are estimated from the lyrics. Check them by ear. If every line is twice
+                too long or too short, try Half or Double.
+              </p>
+              <Segmented
+                label="Estimated lengths"
+                value={scale}
+                options={SCALES}
+                onChange={(v) => {
+                  setScale(v);
+                  read(keep, v);
+                }}
+              />
+            </div>
           ) : null}
           <div className={styles.row}>
             {props.hasSections ? (
