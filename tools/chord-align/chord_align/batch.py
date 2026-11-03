@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .audio import AUDIO_SUFFIXES, SAMPLE_RATE, AudioError, load_audio
-from .chart import FORMAT, FORMAT_VERSION, ChartError, read_chart
+from .chart import FORMAT, FORMAT_VERSION, LIMITS, ChartError, read_chart
 from .pipeline import MIN_CONFIDENCE, Result, run
 from .report import build_report
 from .sources import ChartSource, collect, load_sources
@@ -35,6 +35,8 @@ log = logging.getLogger(__name__)
 #: The combined import file and the summary, in the output folder.
 COMBINED = "aligned-charts.json"
 SUMMARY = "summary.md"
+#: Charts per import file: an Inharmonia file holds up to 500 items.
+PER_FILE = LIMITS["items"]
 
 #: Words in a file name that make a recording more likely the original, or a cover.
 _ORIGINAL_WORDS = {"official": 2, "mv": 2, "videoclip": 2, "original": 1}
@@ -272,7 +274,12 @@ def _cell(text: str) -> str:
     return text.replace("|", "\\|").replace("\n", " ")
 
 
-def summary(rows: list[Row], unmatched: list[Match], unread: list[tuple[Path, str]], counts: str) -> str:
+def summary(
+    rows: list[Row],
+    unmatched: list[Match],
+    unread: list[tuple[Path, str]],
+    counts: str,
+) -> str:
     """``summary.md``: a line per song, then the recordings not matched and the charts not read."""
     lines = ["# Batch alignment", "", counts, ""]
     lines += [
@@ -332,7 +339,7 @@ def align_song(song: Song, opts: Options) -> Result:
 
 
 def combined(items: list[dict[str, Any]]) -> dict[str, Any]:
-    """One Inharmonia file holding every aligned chart, ids made unique."""
+    """One Inharmonia file holding these aligned charts, ids made unique."""
     seen: set[str] = set()
     out = []
     for item in items:
@@ -346,6 +353,27 @@ def combined(items: list[dict[str, Any]]) -> dict[str, Any]:
     return {"format": FORMAT, "version": FORMAT_VERSION, "exportedAt": now, "items": out}
 
 
+def import_files(items: list[dict[str, Any]], per: int | None = None) -> list[tuple[str, dict[str, Any]]]:
+    """The files to import: one, or, past ``PER_FILE`` charts, ``aligned-charts-1.json`` on."""
+    every = combined(items)["items"]  # ids unique across all the files
+    per = per or PER_FILE
+    if len(every) <= per:
+        return [(COMBINED, combined(every))]
+    stem = COMBINED.removesuffix(".json")
+    starts = range(0, len(every), per)
+    return [(f"{stem}-{k + 1}.json", combined(every[i : i + per])) for k, i in enumerate(starts)]
+
+
+@dataclass
+class Batch:
+    """What a batch did: the songs, the recordings not matched, the charts read and the files written."""
+
+    rows: list[Row]
+    unmatched: list[Match]
+    charts: int
+    written: list[str]
+
+
 def run_batch(
     audio: Path,
     charts_path: Path,
@@ -353,14 +381,15 @@ def run_batch(
     *,
     manifest: Path | None = None,
     opts: Options | None = None,
-) -> tuple[list[Row], list[Match]]:
+) -> Batch:
     """Match, align and write everything into ``out_dir``.
 
     That is: a report and suggestions per song, the combined file, and the summary.
     """
     opts = opts or Options()
     pairs = read_manifest(manifest) if manifest else None
-    charts, unread = load_sources(collect(charts_path))
+    files = collect(charts_path)
+    charts, unread = load_sources(files)
     audio_files = audio_in(audio)
     matches = match_all(
         audio_files,
@@ -398,12 +427,24 @@ def run_batch(
         )
         items.append(result.output()["items"][result.chart.item_index])
         rows.append(row)
-    if items:
-        (out_dir / COMBINED).write_text(
-            json.dumps(combined(items), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    written = []
+    for name, data in import_files(items) if items else []:
+        (out_dir / name).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        written.append(name)
+    counts = f"{len(audio_files)} recordings, {len(charts)} charts read. {len(rows)} songs matched"
+    if len(written) == 1:
+        counts += f"; aligned charts in {written[0]}."
+    elif written:
+        counts += (
+            f"; aligned charts in {len(written)} files, as one file holds up to {PER_FILE}: "
+            f"{', '.join(written)}. Import each."
         )
-    counts = f"{len(audio_files)} recordings, {len(charts)} charts read. {len(rows)} songs matched" + (
-        f"; aligned charts in {COMBINED}." if items else "; nothing aligned."
-    )
+    else:
+        counts += "; nothing aligned."
+    if not charts:
+        counts += (
+            f"\n\n**No charts were read** from {charts_path}: {len(files)} .json or .txt files found"
+            + (", none of them a chart (see “Chart files not read”)." if files else ".")
+        )
     (out_dir / SUMMARY).write_text(summary(rows, unmatched, unread, counts), encoding="utf-8")
-    return rows, unmatched
+    return Batch(rows, unmatched, len(charts), written)
