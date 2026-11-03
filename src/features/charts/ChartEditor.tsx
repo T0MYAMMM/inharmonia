@@ -31,6 +31,7 @@ import { TextArea } from '@/ui/TextArea';
 import { TextInput } from '@/ui/TextInput';
 import { PasteSheet } from './PasteSheet';
 import { TapTiming } from './TapTiming';
+import { warmAudio } from './tapSource';
 import styles from './charts.module.css';
 
 const KEYS = [
@@ -450,6 +451,8 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
                   size="small"
                   variant="ghost"
                   onClick={() => {
+                    // A gesture: audio starts now, ready for the first count-in.
+                    warmAudio();
                     setTapFor(s.id);
                     setTextFor(null);
                     setTapped(null);

@@ -8,7 +8,8 @@ import { TapTiming } from './TapTiming';
 const t = vi.hoisted(() => ({ clock: 0, stops: 0 }));
 vi.mock('./tapSource', () => ({
   tapNow: () => t.clock,
-  startMetronome: vi.fn((bpm: number, beatsPerBar: number) => ({
+  warmAudio: () => undefined,
+  startMetronome: vi.fn(async (bpm: number, beatsPerBar: number) => ({
     grid: { downbeat: t.clock + (beatsPerBar * 60) / bpm, period: 60 / bpm },
     stop: () => t.stops++,
   })),
@@ -70,11 +71,12 @@ describe('tap timing with the metronome', () => {
 
     // Beat 0 is at 102 s, a beat every half second.
     await at(102.1);
-    expect(screen.getByTestId('tap-count')).toHaveTextContent('Bar 1, change 0 of 3');
+    expect(screen.getByTestId('tap-count')).toHaveTextContent('Bar 1, first change of 3');
     await at(102 + 6 * 0.5 + 0.07);
     await user.keyboard(' ');
     expect(screen.getByTestId('tap-current')).toHaveTextContent('G');
     expect(said()).toBe('Chord 2 of 4, G.');
+    expect(screen.getByTestId('tap-count')).toHaveTextContent('Bar 2, change 2 of 3');
     // A tap too many, undone.
     await user.keyboard(' ');
     expect(screen.getByTestId('tap-current')).toHaveTextContent('Am');
@@ -86,11 +88,19 @@ describe('tap timing with the metronome', () => {
     await user.keyboard(' ');
     await at(102 + 11 * 0.5 + 0.08);
     await user.keyboard(' ');
-    // All changes in: the sound stops and the bars are shown.
+    // All changes in: the last chord, and End where it stops, or Esc to end it with its bar.
+    expect(screen.getByTestId('tap-current')).toHaveTextContent('F');
+    expect(screen.getByTestId('tap-button')).toHaveTextContent('End');
+    expect(screen.getByTestId('tap-count')).toHaveTextContent('Bar 3, last chord');
+    expect(said()).toBe(
+      'Last chord, F. Tap End where it stops, or press Esc to end it with its bar.',
+    );
+    await user.keyboard('{Escape}');
+    // The sound stops and the bars are shown, Apply ready.
     expect(t.stops).toBe(1);
-    expect(said()).toBe('Done. Here are the new bars.');
+    expect(said()).toBe('Verse: 3 bars, was 4.');
     expect(screen.getByTestId('tap-summary')).toHaveTextContent('Verse: 3 bars, was 4.');
-    expect(screen.getByTestId('tap-summary')).toHaveFocus();
+    expect(screen.getByTestId('tap-apply')).toHaveFocus();
     expect(within(screen.getByTestId('tap-old')).getAllByRole('listitem')).toHaveLength(4);
     const fresh = within(screen.getByTestId('tap-new')).getAllByRole('listitem');
     expect(fresh.map((li) => li.textContent)).toEqual([
@@ -106,6 +116,44 @@ describe('tap timing with the metronome', () => {
     expect(bars[1]!.lyric).toBe('over the hill');
   });
 
+  it('holds the last chord to an End tap, for more than a bar', async () => {
+    const user = userEvent.setup();
+    const { onApply } = renderTap();
+    await user.click(screen.getByTestId('tap-start'));
+    for (const beat of [4, 6, 8, 16]) {
+      await at(102 + beat * 0.5 - 0.05);
+      await user.keyboard(' ');
+    }
+    expect(said()).toBe('Verse: 4 bars, was 4.');
+    expect(screen.getByTestId('tap-apply')).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(show(onApply.mock.calls[0]![0] as ChartBar[])).toBe('C:4 | G:2 Am:2 | F:4 | F:4');
+  });
+
+  it('waits for the sound before counting in, and lets a late start go', async () => {
+    const user = userEvent.setup();
+    let ready = (_: unknown) => undefined as unknown;
+    vi.mocked(startMetronome).mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          ready = r as typeof ready;
+        }),
+    );
+    const { onCancel } = renderTap();
+    await user.click(screen.getByTestId('tap-start'));
+    expect(screen.getByTestId('tap-start')).toHaveTextContent('Getting the sound ready…');
+    expect(screen.getByTestId('tap-start')).toBeDisabled();
+    expect(screen.queryByTestId('tap-button')).toBeNull();
+    await user.click(screen.getByTestId('tap-cancel'));
+    expect(onCancel).toHaveBeenCalled();
+    let stopped = false;
+    await act(async () => {
+      ready({ grid: { downbeat: 0, period: 0.5 }, stop: () => (stopped = true) });
+    });
+    expect(stopped).toBe(true);
+    expect(screen.queryByTestId('tap-button')).toBeNull();
+  });
+
   it('taps with the Tap button too, and Esc stops early', async () => {
     const user = userEvent.setup();
     const { onApply } = renderTap();
@@ -114,7 +162,9 @@ describe('tap timing with the metronome', () => {
     fireEvent.pointerDown(screen.getByTestId('tap-button'), { button: 0 });
     expect(screen.getByTestId('tap-current')).toHaveTextContent('G');
     await user.keyboard('{Escape}');
-    expect(said()).toBe('Stopped after 1 of 3 changes. The rest keep their lengths.');
+    expect(said()).toBe(
+      'Stopped after 1 of 3 changes; the rest keep their lengths. Verse: 3 bars, was 4.',
+    );
     // G reached and kept at its 4 beats, Am too, F to the end of its bar.
     await user.click(screen.getByTestId('tap-apply'));
     expect(show(onApply.mock.calls[0]![0] as ChartBar[])).toBe('C:2 G:2 | G:2 Am:2 | Am:2 F:2');
@@ -158,6 +208,9 @@ describe('tap timing with the metronome', () => {
     await user.click(screen.getByTestId('tap-start'));
     await at(102 + 33 * 4 * 0.5 - 0.5);
     await user.keyboard(' ');
+    await user.keyboard('{Escape}');
+    // Nothing to apply: focus goes to what it says.
+    expect(screen.getByTestId('tap-summary')).toHaveFocus();
     expect(screen.getByTestId('tap-too-long')).toHaveTextContent('A section holds up to 32 bars.');
     expect(screen.getByTestId('tap-apply')).toBeDisabled();
     expect(onApply).not.toHaveBeenCalled();
@@ -257,6 +310,7 @@ describe('tap timing with a song file', () => {
     await tapAt(12 + 4 * 0.6 + 0.06);
     await tapAt(12 + 6 * 0.6 - 0.07);
     await tapAt(12 + 12 * 0.6 + 0.02);
+    await user.keyboard('{Escape}');
     await user.click(screen.getByTestId('tap-apply'));
     expect(show(onApply.mock.calls[0]![0] as ChartBar[])).toBe('C:4 | G:2 Am:2 | Am:4 | F:4');
 
