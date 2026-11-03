@@ -91,6 +91,7 @@ docs/format/            the file format (JSON Schema, notes, one example per kin
                         the piece source format
 docs/composing.md       how a composer's song gets into the catalogue
 scripts/                build-songs.ts (npm run songs) and the transcription eval
+tools/chord-align/      an offline Python tool: chord lengths, tempo and key from a recording (its own README)
 docs/screenshots/       screenshots attached to each phase's pull request
 ```
 
