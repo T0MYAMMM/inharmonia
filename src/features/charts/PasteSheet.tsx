@@ -43,7 +43,11 @@ export function PasteSheet(props: PasteSheetProps) {
   const use = (mode: 'replace' | 'add') => {
     if (!sheet) return;
     props.onUse(
-      sheetToChart(sheet, { beatsPerBar: props.beatsPerBar, twoPerBar: two, newId: props.newId }),
+      sheetToChart(sheet, {
+        beatsPerBar: props.beatsPerBar,
+        lineBars: new Map([...two].map((n) => [n, 'two'])),
+        newId: props.newId,
+      }),
       mode,
     );
   };
