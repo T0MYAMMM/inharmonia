@@ -113,6 +113,44 @@ export function isChordLine(line: string): boolean {
   return chords + silent >= 2 || spaced;
 }
 
+/** A line of one chord and nothing else, such as "G" or "Am7". */
+function loneChord(line: string): boolean {
+  const t = line.trim();
+  return t !== '' && !/\s/.test(t) && chordToken(t) !== null;
+}
+
+/** A line of words: not chords, not a section name, not a lone chord. */
+const isWords = (line: string | undefined): line is string =>
+  !!line && /\p{L}/u.test(line) && !isChordLine(line) && !parseHeader(line) && !loneChord(line);
+
+/**
+ * Lines (1-based) that hold one chord and nothing else, at the start of the
+ * line, over a line of words: chord sites write a chord that lasts the whole
+ * line that way. `isChordLine` can't tell "G" from a one-word lyric on its
+ * own, so the lines around it decide. It is a chord line when the line under
+ * it is words, the line above is the start, a blank line, a section name, or
+ * words that already sit under a line of chords (so it starts a new pair), and
+ * the sheet has other lines of chords or at least two such lines. "A" or "Am"
+ * in a run of lyrics stays a lyric.
+ */
+export function loneChordLines(lines: readonly string[]): Set<number> {
+  const lone = new Set<number>();
+  const chordsAt = (i: number) => i >= 0 && (lone.has(i) || isChordLine(lines[i]!));
+  lines.forEach((line, i) => {
+    if (!loneChord(line) || isChordLine(line) || parseHeader(line) || !isWords(lines[i + 1]))
+      return;
+    const prev = lines[i - 1];
+    const starts =
+      prev === undefined ||
+      !prev.trim() ||
+      parseHeader(prev) !== null ||
+      (isWords(prev) && chordsAt(i - 2));
+    if (starts) lone.add(i);
+  });
+  const others = lines.some((l) => isChordLine(l));
+  return others || lone.size >= 2 ? new Set([...lone].map((i) => i + 1)) : new Set();
+}
+
 /**
  * Where each word-run starts in a lyric line cut at these columns: each cut
  * moved back to the start of the word it falls in, so words stay whole. The
@@ -258,6 +296,7 @@ export function parseSheet(
     body: string,
     offset = 0,
     extra: Partial<PastedLine> = {},
+    lone = false,
   ): PastedLine | null => {
     if (body.includes('|') && isChordLine(body)) {
       const { bars } = parseBars(body, beatsPerBar);
@@ -276,7 +315,7 @@ export function parseSheet(
         ...extra,
       };
     }
-    if (isChordLine(body)) {
+    if (lone || isChordLine(body)) {
       const tokens = body.split(/\s+/).filter((t) => t && !STRUCTURAL.test(t) && !isNoChord(t));
       const chords: string[] = [];
       const unknown: string[] = [];
@@ -316,9 +355,10 @@ export function parseSheet(
     return null;
   };
 
-  text.split(/\r?\n/).forEach((raw, i) => {
+  const rows = text.split(/\r?\n/).map(expandTabs);
+  const lone = loneChordLines(rows);
+  rows.forEach((line, i) => {
     const n = i + 1;
-    const line = expandTabs(raw);
     if (!line.trim()) {
       lines.push({
         n,
@@ -403,7 +443,7 @@ export function parseSheet(
       return;
     }
 
-    const chordLine = readChords(n, line);
+    const chordLine = readChords(n, line, 0, {}, lone.has(n));
     if (chordLine) {
       lines.push(chordLine);
       return;
