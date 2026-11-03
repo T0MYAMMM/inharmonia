@@ -88,23 +88,27 @@ play no part in choosing the tempo or the lengths. They only break exact ties (s
 1. **The form, written out.** Each section is played `repeat` times, in form order. A chord
    repeated across bars counts as one long chord.
 2. **Beats and chroma.** librosa tracks the beats twice, once from the chart's tempo and once from a
-   neutral 100 bpm, each only a starting guess. Chroma (constant-Q, on the harmonic part after
-   separating harmonic from percussive) is taken per beat in two bands: from C3 up, where the
-   chord is, and C1 to B2, for the bass note.
+   neutral 100 bpm, each only a starting guess. Chroma (constant-Q, log-compressed so a loud melody
+   does not drown a quiet chord, on the harmonic part after separating harmonic from percussive)
+   is taken per beat in two bands: from C3 up, where the chord is, and C1 to B2, for the bass note.
 3. **Transposition.** The chart's chords are tried at all 12 shifts, and the three best are
    aligned in full. This catches capo recordings and charts written in another key.
 4. **Beat level.** Each tracked grid, and half and double of it, is aligned with free lengths. The
    cheapest wins, with priors that know nothing of the chart: a tempo from 60 to 160 bpm, chords
-   that last 2 to 8 beats, and a small cost for leaving the tracker's own beat. A chart that writes
-   2+2 where the song plays 4+4 gets its lengths doubled, not its tempo halved.
+   of 2 to 4 beats preferred (up to 8 still usual), and a small cost for leaving the tracker's own
+   beat. So a ballad at 63 with a chord a bar reads as 63, not 126, and a chart that writes 2+2
+   where the song plays 4+4 gets its lengths doubled, not its tempo halved. The report names the
+   other octave. Of the two ways to halve a grid, the one on the stronger onsets is kept.
 5. **Alignment.** An explicit-duration Viterbi search over beats: each chord takes at least one
    beat, with unlabelled audio allowed before the first chord and after the last. The path may
    leave out one playing of a section, or play one twice in a row, at a cost. A chord costs how far
-   it falls short of the best common chord on that beat, plus a little when the bass plays
-   neither its root nor its slash bass. A second pass leans on the playings of each section whose
+   it falls short of the best common chord on that beat, plus a little when the bass plays none
+   of its tones. A bass held under changing chords (a pedal) is not counted. A second pass leans on the playings of each section whose
    edges can be heard, and on chord changes falling on the downbeat.
-6. **Bars.** The downbeat is placed where the most chord changes land. Each section takes the
-   median length of each chord over its playings. Halfway medians go whichever way fills whole
+6. **Bars.** The downbeat is placed where the most chord changes land. Each playing of a section is
+   measured on that bar grid, from its nearest downbeat to the next playing's, so a first chord
+   heard a beat early (a pickup, a push) does not shift the bars: they follow the same grid as the
+   report's bar table. Each section takes the median length of each chord over its playings. Halfway medians go whichever way fills whole
    bars with the most changes on downbeats. The bars are rebuilt: a chord that crosses a barline
    is split and its symbol repeated, and every bar adds up to the meter.
 7. **Key.** Krumhansl–Kessler profiles, fitted to the chroma and to the aligned chords together.
@@ -120,6 +124,9 @@ The tests use synthesised audio only, and no recordings are kept in the repo.
   tones, syncopated drums, tempo drift of ±3%, a slowing at the end, reverb and noise. Among them:
   - a capo recording;
   - a chart written 2+2 where the song plays 4+4, and the same with the chart's tempo halved too;
+  - a ballad at 63 with a chord a bar, whose chart says 126;
+  - a beat of pickup, with the guitar pushing each change;
+  - a quiet verse with an Ab held in the bass under changing chords;
   - a recording with a section more than the chart, and one with a section less;
   - a chart with the song's chords in the wrong order.
 
@@ -130,8 +137,8 @@ chord-align eval                   # prints the metrics for each render
 ```
 
 The bar for every matching render: 90% of beats labelled correctly, tempo within 2%, the
-transposition found, and any change of form reported. Clean renders, and the 2+2-for-4+4 renders,
-must also rebuild every bar exactly. Wrong charts must come out below the confidence threshold,
+transposition found, and any change of form reported. Clean renders, the 2+2-for-4+4 renders, the
+ballad, the pickup and the quiet verse must also rebuild every bar exactly. Wrong charts must come out below the confidence threshold,
 with their bars left alone. `check-output.ts` runs the app's own reader on an output, so every file
 the tool writes is proven to import. From the repo root:
 
@@ -152,7 +159,8 @@ npx tsx --tsconfig tsconfig.app.json tools/chord-align/check-output.ts out.json
   `--min-confidence 0`). Low confidence is always reported, never hidden. “What the recording seems
   to play” shows where.
 - **Chords inside chords.** C sits inside Am7, and F inside Dm7. Where a chart has both side by
-  side, only the bass tells them apart, and a walking bass can blur the change by a beat or two.
+  side, only the bass tells them apart, and a walking bass or a pedal can blur the change by a
+  beat or two.
 - **Identical chords that meet,** like a verse ending on C and a chorus starting on C. The change
   can't be heard, so the split follows the playings where it can be, and failing that, the chart.
 - **Whole beats, one meter.** Lengths are whole beats. A pickup, a bar of 2/4 inside a 4/4 song
@@ -162,5 +170,7 @@ npx tsx --tsconfig tsconfig.app.json tools/chord-align/check-output.ts out.json
   ends up under the wrong bar.
 - **Chords the tool doesn't know** are matched on their root and fifth only, and listed in the
   report.
-- **Half or double time** is a judgement: the beat is kept between 60 and 160 bpm where the music
-  allows. A ballad felt at 50 bpm comes out at 100, with every length doubled.
+- **Half or double time** is a judgement: the beat is kept between 60 and 160 bpm, with chords of 2
+  to 4 beats, where the music allows. A ballad felt at 50 bpm comes out at 100, with every length
+  doubled. The report names the other octave, so you can halve or double the lengths if the song
+  is counted that way.
