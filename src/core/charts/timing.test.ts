@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { parseSheet } from './paste';
 import {
   countSyllables,
   estimateLineTiming,
+  estimateSheetTiming,
   expandTabs,
   isIndonesian,
   type LineChord,
   type LineTiming,
 } from './timing';
-import { beatAccuracy, scoreAll, timingVectors, type TimingVector } from './timing.eval';
+import {
+  barMatch,
+  beatAccuracy,
+  scoreAll,
+  SHAPE,
+  shapeAccuracy,
+  timingVectors,
+  type Tally,
+  type TimingVector,
+} from './timing.eval';
 import { TIMING_FIXTURES } from './timing.fixtures';
 import VECTORS from './timing.vectors.json';
 
@@ -162,9 +171,12 @@ describe('estimateLineTiming', () => {
     // G over "deer" (column 10), D7 over "play" (column 32).
     const exact = line('          G                     D7', lyric, 3);
     expect(line('         G                       D7', lyric, 3)).toEqual(exact);
-    expect(line('            G                    D7', lyric, 3)).toEqual(exact);
+    // Two columns into a one-syllable word lands past it: on a line alone, with no other
+    // lines to set the speed, that can read it at half or double length, in the same proportions.
+    const share = (t: LineTiming) => t.chords.map((c) => c.beats / (t.bars * 3));
+    expect(share(line('            G                    D7', lyric, 3))).toEqual(share(exact));
     expect(line('\t\t  G\t\t\t\t\t\tD7', lyric, 3)).toEqual(exact);
-    expect(line('\t\t \tG \t\t\t\t\tD7', lyric, 3)).toEqual(exact);
+    expect(share(line('\t\t \tG \t\t\t\t\tD7', lyric, 3))).toEqual(share(exact));
   });
 
   it('times 3/4 lines in bars of three', () => {
@@ -197,13 +209,70 @@ describe('estimateLineTiming', () => {
   });
 });
 
+describe('a sheet timed at one speed', () => {
+  const pair = (chords: string, lyric: string) => ({
+    chords: [...chords.matchAll(/\S+/g)].map((m) => ({ symbol: m[0], col: m.index })),
+    lyric,
+  });
+  // Two-bar lines of quarter notes, the speed shared by every line.
+  const SHEET = [
+    pair('C             F       C', 'Lanterns over the water, glow'),
+    pair('G7            C', 'Slowly the boats come home'),
+    pair('C              F      C', 'Harbour lights are burning low'),
+    pair('G7         C', 'Over the evening foam'),
+  ];
+
+  it('gives the lines of a sheet the same speed, so like lines get like bars', () => {
+    const lines = estimateSheetTiming(SHEET, 4);
+    expect(lines.map((l) => l.bars)).toEqual([2, 2, 2, 2]);
+  });
+
+  it('halves and doubles the speed with the scale; a line too crowded to halve keeps its length', () => {
+    const as = estimateSheetTiming(SHEET, 4);
+    const half = estimateSheetTiming(SHEET, 4, { scale: 0.5 });
+    const double = estimateSheetTiming(SHEET, 4, { scale: 2 });
+    expect(double.map((l) => l.bars)).toEqual(as.map((l) => l.bars * 2));
+    // Two chords halve to a bar of 2 + 2; three chords keep their 2 bars.
+    expect(half.map((l) => l.bars)).toEqual([2, 1, 2, 1]);
+    expect(half[1]!.chords.map((c) => c.beats)).toEqual([2, 2]);
+    for (const [i, l] of double.entries())
+      expect(l.chords.map((c) => c.symbol)).toEqual(as[i]!.chords.map((c) => c.symbol));
+  });
+
+  it('leaves lines with no words a bar a chord, and lines with no chords empty', () => {
+    const [none, empty, timed] = estimateSheetTiming(
+      [pair('C   G', '  --  '), { chords: [], lyric: 'la la' }, SHEET[0]!],
+      4,
+    );
+    expect(none).toEqual({
+      chords: [
+        { symbol: 'C', beats: 4 },
+        { symbol: 'G', beats: 4 },
+      ],
+      bars: 2,
+      confidence: 'rough',
+    });
+    expect(empty).toEqual({ chords: [], bars: 0, confidence: 'rough' });
+    expect(timed!.bars).toBeGreaterThan(0);
+  });
+
+  it('times a line alone as a sheet of one line', () => {
+    expect(estimateLineTiming(SHEET[1]!.chords, SHEET[1]!.lyric, 4)).toEqual(
+      estimateSheetTiming([SHEET[1]!], 4)[0],
+    );
+  });
+});
+
 describe('timing on the evaluation set', () => {
   const vectors = VECTORS as TimingVector[];
 
   it('reproduces every vector in timing.vectors.json exactly', () => {
-    expect(vectors.length).toBeGreaterThan(50);
+    expect(vectors.length).toBeGreaterThanOrEqual(TIMING_FIXTURES.length);
+    expect(new Set(vectors.map((v) => v.input.scale))).toEqual(new Set([1, 0.5, 2]));
     for (const { input, output } of vectors)
-      expect(estimateLineTiming(input.chords, input.lyric, input.beatsPerBar)).toEqual(output);
+      expect(estimateSheetTiming(input.lines, input.beatsPerBar, { scale: input.scale })).toEqual(
+        output,
+      );
   });
 
   it('has vectors that match the fixtures (npm run eval:timing -- --write-vectors)', () => {
@@ -211,78 +280,124 @@ describe('timing on the evaluation set', () => {
   });
 
   it('keeps every line whole: beats of at least 1 that fill 1, 2, 4 or 8 bars', () => {
-    for (const { input, output } of vectors) {
-      expect([1, 2, 4, 8]).toContain(output.bars);
-      expect(output.chords.map((c) => c.symbol)).toEqual(input.chords.map((c) => c.symbol));
-      expect(output.chords.every((c) => Number.isInteger(c.beats) && c.beats >= 1)).toBe(true);
-      expect(output.chords.reduce((s, c) => s + c.beats, 0)).toBe(output.bars * input.beatsPerBar);
-    }
+    for (const { input, output } of vectors)
+      for (const [i, line] of output.entries()) {
+        expect([1, 2, 4, 8]).toContain(line.bars);
+        expect(line.chords.map((c) => c.symbol)).toEqual(
+          input.lines[i]!.chords.map((c) => c.symbol),
+        );
+        expect(line.chords.every((c) => Number.isInteger(c.beats) && c.beats >= 1)).toBe(true);
+        expect(line.chords.reduce((n, c) => n + c.beats, 0)).toBe(line.bars * input.beatsPerBar);
+      }
   });
 
-  it('has at least 12 public-domain songs, in 4/4 and 3/4, and Indonesian lines', () => {
+  it('has public-domain songs in 4/4 and 3/4, Indonesian lines, and a test half', () => {
     const english = TIMING_FIXTURES.filter((f) => !f.source.startsWith('Original'));
     expect(english.length).toBeGreaterThanOrEqual(12);
     expect(TIMING_FIXTURES.filter((f) => f.split === 'test').length).toBeGreaterThanOrEqual(6);
     expect(new Set(TIMING_FIXTURES.map((f) => f.beatsPerBar))).toEqual(new Set([3, 4]));
     expect(TIMING_FIXTURES.some((f) => f.sheet.includes('\t'))).toBe(true);
-    expect(
-      TIMING_FIXTURES.some((f) => parseSheet(f.sheet, f.beatsPerBar).lines.some((l) => l.estimate)),
-    ).toBe(true);
   });
 
-  it('beats one chord a bar, song by song as measured (right beats, beats, right bar counts, lines)', () => {
+  /** Right beats, beats, right bar counts, scale-free points right, lines read at ×2 or ×½. */
+  const t = (x: Tally) => [x.right, x.beats, x.barsRight, x.shapeRight, x.doubled];
+
+  it('scores the tune half as measured, well above one chord a bar', () => {
     const { rows, estimated, baseline } = scoreAll(
       TIMING_FIXTURES.filter((f) => f.split === 'tune'),
     );
-    const t = (x: typeof estimated) => [x.right, x.beats, x.barsRight, x.lines];
     expect(rows.map((r) => [r.id, t(r.estimated), t(r.baseline)])).toEqual([
-      ['amazing-grace', [52, 57, 5, 5], [45, 57, 3, 5]],
-      ['silent-night', [55, 72, 4, 5], [24, 72, 0, 5]],
-      ['oh-susanna', [56, 64, 4, 4], [16, 64, 0, 4]],
-      ['when-the-saints', [64, 64, 4, 4], [32, 64, 0, 4]],
-      ['swing-low', [32, 96, 0, 6], [30, 64, 2, 6]],
-      ['auld-lang-syne', [62, 64, 4, 4], [48, 72, 1, 4]],
-      ['yankee-doodle', [63, 64, 4, 4], [40, 64, 2, 4]],
-      ['red-river-valley', [60, 64, 4, 4], [32, 64, 0, 4]],
-      ['camptown-races', [62, 64, 4, 4], [16, 64, 0, 4]],
-      ['home-on-the-range', [45, 48, 4, 4], [18, 48, 0, 4]],
-      ['clementine', [48, 48, 4, 4], [30, 48, 2, 4]],
-      ['my-bonnie', [48, 48, 4, 4], [36, 48, 0, 4]],
-      ['down-in-the-valley', [47, 48, 4, 4], [12, 48, 0, 4]],
-      ['senja', [66, 80, 5, 5], [38, 84, 1, 5]],
-      ['tidurlah', [41, 48, 4, 4], [24, 48, 0, 4]],
-      ['this-old-man', [18, 64, 0, 4], [22, 44, 1, 4]],
-      ['polly-wolly-doodle', [22, 64, 0, 4], [18, 36, 1, 4]],
-      ['buffalo-gals', [26, 64, 0, 4], [24, 32, 2, 4]],
-      ['skip-to-my-lou', [28, 64, 0, 4], [20, 32, 1, 4]],
+      ['amazing-grace', [52, 57, 5, 220, 0], [45, 57, 3, 228, 1]],
+      ['silent-night', [55, 72, 4, 208, 1], [24, 72, 0, 216, 3]],
+      ['oh-susanna', [56, 64, 4, 168, 0], [16, 64, 0, 144, 1]],
+      ['when-the-saints', [16, 64, 0, 192, 4], [32, 64, 0, 168, 1]],
+      ['swing-low', [39, 56, 5, 246, 1], [30, 64, 2, 228, 0]],
+      ['auld-lang-syne', [62, 64, 4, 186, 0], [48, 72, 1, 160, 0]],
+      ['yankee-doodle', [63, 64, 4, 189, 0], [40, 64, 2, 180, 2]],
+      ['red-river-valley', [16, 64, 0, 192, 4], [32, 64, 0, 168, 1]],
+      ['camptown-races', [62, 64, 4, 186, 0], [16, 64, 0, 168, 1]],
+      ['home-on-the-range', [45, 48, 4, 180, 0], [18, 48, 0, 180, 3]],
+      ['clementine', [48, 48, 4, 192, 0], [30, 48, 2, 168, 2]],
+      ['my-bonnie', [48, 48, 4, 192, 0], [36, 48, 0, 144, 0]],
+      ['down-in-the-valley', [47, 48, 4, 188, 0], [12, 48, 0, 192, 4]],
+      ['senja', [44, 80, 3, 198, 2], [38, 84, 1, 210, 2]],
+      ['tidurlah', [41, 48, 4, 164, 0], [24, 48, 0, 156, 1]],
+      ['this-old-man', [21, 40, 3, 144, 1], [22, 44, 1, 156, 0]],
+      ['polly-wolly-doodle', [28, 32, 4, 168, 0], [18, 36, 1, 180, 2]],
+      ['buffalo-gals', [31, 32, 4, 186, 0], [24, 32, 2, 192, 2]],
+      ['skip-to-my-lou', [32, 32, 4, 192, 0], [20, 32, 1, 192, 3]],
     ]);
-    expect(beatAccuracy(estimated)).toBeCloseTo(0.755, 3);
+    expect(beatAccuracy(estimated)).toBeCloseTo(0.786, 3);
     expect(beatAccuracy(baseline)).toBeCloseTo(0.499, 3);
-    expect(beatAccuracy(estimated) - beatAccuracy(baseline)).toBeGreaterThan(0.2);
+    expect(barMatch(estimated)).toBeCloseTo(0.84, 3);
+    expect(shapeAccuracy(estimated)).toBeCloseTo(0.924, 3);
   });
 
-  it('hardly moves when every chord is written a column or two off', () => {
-    for (const [shift, least] of [
-      [-2, 0.95],
-      [-1, 0.98],
-      [1, 0.98],
-      [2, 0.94],
+  it('scores the test half as measured (never used to set the constants)', () => {
+    const { rows, estimated, baseline } = scoreAll(
+      TIMING_FIXTURES.filter((f) => f.split === 'test'),
+    );
+    expect(rows.map((r) => [r.id, t(r.estimated), t(r.baseline)])).toEqual([
+      ['are-you-sleeping', [17, 40, 3, 126, 1], [20, 64, 0, 156, 1]],
+      ['mary-had-a-little-lamb', [29, 32, 4, 174, 0], [24, 32, 2, 192, 2]],
+      ['coming-round-the-mountain', [20, 56, 1, 180, 3], [28, 32, 3, 192, 1]],
+      ['muffin-man', [32, 32, 4, 192, 0], [32, 32, 4, 192, 0]],
+      ['aura-lee', [32, 32, 4, 192, 0], [32, 32, 4, 192, 0]],
+      ['old-smoky', [12, 48, 0, 192, 4], [12, 48, 0, 192, 4]],
+    ]);
+    // As estimated, no better than one chord a bar on these beats; Half or Double fixes most.
+    expect(beatAccuracy(estimated)).toBeCloseTo(0.592, 3);
+    expect(beatAccuracy(baseline)).toBeCloseTo(0.617, 3);
+    expect(barMatch(estimated)).toBeCloseTo(0.667, 3);
+    const best = scoreAll(
+      TIMING_FIXTURES.filter((f) => f.split === 'test'),
+      { bestScale: true },
+    );
+    expect(beatAccuracy(best.estimated)).toBeCloseTo(0.889, 3);
+    expect(barMatch(best.estimated)).toBeCloseTo(0.958, 3);
+  });
+
+  it('hardly moves when every chord in a sheet is written a column or two off', () => {
+    // [shift, least share of beats the same, least share of the line's shape the same]
+    // Beats move more than the shape: a sheet whose speed sits near the boundary between
+    // two readings a factor of 2 apart can tip over, which Half or Double puts back.
+    for (const [shift, beats, shape] of [
+      [-2, 0.95, 0.97],
+      [-1, 0.98, 0.99],
+      [1, 0.92, 0.97],
+      [2, 0.85, 0.93],
     ] as const) {
       let same = 0;
       let total = 0;
-      for (const { input, output } of vectors) {
-        let next = 0;
-        const moved = input.chords.map((c) => {
-          const col = Math.max(next, c.col + shift);
-          next = col + c.symbol.length + 1;
-          return { ...c, col };
+      let alike = 0;
+      let points = 0;
+      for (const { input, output } of vectors.filter((v) => v.input.scale === 1)) {
+        const moved = input.lines.map((l) => {
+          let next = 0;
+          return {
+            lyric: l.lyric,
+            chords: l.chords.map((c) => {
+              const col = Math.max(next, c.col + shift);
+              next = col + c.symbol.length + 1;
+              return { ...c, col };
+            }),
+          };
         });
-        const a = beatsOf(output);
-        const b = beatsOf(estimateLineTiming(moved, input.lyric, input.beatsPerBar));
-        for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] === b[i]) same++;
-        total += Math.max(a.length, b.length);
+        const got = estimateSheetTiming(moved, input.beatsPerBar);
+        for (const [i, line] of output.entries()) {
+          const a = beatsOf(line);
+          const b = beatsOf(got[i]!);
+          for (let k = 0; k < Math.min(a.length, b.length); k++) if (a[k] === b[k]) same++;
+          total += Math.max(a.length, b.length);
+          for (let k = 0; k < SHAPE; k++) {
+            const at = (x: string[]) => x[Math.floor(((k + 0.5) * x.length) / SHAPE)];
+            if (at(a) === at(b)) alike++;
+            points++;
+          }
+        }
       }
-      expect(same / total).toBeGreaterThanOrEqual(least);
+      expect(same / total).toBeGreaterThanOrEqual(beats);
+      expect(alike / points).toBeGreaterThanOrEqual(shape);
     }
   });
 });

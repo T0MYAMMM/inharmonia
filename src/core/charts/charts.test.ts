@@ -740,7 +740,7 @@ describe('pasting a chord sheet', () => {
       });
       expect(sheet.lines[3]!.estimate).toBeUndefined();
       const { sections } = sheetToChart(sheet, { beatsPerBar: 4 });
-      expect(formatBars(sections[0]!.bars, 4, 99)).toBe('| C | C G | G | G | Am | F | C | G |');
+      expect(formatBars(sections[0]!.bars, 4, 99)).toBe('| C | G | Am | F | C | G |');
     });
 
     it('reads the words only for timing: none are kept unless asked', () => {
