@@ -165,15 +165,58 @@ def test_without_lyrics_leaves_the_file_as_it_was(chart_data: dict[str, Any]) ->
     assert all("lyrics" not in s for s in clean["items"][0]["chart"]["sections"])
 
 
-def test_hundreds_of_charts_come_back_in_one_call(tmp_path: Path) -> None:
-    # Enough that the bridge's report on stdout runs past a pipe's buffer.
+def test_more_charts_than_one_file_holds_are_read_in_chunks(tmp_path: Path) -> None:
+    # An Inharmonia file holds 500 items: three research folders hold about 1,050 charts.
+    # Enough too that the bridge's report on stdout runs past a pipe's buffer.
     require_node()
     paths = []
-    for n in range(500):
+    for n in range(1050):
         p = tmp_path / f"song-{n}.json"
         p.write_text(json.dumps({"title": f"Song number {n}", "artist": "A band", "chart": "| C | G |"}))
         paths.append(p)
     charts, skipped = convert(paths)
     assert skipped == []
-    assert len(charts) == 500
-    assert {c.title for c in charts} == {f"Song number {n}" for n in range(500)}
+    assert len(charts) == 1050
+    assert {c.title for c in charts} == {f"Song number {n}" for n in range(1050)}
+    assert all(len(c.data["items"]) <= 500 for c in charts)
+    assert all(read_chart(c.data, c.item_id).item_id == c.item_id for c in charts[::100])
+
+
+def _tree(root: Path) -> None:
+    (root / "chords-id" / "nidji").mkdir(parents=True)
+    (root / "chords-id" / "nidji" / "laskar-pelangi.json").write_text("{}", encoding="utf-8")
+    (root / "chords-id" / "index.json").write_text("[]", encoding="utf-8")
+
+
+def test_symlinked_chart_folders_are_followed(tmp_path: Path) -> None:
+    research = tmp_path / "research"
+    _tree(research)
+    (research / "chords-ug").mkdir()
+    (research / "chords-ug" / "dan.txt").write_text("C G", encoding="utf-8")
+    links = tmp_path / "links"
+    links.mkdir()
+    (links / "chords-id").symlink_to(research / "chords-id", target_is_directory=True)
+    (links / "chords-ug").symlink_to(research / "chords-ug", target_is_directory=True)
+    (links / "one.json").symlink_to(research / "chords-id" / "nidji" / "laskar-pelangi.json")
+    found = collect(links)
+    assert [p.relative_to(links).as_posix() for p in found] == [
+        "chords-id/nidji/laskar-pelangi.json",
+        "chords-ug/dan.txt",
+        "one.json",
+    ]
+
+
+def test_a_symlink_loop_is_read_once(tmp_path: Path) -> None:
+    root = tmp_path / "charts"
+    _tree(root)
+    (root / "chords-id" / "nidji" / "back-up").symlink_to(root, target_is_directory=True)
+    (root / "again").symlink_to(root / "chords-id", target_is_directory=True)
+    found = collect(root)
+    assert [p.relative_to(root).as_posix() for p in found] == ["chords-id/nidji/laskar-pelangi.json"]
+
+
+def test_hidden_folders_are_skipped(tmp_path: Path) -> None:
+    _tree(tmp_path)
+    (tmp_path / ".venv").mkdir()
+    (tmp_path / ".venv" / "x.json").write_text("{}", encoding="utf-8")
+    assert [p.name for p in collect(tmp_path)] == ["laskar-pelangi.json"]

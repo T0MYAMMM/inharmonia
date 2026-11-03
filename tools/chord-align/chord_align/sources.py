@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
@@ -31,8 +32,10 @@ _NOT_CHARTS = ("index.json",)
 _NOT_CHART_ENDINGS = (".official-key.json", ".suggestions.json", ".aligned.json")
 #: Research JSON files are small; anything larger is not one.
 MAX_SOURCE_BYTES = 1024 * 1024
-#: Seconds the bridge may take (it reads hundreds of files in one go).
+#: Seconds one call of the bridge may take.
 BRIDGE_TIMEOUT = 300
+#: Files read per call of the bridge: under the 500 items an Inharmonia file may hold.
+CHUNK = 400
 
 
 @dataclass(frozen=True)
@@ -53,18 +56,18 @@ def kind_of(path: Path) -> str:
     if suffix == ".txt":
         return "sheet"
     if suffix != ".json":
-        raise ChartError("", f"{path.name}: a chart is an Inharmonia .json, a research .json or a .txt sheet")
+        raise ChartError("", "a chart is an Inharmonia .json, a research .json or a .txt sheet")
     if path.stat().st_size > LIMITS["bytes"]:
-        raise ChartError("", f"{path.name}: this file is too large to be a chart")
+        raise ChartError("", "this file is too large to be a chart")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        raise ChartError("", f"{path.name}: this is not JSON") from None
+        raise ChartError("", "this is not JSON") from None
     if isinstance(data, dict) and data.get("format") == "inharmonia":
         return "inharmonia"
     if isinstance(data, dict) and isinstance(data.get("chart"), str):
         return "research"
-    raise ChartError("", f"{path.name}: neither an Inharmonia export nor a research chart")
+    raise ChartError("", "neither an Inharmonia export nor a research chart")
 
 
 def without_lyrics(data: dict[str, Any]) -> dict[str, Any]:
@@ -92,21 +95,38 @@ def split_title(title: str) -> tuple[str, str | None]:
     return t, None
 
 
+def _is_chart_file(p: Path) -> bool:
+    name = p.name.lower()
+    if p.suffix.lower() not in (".json", ".txt") or name.startswith("."):
+        return False
+    return name not in _NOT_CHARTS and not name.endswith(_NOT_CHART_ENDINGS)
+
+
 def collect(path: Path) -> list[Path]:
-    """Chart files: the file itself, or every .json and .txt under a folder (sorted)."""
+    """Chart files: the file itself, or every .json and .txt under a folder (sorted).
+
+    Symlinked folders are followed, each real folder once (by its real path, a
+    real folder before a link to it), so a link back up the tree cannot loop.
+    Hidden folders (``.git``, ``.venv``) are skipped.
+    """
     if path.is_file():
         return [path]
     if not path.is_dir():
         raise ChartError("", f"no such file or folder: {path}")
-    found = []
-    for p in sorted(path.rglob("*")):
-        name = p.name.lower()
-        if not p.is_file() or p.suffix.lower() not in (".json", ".txt"):
-            continue
-        if name in _NOT_CHARTS or name.endswith(_NOT_CHART_ENDINGS) or name.startswith("."):
-            continue
-        found.append(p)
-    return found
+    found: list[Path] = []
+    seen = {path.resolve()}
+    for root, dirs, files in os.walk(path, followlinks=True):
+        here = Path(root)
+        keep = []
+        # Real folders first, so a link to one already in the tree is the copy left out.
+        for d in sorted(dirs, key=lambda d: ((here / d).is_symlink(), d)):
+            real = (here / d).resolve()
+            if not d.startswith(".") and real not in seen:
+                seen.add(real)
+                keep.append(d)
+        dirs[:] = keep
+        found += [here / f for f in files if _is_chart_file(here / f) and (here / f).is_file()]
+    return sorted(found)
 
 
 def bridge_command(out: Path, inputs: list[Path]) -> list[str]:
@@ -118,9 +138,11 @@ def bridge_command(out: Path, inputs: list[Path]) -> list[str]:
 
 
 def convert(inputs: list[Path]) -> tuple[list[ChartSource], list[tuple[Path, str]]]:
-    """Sheets and research JSON into charts, by the app's reader: (charts, (file, why skipped))."""
-    if not inputs:
-        return [], []
+    """Sheets and research JSON into charts, by the app's reader: (charts, (file, why skipped)).
+
+    Read ``CHUNK`` files at a time: each call writes one Inharmonia file, which
+    holds at most ``LIMITS["items"]`` charts, so any number of files works.
+    """
     skipped: list[tuple[Path, str]] = []
     readable = []
     for p in inputs:
@@ -128,13 +150,21 @@ def convert(inputs: list[Path]) -> tuple[list[ChartSource], list[tuple[Path, str
             skipped.append((p, "too large to be a chord sheet"))
         else:
             readable.append(p.resolve())
-    if not readable:
-        return [], skipped
+    charts: list[ChartSource] = []
+    for i in range(0, len(readable), CHUNK):
+        got, why = _convert_chunk(readable[i : i + CHUNK])
+        charts += got
+        skipped += why
+    return charts, skipped
+
+
+def _convert_chunk(paths: list[Path]) -> tuple[list[ChartSource], list[tuple[Path, str]]]:
+    """One call of the bridge, for up to ``CHUNK`` files."""
     with tempfile.TemporaryDirectory(prefix="chord-align-") as tmp:
         out = Path(tmp) / "charts.json"
         try:
             done = subprocess.run(
-                bridge_command(out, readable),
+                bridge_command(out, paths),
                 cwd=REPO,
                 capture_output=True,
                 text=True,
@@ -150,7 +180,7 @@ def convert(inputs: list[Path]) -> tuple[list[ChartSource], list[tuple[Path, str
         if not isinstance(told, dict):
             detail = done.stderr.strip().splitlines()
             raise ChartError("", f"the app's sheet reader failed: {detail[-1] if detail else '?'}")
-        skipped += [(Path(s["source"]), str(s["reason"])) for s in told.get("skipped", [])]
+        skipped = [(Path(s["source"]), str(s["reason"])) for s in told.get("skipped", [])]
         if not told.get("items"):
             return [], skipped
         data = load_file(out)
