@@ -1,8 +1,18 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyChart, parseBars, withLyric, type ChordChart } from '@/core/charts';
 import { ChartEditor } from './ChartEditor';
+
+// Tap timing's clock, moved by hand, and a metronome that only says where its beat is.
+const tap = vi.hoisted(() => ({ clock: 0 }));
+vi.mock('./tapSource', () => ({
+  tapNow: () => tap.clock,
+  startMetronome: (bpm: number, beatsPerBar: number) => ({
+    grid: { downbeat: tap.clock + (beatsPerBar * 60) / bpm, period: 60 / bpm },
+    stop: () => undefined,
+  }),
+}));
 
 // An invented chart, with invented words on its first two bars.
 const chart = (): ChordChart => {
@@ -126,5 +136,59 @@ describe('lyrics in the chart editor', () => {
     renderEditor(c);
     await user.click(screen.getByTestId('edit-text-0'));
     expect(screen.queryByTestId('bars-text-lyrics')).toBeNull();
+  });
+});
+
+describe('tap timing in the chart editor', () => {
+  it("sets a section's chord lengths, kept once saved", async () => {
+    const user = userEvent.setup();
+    const { saved, lyrics } = renderEditor();
+    expect(screen.getByTestId('tap-open-0')).toBeEnabled();
+    await user.click(screen.getByTestId('tap-open-0'));
+    expect(screen.queryByRole('list', { name: 'Bars of Verse' })).toBeNull();
+    tap.clock = 10;
+    await user.click(screen.getByTestId('tap-start'));
+    // 80 bpm: a bar's count-in, then a beat every 0.75 s from 13 s.
+    for (const beat of [2, 4, 6]) {
+      tap.clock = 13 + beat * 0.75 + 0.05;
+      await act(() => Promise.resolve());
+      await user.keyboard(' ');
+    }
+    await user.click(screen.getByTestId('tap-apply'));
+    expect(screen.getByTestId('tap-applied-0')).toHaveTextContent(
+      'New timing in place. Save to keep it.',
+    );
+    expect(screen.getByTestId('bar-0-0')).toHaveTextContent(/^1CG/);
+    expect(screen.getByTestId('bar-0-1')).toHaveTextContent(/^2AmF$/);
+    const after = await saved(user);
+    expect(after.sections[0]!.bars.map((b) => b.chords)).toEqual([
+      [
+        { symbol: 'C', beats: 2 },
+        { symbol: 'G', beats: 2 },
+      ],
+      [
+        { symbol: 'Am', beats: 2 },
+        { symbol: 'F', beats: 2 },
+      ],
+    ]);
+    // Both bars' words now begin in the first bar.
+    expect(lyrics(after)).toEqual(['lanterns on the water slow boats', null]);
+  });
+
+  it('leaves the bars as they were on Discard', async () => {
+    const user = userEvent.setup();
+    const { saved } = renderEditor();
+    await user.click(screen.getByTestId('tap-open-0'));
+    await user.click(screen.getByTestId('tap-cancel'));
+    expect(screen.getByTestId('tap-applied-0')).toHaveTextContent('');
+    const after = await saved(user);
+    expect(after.sections[0]!.bars).toEqual(chart().sections[0]!.bars);
+  });
+
+  it('has nothing to tap in a section of one chord held', () => {
+    const c = chart();
+    c.sections[0]!.bars = parseBars('| C | C |', 4).bars;
+    renderEditor(c);
+    expect(screen.getByTestId('tap-open-0')).toBeDisabled();
   });
 });
