@@ -19,6 +19,11 @@ async function sungChart(page: Page, title: string) {
   await page.getByTestId('paste-text').fill(SHEET);
   await page.getByTestId('keep-lyrics').check();
   await page.getByTestId('paste-read').click();
+  // One chord a bar, so each chord's words fill a bar of their own.
+  await page
+    .getByRole('radiogroup', { name: 'Bar lengths, line 2' })
+    .getByRole('radio', { name: '1 a bar' })
+    .click();
   await page.getByTestId('paste-use').click();
   await page.getByTestId('chart-save').click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();

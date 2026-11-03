@@ -49,8 +49,8 @@ describe('PasteSheet', () => {
     const rows = within(screen.getByTestId('paste-review')).getAllByRole('row');
     expect(rows.map((r) => r.textContent)).toEqual([
       'You pastedRead as',
-      'C       GChords: C G',
-      'la la la lyricLyrics kept: la la la | lyric',
+      'C       GBars: | C . . G | G |Estimated1 a bar2 a bar',
+      'la la la lyricLyrics kept: la la la lyric | –',
       'placeholderLeft out: no chords right above it',
     ]);
 
@@ -63,7 +63,7 @@ describe('PasteSheet', () => {
     await user.click(screen.getByTestId('paste-use'));
     expect(
       onUse.mock.calls[0]![0].sections[0].bars.map((b: { lyric?: string }) => b.lyric),
-    ).toEqual(['la la la', 'lyric']);
+    ).toEqual(['la la la lyric', undefined]);
 
     unmount();
     renderPaste();
@@ -79,5 +79,121 @@ describe('PasteSheet', () => {
     await user.click(screen.getByTestId('paste-read'));
     const row = within(screen.getByTestId('paste-review')).getAllByRole('row')[2]!;
     expect(row).toHaveTextContent(/\(cut to 120 characters a bar\)$/);
+  });
+
+  it('estimates bars from the lyrics, says so, and reads a line one or two a bar when asked', async () => {
+    const user = userEvent.setup();
+    const onUse = vi.fn();
+    renderPaste(onUse);
+    await user.type(
+      screen.getByRole('textbox', { name: 'Chord sheet' }),
+      'C          G{enter}la la la lyric line here, la la',
+    );
+    await user.click(screen.getByTestId('paste-read'));
+    const group = screen.getByRole('radiogroup', { name: 'Bar lengths, line 1' });
+    expect(within(group).getByRole('radio', { name: 'Estimated' })).toBeChecked();
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C G \| G \|/);
+    expect(screen.getByTestId('estimate-note')).toHaveTextContent(
+      'Bar lengths are estimated from the lyrics. Check them by ear.',
+    );
+    // The words were only read for timing.
+    expect(screen.getByTestId('lyrics-notice')).toHaveTextContent('Lyrics removed from 1 line.');
+
+    await user.click(within(group).getByRole('radio', { name: '1 a bar' }));
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C \| G \|/);
+    expect(screen.queryByTestId('estimate-note')).toBeNull();
+    await user.click(within(group).getByRole('radio', { name: '2 a bar' }));
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C G \|/);
+
+    // Arrow keys move along the choices, like radios.
+    await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(within(group).getByRole('radio', { name: 'Estimated' })).toBeChecked();
+    expect(within(group).getByRole('radio', { name: 'Estimated' })).toHaveFocus();
+    await user.click(screen.getByTestId('paste-use'));
+    const bars = onUse.mock.calls[0]![0].sections[0].bars as { chords: { symbol: string }[] }[];
+    expect(bars.map((b) => b.chords.map((c) => c.symbol).join(' '))).toEqual(['C G', 'G']);
+  });
+
+  it('offers one or two a bar on a busy line with no lyrics, and nothing on a plain one', async () => {
+    const user = userEvent.setup();
+    const onUse = vi.fn();
+    renderPaste(onUse);
+    await user.type(
+      screen.getByRole('textbox', { name: 'Chord sheet' }),
+      'C G Am F C G Am F{enter}{enter}C   G   Am',
+    );
+    await user.click(screen.getByTestId('paste-read'));
+    const group = screen.getByRole('radiogroup', { name: 'Bar lengths, line 1' });
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['1 a bar', '2 a bar']);
+    expect(within(group).getByRole('radio', { name: '1 a bar' })).toBeChecked();
+    expect(screen.queryByRole('radiogroup', { name: 'Bar lengths, line 3' })).toBeNull();
+    expect(screen.queryByTestId('estimate-note')).toBeNull();
+    await user.click(within(group).getByRole('radio', { name: '2 a bar' }));
+    expect(screen.getByTestId('read-1')).toHaveTextContent('Bars: | C G | Am F | C G | Am F |');
+    await user.click(screen.getByTestId('paste-use'));
+    expect(onUse.mock.calls[0]![0].sections[0].bars).toHaveLength(7);
+  });
+
+  it('starts every line on its default again when the sheet is read again', async () => {
+    const user = userEvent.setup();
+    renderPaste();
+    await user.type(
+      screen.getByRole('textbox', { name: 'Chord sheet' }),
+      'C       G{enter}la la la',
+    );
+    await user.click(screen.getByTestId('paste-read'));
+    await user.click(screen.getByRole('radio', { name: '1 a bar' }));
+    await user.click(screen.getByRole('button', { name: 'Back to the text' }));
+    await user.click(screen.getByTestId('paste-read'));
+    expect(screen.getByRole('radio', { name: 'Estimated' })).toBeChecked();
+  });
+
+  it('halves or doubles every estimated length in one click, and starts as estimated', async () => {
+    const user = userEvent.setup();
+    const onUse = vi.fn();
+    renderPaste(onUse);
+    await user.type(
+      screen.getByRole('textbox', { name: 'Chord sheet' }),
+      'C          G{enter}la la la lyric line here, la la{enter}Am         F{enter}slow boats coming home tonight',
+    );
+    await user.click(screen.getByTestId('paste-read'));
+    const lengths = screen.getByRole('radiogroup', { name: 'Estimated lengths' });
+    expect(within(lengths).getByRole('radio', { name: 'As estimated' })).toBeChecked();
+    expect(screen.getByTestId('estimate-note')).toHaveTextContent(
+      'If every line is twice too long or too short, try Half or Double.',
+    );
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C G \| G \|/);
+    expect(screen.getByTestId('read-3')).toHaveTextContent(/^Bars: \| Am F \| F \|/);
+
+    await user.click(within(lengths).getByRole('radio', { name: 'Double' }));
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C \| C G \| G \| G \|/);
+    expect(screen.getByTestId('read-3')).toHaveTextContent(/^Bars: \| Am \| F \| F \| F \|/);
+    await user.click(within(lengths).getByRole('radio', { name: 'Half' }));
+    expect(screen.getByTestId('read-3')).toHaveTextContent(/^Bars: \| Am F \. \. \|/);
+
+    // A line read one chord a bar is not estimated, so Half and Double leave it alone.
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: 'Bar lengths, line 1' })).getByRole('radio', {
+        name: '1 a bar',
+      }),
+    );
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C \| G \|/);
+    await user.click(within(lengths).getByRole('radio', { name: 'Double' }));
+    expect(screen.getByTestId('read-1')).toHaveTextContent(/^Bars: \| C \| G \|/);
+    await user.click(screen.getByTestId('paste-use'));
+    expect(onUse.mock.calls[0]![0].sections[0].bars).toHaveLength(6);
+
+    // Reading the sheet again starts as estimated.
+    await user.click(screen.getByRole('button', { name: 'Back to the text' }));
+    await user.click(screen.getByTestId('paste-read'));
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Estimated lengths' })).getByRole('radio', {
+        name: 'As estimated',
+      }),
+    ).toBeChecked();
   });
 });
