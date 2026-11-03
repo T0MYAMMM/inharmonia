@@ -2302,5 +2302,1221 @@
       "bars": 4,
       "confidence": "good"
     }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 14
+        },
+        {
+          "symbol": "C",
+          "col": 24
+        }
+      ],
+      "lyric": "This old man, he played one,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 22
+        }
+      ],
+      "lyric": "He played knick-knack on my thumb;",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 7
+        },
+        {
+          "symbol": "G7",
+          "col": 31
+        },
+        {
+          "symbol": "C",
+          "col": 44
+        }
+      ],
+      "lyric": "With a knick-knack paddywhack, give a dog a bone;",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 18
+        },
+        {
+          "symbol": "C",
+          "col": 26
+        }
+      ],
+      "lyric": "This old man came rolling home.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 4
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 6
+        }
+      ],
+      "lyric": "Oh, I went down South for to see my Sal,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 6
+        },
+        {
+          "symbol": "D7",
+          "col": 16
+        },
+        {
+          "symbol": "G",
+          "col": 34
+        }
+      ],
+      "lyric": "Sing Polly wolly doodle all the day;",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 4
+        },
+        {
+          "symbol": "D7",
+          "beats": 8
+        },
+        {
+          "symbol": "G",
+          "beats": 4
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G",
+          "col": 3
+        }
+      ],
+      "lyric": "My Sal, she is a spunky gal,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "col": 3
+        },
+        {
+          "symbol": "G",
+          "col": 33
+        }
+      ],
+      "lyric": "Sing Polly wolly doodle all the day.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "D7",
+          "beats": 10
+        },
+        {
+          "symbol": "G",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        }
+      ],
+      "lyric": "Buffalo gals,  won't you come out tonight,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 19
+        }
+      ],
+      "lyric": "Come out tonight,  come out tonight,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        }
+      ],
+      "lyric": "Buffalo gals,  won't you come out tonight,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 4
+        },
+        {
+          "symbol": "C",
+          "col": 30
+        }
+      ],
+      "lyric": "And dance by the light of the moon.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 10
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        }
+      ],
+      "lyric": "Lou, Lou, skip to my Lou,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "col": 0
+        }
+      ],
+      "lyric": "Lou, Lou, skip to my Lou,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "F",
+          "col": 0
+        }
+      ],
+      "lyric": "Lou, Lou, skip to my Lou,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "F",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "col": 0
+        },
+        {
+          "symbol": "F",
+          "col": 19
+        }
+      ],
+      "lyric": "Skip to my Lou, my darling.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "beats": 8
+        },
+        {
+          "symbol": "F",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 18
+        },
+        {
+          "symbol": "C",
+          "col": 26
+        }
+      ],
+      "lyric": "Are you sleeping, are you sleeping,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 14
+        },
+        {
+          "symbol": "C",
+          "col": 22
+        }
+      ],
+      "lyric": "Brother John, Brother John?",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 18
+        },
+        {
+          "symbol": "C",
+          "col": 27
+        },
+        {
+          "symbol": "G7",
+          "col": 45
+        }
+      ],
+      "lyric": "Morning bells are ringing, morning bells are ringing,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 4
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "G7",
+          "col": 6
+        },
+        {
+          "symbol": "C",
+          "col": 12
+        },
+        {
+          "symbol": "C",
+          "col": 18
+        },
+        {
+          "symbol": "G7",
+          "col": 24
+        },
+        {
+          "symbol": "C",
+          "col": 30
+        }
+      ],
+      "lyric": "Ding, dang, dong, ding, dang, dong.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 2
+        },
+        {
+          "symbol": "G7",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 2
+        },
+        {
+          "symbol": "C",
+          "beats": 1
+        },
+        {
+          "symbol": "G7",
+          "beats": 1
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        }
+      ],
+      "lyric": "Mary had a little lamb,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 1
+        },
+        {
+          "symbol": "C",
+          "col": 12
+        }
+      ],
+      "lyric": "Little lamb, little lamb,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 2
+        }
+      ],
+      "lyric": "Mary had a little lamb, its",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 18
+        }
+      ],
+      "lyric": "Fleece was white as snow.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 10
+        }
+      ],
+      "lyric": "She'll be coming 'round the mountain when she comes,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 16
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 10
+        },
+        {
+          "symbol": "G7",
+          "col": 46
+        }
+      ],
+      "lyric": "She'll be coming 'round the mountain when she comes,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 10
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "col": 10
+        },
+        {
+          "symbol": "F",
+          "col": 49
+        }
+      ],
+      "lyric": "She'll be coming 'round the mountain,  she'll be coming 'round the mountain,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C7",
+          "beats": 8
+        },
+        {
+          "symbol": "F",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 10
+        },
+        {
+          "symbol": "C",
+          "col": 46
+        }
+      ],
+      "lyric": "She'll be coming 'round the mountain when she comes.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 10
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 4
+        },
+        {
+          "symbol": "F",
+          "col": 20
+        }
+      ],
+      "lyric": "Oh, do you know the muffin man,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "F",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 4
+        },
+        {
+          "symbol": "C",
+          "col": 20
+        }
+      ],
+      "lyric": "The muffin man, the muffin man,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 4
+        },
+        {
+          "symbol": "F",
+          "col": 20
+        }
+      ],
+      "lyric": "Oh, do you know the muffin man",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "F",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 4
+        },
+        {
+          "symbol": "C",
+          "col": 19
+        }
+      ],
+      "lyric": "Who lives on Drury Lane?",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 8
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "D7",
+          "col": 17
+        }
+      ],
+      "lyric": "As the blackbird in the spring,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "D7",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 18
+        }
+      ],
+      "lyric": "'Neath the willow tree,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 8
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 0
+        },
+        {
+          "symbol": "D7",
+          "col": 17
+        }
+      ],
+      "lyric": "Sat and piped, I heard him sing,",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "D7",
+          "beats": 10
+        }
+      ],
+      "bars": 4,
+      "confidence": "good"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 0
+        },
+        {
+          "symbol": "C",
+          "col": 13
+        }
+      ],
+      "lyric": "Sing of Aura Lee.",
+      "beatsPerBar": 4
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 8
+        },
+        {
+          "symbol": "C",
+          "beats": 8
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 3
+        },
+        {
+          "symbol": "F",
+          "col": 15
+        }
+      ],
+      "lyric": "On top of Old Smoky,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 9
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 3
+        },
+        {
+          "symbol": "G7",
+          "col": 19
+        }
+      ],
+      "lyric": "All covered with snow,",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 6
+        },
+        {
+          "symbol": "G7",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "C",
+          "col": 2
+        },
+        {
+          "symbol": "F",
+          "col": 13
+        }
+      ],
+      "lyric": "I lost my true lover",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "C",
+          "beats": 3
+        },
+        {
+          "symbol": "F",
+          "beats": 9
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
+  },
+  {
+    "input": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "col": 5
+        },
+        {
+          "symbol": "C",
+          "col": 17
+        }
+      ],
+      "lyric": "For courting too slow.",
+      "beatsPerBar": 3
+    },
+    "output": {
+      "chords": [
+        {
+          "symbol": "G7",
+          "beats": 6
+        },
+        {
+          "symbol": "C",
+          "beats": 6
+        }
+      ],
+      "bars": 4,
+      "confidence": "rough"
+    }
   }
 ]
