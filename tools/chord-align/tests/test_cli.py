@@ -10,7 +10,7 @@ from chord_align.cli import default_out, main
 from chord_align.renders import ALL_RENDERS, by_name
 from chord_align.synth import chart_file, render
 
-from .conftest import FIXTURES, check_output, scored
+from .conftest import FIXTURES, check_output, require_node, scored
 
 
 def _write_render(tmp_path: Path, name: str) -> tuple[Path, Path]:
@@ -39,6 +39,12 @@ def test_align_writes_an_importable_file_and_a_report(
     assert raw["sections"][0]["bars"] == ["G D", "Em . . C", "G . . D", "Cadd9"]
     assert raw["key"] == {"tonic": "G", "mode": "major"}
     assert "Tempo 96 bpm" in capsys.readouterr().out
+    suggestions = json.loads(out.with_suffix(".suggestions.json").read_text(encoding="utf-8"))
+    assert suggestions == {
+        "chart": {"id": "uneven-96", "title": "Uneven 96"},
+        "applied": False,
+        "suggestions": [],
+    }
     checked = check_output(out)
     assert checked.returncode == 0, checked.stderr
 
@@ -127,3 +133,57 @@ def test_eval_prints_the_metrics(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
 def test_eval_unknown_render(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["eval", "nope"]) == 2
+
+
+@pytest.mark.slow
+def test_align_reads_a_pasted_sheet(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    require_node()
+    wav, _ = _write_render(tmp_path, "even-70")
+    sheet = tmp_path / "Even 70.txt"
+    # Chords over words, as a chord site writes them; the second verse and chorus by name only.
+    sheet.write_text(
+        "[Verse]\nC          G\nsome words here, more words\nAm         F\nand some more words to sing\n\n"
+        "[Chorus]\n| F | G | C | C |\n\n[Verse]\n\n[Chorus]\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "even.json"
+    assert main([str(wav), str(sheet), "--out", str(out)]) == 0
+    text = out.read_text(encoding="utf-8")
+    assert "words" not in text and "lyrics" not in text
+    raw = json.loads(text)["items"][0]["chart"]
+    assert raw["form"] == ["s1", "s2", "s1", "s2"]
+    assert raw["sections"][0]["bars"] == list(by_name("even-70").sections[0].truth)
+    assert raw["tempo"] == 70
+    assert out.with_suffix(".suggestions.json").is_file()
+    assert check_output(out).returncode == 0
+
+
+def test_batch_refuses_a_bad_manifest(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    manifest = tmp_path / "m.csv"
+    manifest.write_text("song\nx\n", encoding="utf-8")
+    code = main(
+        [
+            "batch",
+            str(tmp_path),
+            str(FIXTURES / "chart.json"),
+            "--out",
+            str(tmp_path / "o"),
+            "--manifest",
+            str(manifest),
+        ]
+    )
+    assert code == 1
+    assert "header audio,chart" in capsys.readouterr().err
+
+
+def test_batch_bad_min_confidence() -> None:
+    assert main(["batch", "a", "c", "--out", "o", "--min-confidence", "-1"]) == 2
+
+
+def test_batch_with_nothing_matched_writes_a_summary(tmp_path: Path) -> None:
+    (tmp_path / "voice memo.m4a").write_bytes(b"")
+    out = tmp_path / "out"
+    assert main(["batch", str(tmp_path), str(FIXTURES / "chart.json"), "--out", str(out)]) == 0
+    summary = (out / "summary.md").read_text(encoding="utf-8")
+    assert "- voice memo.m4a: no chart's title is in its name." in summary
+    assert not (out / "aligned-charts.json").exists()
