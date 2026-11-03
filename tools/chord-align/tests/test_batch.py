@@ -13,6 +13,7 @@ from chord_align.batch import (
     COMBINED,
     SUMMARY,
     ManifestError,
+    artist_in,
     audio_in,
     combined,
     import_files,
@@ -22,6 +23,8 @@ from chord_align.batch import (
     read_manifest,
     slug,
     songs,
+    summary,
+    typos,
     words,
 )
 from chord_align.cli import main
@@ -95,6 +98,63 @@ def test_the_longest_title_wins_and_a_short_one_needs_the_artist() -> None:
     aku = _chart("Aku", "Chrisye")
     assert match_name(Path("Aku dan Kamu.mp3"), [aku]).chart is None
     assert match_name(Path("Chrisye - Aku.mp3"), [aku]).chart is aku
+
+
+def test_typos_count_letters_added_dropped_changed_or_swapped() -> None:
+    assert typos("sheila", "sheila") == 0
+    assert typos("shelia", "sheila") == 1  # two letters swapped
+    assert typos("kitten", "sitting") == 3
+    assert typos("dewa", "dewa19") == 2
+
+
+def test_the_artist_may_have_a_typo_or_its_spaces_left_out() -> None:
+    assert artist_in(words("Sheila on 7 - Dan"), "Sheila on 7") == 2
+    assert artist_in(words("Shelia on 7 - Dan"), "Sheila on 7") == 1
+    assert artist_in(words("Sheila On7 - Dan"), "Sheila on 7") == 2
+    assert artist_in(words("Dewa19 - Kangen"), "Dewa 19") == 2
+    assert artist_in(words("Dewa 19 - Kangen"), "Dewa19") == 2
+    assert artist_in(words("Noah - Separuh Aku"), "Nidji") == 0
+    assert artist_in(words("Sheena - Dan"), "Sheila on 7") == 0
+    # A short name allows no typo: "Naif" is not "Nail", "Padi" not "pada".
+    assert artist_in(words("Nail - Posesif"), "Naif") == 0
+    assert artist_in(words("Lagu pada malam"), "Padi") == 0
+    assert artist_in(words("Kotek - Pelangi"), "Kotak") == 1
+    assert artist_in(words("Anything"), None) == 0
+
+
+def test_a_short_title_matches_with_the_artist_even_misspelt() -> None:
+    dan = _chart("Dan", "Sheila on 7")
+    charts = [*CHARTS, dan]
+    assert match_name(Path("Shelia on 7 - Dan.m4a"), charts).chart is dan
+    assert match_name(Path("SHEILA ON 7 - DAN (Official Audio).mp3"), charts).chart is dan
+    # "Dan" is also a word: on its own, or with someone else's name, it is not the song.
+    assert match_name(Path("Aku dan Kamu.mp3"), charts).chart is None
+    assert match_name(Path("Tulus - Dan.mp3"), charts).chart is None
+
+
+def test_dewa19_written_together_is_dewa_19() -> None:
+    kangen = _chart("Kangen", "Dewa 19")
+    other = _chart("Kangen", "Band Lain", "kangen-2")
+    m = match_name(Path("Dewa19 - Kangen.m4a"), [kangen, other])
+    assert m.chart is kangen
+
+
+def test_the_same_song_in_several_folders_uses_the_first_and_names_the_rest(tmp_path: Path) -> None:
+    root = tmp_path / "charts"
+    copies = [
+        ChartSource(root / folder / "sheila-on-7" / "dan.json", f"dan-{folder}", "Dan", "Sheila on 7", {})
+        for folder in ("chords-ug", "chords-id", "chords-intl")
+    ]
+    m = match_name(Path("Shelia on 7 - Dan.m4a"), copies)
+    assert m.chart is copies[1]  # chords-id, first by path
+    assert [c.path.parts[-3] for c in m.others] == ["chords-intl", "chords-ug"]
+    song = songs([m])[0]
+    row = batch.Row("Dan (Sheila on 7)", m.audio.name, [], song.chart, m.others)
+    text = summary([row], [], [], "1 recordings, 3 charts read.", root)
+    assert (
+        "- Dan (Sheila on 7): chords-id/sheila-on-7/dan.json (the same song is also in "
+        "chords-intl/sheila-on-7/dan.json, chords-ug/sheila-on-7/dan.json; name one in a manifest to use it)."
+    ) in text
 
 
 def test_official_and_mv_rank_above_covers() -> None:
