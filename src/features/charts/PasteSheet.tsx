@@ -1,16 +1,22 @@
 import { useId, useState } from 'react';
 import {
-  barWords,
+  defaultLineBars,
+  formatBars,
   LIMITS,
+  lineBars,
   NO_CHORD,
   parseSheet,
   sheetToChart,
+  type ChartBar,
   type ChordChart,
+  type LineBars,
   type ParsedSheet,
+  type PastedLine,
 } from '@/core/charts';
 import { prettyChord } from '@/core/notation';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
+import { Segmented, type SegmentedOption } from '@/ui/Segmented';
 import { TextArea } from '@/ui/TextArea';
 import styles from './charts.module.css';
 
@@ -23,31 +29,39 @@ export interface PasteSheetProps {
   onCancel: () => void;
 }
 
+const ESTIMATED: SegmentedOption<LineBars>[] = [
+  { value: 'estimated', label: 'Estimated' },
+  { value: 'one', label: '1 a bar' },
+  { value: 'two', label: '2 a bar' },
+];
+const AS_TYPED = ESTIMATED.slice(1);
+
 /**
  * Paste a chord sheet and review what was read, line by line, next to what you
- * pasted. Lyrics are dropped on the spot, and only chords and section names are
- * kept, unless you tick Keep lyrics: then each lyric line goes on the bars it
- * sat under, on this device. The box starts unticked every time. The pasted
- * text lives only on this screen and is never saved.
+ * pasted, as the bars it will make. Where words sit under the chords, each
+ * chord's length is estimated from them; any line can be read one or two
+ * chords a bar instead. Lyrics are dropped once read, and only chords and
+ * section names are kept, unless you tick Keep lyrics: then the words go on
+ * the bars where they start, on this device. The box starts unticked every
+ * time. The pasted text lives only on this screen and is never saved.
  */
 export function PasteSheet(props: PasteSheetProps) {
   const [text, setText] = useState('');
   const [sheet, setSheet] = useState<ParsedSheet | null>(null);
-  const [two, setTwo] = useState<Set<number>>(new Set());
+  /** Lines read another way than their default, by line number. */
+  const [chosen, setChosen] = useState<Map<number, LineBars>>(new Map());
   const [keep, setKeep] = useState(false);
   const noteId = useId();
   const pasted = text.split(/\r?\n/);
   const read = (keepLyrics: boolean) =>
     setSheet(parseSheet(text, props.beatsPerBar, { keepLyrics }));
+  const howOf = (l: PastedLine) => chosen.get(l.n) ?? defaultLineBars(l);
+  const estimated = sheet?.lines.some((l) => l.estimate && howOf(l) === 'estimated') ?? false;
 
   const use = (mode: 'replace' | 'add') => {
     if (!sheet) return;
     props.onUse(
-      sheetToChart(sheet, {
-        beatsPerBar: props.beatsPerBar,
-        lineBars: new Map([...two].map((n) => [n, 'two'])),
-        newId: props.newId,
-      }),
+      sheetToChart(sheet, { beatsPerBar: props.beatsPerBar, lineBars: chosen, newId: props.newId }),
       mode,
     );
   };
@@ -71,8 +85,9 @@ export function PasteSheet(props: PasteSheetProps) {
       </h2>
       <p className={styles.note}>
         Chords over lyrics, [C]inline chords, bar lines (| C | G |) and section names (Verse, Reff,
-        Bait 2, Chorus x2) all work. Lyrics are removed straight away unless you keep them. A pasted
-        sheet has no timing, so each chord becomes one bar until you change it.
+        Bait 2, Chorus x2) all work. Where lyrics sit under the chords, each chord's length is
+        estimated from them; other chords get a bar each. Lyrics are removed once read unless you
+        keep them.
       </p>
       <div className={styles.keepLyrics}>
         <Checkbox
@@ -111,7 +126,7 @@ export function PasteSheet(props: PasteSheetProps) {
               disabled={!text.trim()}
               onClick={() => {
                 read(keep);
-                setTwo(new Set());
+                setChosen(new Map());
               }}
               data-testid="paste-read"
             >
@@ -145,32 +160,30 @@ export function PasteSheet(props: PasteSheetProps) {
                       pasted[l.n - 1]
                     )}
                   </span>
-                  <span role="cell" className={styles.detected}>
-                    {describeLine(l, sheet, keep, two)}
+                  <span role="cell" className={styles.detected} data-testid={`read-${l.n}`}>
+                    {describeLine(l, sheet, keep, howOf, props.beatsPerBar)}
                     {l.unknown.length ? (
                       <span className={styles.unknown}> Can't read: {l.unknown.join(', ')}</span>
                     ) : null}
-                    {l.dense ? (
-                      <Checkbox
-                        className={styles.inlineCheck}
-                        checked={two.has(l.n)}
-                        onChange={(checked) =>
-                          setTwo((s) => {
-                            const next = new Set(s);
-                            if (checked) next.add(l.n);
-                            else next.delete(l.n);
-                            return next;
-                          })
-                        }
-                        data-testid={`two-per-bar-${l.n}`}
-                      >
-                        Two chords a bar
-                      </Checkbox>
+                    {l.estimate || (l.dense && !l.bars) ? (
+                      <span className={styles.lineBars}>
+                        <Segmented
+                          label={`Bar lengths, line ${l.n}`}
+                          value={howOf(l)}
+                          options={l.estimate ? ESTIMATED : AS_TYPED}
+                          onChange={(v) => setChosen((m) => new Map(m).set(l.n, v))}
+                        />
+                      </span>
                     ) : null}
                   </span>
                 </div>
               ))}
           </div>
+          {estimated ? (
+            <p className={styles.note} data-testid="estimate-note">
+              Bar lengths are estimated from the lyrics. Check them by ear.
+            </p>
+          ) : null}
           <div className={styles.row}>
             {props.hasSections ? (
               <>
@@ -219,30 +232,46 @@ function keptNotice(sheet: ParsedSheet): string {
 
 const CUT = ` (cut to ${LIMITS.lyric} characters a bar)`;
 
+const pretty = (c: string) => (c === NO_CHORD ? c : prettyChord(c));
+
+/** Bars as chart syntax, all on one line, chords as they are shown. */
+function barText(bars: readonly ChartBar[], beatsPerBar: number): string {
+  const shown = bars.map((b) => ({
+    chords: b.chords.map((c) => ({ ...c, symbol: pretty(c.symbol) })),
+  }));
+  return formatBars(shown, beatsPerBar, Infinity);
+}
+
 function describeLine(
-  l: ParsedSheet['lines'][number],
+  l: PastedLine,
   sheet: ParsedSheet,
   keep: boolean,
-  two: ReadonlySet<number>,
+  howOf: (l: PastedLine) => LineBars,
+  beatsPerBar: number,
 ): string {
-  const chords = (cs: string[]) => cs.map((c) => (c === NO_CHORD ? c : prettyChord(c))).join(' ');
+  const barsOf = (line: PastedLine) => lineBars(line, howOf(line), beatsPerBar);
+  /** The bars a line makes, and whether their lengths are a rough guess. */
+  const bars = (line: PastedLine) => {
+    const rough = line.estimate?.confidence === 'rough' && howOf(line) === 'estimated';
+    return `${barText(barsOf(line), beatsPerBar)}${rough ? ' (rough)' : ''}`;
+  };
   /** A line's kept words, bar by bar, as they will sit in the chart. */
-  const kept = (line: ParsedSheet['lines'][number]) =>
-    barWords(line, two.has(line.n) ? 2 : 1)
-      .map((w) => w ?? '–')
+  const kept = (line: PastedLine) =>
+    barsOf(line)
+      .map((b) => b.lyric ?? '–')
       .join(' | ');
   switch (l.kind) {
     case 'header': {
       const s = l.section !== null ? sheet.sections[l.section] : null;
       const head = s ? `Section: ${s.label}${s.repeat > 1 ? ` ×${s.repeat}` : ''}` : 'Section';
-      return l.chords.length ? `${head}, chords ${chords(l.chords)}` : head;
+      return l.chords.length ? `${head}, bars ${bars(l)}` : head;
     }
     case 'chords':
     case 'bars':
-      return `Chords: ${chords(l.chords)}`;
+      return `Bars: ${bars(l)}`;
     case 'inline':
-      if (l.words) return `Chords: ${chords(l.chords)}. Lyrics kept: ${kept(l)}${l.cut ? CUT : ''}`;
-      return `Chords: ${chords(l.chords)}${l.lyricsRemoved ? ' (lyrics removed)' : ''}`;
+      if (l.words) return `Bars: ${bars(l)}. Lyrics kept: ${kept(l)}${l.cut ? CUT : ''}`;
+      return `Bars: ${bars(l)}${l.lyricsRemoved ? ' (lyrics removed)' : ''}`;
     case 'lyric': {
       const above = sheet.lines.find((x) => x.n === l.under);
       if (above) return `Lyrics kept: ${kept(above)}${above.cut ? CUT : ''}`;
