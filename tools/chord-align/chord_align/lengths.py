@@ -36,7 +36,7 @@ class SectionLengths:
     outliers: list[tuple[int, int, int, int]] = field(default_factory=list)
     #: Beats added (+) or removed (−) to make whole bars, and at which position.
     bar_fix: tuple[int, int] | None = None
-    #: Playings that start off a downbeat.
+    #: Playings whose first chord starts off a downbeat (written from the downbeat).
     off_downbeat: list[int] = field(default_factory=list)
 
 
@@ -63,15 +63,50 @@ def unambiguous(events: list[Event], al: Alignment) -> np.ndarray:
     return out
 
 
-def position_medians(events: list[Event], al: Alignment, trusted: np.ndarray) -> dict[tuple[str, int], float]:
-    """Median run length for each (section, chord position), from trusted runs when there are any."""
+def nearest_downbeat(beat: int, phase: int, beats_per_bar: int) -> int:
+    """The downbeat closest to ``beat`` (the later one on a tie)."""
+    return phase + int(np.floor((beat - phase + beats_per_bar / 2) / beats_per_bar)) * beats_per_bar
+
+
+def bar_lengths(al: Alignment, phase: int, beats_per_bar: int) -> np.ndarray:
+    """Each run's length on the bar grid, the grid the report's bar table shows.
+
+    Each playing of a section is taken from its nearest downbeat to the next
+    playing's: a first chord that starts a beat early (a pickup, a push) or late
+    loses or gains that beat, and the chord before it gives or takes it. Changes
+    inside a playing stay where they were heard. So the bars written follow the
+    downbeats, not the first chord's start.
+    """
+    out = al.lengths.astype(int).copy()
+    n = len(al.events)
+    firsts = [k for k in range(n) if k == 0 or al.plays[k] != al.plays[k - 1]]
+    for j, f in enumerate(firsts):
+        last = (firsts[j + 1] if j + 1 < len(firsts) else n) - 1
+        start = nearest_downbeat(int(al.starts[f]), phase, beats_per_bar)
+        end = int(al.ends[last])
+        if last + 1 < n and al.starts[last + 1] == al.ends[last]:
+            end = nearest_downbeat(int(al.starts[last + 1]), phase, beats_per_bar)
+        cuts = [start, *(int(al.starts[k]) for k in range(f + 1, last + 1)), end]
+        for k in range(f, last + 1):
+            out[k] = max(1, cuts[k - f + 1] - cuts[k - f])
+    return out
+
+
+def position_medians(
+    events: list[Event], al: Alignment, trusted: np.ndarray, lengths: np.ndarray | None = None
+) -> dict[tuple[str, int], float]:
+    """Median length for each (section, chord position), from trusted runs when there are any.
+
+    ``lengths`` are the runs' lengths to use (by default, as aligned).
+    """
+    lens = al.lengths if lengths is None else lengths
     groups: dict[tuple[str, int], list[int]] = defaultdict(list)
     for k, i in enumerate(al.events):
         groups[(events[i].section_id, events[i].position)].append(k)
     out: dict[tuple[str, int], float] = {}
     for key, ks in groups.items():
         good = [k for k in ks if trusted[k]] or ks
-        out[key] = float(np.median(al.lengths[good]))
+        out[key] = float(np.median(lens[good]))
     return out
 
 
@@ -83,14 +118,15 @@ def event_prior(events: list[Event], medians: dict[tuple[str, int], float], fall
 def consensus(
     events: list[Event], al: Alignment, phase: int, beats_per_bar: int, trusted: np.ndarray
 ) -> dict[str, SectionLengths]:
-    """Median length per chord position for each section heard, outliers flagged."""
-    medians = position_medians(events, al, trusted)
+    """Median length per chord position for each section heard, on the bar grid; outliers flagged."""
+    on_grid = bar_lengths(al, phase, beats_per_bar)
+    medians = position_medians(events, al, trusted, on_grid)
     runs: dict[str, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))
     first_beat: dict[str, dict[int, int]] = defaultdict(dict)
     for k, i in enumerate(al.events):
         ev = events[i]
         play = int(al.plays[k])
-        runs[ev.section_id][play].append(int(al.lengths[k]))
+        runs[ev.section_id][play].append(int(on_grid[k]))
         first_beat[ev.section_id].setdefault(play, int(al.starts[k]))
     out: dict[str, SectionLengths] = {}
     for sid, by_play in runs.items():

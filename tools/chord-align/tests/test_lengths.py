@@ -3,8 +3,17 @@ from __future__ import annotations
 import numpy as np
 
 from chord_align.align import Alignment
-from chord_align.chart import Event
-from chord_align.lengths import bar_phase, consensus, is_outlier, rounded, unambiguous, whole_bars
+from chord_align.chart import Event, bars_from_lengths, written_bars
+from chord_align.lengths import (
+    bar_lengths,
+    bar_phase,
+    consensus,
+    is_outlier,
+    nearest_downbeat,
+    rounded,
+    unambiguous,
+    whole_bars,
+)
 
 
 def _events(section: str, symbols: list[str], occurrences: int) -> list[Event]:
@@ -73,6 +82,39 @@ def test_off_downbeat_starts_are_reported() -> None:
     assert consensus(events, al, 0, 4, unambiguous(events, al))["v"].off_downbeat == []
     al = _path([4, 5, 3, 4], 2)
     assert consensus(events, al, 0, 4, unambiguous(events, al))["v"].off_downbeat == [1]
+
+
+def test_bars_follow_the_downbeats_not_a_first_chord_that_starts_early() -> None:
+    # The Laskar Pelangi intro: every playing heard a beat early, so the runs read
+    # 5 4 4 3 (Ab Db Ab Db) when the downbeats say 4 4 4 4.
+    intro = [Event(s, 4, "intro", 0, p) for p, s in enumerate(["Ab", "Db", "Ab", "Db"])]
+    verse = [Event(s, 4, "verse", 0, p) for p, s in enumerate(["Ab", "Db", "Cm", "Db"])]
+    starts = np.array([3, 8, 12, 16, 19, 24, 28, 32])  # downbeats at 4, 8, ...; plays start a beat early
+    ends = np.concatenate([starts[1:], [36]])
+    al = Alignment(
+        events=np.arange(8),
+        starts=starts,
+        ends=ends,
+        plays=np.array([0, 0, 0, 0, 1, 1, 1, 1]),
+        play_occurrence=[0, 1],
+        cost=0.0,
+        run_costs=np.zeros(8),
+    )
+    assert list(al.lengths[:4]) == [5, 4, 4, 3]
+    assert list(bar_lengths(al, 0, 4)) == [4, 4, 4, 4, 4, 4, 4, 4]
+    events = intro + verse
+    lengths = consensus(events, al, 0, 4, unambiguous(events, al))
+    assert lengths["intro"].lengths == [4, 4, 4, 4]
+    assert lengths["intro"].off_downbeat == [0]
+    bars = bars_from_lengths(["Ab", "Db", "Ab", "Db"], lengths["intro"].lengths, 4)
+    assert written_bars(bars, 4) == ["Ab", "Db", "Ab", "Db"]
+
+
+def test_nearest_downbeat() -> None:
+    assert nearest_downbeat(3, 0, 4) == 4
+    assert nearest_downbeat(5, 0, 4) == 4
+    assert nearest_downbeat(6, 0, 4) == 8  # halfway: the later one
+    assert nearest_downbeat(2, 1, 3) == 1
 
 
 def test_outlier_rule() -> None:
