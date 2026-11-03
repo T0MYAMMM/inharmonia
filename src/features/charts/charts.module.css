@@ -244,12 +244,10 @@
   font-size: 0.9rem;
 }
 
-.inlineCheck {
-  display: inline-flex;
-  gap: 6px;
-  margin-left: 8px;
-  align-items: center;
-  font-weight: 400;
+/* How a line of chords becomes bars: under what it was read as. */
+.lineBars {
+  display: block;
+  margin-top: 6px;
 }
 
 .form {
