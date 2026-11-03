@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseSheet } from './paste';
 import {
   countSyllables,
   estimateLineTiming,
@@ -7,6 +8,8 @@ import {
   type LineChord,
   type LineTiming,
 } from './timing';
+import { barMatch, beatAccuracy, scoreAll, timingVectors } from './timing.eval';
+import { TIMING_FIXTURES } from './timing.fixtures';
 
 /** Chords over a lyric, as a sheet shows them: each chord's column is where it is written. */
 function line(chords: string, lyric: string, beatsPerBar = 4) {
@@ -17,6 +20,8 @@ function line(chords: string, lyric: string, beatsPerBar = 4) {
   return estimateLineTiming(placed, expandTabs(lyric), beatsPerBar);
 }
 const show = (t: LineTiming) => t.chords.map((c) => `${c.symbol}:${c.beats}`).join(' ');
+const beatsOf = (t: LineTiming) =>
+  t.chords.flatMap((c) => Array.from({ length: c.beats }, () => c.symbol));
 
 describe('syllables', () => {
   it('counts English vowel groups, with a silent e and its endings', () => {
@@ -188,5 +193,70 @@ describe('estimateLineTiming', () => {
     expect(t.chords.map((c) => c.symbol)).toEqual(['C', 'G', 'Am', 'F', 'E']);
     expect(Math.min(...t.chords.map((c) => c.beats))).toBeGreaterThanOrEqual(1);
     expect(t.chords.reduce((s, c) => s + c.beats, 0)).toBe(t.bars * 4);
+  });
+});
+
+describe('timing on the evaluation set', () => {
+  it('has at least 12 public-domain songs, in 4/4 and 3/4, and Indonesian lines', () => {
+    const english = TIMING_FIXTURES.filter((f) => !f.source.startsWith('Original'));
+    expect(english.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(TIMING_FIXTURES.map((f) => f.beatsPerBar))).toEqual(new Set([3, 4]));
+    expect(TIMING_FIXTURES.some((f) => f.sheet.includes('\t'))).toBe(true);
+    expect(
+      TIMING_FIXTURES.some((f) => parseSheet(f.sheet, f.beatsPerBar).lines.some((l) => l.estimate)),
+    ).toBe(true);
+  });
+
+  it('beats one chord a bar, song by song as measured (right beats, beats, right bar counts, lines)', () => {
+    const { rows, estimated, baseline } = scoreAll(TIMING_FIXTURES);
+    const t = (x: typeof estimated) => [x.right, x.beats, x.barsRight, x.lines];
+    expect(rows.map((r) => [r.id, t(r.estimated), t(r.baseline)])).toEqual([
+      ['amazing-grace', [52, 57, 5, 5], [45, 57, 3, 5]],
+      ['silent-night', [55, 72, 4, 5], [24, 72, 0, 5]],
+      ['oh-susanna', [56, 64, 4, 4], [16, 64, 0, 4]],
+      ['when-the-saints', [64, 64, 4, 4], [32, 64, 0, 4]],
+      ['swing-low', [32, 96, 0, 6], [30, 64, 2, 6]],
+      ['auld-lang-syne', [62, 64, 4, 4], [48, 72, 1, 4]],
+      ['yankee-doodle', [63, 64, 4, 4], [40, 64, 2, 4]],
+      ['red-river-valley', [60, 64, 4, 4], [32, 64, 0, 4]],
+      ['camptown-races', [62, 64, 4, 4], [16, 64, 0, 4]],
+      ['home-on-the-range', [45, 48, 4, 4], [18, 48, 0, 4]],
+      ['clementine', [48, 48, 4, 4], [30, 48, 2, 4]],
+      ['my-bonnie', [48, 48, 4, 4], [36, 48, 0, 4]],
+      ['down-in-the-valley', [47, 48, 4, 4], [12, 48, 0, 4]],
+      ['senja', [66, 80, 5, 5], [38, 84, 1, 5]],
+      ['tidurlah', [41, 48, 4, 4], [24, 48, 0, 4]],
+    ]);
+    expect(beatAccuracy(estimated)).toBeCloseTo(0.862, 3);
+    expect(beatAccuracy(baseline)).toBeCloseTo(0.485, 3);
+    expect(barMatch(estimated)).toBeCloseTo(0.892, 3);
+    expect(barMatch(baseline)).toBeCloseTo(0.169, 3);
+    expect(beatAccuracy(estimated) - beatAccuracy(baseline)).toBeGreaterThan(0.25);
+  });
+
+  it('hardly moves when every chord is written a column or two off', () => {
+    const vectors = timingVectors(TIMING_FIXTURES);
+    for (const [shift, least] of [
+      [-2, 0.95],
+      [-1, 0.98],
+      [1, 0.98],
+      [2, 0.94],
+    ] as const) {
+      let same = 0;
+      let total = 0;
+      for (const { input, output } of vectors) {
+        let next = 0;
+        const moved = input.chords.map((c) => {
+          const col = Math.max(next, c.col + shift);
+          next = col + c.symbol.length + 1;
+          return { ...c, col };
+        });
+        const a = beatsOf(output);
+        const b = beatsOf(estimateLineTiming(moved, input.lyric, input.beatsPerBar));
+        for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] === b[i]) same++;
+        total += Math.max(a.length, b.length);
+      }
+      expect(same / total).toBeGreaterThanOrEqual(least);
+    }
   });
 });
