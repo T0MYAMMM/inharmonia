@@ -418,6 +418,75 @@ describe('pasting a chord sheet', () => {
     expect(sheet.lyricLines).toBe(4);
   });
 
+  describe('a lone chord over a line of words', () => {
+    const kinds = (text: string) => parseSheet(text, 4).lines.map((l) => l.kind);
+
+    it('reads a chord alone at the start of a line as a line of chords', () => {
+      const sheet = parseSheet(
+        [
+          '[Verse]',
+          'G',
+          'la la la lyric line here',
+          'Am',
+          'placeholder words',
+          '',
+          'Em7',
+          'la la',
+        ].join('\n'),
+        4,
+      );
+      expect(sheet.lines.map((l) => l.kind)).toEqual([
+        'header',
+        'chords',
+        'lyric',
+        'chords',
+        'lyric',
+        'blank',
+        'chords',
+        'lyric',
+      ]);
+      expect(sheet.lines.flatMap((l) => l.chords)).toEqual(['G', 'Am', 'Em7']);
+      expect(sheet.lyricLines).toBe(3);
+      // It lasts the line of words under it.
+      expect(sheet.lines[1]!.estimate!.chords).toEqual([
+        { symbol: 'G', beats: sheet.lines[1]!.estimate!.bars * 4 },
+      ]);
+      expectNoLyrics(sheet);
+    });
+
+    it('reads it beside lines of chords, and keeps its words when asked', () => {
+      const text = ['G', 'la la la', 'C   D', 'lyric line here'].join('\n');
+      expect(kinds(text)).toEqual(['chords', 'lyric', 'chords', 'lyric']);
+      const kept = parseSheet(text, 4, { keepLyrics: true });
+      expect(kept.lines[0]!.words).toEqual(['la la la']);
+      expect(kept.keptLines).toBe(2);
+    });
+
+    it('leaves a one-word lyric a lyric: under chords, in a run of words, or with no chords', () => {
+      // Under a line of chords it is that line's words.
+      expect(kinds('C   G\nA\nla la la')).toEqual(['chords', 'lyric', 'lyric']);
+      // After words that sit under no chords, it is more words.
+      expect(kinds('C   G\nla la\nlyric line\nAm\nla la la')).toEqual([
+        'chords',
+        'lyric',
+        'lyric',
+        'lyric',
+        'lyric',
+      ]);
+      // A sheet of words alone has no chords in it.
+      expect(kinds('A\nla la la lyric\nhere')).toEqual(['lyric', 'lyric', 'lyric']);
+      // With nothing under it, it is not over any words.
+      expect(kinds('C   G\nla la\n\nAm')).toEqual(['chords', 'lyric', 'blank', 'lyric']);
+      // Two lone chords over words are enough on their own.
+      expect(kinds('G\nla la la\nC\nlyric line here')).toEqual([
+        'chords',
+        'lyric',
+        'chords',
+        'lyric',
+      ]);
+    });
+  });
+
   it('keeps lyrics only when asked: by default the parse holds no lyric text', () => {
     const off = parseSheet(OVER, 4);
     expect(off.keptLines).toBe(0);
