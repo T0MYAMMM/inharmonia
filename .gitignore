@@ -12,3 +12,10 @@ blob-report
 
 # Score scans downloaded to work from; never committed.
 .cache/
+
+# The chord-align tool's virtual environment and Python caches.
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
