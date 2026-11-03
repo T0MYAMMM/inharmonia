@@ -196,3 +196,12 @@ def test_file_without_a_chart(tmp_path: Path) -> None:
     path.write_text(json.dumps({"format": "inharmonia", "version": 3, "items": [{"kind": "song"}]}))
     with pytest.raises(ChartError, match="has no chart"):
         read_chart(load_file(path))
+
+
+def test_replace_symbols_counts_positions_as_merged_does() -> None:
+    from chord_align.chart import replace_symbols
+
+    bars = [parse_bar("C", 4, "a"), parse_bar("C G", 4, "b"), parse_bar("G Am", 4, "c")]
+    # Positions: C (bars 1–2), G (bars 2–3), Am.
+    out = replace_symbols(bars, {1: "G7", 2: "F"})
+    assert written_bars(out, 4) == ["C", "C G7", "G7 F"]

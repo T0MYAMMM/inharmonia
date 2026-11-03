@@ -26,8 +26,19 @@ from .align import (
     occurrences,
     written_prior,
 )
-from .chart import LIMITS, Chart, Event, Section, bars_from_lengths, expand_form, write_chart, written_bars
+from .chart import (
+    LIMITS,
+    Chart,
+    Event,
+    Section,
+    bars_from_lengths,
+    expand_form,
+    read_chart,
+    write_chart,
+    written_bars,
+)
 from .lengths import SectionLengths, bar_phase, consensus, event_prior, position_medians, unambiguous
+from .suggest import Suggestion, corrected, suggest
 from .symbols import ChordPCs, parse_symbol
 
 log = logging.getLogger(__name__)
@@ -60,6 +71,8 @@ COVERAGE_OK = 0.8
 #: How much better (in profile correlation) the best key must fit than the chart's
 #: own key before ``--set-key`` writes it: a fifth away is often a near tie.
 KEY_MARGIN = 0.1
+#: Per-beat cost cap of the relaxed alignment that suggestions are heard on.
+RELAXED_CAP = 0.12
 #: With trusted lengths: cost per octave between the song's length and the chart's.
 TRUSTED_SPAN_WEIGHT = 0.3
 
@@ -90,6 +103,8 @@ class Result:
     shift_scores: list[tuple[int, float]]
     sounding: tonality.Key
     alignment: Alignment
+    #: The alignment with capped beat costs, where a wrong chord keeps its place.
+    relaxed: Alignment
     phase: int
     tempo: int
     sections: list[SectionResult]
@@ -109,6 +124,8 @@ class Result:
     #: Section labels of playings the recording left out or played twice.
     left_out: list[str] = field(default_factory=list)
     played_twice: list[str] = field(default_factory=list)
+    #: Chords the recording clearly plays instead of the chart's (see ``suggest``).
+    suggestions: list[Suggestion] = field(default_factory=list)
 
     def labels(self) -> list[str | None]:
         """The chord symbol on each beat, None for intro and outro."""
@@ -192,8 +209,14 @@ def run(
     set_key: bool = False,
     min_confidence: float = MIN_CONFIDENCE,
     lengths_trusted: bool = False,
+    apply_suggestions: bool = False,
 ) -> Result:
-    """Align the chart to the recording and work out lengths, tempo and key."""
+    """Align the chart to the recording and work out lengths, tempo and key.
+
+    Suggested chord changes are always worked out. With ``apply_suggestions``,
+    the chart takes them and is aligned again, so the new chords get their own
+    lengths; the result lists the suggestions, marked applied.
+    """
     events = expand_form(chart)
     vocab, idx = _vocabulary(events)
     written = np.array([e.chart_beats for e in events])
@@ -284,7 +307,12 @@ def run(
     costs = tonality.chord_costs(moved, feats.chroma, feats.energy, feats.bass)
     intro = tonality.intro_costs(moved, feats.chroma, feats.energy)
     phase = bar_phase(al.starts, chart.meter)
-    al = align(costs[idx], intro, prior, occs, start_cost=downbeat_costs(feats.n, phase, chart.meter))
+    start_cost = downbeat_costs(feats.n, phase, chart.meter)
+    al = align(costs[idx], intro, prior, occs, start_cost=start_cost)
+    # For suggestions: the same search with each beat's cost capped, so a chord the
+    # recording does not play keeps its place instead of being squeezed out by
+    # its neighbours, and what is played there can be heard.
+    relaxed = align(np.minimum(costs[idx], RELAXED_CAP), intro, prior, occs, start_cost=start_cost)
     trusted = unambiguous(events, al)
 
     best_sim = tonality.best_similarity(moved, feats.chroma)
@@ -372,6 +400,7 @@ def run(
         shift_scores=best.ranked,
         sounding=sounding,
         alignment=al,
+        relaxed=relaxed,
         phase=phase,
         tempo=int(np.clip(round(feats.tempo), 30, 240)),
         sections=sections,
@@ -388,6 +417,16 @@ def run(
         left_out=[label_of(g) for g in al.skipped],
         played_twice=[label_of(g) for g in al.repeated],
     )
+    result.suggestions = suggest(result)
+    if apply_suggestions and result.suggestions:
+        fixed = read_chart(corrected(chart, result.suggestions), chart.item_id)
+        again = run(
+            fixed, y, sr, set_key=set_key, min_confidence=min_confidence, lengths_trusted=lengths_trusted
+        )
+        for s in result.suggestions:
+            s.applied = True
+        again.suggestions = result.suggestions
+        return again
     if set_key:
         if shift != 0:
             result.transpose = tonality.signed_shift(shift)

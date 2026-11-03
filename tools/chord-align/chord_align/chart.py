@@ -342,6 +342,23 @@ def bars_from_lengths(symbols: list[str], lengths: list[int], beats_per_bar: int
     return bars
 
 
+def replace_symbols(bars: list[list[Chord]], changes: dict[int, str]) -> list[list[Chord]]:
+    """The bars with the chords at these positions (of ``Section.merged()``) renamed.
+
+    Positions count as ``merged`` does: a chord repeated across a barline is one.
+    """
+    out: list[list[Chord]] = []
+    pos, prev = -1, None
+    for bar in bars:
+        out.append([])
+        for chord in bar:
+            if chord.symbol != prev:
+                pos += 1
+                prev = chord.symbol
+            out[-1].append(Chord(changes.get(pos, chord.symbol), chord.beats))
+    return out
+
+
 def written_bars(bars: list[list[Chord]], beats_per_bar: int) -> list[str]:
     """Bars as the strings the file holds."""
     return [format_bar(b, beats_per_bar) for b in bars]
