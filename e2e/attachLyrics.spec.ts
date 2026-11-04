@@ -74,8 +74,15 @@ test.describe('add lyrics from a sheet', () => {
     isMobile,
   }) => {
     await savedChart(page, 'Lantern tide');
+    // What could carry the pasted words out: anything sent, or anything off this site. The
+    // app's own files (the piano samples it loads when idle) are not that.
     const requests: string[] = [];
-    page.on('request', (r) => requests.push(r.url()));
+    page.on('request', (r) => {
+      const url = new URL(r.url());
+      const own = url.origin === new URL(page.url()).origin;
+      if (r.method() !== 'GET' || (!own && !['blob:', 'data:'].includes(url.protocol)))
+        requests.push(`${r.method()} ${r.url()}`);
+    });
     await readSheet(page);
 
     await expect(page.getByTestId('lyrics-summary')).toHaveText(
@@ -95,7 +102,7 @@ test.describe('add lyrics from a sheet', () => {
     ).toHaveText(['1Fcarry me', '2Ghome on the', '3Ctide', '4CNo words']);
     await noSideways(page);
     // Reading went nowhere.
-    expect(requests.filter((u) => !u.startsWith('blob:') && !u.startsWith('data:'))).toEqual([]);
+    expect(requests).toEqual([]);
 
     await page.getByTestId('lyrics-apply').click();
     await expect(page.getByTestId('lyrics-added')).toHaveText(
