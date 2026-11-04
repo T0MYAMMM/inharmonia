@@ -368,6 +368,65 @@ describe('attachLyrics', () => {
     ]);
   });
 
+  it('fits a sheet the way sheets are written to a chart timed from a recording', () => {
+    // Uneven lengths, an intro and a solo the sheet leaves out; the sheet in A over a chart in
+    // G, with sevenths, a passing chord, Asus4 into A, and "Reff" alone for the chorus again.
+    const chart = chartOf(
+      [
+        section('i', 'Intro', 'intro', '| G | G | C | D |'),
+        section('v', 'Verse', 'verse', '| G | G D | Em | Em | C | C D | G | G |'),
+        section('c', 'Chorus', 'chorus', '| C | D | G . . Em | Em | C | D | G | G |'),
+        section('s', 'Solo', 'solo', '| Em | C | G | D |'),
+      ],
+      ['i', 'v', 'c', 'v', 'c', 's', 'c'],
+    );
+    const sheet = [
+      'Verse 1:',
+      'A                    E',
+      'lanterns hang along the quay',
+      'F#m7                 D       E',
+      'someone sings a song for me',
+      'A          C#m/G#    A',
+      'and the evening settles in',
+      'Reff:',
+      'D        E          A      F#m',
+      'carry me home before the light',
+      'D        E          Asus4  A',
+      'carry me home across the night',
+      'Verse 2:',
+      'A                    E',
+      'boats come in with silver nets',
+      'F#m7                 D       E',
+      'gulls are calling no regrets',
+      'A          C#m/G#    A',
+      'and the harbour sleeps again',
+      'Reff',
+      'Reff',
+    ].join('\n');
+    const r = attachLyrics(chart, sheet);
+    expect(r.report).toMatchObject({ shift: 2, events: 40, matched: 33, copies: 1, leftOut: [] });
+    expect(r.report.noWords).toEqual(['Intro', 'Solo']);
+    expect(words(r)).toEqual({
+      Intro: ['-', '-', '-', '-'],
+      Verse: [
+        ...['lanterns hang along', 'the quay', 'someone sings a song', '-'],
+        ...['for me', '-', 'and the evening settles in', '-'],
+      ],
+      'Verse 2': [
+        ...['boats come in with', 'silver nets', 'gulls are calling no', '-'],
+        ...['regrets', '-', 'and the harbour sleeps again', '-'],
+      ],
+      // Played three times, the same words each time: one chorus. Asus4's word goes with the A.
+      Chorus: [
+        ...['carry me', 'home before', 'the light', '-'],
+        ...['carry me', 'home across', 'the night', '-'],
+      ],
+      Solo: ['-', '-', '-', '-'],
+    });
+    expect(r.form).toEqual(['i', 'v', 'c', 'copy1', 'c', 's', 'c']);
+    expect(playedChords(r)).toEqual(playedChords(chart));
+  });
+
   it('reports lines of words with no chords above them', () => {
     const r = attachLyrics(song(), sheetOf(['[Verse]', 'a line sung before any chord'], VERSE_1));
     expect(r.report.leftOut).toEqual([2]);

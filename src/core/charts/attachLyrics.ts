@@ -23,19 +23,23 @@ import {
  *
  * 1. The sheet, read with its lyrics kept: each chord with the words from its
  *    column up to the next chord's, sections played as often as the sheet
- *    says. A chord written again right after itself is one chord held, its
+ *    says, and a section name alone ("Reff" again) playing it again. A chord written again right after itself is one chord held, its
  *    words kept in order as pieces.
  * 2. The chart, the form written out: each chord as you hear it change (a
  *    chord written again in the next bar is one held chord, as `tapChords`
  *    has it), with the form entry, pass, beat it starts on and its length.
  * 3. A global alignment (Needleman–Wunsch) of the two, the sheet tried in all
  *    12 transpositions (it may be written for a capo or in another key).
- *    Alike chords score (exact 3, same root and family 2, same root 1),
- *    others and gaps cost 1, and section kinds that agree nudge a pair by ¼.
+ *    Alike chords score (exact 3, same root and family 2, same root 1), a
+ *    gap costs 1 and unlike chords 2½, and section kinds that agree nudge a
+ *    pair by ¼. A lone pair in a section played (one chord of three or more)
+ *    is dropped, and chords both sides left out between the same two pairs,
+ *    as many on each, are then paired in order.
  * 4. Each aligned sheet chord's words go to the bar its chart chord starts
  *    in; a held sheet chord's pieces are spread over the chart chord by their
  *    estimated lengths. Words of a sheet chord the chart lacks join the chord
- *    before them on the same line (or after, if it starts the line); others
+ *    before them on the same line (the one after if that is more like it, or
+ *    it starts the line); others
  *    are left out and their lines reported. A bar's words are joined in order
  *    and cut at a word to `LIMITS.lyric`.
  * 5. A section played more than once whose words differ from one time to the
@@ -170,23 +174,21 @@ interface ChartEvent {
   beats: number;
 }
 
+/** A section label as the sheet repeats it: "Reff", "reff ", "REFF" are one. */
+const labelKey = (label: string) => label.toLowerCase().replace(/\s+/g, ' ').trim();
+
 function readSheet(text: string, beatsPerBar: number) {
   const sheet = parseSheet(text, beatsPerBar, { keepLyrics: true });
-  const events: SheetEvent[] = [];
+  // Each sheet section's chords, held repeats merged.
+  const own: SheetEvent[][] = sheet.sections.map(() => []);
   let order = 0;
-  let run: SheetEvent[] = [];
-  let runSection: number | null = null;
-  const flush = () => {
-    const repeat = runSection === null ? 1 : (sheet.sections[runSection]?.repeat ?? 1);
-    for (let i = 0; i < repeat; i++) events.push(...run.map((e) => ({ ...e })));
-    run = [];
-  };
+  // The line each line of chords' words are on: the lyric line under it, or itself (inline).
+  const wordsLine = new Map(
+    sheet.lines.flatMap((l) => (l.under === undefined ? [] : [[l.under, l.n] as const])),
+  );
   for (const line of sheet.lines) {
     if (line.chords.length === 0 || line.section === null) continue;
-    if (line.section !== runSection) {
-      flush();
-      runSection = line.section;
-    }
+    const run = own[line.section]!;
     const type = sheet.sections[line.section]?.type ?? 'custom';
     const chords: { symbol: string; words: string | undefined; weight: number }[] = line.bars
       ? line.bars.flatMap((bar, b) =>
@@ -202,13 +204,29 @@ function readSheet(text: string, beatsPerBar: number) {
           weight: line.estimate?.chords[i]?.beats ?? beatsPerBar,
         }));
     for (const c of chords) {
-      const piece = { words: c.words, weight: Math.max(1, c.weight), line: line.n, order: order++ };
+      const piece = {
+        words: c.words,
+        weight: Math.max(1, c.weight),
+        line: wordsLine.get(line.n) ?? line.n,
+        order: order++,
+      };
       const last = run.at(-1);
       if (last && last.symbol === c.symbol) last.pieces.push(piece);
       else run.push({ key: chordKey(c.symbol), symbol: c.symbol, type, pieces: [piece] });
     }
   }
-  flush();
+  // In order, each as often as the sheet says; a name alone ("Reff" again) plays that section again.
+  const events: SheetEvent[] = [];
+  sheet.sections.forEach((section, i) => {
+    const again = own
+      .slice(0, i)
+      .findLast(
+        (run, k) =>
+          run.length > 0 && labelKey(sheet.sections[k]!.label) === labelKey(section.label),
+      );
+    const run = own[i]!.length ? own[i]! : (again ?? []);
+    for (let k = 0; k < section.repeat; k++) events.push(...run);
+  });
   const leftOut = sheet.lines.filter((l) => l.lyricsRemoved).map((l) => l.n);
   return { events, leftOut, cut: sheet.lines.some((l) => l.cut) };
 }
@@ -241,8 +259,13 @@ function readChart(entries: readonly FormEntry[]): ChartEvent[] {
   return out;
 }
 
-/** Pair scores: a nudge for agreeing section kinds, never enough to make unlike chords pair. */
-const SCORE = { unlike: -1, gap: -1, kinds: 0.25 } as const;
+/**
+ * Pair scores. Unlike chords cost more than leaving one out on each side, so
+ * the alignment never pairs them to save a gap; `pairLeftOver` pairs them
+ * afterwards where both sides left the same stretch out. A nudge for agreeing
+ * section kinds, never enough to make unlike chords pair.
+ */
+const SCORE = { unlike: -2.5, gap: -1, kinds: 0.25 } as const;
 
 function pairScore(s: SheetEvent, c: ChartEvent, shift: number): number {
   const like = likeness(s.key, c.key, shift);
@@ -277,7 +300,8 @@ function align(sheet: readonly SheetEvent[], chart: readonly ChartEvent[], shift
       const skipChart = score[i * w + j - 1]! + SCORE.gap;
       const best = Math.max(diag, skipSheet, skipChart);
       score[i * w + j] = best;
-      from[i * w + j] = best === diag ? 0 : best === skipSheet ? 1 : 2;
+      // Ties go to leaving a chart chord out, so the sheet pairs as early in the song as it can.
+      from[i * w + j] = best === skipChart ? 2 : best === diag ? 0 : 1;
     }
   const pairs = new Array<number>(n).fill(-1);
   let i = n;
@@ -289,6 +313,50 @@ function align(sheet: readonly SheetEvent[], chart: readonly ChartEvent[], shift
     else j--;
   }
   return { score: score[n * w + m]!, pairs };
+}
+
+/**
+ * A section played (3 chord changes or more) where the sheet matched just one
+ * chord is almost always a chord borrowed from the next section, such as the
+ * last G of a chorus paired with the G of a solo after it: that pair is
+ * dropped, and the words join their line again.
+ */
+function dropLonePairs(pairs: number[], chart: readonly ChartEvent[]): number[] {
+  const at = (c: ChartEvent) => `${c.entry}/${c.pass}`;
+  const total = new Map<string, number>();
+  const paired = new Map<string, number>();
+  for (const c of chart) total.set(at(c), (total.get(at(c)) ?? 0) + 1);
+  for (const c of pairs)
+    if (c >= 0) paired.set(at(chart[c]!), (paired.get(at(chart[c]!)) ?? 0) + 1);
+  return pairs.map((c) => {
+    if (c < 0) return c;
+    const k = at(chart[c]!);
+    return paired.get(k) === 1 && total.get(k)! >= 3 ? -1 : c;
+  });
+}
+
+/**
+ * Where the alignment left chords out on both sides between the same two
+ * pairs, as many on each (a chord the chart heard as another, a section the
+ * sheet names differently), pair them in order: the words sat at that place in the song.
+ */
+function pairLeftOver(pairs: number[], chartLength: number): number[] {
+  const out = [...pairs];
+  let lastChart = -1;
+  let run: number[] = [];
+  const fill = (nextChart: number) => {
+    // Only stretches of the same length: one chord for one, two for two.
+    if (run.length === nextChart - lastChart - 1)
+      run.forEach((s, k) => (out[s] = lastChart + 1 + k));
+    run = [];
+  };
+  pairs.forEach((c, s) => {
+    if (c < 0) return run.push(s);
+    fill(c);
+    lastChart = c;
+  });
+  fill(chartLength);
+  return out;
 }
 
 /** Shifts to try, nearest first, so a tie keeps the sheet's own key or the nearest. */
@@ -316,8 +384,12 @@ function copyLabel(label: string, n: number, taken: Set<string>): string {
 }
 
 /** Two sets of a section's words that never give one bar different words. */
-const agree = (a: readonly (string | undefined)[], b: readonly (string | undefined)[]) =>
+const fits = (a: readonly (string | undefined)[], b: readonly (string | undefined)[]) =>
   a.every((w, i) => !w || !b[i] || w === b[i]);
+
+/** The same words in the same order, a bar this way or that. */
+const sameWords = (a: readonly (string | undefined)[], b: readonly (string | undefined)[]) =>
+  a.filter(Boolean).join(' ') === b.filter(Boolean).join(' ');
 
 /**
  * Put a pasted sheet's lyrics on a chart's bars, its chords untouched: only
@@ -342,7 +414,8 @@ export function attachLyrics(
     const a = align(sheet, played, shift);
     if (a.score > best.score) best = { ...a, shift };
   }
-  const { pairs, shift } = best;
+  const { shift } = best;
+  const pairs = pairLeftOver(dropLonePairs(best.pairs, played), played.length);
   const matched = played.map(() => false);
   pairs.forEach((c, s) => {
     if (c >= 0 && likeness(sheet[s]!.key, played[c]!.key, shift) > 0) matched[c] = true;
@@ -379,8 +452,11 @@ export function attachLyrics(
     }
     for (const p of s.pieces) {
       if (!p.words) continue;
-      const before = neighbour(si, p.line, -1);
-      const after = before < 0 ? neighbour(si, p.line, 1) : -1;
+      // The chord before it on the line, unless the one after is more like it (Gsus4 G).
+      const near = (k: number) => (k < 0 ? -1 : likeness(s.key, played[pairs[k]!]!.key, shift));
+      let before = neighbour(si, p.line, -1);
+      const after = neighbour(si, p.line, 1);
+      if (near(after) > near(before)) before = -1;
       if (before >= 0) {
         const ev = played[pairs[before]!]!;
         place(ev, ev.start + ev.beats - 1e-6, p);
@@ -420,9 +496,10 @@ export function attachLyrics(
     if (words.every((w) => !w)) return;
     const id = entries[e]!.section.id;
     const list = sets.get(id) ?? [];
-    const same = list.find((g) => agree(g.words, words));
+    // Words that fit fill the set's gaps; the same words placed a bar apart keep the set's places.
+    const same = list.find((g) => fits(g.words, words) || sameWords(g.words, words));
     if (same) {
-      same.words = same.words.map((w, i) => w ?? words[i]);
+      if (fits(same.words, words)) same.words = same.words.map((w, i) => w ?? words[i]);
       same.entries.push(e);
     } else list.push({ words: [...words], entries: [e] });
     sets.set(id, list);
