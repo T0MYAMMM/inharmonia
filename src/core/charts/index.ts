@@ -18,3 +18,4 @@ export * from './numerals';
 export * from './lyrics';
 export * from './rebar';
 export * from './tapTiming';
+export * from './attachLyrics';
