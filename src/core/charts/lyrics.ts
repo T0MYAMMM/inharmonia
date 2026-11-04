@@ -15,6 +15,18 @@ export function tidyLyric(text: string): string | undefined {
   return text.replace(NOT_TEXT, ' ').replace(/\s+/g, ' ').trim() || undefined;
 }
 
+/** Words to keep in a bar: one line, cut at a word to `LIMITS.lyric` characters. */
+export function fitLyric(text: string): { words: string | undefined; cut: boolean } {
+  const words = tidyLyric(text);
+  if (!words || words.length <= LIMITS.lyric) return { words, cut: false };
+  const head = words.slice(0, LIMITS.lyric + 1);
+  const space = head.lastIndexOf(' ');
+  return {
+    words: (space > 0 ? head.slice(0, space) : words.slice(0, LIMITS.lyric)).trim(),
+    cut: true,
+  };
+}
+
 /** A bar with these words, or without any. */
 export function withLyric(bar: ChartBar, lyric: string | undefined): ChartBar {
   const { lyric: _old, ...rest } = bar;
