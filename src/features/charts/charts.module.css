@@ -257,6 +257,71 @@
   margin-top: 6px;
 }
 
+/* Add lyrics: each section's bars with the words they would get. */
+.previewTitle {
+  font-size: 1rem;
+}
+
+.previewTitle:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.previewSection {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.previewHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+}
+
+.previewLabel {
+  font-size: 0.95rem;
+}
+
+.previewBar {
+  composes: bar;
+  cursor: default;
+}
+
+.previewBar[data-unmatched] {
+  border-style: dashed;
+}
+
+/* The words wrap here, so every one can be checked before Apply. */
+.previewLyric {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.previewLyric[data-none] {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.unmatched {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ask {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .form {
   display: flex;
   flex-wrap: wrap;

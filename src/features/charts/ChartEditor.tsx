@@ -29,6 +29,7 @@ import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { TextArea } from '@/ui/TextArea';
 import { TextInput } from '@/ui/TextInput';
+import { AddLyrics } from './AddLyrics';
 import { PasteSheet } from './PasteSheet';
 import { TapTiming } from './TapTiming';
 import { warmAudio } from './tapSource';
@@ -61,6 +62,9 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
   const [tapFor, setTapFor] = useState<string | null>(null);
   const [tapped, setTapped] = useState<string | null>(null);
   const [pasting, setPasting] = useState(initial.sections.length === 0);
+  // Lyrics from a pasted sheet onto these bars, and whether some were just put in.
+  const [addingLyrics, setAddingLyrics] = useState(false);
+  const [lyricsAdded, setLyricsAdded] = useState(false);
   const bpb = chart.meter.beats;
   const issues = chartIssues(chart);
   const suggestions = useMemo(() => suggestKeys(chart.sections).slice(0, 2), [chart.sections]);
@@ -237,13 +241,46 @@ export function ChartEditor({ initial, saving, onSave }: ChartEditorProps) {
             setPasting(false);
           }}
         />
+      ) : addingLyrics ? (
+        <AddLyrics
+          chart={chart}
+          newId={newSectionId}
+          onCancel={() => setAddingLyrics(false)}
+          onApply={(parts) => {
+            // Only words, and copies of sections for other words: the chords are the chart's own.
+            setChart((c) => ({ ...c, ...parts }));
+            setSelected(null);
+            setAddingLyrics(false);
+            setLyricsAdded(true);
+          }}
+        />
       ) : (
         <div className={styles.row}>
-          <Button onClick={() => setPasting(true)} data-testid="paste-open">
+          <Button
+            onClick={() => {
+              setPasting(true);
+              setLyricsAdded(false);
+            }}
+            data-testid="paste-open"
+          >
             Paste a chord sheet
           </Button>
+          {chart.sections.length ? (
+            <Button
+              onClick={() => {
+                setAddingLyrics(true);
+                setLyricsAdded(false);
+              }}
+              data-testid="lyrics-open"
+            >
+              Add lyrics
+            </Button>
+          ) : null}
         </div>
       )}
+      <p className={styles.notice} role="status" data-testid="lyrics-added">
+        {lyricsAdded ? 'Lyrics in place. Save to keep them.' : ''}
+      </p>
 
       {chart.sections.map((s, si) => (
         <section
