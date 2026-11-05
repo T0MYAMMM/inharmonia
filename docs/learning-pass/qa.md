@@ -142,15 +142,16 @@ are the owner's measurements of the deployed site.
 
 ## Findings not fixed, and why
 
-- C-11, the count-in hidden under the dock at 1280×800 in play-along: not in the ten picked; the
-  fix (the count in the Play button's place) is small and waits for a decision.
-- C-12, the chord card before the pickers on a phone's Chords page: not picked.
-- C-16, "Not a Standard MIDI File." without a next step, and the chart's issues list far from its
-  bar: not picked.
-- The falling-notes canvas draws its hands in its own colours (`FallingNotes.tsx`), not the
-  tokens: found by the RYUX source scan, outside this pass's scope, worth its own small commit.
+- C-12, the chord card before the pickers on a phone's Chords page: an earlier decision, written
+  in `chords.module.css` ("the chord comes first, then the pickers"), left as it is.
+- The chart's issues list sits far below the bar it names; the dashed outline on the bar marks it.
 - The on-screen keys stay hidden from assistive technology (`aria-hidden`): a design question for
   the owner, not a change made here.
+
+Fixed after the ten, on "keep going": the play-along count-in now reaches the dock's line and the
+live region (C-11); "Not a Standard MIDI File." says what to do next (C-16); and the falling-notes
+canvas reads its colours from the tokens, amber and dusk with their text colours on the keys' own
+black (`falling-notes-1280-light.png`, `falling-notes-1280-dark.png`).
 
 ## Theory and credit
 
@@ -171,7 +172,7 @@ DESIGN SYSTEM  PASS          · one new component (AudioNotice) and one hook (us
 ACCESSIBILITY  PASS          · live regions mounted and polite, their words plain and specific; 44 px targets on touch, measured; not heard with a screen reader (see Not verified)
 RESPONSIVE     PASS          · 1280, 820 and 360 captured; the width-specific behaviour (dock action, Follow along, the ear fold, the progression's row) is under 600 px only and guarded
 EDGE CASES     PASS          · loading, synth fallback, error and offline wording for the sound; MIDI coming and going; the empty and error states unchanged and checked
-CODE QUALITY   PASS          · lint, format, typecheck, songs check, 1325 unit tests, 421 e2e tests green before every commit
+CODE QUALITY   PASS          · lint, format, typecheck, songs check, 1328 unit tests, 421 e2e tests green before every commit
 VISUAL QA      PASS          · Playwright captures at three widths, two themes, reduced motion; motion read from document.getAnimations
 ANTI-SLOP      PASS          · no numbers, urgency or decoration added; the streak removed
 FINAL          PASS          · with the Not verified list above standing
