@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { compileLesson } from '@/core/content/compile';
 import { DEFAULT_RULES, LESSON_SCHEMA_VERSION, type Lesson } from '@/core/content/types';
 import { PATTERNS } from '@/content/patterns';
@@ -126,6 +126,44 @@ describe('adaptive score layout', () => {
     const { container } = render(<Score {...p} compiled={progression} />);
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
     expect(screen.queryByTestId('score-tools')).not.toBeInTheDocument();
+  });
+});
+
+describe('the view on a phone', () => {
+  const stubWidth = (compact: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: compact && query === '(max-width: 600px)',
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('opens Follow Along for Practice under 600px, and returns to Overview after', () => {
+    stubWidth(true);
+    const { rerender } = render(<Score {...props('easy')} />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    rerender(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Follow Along' })).toBeChecked();
+    expect(screen.getByRole('region', { name: 'Follow Along score' })).toBeInTheDocument();
+    rerender(<Score {...props('easy')} mode="listen" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  it('keeps a view picked by hand during Practice', () => {
+    stubWidth(true);
+    const { rerender } = render(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Follow Along' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'Overview' }));
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    rerender(<Score {...props('easy')} mode="listen" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  it('leaves Overview alone on a wider screen', () => {
+    stubWidth(false);
+    const { rerender } = render(<Score {...props('easy')} />);
+    rerender(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
   });
 });
 

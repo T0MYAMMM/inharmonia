@@ -416,9 +416,26 @@ test.describe('song player', () => {
     await expect(action).toHaveText('Hear it');
   });
 
-  test('practice: clicking a bar moves the target there', async ({ page }) => {
+  test('on a phone, Practice opens Follow Along, and Listen brings Overview back', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'a view rule for screens under 600px: the phone project');
+    await open(page);
+    await expect(page.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await expect(page.getByRole('radio', { name: 'Follow Along' })).toBeChecked();
+    // Every note of the bar is in view, with the target among them.
+    await expect(page.locator('[data-score-view="follow"] [data-state="target"]')).toHaveCount(1);
+    await page.getByRole('radio', { name: 'Listen' }).click();
+    await expect(page.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  test('practice: clicking a bar moves the target there', async ({ page, isMobile }) => {
     await open(page);
     await page.getByRole('radio', { name: 'Practice' }).click();
+    // On a phone Practice opens Follow Along; Overview, with every bar, is a tap away and is kept.
+    if (isMobile) await page.getByRole('radio', { name: 'Overview' }).click();
     await page.locator('[data-bar="8"]').click();
     await expect(page.locator('[data-state="target"]')).toHaveAttribute('data-chip', 'rh-8-0');
     await expect(page.getByTestId('status-line')).toHaveText('Bar 9 of 24, Dm');

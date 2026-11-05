@@ -1,4 +1,5 @@
 import { forwardRef, memo, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import type { CompiledBar, CompiledLesson } from '@/core/content/compile';
 import {
   prettyNumeral,
@@ -74,6 +75,29 @@ export function Score(props: ScoreProps) {
       ? 'follow'
       : 'overview',
   );
+  // On a phone, Practice opens Follow Along, where every note of the bar is
+  // shown with its beat; Overview summarises a bar of five notes or more. The
+  // view it found comes back when Practice ends, unless one was picked by hand.
+  const compact = useMediaQuery(BREAKPOINTS.compact);
+  const [returnTo, setReturnTo] = useState<ScoreView | null>(null);
+  const lastMode = useRef<SongMode>('listen');
+  useEffect(() => {
+    const entered = mode === 'practice' && lastMode.current !== 'practice';
+    const left = mode !== 'practice' && lastMode.current === 'practice';
+    lastMode.current = mode;
+    if (!isSong) return;
+    if (entered && compact && view === 'overview') {
+      setReturnTo(view);
+      setView('follow');
+    } else if (left && returnTo !== null) {
+      setView(returnTo);
+      setReturnTo(null);
+    }
+  }, [mode, compact, isSong, view, returnTo]);
+  const pickView = (v: ScoreView) => {
+    setReturnTo(null);
+    setView(v);
+  };
   const [zoom, setZoom] = useState(100);
   const [localFallingHand, setFallingHand] = useState<FallingHand>('both');
   const [localLookAhead, setLookAheadBeats] = useState(4);
@@ -127,7 +151,7 @@ export function Score(props: ScoreProps) {
       {notation === 'angka' ? <p className={styles.doHeader}>{doHeader(key)}</p> : null}
       {isSong ? (
         <div className={styles.scoreTools} data-testid="score-tools">
-          <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={setView} />
+          <Segmented label="Score view" value={view} options={VIEW_OPTIONS} onChange={pickView} />
           {shownView === 'falling' ? (
             <div className={styles.followTools}>
               <Field label="Displayed hands">
