@@ -362,8 +362,9 @@ function FillTrainer({
         ) : null}
         {speed ? (
           <p className={songStyles.note}>
-            One bar to count in, then play the fill each time round. {snap.speed.needed} clean in a
-            row and it speeds up.
+            One bar to count in, then play the fill each time round. A time round is clean when
+            every note lands on time and nothing extra is played; {snap.speed.needed} clean in a row
+            and it speeds up.
           </p>
         ) : null}
 

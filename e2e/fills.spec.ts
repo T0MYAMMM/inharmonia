@@ -23,6 +23,16 @@ test.describe('fills', () => {
     );
   });
 
+  test('speed-up says what a clean time round is', async ({ page }) => {
+    await page.goto('fills/step-up');
+    await page.getByRole('radio', { name: 'Speed-up' }).click();
+    await expect(
+      page.getByText(
+        /A time round is clean when every note lands on time and nothing extra is played/,
+      ),
+    ).toBeVisible();
+  });
+
   test('listen plays the fill over the chords and lights it', async ({ page }) => {
     await page.goto('fills/step-up?key=C&change=V7>I');
     await page.getByTestId('play').click();
