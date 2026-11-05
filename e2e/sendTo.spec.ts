@@ -34,8 +34,15 @@ async function typeChords(page: Page, text: string) {
   await field.press('Enter');
 }
 
-/** Open a Send to menu (the page's, or one inside `scope`) and choose a room. */
-async function sendTo(page: Page, room: string, scope: Locator | Page = page.locator('header')) {
+/**
+ * Open a Send to menu (the page's, or one inside `scope`) and choose a room.
+ * The page's own sits in the header, or after the score on a phone's progression page.
+ */
+async function sendTo(
+  page: Page,
+  room: string,
+  scope: Locator | Page = page.locator('header, [data-testid="progression-actions"]'),
+) {
   await scope.getByRole('button', { name: /^Send to/ }).click();
   await page.getByRole('menuitem', { name: room }).click();
 }

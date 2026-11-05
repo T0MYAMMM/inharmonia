@@ -216,6 +216,30 @@ export function ProgressionPage() {
     fields
   );
 
+  // What else you can do with it. On a phone it goes after the score, so Play
+  // is in the first screen and the row ends up where the dock no longer covers it.
+  const actions = (
+    <>
+      {saved ? (
+        <Link
+          to={`/progressions/${progression.id}/edit`}
+          className={buttonClass('secondary', 'small')}
+        >
+          Edit
+        </Link>
+      ) : (
+        <Link
+          to={`/progressions/new?from=${progression.id}`}
+          className={buttonClass('secondary', 'small')}
+        >
+          Make a copy to edit
+        </Link>
+      )}
+      <SendToMenu items={sendTo} />
+      <ExportMenu build={() => exportItems({ progressions: [progression] })} />
+    </>
+  );
+
   return (
     <>
       <PageHeader
@@ -227,27 +251,7 @@ export function ProgressionPage() {
             {progression.description ? <p>{progression.description}</p> : null}
           </>
         }
-        actions={
-          <>
-            {saved ? (
-              <Link
-                to={`/progressions/${progression.id}/edit`}
-                className={buttonClass('secondary', 'small')}
-              >
-                Edit
-              </Link>
-            ) : (
-              <Link
-                to={`/progressions/new?from=${progression.id}`}
-                className={buttonClass('secondary', 'small')}
-              >
-                Make a copy to edit
-              </Link>
-            )}
-            <SendToMenu items={sendTo} />
-            <ExportMenu build={() => exportItems({ progressions: [progression] })} />
-          </>
-        }
+        actions={small ? undefined : actions}
       />
       <LessonPlayer
         key={progression.id}
@@ -256,6 +260,11 @@ export function ProgressionPage() {
         variant="progression"
         settings={settings}
       />
+      {small ? (
+        <div className={styles.afterActions} data-testid="progression-actions">
+          {actions}
+        </div>
+      ) : null}
     </>
   );
 }

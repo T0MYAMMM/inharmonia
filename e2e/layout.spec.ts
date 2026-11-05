@@ -159,10 +159,10 @@ test.describe('touch targets', () => {
   test('an open menu stays on the screen, and the page does not zoom out to fit it', async ({
     page,
   }) => {
-    // Send to sits at the right of its row here, and its notes make it wide.
+    // On a phone Send to sits after the score, at the right of its row, and its notes make it wide.
     await page.goto('progressions/ii-v-i');
     await page
-      .locator('header')
+      .getByTestId('progression-actions')
       .getByRole('button', { name: /^Send to/ })
       .click();
     await expect(page.getByRole('menu')).toBeVisible();
@@ -327,6 +327,19 @@ test.describe('Play on a phone', () => {
       await playInFirstScreen(page);
     });
   }
+
+  test('on a progression, Edit, Send to and Export sit under the player', async ({ page }) => {
+    await page.goto('progressions/ii-v-i');
+    const play = page.getByTestId('play');
+    const actions = page.getByTestId('progression-actions');
+    await expect(actions.getByRole('link', { name: 'Make a copy to edit' })).toBeVisible();
+    const [playTop, actionsTop] = await Promise.all([
+      play.evaluate((el) => el.getBoundingClientRect().top),
+      actions.evaluate((el) => el.getBoundingClientRect().top),
+    ]);
+    expect(actionsTop).toBeGreaterThan(playTop);
+    await playInFirstScreen(page);
+  });
 
   test('on Home, the way in is in the first screen, written for a phone', async ({ page }) => {
     await page.goto('');
