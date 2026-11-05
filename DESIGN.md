@@ -69,5 +69,12 @@ Core rules for Inharmonia, extracted from the code. Detail lives where it is enf
 
 - Audience and skill level are inferred from content; no user research is recorded.
 - Lighthouse scores are a README claim with no CI guard.
-- Whether "streak" on Progress (README "Progress") fits "no gamified pressure" is undecided.
-- No written rule yet for when a term (voicing, inversion, comping) is explained in the UI.
+- Decided (learning pass, 2026-11-06): no streak. Progress and Home count the days practised of
+  the last seven; nothing counts a run.
+- Decided (learning pass): a term (voicing, inversion, comping, quality, clean) is explained in one
+  line on the screen where it first appears, under the control that uses it (the Segmented's
+  `describedBy` note) or in the page's lede.
+- Decided (learning pass): practice feedback is words, not colour alone: what was expected and
+  where it is, what was played and what comes next, on the dock's legend line and in the player's
+  polite live region. The dock also says what the sound is doing and when a MIDI keyboard comes or
+  goes, and carries the mode's primary action on a phone once the panel has scrolled away.
