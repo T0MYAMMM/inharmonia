@@ -13,6 +13,13 @@ test.describe('ear training', () => {
     await expect(page.getByTestId('feedback')).toContainText('Press Play');
   });
 
+  test('chord quality: says what quality means before the first question', async ({ page }) => {
+    await page.goto('ear?exercise=chords&level=major-minor');
+    await expect(
+      page.getByText(/Quality is the chord's kind: major, minor and the rest\./),
+    ).toBeVisible();
+  });
+
   test('note names: one note, twelve names, and the octave told after', async ({ page }) => {
     await page.goto('ear?exercise=notes&level=all');
     const options = page.getByRole('group', { name: 'Which note is it?' }).getByRole('button');

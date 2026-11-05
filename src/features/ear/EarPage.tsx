@@ -380,7 +380,10 @@ function ChordQuiz({ levelId }: { levelId: string }) {
             </div>
           </>
         ) : (
-          <p className={styles.muted}>Press Play, then choose. Number keys answer too.</p>
+          <p className={styles.muted}>
+            Quality is the chord's kind: major, minor and the rest. Press Play, then choose. Number
+            keys answer too.
+          </p>
         )}
       </div>
       <RoundLine round={round} last={last} streak={quiz.score.streak} />
