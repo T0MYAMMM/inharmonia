@@ -3,6 +3,7 @@ import { BASE_MIDI, computerKeyMap, OCTAVE_KEYS } from '@/core/input';
 import { armAudio, audio, lights, notes } from '@/app/services';
 import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
+import { Button } from '../Button';
 import { Keyboard } from './Keyboard';
 import { DOCK_RANGE, keyName } from './layout';
 import { InputStatus } from './InputStatus';
@@ -16,6 +17,12 @@ export interface KeyboardDockProps {
   extra?: ReactNode;
   /** The words of practice: what to play, or what just happened, where the keys are. */
   feedback?: string;
+  /**
+   * The player's primary action, moved here while its own button is out of
+   * reach (a phone, scrolled to the bar being played). Never shown in Full Screen,
+   * which has its own controls.
+   */
+  action?: { label: string; onClick: () => void };
   showTarget?: boolean;
   /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
@@ -29,6 +36,7 @@ export function KeyboardDock({
   high = DOCK_RANGE[1],
   extra,
   feedback,
+  action,
   showTarget = false,
   roll,
   fullScreenControls,
@@ -168,6 +176,16 @@ export function KeyboardDock({
               >
                 {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
               </button>
+            ) : null}
+            {action && !fullScreen ? (
+              <Button
+                variant="primary"
+                size="small"
+                onClick={action.onClick}
+                data-testid="dock-action"
+              >
+                {action.label}
+              </Button>
             ) : null}
             <InputStatus octaveShift={shift} />
             <span className={styles.keysHint} data-testid="keys-range">

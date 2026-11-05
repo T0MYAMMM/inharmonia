@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { NoteStream } from '@/core/input';
 import { KeyLights } from '@/state/keyLights';
@@ -28,5 +29,14 @@ describe('KeyboardDock', () => {
     );
     // The dock's line is for the eyes; the player's live region says it.
     expect(screen.getByTestId('dock-feedback')).not.toHaveAttribute('role');
+  });
+
+  it("carries the player's primary action when it is given one", async () => {
+    const onClick = vi.fn();
+    const { rerender } = render(<KeyboardDock />);
+    expect(screen.queryByTestId('dock-action')).toBeNull();
+    rerender(<KeyboardDock action={{ label: 'Pause', onClick }} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

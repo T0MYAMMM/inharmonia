@@ -6,6 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { describeChange, type VoicingChange } from '@/core/charts';
 import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
@@ -22,6 +23,7 @@ import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { dockRangeFor, KeyboardDock } from '@/ui/keyboard';
+import { useOffscreen } from '@/ui/useOffscreen';
 import { Score, type FallingViewOptions } from './Score';
 import { FallingNotes } from './FallingNotes';
 import { SongController, type SongMode } from './SongController';
@@ -132,6 +134,12 @@ export function LessonPlayer({
   const setSettings = useSettings((s) => s.set);
   const progressRef = useRef<HTMLDivElement>(null);
   const lesson = compiled.lesson;
+  // On a phone the panel is not sticky, and the score follows the bar being
+  // played: when Play has scrolled out of reach (or under the dock, the lower
+  // third), the dock carries the mode's primary action instead.
+  const transportRef = useRef<HTMLSpanElement>(null);
+  const compact = useMediaQuery(BREAKPOINTS.compact);
+  const playOffscreen = useOffscreen(transportRef, '0px 0px -35% 0px');
 
   useEffect(() => {
     ctrl.attach();
@@ -205,13 +213,22 @@ export function LessonPlayer({
     };
   }, [hintKey]);
   const [low, high] = dockRange(compiled);
+  const dockAction =
+    compact && playOffscreen
+      ? practice
+        ? { label: 'Hear it', onClick: () => ctrl.hearIt() }
+        : {
+            label: playing ? (playAlong ? 'Stop' : 'Pause') : 'Play',
+            onClick: () => ctrl.playPause(),
+          }
+      : undefined;
 
   return (
     <>
       <div className={styles.panel} data-sticky-panel>
         {/* Play first, so it is in the first screen on a phone; what shapes the lesson last. */}
         <div className={styles.row}>
-          <span className={styles.group}>
+          <span className={styles.group} ref={transportRef}>
             <Button
               variant="primary"
               onClick={() => ctrl.playPause()}
@@ -536,6 +553,7 @@ export function LessonPlayer({
         high={high}
         showTarget={practice && !progression}
         feedback={snap.mode === 'listen' ? undefined : snap.feedback || undefined}
+        action={dockAction}
         roll={
           fallingOptions ? (
             <FallingNotes

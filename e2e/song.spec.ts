@@ -390,6 +390,32 @@ test.describe('song player', () => {
     await expect(feedback).toHaveCount(0);
   });
 
+  test('on a phone, Pause follows into the dock when the panel scrolls away', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'the panel is static under 600px: the phone project');
+    await open(page);
+    const action = page.getByTestId('dock-action');
+    await expect(action).toHaveCount(0);
+    await page.getByTestId('play').click();
+    // The score follows the bar being played, so the panel leaves the screen.
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { timeout: 15_000 })
+      .toBeGreaterThan(300);
+    await expect(action).toHaveText('Pause');
+    await action.click();
+    await expect(page.getByTestId('play')).toHaveText('Play');
+    await expect(action).toHaveText('Play');
+    // Back at the top, the panel's own Play is in reach and the dock's goes.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(action).toHaveCount(0);
+    // In Practice it is Hear it, once the panel has scrolled away.
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    await expect(action).toHaveText('Hear it');
+  });
+
   test('practice: clicking a bar moves the target there', async ({ page }) => {
     await open(page);
     await page.getByRole('radio', { name: 'Practice' }).click();
