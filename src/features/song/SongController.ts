@@ -473,10 +473,21 @@ export class SongController {
     this.s.lights.setExactly('chordTarget', chord ? chord.voicing.map((n) => n.midi) : []);
     const countIn = t.countInRemaining(time);
     const now = beat < 0 ? this.compiled.chords[0] : chordAt(this.compiled, beat);
+    const count = countIn === null ? null : Math.ceil(countIn);
+    // The count-in, where the eyes are: said as it changes, cleared when it ends.
+    const counted =
+      count === this.snap.countIn
+        ? {}
+        : count !== null
+          ? this.words(`Count-in, ${count}.`)
+          : Object.keys(this.snap.chordScores).length
+            ? {}
+            : this.words('');
     this.set({
       bar: beat < 0 ? 0 : barAt(this.compiled, beat),
       chordSymbol: now?.symbol ?? null,
-      countIn: countIn === null ? null : Math.ceil(countIn),
+      countIn: count,
+      ...counted,
     });
     this.renderProgress(Math.max(0, beat));
   }

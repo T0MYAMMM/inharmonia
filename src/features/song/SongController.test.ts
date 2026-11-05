@@ -372,6 +372,26 @@ describe('SongController, Practice', () => {
   });
 });
 
+describe('SongController, play-along', () => {
+  let env: ReturnType<typeof setup>;
+  beforeEach(() => {
+    env = setup();
+    env.ctrl.setMode('playalong');
+  });
+
+  it('says the count-in as it runs, then lets the chords speak', () => {
+    env.ctrl.playPause(); // one bar of count-in at 100 bpm: 4 beats, 0.6 s each
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: 4, feedback: 'Count-in, 4.' });
+    env.clock.advance(1.5);
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: 2, feedback: 'Count-in, 2.' });
+    env.clock.advance(1.2);
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: null, feedback: '' });
+  });
+});
+
 describe('SongController, left-hand and both-hands practice', () => {
   let env: ReturnType<typeof setup>;
   beforeEach(() => {
