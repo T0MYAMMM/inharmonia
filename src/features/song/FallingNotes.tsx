@@ -23,8 +23,7 @@ export interface FallingNotesProps {
   high: number;
 }
 
-const RH = '#F2B65B';
-const LH = '#A9A0EB';
+import { rollPalette } from './rollPalette';
 
 /**
  * The falling roll shares a scroll surface and responsive MIDI-key geometry
@@ -55,6 +54,7 @@ export function FallingNotes({
     const scroller = canvas?.closest<HTMLElement>('[data-keyboard-scroller]');
     const ctx = canvas?.getContext('2d');
     if (!canvas || !strip || !ctx) return;
+    const roll = canvas.parentElement ?? canvas;
 
     const geometry = layoutKeys(low, high);
     const positions = new Map(geometry.keys.map((key) => [key.midi, key]));
@@ -83,7 +83,9 @@ export function FallingNotes({
       canvas.style.height = height + 'px';
       ctx.setTransform(density, 0, 0, density, 0, 0);
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#131E30';
+      // The tokens, as the theme sets them now.
+      const palette = rollPalette(getComputedStyle(roll));
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, width, height);
 
       const beat = visualBeat();
@@ -91,12 +93,15 @@ export function FallingNotes({
       const unit = width / geometry.width;
 
       // Vertical pitch lanes align exactly with the real keys below them.
+      ctx.fillStyle = palette.lane;
       for (const key of geometry.keys) {
         if (key.black) continue;
-        ctx.fillStyle = key.midi % 12 === 0 ? '#24324A' : '#1C293C';
+        // Each C's lane a little brighter, so the octaves can be counted.
+        ctx.globalAlpha = key.midi % 12 === 0 ? 1 : 0.6;
         ctx.fillRect(key.x * unit, 0, unit - 1, height);
       }
-      ctx.strokeStyle = '#64748B55';
+      ctx.globalAlpha = 0.33;
+      ctx.strokeStyle = palette.beat;
       ctx.lineWidth = 1;
       for (let b = Math.ceil(beat); b <= beat + lookAheadBeats; b++) {
         const y = height * (1 - (performanceBeat(b) - beat) / lookAheadBeats);
@@ -106,6 +111,7 @@ export function FallingNotes({
         ctx.lineTo(width, y);
         ctx.stroke();
       }
+      ctx.globalAlpha = 1;
 
       // Note starts hit the real keyboard edge at the same performance beat
       // that the audio transport schedules them. Holds preserve their height.
@@ -117,11 +123,11 @@ export function FallingNotes({
         const w = Math.max(4, pitchWidth * 0.76);
         const y = note.top * height;
         const h = Math.max(3, (note.bottom - note.top) * height);
-        ctx.fillStyle = note.hand === 'rh' ? RH : LH;
+        ctx.fillStyle = note.hand === 'rh' ? palette.rh : palette.lh;
         ctx.globalAlpha = note.active ? 1 : 0.85;
         ctx.fillRect(x, y, w, h);
         if (note.active) {
-          ctx.strokeStyle = '#FFFFFF';
+          ctx.strokeStyle = palette.edge;
           ctx.lineWidth = 2;
           ctx.strokeRect(x, y, w, h);
         }
@@ -129,12 +135,12 @@ export function FallingNotes({
         if (w >= 19 && h >= 19) {
           ctx.font = 'bold 10px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillStyle = '#101827';
+          ctx.fillStyle = note.hand === 'rh' ? palette.onRh : palette.onLh;
           ctx.fillText(keyName(note.midi).replace(/[0-9]+$/, ''), x + w / 2, y + 13, w);
         }
       }
 
-      ctx.fillStyle = '#D9E7F7';
+      ctx.fillStyle = palette.edge;
       ctx.fillRect(0, height - 2, width, 3);
 
       // On mobile, move the ONE shared scroller, so the notes and actual keys
@@ -188,9 +194,9 @@ export function FallingNotes({
         ref={canvasRef}
         className={styles.canvas}
         role="img"
-        aria-label="Falling piano notes aligned with the floating playable keyboard. Amber for right hand, lavender for left hand."
+        aria-label="Falling piano notes aligned with the floating playable keyboard. Amber for the right hand, dusk blue for the left hand."
       >
-        Falling-notes visualization requires Canvas support. Use Follow Along for text-based notes.
+        Falling notes need Canvas support. Use Follow along for the notes as text.
       </canvas>
     </div>
   );

@@ -92,8 +92,8 @@ describe('WaitSession, left hand', () => {
     expect(s.targets.map((t) => t.kind)).toEqual(Array(ode.chords.length).fill('chord'));
     s.goToBar(1);
     // G (G B D): build it one note at a time, in any octave.
-    expect(s.press(55, [55])).toMatchObject({ kind: 'progress', missing: 2 });
-    expect(s.press(59, [55, 59])).toMatchObject({ kind: 'progress', missing: 1 });
+    expect(s.press(55, [55])).toMatchObject({ kind: 'progress', missing: 2, need: 'chord' });
+    expect(s.press(59, [55, 59])).toMatchObject({ kind: 'progress', missing: 1, need: 'chord' });
     const hit = s.press(74, [55, 59, 74]);
     expect(hit).toMatchObject({ kind: 'hit', segment: { symbol: 'G' }, roll: null });
     expect(s.target).toMatchObject({ kind: 'chord', chord: { symbol: 'D' } });
@@ -118,16 +118,24 @@ describe('WaitSession, both hands', () => {
   it('needs the chord held with the melody note when a new chord starts', () => {
     const s = new WaitSession(ode, 'both');
     // F#4 over D: the melody note alone is not enough.
-    expect(s.press(66, [66])).toMatchObject({ kind: 'progress' });
+    expect(s.press(66, [66])).toMatchObject({ kind: 'progress', missing: 2, need: 'chord' });
     expect(s.misses).toBe(0);
     // Chord tones are fine to add (left hand).
-    expect(s.press(50, [50, 66]).kind).toBe('progress');
+    expect(s.press(50, [50, 66])).toMatchObject({ kind: 'progress', missing: 1, need: 'chord' });
     expect(s.press(57, [50, 57, 66]).kind).toBe('hit');
     // G4 starts bar 1's second D, so the chord is held with it again.
     expect(s.press(67, [50, 57, 67]).kind).toBe('progress');
     expect(s.press(54, [50, 54, 57, 67]).kind).toBe('hit');
     // A4 on the same chord: the melody note alone is enough.
     expect(s.press(69, [69]).kind).toBe('hit');
+  });
+
+  it('says when the chord is there but the melody note is not', () => {
+    const s = new WaitSession(ode, 'both');
+    // The chord's D and A without F#4: a chord tone, so not a miss, and the melody is what is missing.
+    expect(s.press(50, [50])).toMatchObject({ kind: 'progress', missing: 1, need: 'melody' });
+    expect(s.press(57, [50, 57])).toMatchObject({ kind: 'progress', missing: 1, need: 'melody' });
+    expect(s.misses).toBe(0);
   });
 
   it('a note in neither hand is a miss', () => {

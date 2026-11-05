@@ -159,10 +159,10 @@ test.describe('touch targets', () => {
   test('an open menu stays on the screen, and the page does not zoom out to fit it', async ({
     page,
   }) => {
-    // Send to sits at the right of its row here, and its notes make it wide.
+    // On a phone Send to sits after the score, at the right of its row, and its notes make it wide.
     await page.goto('progressions/ii-v-i');
     await page
-      .locator('header')
+      .getByTestId('progression-actions')
       .getByRole('button', { name: /^Send to/ })
       .click();
     await expect(page.getByRole('menu')).toBeVisible();
@@ -327,6 +327,52 @@ test.describe('Play on a phone', () => {
       await playInFirstScreen(page);
     });
   }
+
+  test('on a progression, Edit, Send to and Export sit under the player', async ({ page }) => {
+    await page.goto('progressions/ii-v-i');
+    const play = page.getByTestId('play');
+    const actions = page.getByTestId('progression-actions');
+    await expect(actions.getByRole('link', { name: 'Make a copy to edit' })).toBeVisible();
+    const [playTop, actionsTop] = await Promise.all([
+      play.evaluate((el) => el.getBoundingClientRect().top),
+      actions.evaluate((el) => el.getBoundingClientRect().top),
+    ]);
+    expect(actionsTop).toBeGreaterThan(playTop);
+    await playInFirstScreen(page);
+  });
+
+  test('on Ear training, the pickers fold and Play is in the first screen', async ({ page }) => {
+    await page.goto('ear?exercise=chords&level=major-minor');
+    const fold = page.getByTestId('ear-pickers');
+    await expect(fold.locator('summary')).toHaveText('Chord quality · Major or minor');
+    await expect(fold).not.toHaveAttribute('open');
+    await playInFirstScreen(page);
+    // Open, the pickers are the same two groups as on a wider screen.
+    await fold.locator('summary').click();
+    await expect(page.getByRole('radiogroup', { name: 'Level' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Triads' }).click();
+    await expect(fold.locator('summary')).toHaveText('Chord quality · Triads');
+  });
+
+  test('on Home, the way in is in the first screen, written for a phone', async ({ page }) => {
+    await page.goto('');
+    const start = page.getByRole('link', { name: 'Start with Twinkle, Twinkle' });
+    await expect(start).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    const box = await start.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { bottom: r.bottom, height: window.innerHeight, scrolled: window.scrollY };
+    });
+    expect(box.scrolled).toBe(0);
+    expect(box.bottom, `the way in ends ${Math.round(box.bottom)}px down`).toBeLessThanOrEqual(
+      box.height,
+    );
+    // A touch-only phone is told to tap the piano, not which computer keys to press.
+    await expect(page.getByText('Find the keys.').locator('..')).toContainText(
+      'Tap the piano at the foot of every practice page',
+    );
+    await expect(page.getByText(/use your computer keyboard/)).toHaveCount(0);
+  });
 
   test('on a downloaded song, Play is in the first screen', async ({ page }) => {
     await downloadSong(page, 'minuet-in-g-easy');

@@ -31,7 +31,7 @@ test.describe('song player', () => {
     await expect(score).toHaveAttribute('data-score-view', 'overview');
     await expect(score.locator('[data-bar]')).toHaveCount(24);
 
-    await page.getByRole('radio', { name: 'Follow Along' }).click();
+    await page.getByRole('radio', { name: 'Follow along' }).click();
     await expect(score).toHaveAttribute('data-score-view', 'follow');
     await expect(score.locator('[data-bar]')).toHaveCount(1);
     const slot = score.locator('[data-note-slot]').first();
@@ -51,11 +51,11 @@ test.describe('song player', () => {
     await expect(score.locator('[data-bar]')).toHaveCount(24);
   });
 
-  test('Falling Notes plays in sync with the transport and survives mode changes', async ({
+  test('Falling notes plays in sync with the transport and survives mode changes', async ({
     page,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
     const roll = page.getByTestId('falling-notes');
     await expect(roll).toBeVisible();
     await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
@@ -112,12 +112,12 @@ test.describe('song player', () => {
     expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
   });
 
-  test('Falling Notes Full Screen expands the same piano and restores the floating dock', async ({
+  test('Falling notes full screen expands the same piano and restores the floating dock', async ({
     page,
     isMobile,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
     const dock = page.locator('[data-dock]');
     const keyboard = page.getByTestId('keyboard');
     const roll = page.getByTestId('keyboard-roll');
@@ -133,7 +133,7 @@ test.describe('song player', () => {
     });
     await page.getByTestId('falling-fullscreen').click();
     await expect(dock).toHaveAttribute('data-immersive', 'true');
-    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit Full Screen');
+    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit full screen');
     await expect(page.getByTestId('falling-fullscreen-controls')).toBeVisible();
     const leftPanel = page.getByTestId('falling-panel-left');
     const rightPanel = page.getByTestId('falling-panel-right');
@@ -206,11 +206,11 @@ test.describe('song player', () => {
     await expect(keyboard).toHaveCount(1);
   });
 
-  test('Full Screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
+  test('Full screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
     page,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
 
     // CSS fallback exercises browsers where Fullscreen API is unavailable.
     await page.evaluate(() => {
@@ -277,10 +277,10 @@ test.describe('song player', () => {
 
     await controls.getByRole('radio', { name: 'Practice' }).click();
     await expect(
-      controls.getByRole('radiogroup', { name: 'Full Screen practice hand' }),
+      controls.getByRole('radiogroup', { name: 'Full screen practice hand' }),
     ).toBeVisible();
     await controls
-      .getByRole('radiogroup', { name: 'Full Screen practice hand' })
+      .getByRole('radiogroup', { name: 'Full screen practice hand' })
       .getByRole('radio', { name: 'Both hands' })
       .click();
     await expect(
@@ -362,24 +362,96 @@ test.describe('song player', () => {
       await page.mouse.down();
       await page.mouse.up();
     };
+    // The words of practice: on the dock, where the keys are, and in the live region.
+    const feedback = page.getByTestId('dock-feedback');
+    const said = page.getByTestId('practice-said');
+    await expect(feedback).toHaveCount(0);
     await pressKey(60); // wrong
     await expect(counts).toHaveText('0 hits, 1 miss');
+    await expect(feedback).toHaveText('Not quite: play E, the amber key.');
+    await expect(said).toHaveText('Not quite: play E, the amber key.');
     await expect.poll(() => lit(page, 'target')).toEqual([76]);
     await pressKey(76); // E5, right
     await expect(counts).toHaveText('1 hit, 1 miss');
+    await expect(feedback).toHaveText('E. Next: F.');
+    await expect(said).toHaveText('E. Next: F.');
     await expect.poll(() => lit(page, 'target')).toEqual([77]); // F5
     await expect(page.locator('[data-state="done"]')).toHaveCount(1);
     if (!isMobile) {
       await page.keyboard.press("'"); // F5 on the computer keyboard
       await expect(counts).toHaveText('2 hits, 1 miss');
+      await expect(feedback).toHaveText('F. Next: G.');
     }
     await page.getByRole('button', { name: 'Start over' }).click();
     await expect(counts).toHaveText('0 hits, 0 misses');
+    await expect(feedback).toHaveText('Back to the first note.');
+    // Back in Listen there is nothing to say.
+    await page.getByRole('radio', { name: 'Listen' }).click();
+    await expect(feedback).toHaveCount(0);
   });
 
-  test('practice: clicking a bar moves the target there', async ({ page }) => {
+  test('the dock says what the sound is doing after the first Play, then falls quiet', async ({
+    page,
+  }) => {
+    await open(page);
+    const notice = page.getByTestId('dock-notice');
+    // Nothing to say before the first gesture.
+    await expect(notice).toHaveAttribute('aria-live', 'polite');
+    await expect(notice).toHaveText('');
+    await page.getByTestId('play').click();
+    await expect(notice).toHaveText(/Starting the sound|Loading the piano|Piano ready/, {
+      timeout: 10_000,
+    });
+    // The piano lands, says so for a moment, and the line goes quiet.
+    await expect(notice).toHaveText('', { timeout: 20_000 });
+  });
+
+  test('on a phone, Pause follows into the dock when the panel scrolls away', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'the panel is static under 600px: the phone project');
+    await open(page);
+    const action = page.getByTestId('dock-action');
+    await expect(action).toHaveCount(0);
+    await page.getByTestId('play').click();
+    // The score follows the bar being played, so the panel leaves the screen.
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { timeout: 15_000 })
+      .toBeGreaterThan(300);
+    await expect(action).toHaveText('Pause');
+    await action.click();
+    await expect(page.getByTestId('play')).toHaveText('Play');
+    await expect(action).toHaveText('Play');
+    // Back at the top, the panel's own Play is in reach and the dock's goes.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(action).toHaveCount(0);
+    // In Practice it is Hear it, once the panel has scrolled away.
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    await expect(action).toHaveText('Hear it');
+  });
+
+  test('on a phone, Practice opens Follow Along, and Listen brings Overview back', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'a view rule for screens under 600px: the phone project');
+    await open(page);
+    await expect(page.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    await page.getByRole('radio', { name: 'Practice' }).click();
+    await expect(page.getByRole('radio', { name: 'Follow along' })).toBeChecked();
+    // Every note of the bar is in view, with the target among them.
+    await expect(page.locator('[data-score-view="follow"] [data-state="target"]')).toHaveCount(1);
+    await page.getByRole('radio', { name: 'Listen' }).click();
+    await expect(page.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  test('practice: clicking a bar moves the target there', async ({ page, isMobile }) => {
     await open(page);
     await page.getByRole('radio', { name: 'Practice' }).click();
+    // On a phone Practice opens Follow Along; Overview, with every bar, is a tap away and is kept.
+    if (isMobile) await page.getByRole('radio', { name: 'Overview' }).click();
     await page.locator('[data-bar="8"]').click();
     await expect(page.locator('[data-state="target"]')).toHaveAttribute('data-chip', 'rh-8-0');
     await expect(page.getByTestId('status-line')).toHaveText('Bar 9 of 24, Dm');

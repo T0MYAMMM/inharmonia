@@ -7,6 +7,7 @@ import {
   spanDuration,
   type CompiledChord,
   type CompiledLesson,
+  type CompiledNote,
 } from '@/core/content/compile';
 import type { NoteStream } from '@/core/input';
 import {
@@ -64,6 +65,15 @@ export interface SongSnapshot {
   backing: boolean;
   /** Polite live-region text for practice feedback. */
   announcement: string;
+  /** The same words for the eyes, on the dock's feedback line; empty in Listen. */
+  feedback: string;
+}
+
+/** The names the words of practice use: a note as the score shows it, a chord as its symbol. */
+export interface PracticeNames {
+  /** The note's label (text, for the eyes) and how a screen reader should say it. */
+  note(note: CompiledNote): { text: string; spoken: string };
+  chord(symbol: string): string;
 }
 
 export interface SongServices {
@@ -76,6 +86,8 @@ export interface SongServices {
   onPlayAlongDone?: (summary: PlayAlongSummary, tempo: number) => void;
   /** Practice hands to start with (the progression trainer practises chords). */
   initialHands?: PracticeHands;
+  /** Names in the notation shown; without them, spelled names and symbols. */
+  names?: PracticeNames;
 }
 
 const TIMING_WORDS: Record<Timing, string> = {
@@ -99,12 +111,16 @@ export class SongController {
   private progressEl: HTMLElement | null = null;
   private scorer: PlayAlongScorer | null = null;
   private _compiled: CompiledLesson;
+  /** The last hit's name, so a repeated note is said as "again" and still heard. */
+  private lastHit: string | null = null;
+  private names: PracticeNames | undefined;
 
   constructor(
     compiled: CompiledLesson,
     private readonly s: SongServices,
   ) {
     this._compiled = compiled;
+    this.names = s.names;
     const hands = s.initialHands ?? 'rh';
     this.session = new WaitSession(compiled, hands, compiled.lesson.rules.strictness);
     this.snap = {
@@ -127,6 +143,7 @@ export class SongController {
       chordSymbol: compiled.chords[0]?.symbol ?? null,
       countIn: null,
       announcement: '',
+      feedback: '',
       chordScores: {},
       playSummary: null,
       countInOn: true,
@@ -153,6 +170,7 @@ export class SongController {
     if (this.snap.mode === 'playalong') t.setLoop(null);
     else this.applyLoop();
     this.clearLights();
+    this.lastHit = null;
     this.set({
       bar: 0,
       activeChipId: null,
@@ -163,6 +181,7 @@ export class SongController {
       playSummary: null,
       countIn: null,
       chordSymbol: compiled.chords[0]?.symbol ?? null,
+      ...this.words(''),
     });
     if (this.snap.mode === 'practice') this.renderPractice();
     else this.renderProgress(0);
@@ -179,13 +198,19 @@ export class SongController {
     return this.session.target;
   }
 
+  /** Name notes and chords as the score shows them (the notation can change while open). */
+  setNames(names: PracticeNames | undefined): void {
+    this.names = names;
+  }
+
   /** Practice the right hand, the left hand (chords) or both. Keeps the place in the song. */
   setHands(hands: PracticeHands): void {
     if (hands === this.session.hands) return;
     const beat = this.session.target?.startBeat ?? 0;
     this.session = new WaitSession(this.compiled, hands, this.compiled.lesson.rules.strictness);
     this.session.goToBeat(beat);
-    this.set({ hands, finished: null, hits: 0, misses: 0 });
+    this.lastHit = null;
+    this.set({ hands, finished: null, hits: 0, misses: 0, ...this.words('') });
     if (this.snap.mode === 'practice') this.renderPractice();
   }
 
@@ -333,22 +358,29 @@ export class SongController {
         bar: 0,
         chordScores: {},
         playSummary: null,
-        announcement: '',
+        ...this.words(''),
       });
       this.renderProgress(0);
       return;
     }
+    this.lastHit = null;
     if (mode === 'practice') {
       const beat = Math.max(0, t.beatAt());
       t.stop();
       this.clearLights();
       this.session.goToBeat(beat);
-      this.set({ mode, activeChipId: null, finished: null, countIn: null });
+      this.set({ mode, activeChipId: null, finished: null, countIn: null, ...this.words('') });
       this.renderPractice();
     } else {
       const target = this.session.target;
       this.clearLights();
-      this.set({ mode, targetChipId: null, targetChordId: null, finished: null, announcement: '' });
+      this.set({
+        mode,
+        targetChipId: null,
+        targetChordId: null,
+        finished: null,
+        ...this.words(''),
+      });
       if (target) t.seek(this.compiled.bars[target.barIndex]!.startBeat);
       else t.stop();
     }
@@ -373,7 +405,7 @@ export class SongController {
       hitWindowMs: rules.hitWindowMs,
     });
     this.clearLights();
-    this.set({ chordScores: {}, playSummary: null, announcement: '' });
+    this.set({ chordScores: {}, playSummary: null, ...this.words('') });
     const t = this.s.transport;
     t.setLoop(null);
     t.setMuted('lh', !this.snap.backing);
@@ -398,7 +430,9 @@ export class SongController {
     this.set({
       playSummary: summary,
       countIn: null,
-      announcement: `Done: ${summary.onTime} of ${summary.total} on time, ${summary.missed} missed.`,
+      ...this.words(
+        `Done: ${summary.onTime} of ${summary.total} on time, ${summary.missed} missed.`,
+      ),
     });
   }
 
@@ -412,7 +446,7 @@ export class SongController {
     const next = { ...this.snap.chordScores };
     for (const r of results) next[r.chordId] = r.timing;
     const last = results[results.length - 1]!;
-    this.set({ chordScores: next, announcement: TIMING_WORDS[last.timing] });
+    this.set({ chordScores: next, ...this.words(TIMING_WORDS[last.timing]) });
   }
 
   private renderPlayAlong(): void {
@@ -439,10 +473,21 @@ export class SongController {
     this.s.lights.setExactly('chordTarget', chord ? chord.voicing.map((n) => n.midi) : []);
     const countIn = t.countInRemaining(time);
     const now = beat < 0 ? this.compiled.chords[0] : chordAt(this.compiled, beat);
+    const count = countIn === null ? null : Math.ceil(countIn);
+    // The count-in, where the eyes are: said as it changes, cleared when it ends.
+    const counted =
+      count === this.snap.countIn
+        ? {}
+        : count !== null
+          ? this.words(`Count-in, ${count}.`)
+          : Object.keys(this.snap.chordScores).length
+            ? {}
+            : this.words('');
     this.set({
       bar: beat < 0 ? 0 : barAt(this.compiled, beat),
       chordSymbol: now?.symbol ?? null,
-      countIn: countIn === null ? null : Math.ceil(countIn),
+      countIn: count,
+      ...counted,
     });
     this.renderProgress(Math.max(0, beat));
   }
@@ -507,8 +552,80 @@ export class SongController {
   startOver(): void {
     if (this.snap.mode !== 'practice') return;
     this.session.reset();
-    this.set({ finished: null, announcement: 'Back to the first note.' });
+    this.lastHit = null;
+    this.set({ finished: null, ...this.words('Back to the first note.') });
     this.renderPractice();
+  }
+
+  // ---- the words of practice -----------------------------------------------------
+
+  /** The same words for the dock's line and, unless given apart, the live region. */
+  private words(text: string, spoken = text): Pick<SongSnapshot, 'feedback' | 'announcement'> {
+    return { feedback: text, announcement: spoken };
+  }
+
+  private noteName(note: CompiledNote): { text: string; spoken: string } {
+    if (this.names) return this.names.note(note);
+    const name = note.note!.name;
+    return { text: name, spoken: name };
+  }
+
+  private chordName(chord: CompiledChord): string {
+    return this.names ? this.names.chord(chord.symbol) : chord.symbol;
+  }
+
+  /** "D", "D with G" (both hands, chord due) or "G" (a chord target). */
+  private targetName(t: PracticeTarget): { text: string; spoken: string } {
+    if (t.kind === 'chord') {
+      const c = this.chordName(t.chord);
+      return { text: c, spoken: c };
+    }
+    const n = this.noteName(t.note);
+    if (!t.needsChord || !t.chord) return n;
+    const c = this.chordName(t.chord);
+    return { text: `${n.text} with ${c}`, spoken: `${n.spoken} with ${c}` };
+  }
+
+  /** A wrong press: what was expected, and where it is. The count keeps a repeated miss audible. */
+  private missWords(expected: PracticeTarget, misses: number) {
+    const count = misses > 1 ? ` ${misses} missed.` : '';
+    const where = expected.kind === 'chord' ? 'the ringed keys' : 'the amber key';
+    const name = this.targetName(expected);
+    const chordDue = expected.kind === 'note' && expected.needsChord && expected.chord;
+    const text = chordDue
+      ? `Not quite: play ${name.text}.`
+      : `Not quite: play ${name.text}, ${where}.`;
+    const spoken = chordDue
+      ? `Not quite: play ${name.spoken}.`
+      : `Not quite: play ${name.spoken}, ${where}.`;
+    return this.words(`${text}${count}`, `${spoken}${count}`);
+  }
+
+  /** A right note with more to hold: how many, or the melody note itself. */
+  private progressWords(missing: number, need: 'chord' | 'melody') {
+    const t = this.session.target;
+    if (!t) return this.words('');
+    if (need === 'melody' && t.kind === 'note') {
+      const n = this.noteName(t.note);
+      return this.words(`Now the melody note, ${n.text}.`, `Now the melody note, ${n.spoken}.`);
+    }
+    const more = missing === 1 ? 'one more note' : `${missing} more notes`;
+    if (t.kind === 'note' && t.chord)
+      return this.words(`Hold ${this.chordName(t.chord)} with it: ${more}.`);
+    return this.words(`${more[0]!.toUpperCase()}${more.slice(1)}.`);
+  }
+
+  /** A hit: what it was, and what comes next. A repeat is said as "again", so it is still heard. */
+  private hitWords(target: PracticeTarget) {
+    const name = this.targetName(target);
+    const again = this.lastHit === name.text ? ' again' : '';
+    this.lastHit = name.text;
+    const next = this.session.target;
+    const nextName = next ? this.targetName(next) : null;
+    return this.words(
+      `${name.text}${again}.${nextName ? ` Next: ${nextName.text}.` : ''}`,
+      `${name.spoken}${again}.${nextName ? ` Next: ${nextName.spoken}.` : ''}`,
+    );
   }
 
   private onPress(midi: number): void {
@@ -523,10 +640,12 @@ export class SongController {
     const r = this.session.press(midi, this.s.notes.held());
     if (r.kind === 'miss') {
       this.s.lights.flash(midi, 'wrong', WRONG_FLASH_MS);
-      this.set({
-        misses: this.session.misses,
-        announcement: `Not that one. ${this.session.misses} missed.`,
-      });
+      this.lastHit = null;
+      this.set({ misses: this.session.misses, ...this.missWords(r.expected, this.session.misses) });
+      return;
+    }
+    if (r.kind === 'progress') {
+      this.set(this.progressWords(r.missing, r.need));
       return;
     }
     if (r.kind !== 'hit') return;
@@ -534,12 +653,13 @@ export class SongController {
     if (r.segment && this.snap.rhOn) this.playSegmentMelody(r.segment);
     if (r.finished) {
       this.s.onFinished?.(r.finished);
+      this.lastHit = null;
       this.set({
         finished: r.finished,
-        announcement: `Finished: ${r.finished.hits} hits, ${r.finished.misses} misses.`,
+        ...this.words(`Finished: ${r.finished.hits} hits, ${r.finished.misses} misses.`),
       });
-    } else if (this.snap.finished) {
-      this.set({ finished: null });
+    } else {
+      this.set({ finished: null, ...this.hitWords(r.target) });
     }
     this.renderPractice();
   }

@@ -42,6 +42,18 @@
   background: var(--c);
 }
 
+/* The words of practice, said once where the keys are: ink, so they read as the message. */
+.feedback {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .feedback {
+    flex: 1 1 100%;
+  }
+}
+
 /*
  * Full Screen, the input and the key hint, at the end of the legend. As one
  * group they wrap together, and an empty spacer adds no gap that would push

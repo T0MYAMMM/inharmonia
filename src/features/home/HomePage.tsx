@@ -1,9 +1,10 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { Link } from 'react-router';
+import { useTouchOnly } from '@/app/hooks';
 import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { computerKeyMap } from '@/core/input';
 import { keyName } from '@/ui/keyboard/layout';
-import { loadProgress, streak } from '@/state/progress';
+import { loadProgress } from '@/state/progress';
 import { dueForReview, lastSevenDays } from '@/state/review';
 import { useDownloads } from '@/state/downloads';
 import { useSettings } from '@/state/settings';
@@ -30,13 +31,13 @@ const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boole
     to: '/chords',
     room: 'chords',
     title: 'Chords',
-    body: 'Every quality, inversion and voicing, then a drill to test them.',
+    body: 'How each chord is built, and the ways to spread it over the keys: inversions and voicings. Then a drill.',
   },
   {
     to: '/progressions',
     room: 'progressions',
     title: 'Progressions',
-    body: 'Roman-numeral progressions in any key, comped, practised or played along.',
+    body: "Chord progressions in any key, with a comping pattern, the left hand's accompaniment, under them. Practise them, or play along in time.",
   },
   {
     to: '/fills',
@@ -56,7 +57,7 @@ const ROOMS: { to: string; room: Room; title: string; body: string; beta?: boole
     to: '/progress',
     room: 'progress',
     title: 'Progress',
-    body: 'Your best scores, streak, and what to look at today.',
+    body: 'Your best scores, your last seven days, and what to look at today.',
   },
 ];
 
@@ -87,6 +88,8 @@ const LAST_KEY = KEY_MAP.at(-1)!;
 export function HomePage() {
   const dismissed = useSettings((s) => s.welcomeDismissed);
   const set = useSettings((s) => s.set);
+  // A touch-only phone has no computer keys to press: the first step says so.
+  const touchOnly = useTouchOnly();
   const mine = useUserProgressions((s) => s.items);
   const state = loadProgress();
   const practised = Object.keys(state.exercises).length > 0;
@@ -99,8 +102,8 @@ export function HomePage() {
   const describe = (id: string) => describeExercise(id, mine, songs);
   const due = dueForReview(state, describe, { limit: 1 })[0]?.info ?? null;
   const next = due ?? nextNew((id) => id in state.exercises);
-  const run = streak(state);
   const week = lastSevenDays(state);
+  const practisedDays = week.filter((d) => d.practised).length;
 
   return (
     <>
@@ -112,27 +115,7 @@ export function HomePage() {
       {!dismissed && !practised ? (
         <section className={styles.welcome} aria-labelledby="welcome-title">
           <h2 id="welcome-title">New here?</h2>
-          <div className={styles.welcomeArt}>
-            <KeysSpot />
-          </div>
-          <ol className={styles.steps}>
-            <li>
-              <strong>Find the keys.</strong> Tap the piano, use your computer keyboard (
-              {FIRST_KEY.label} to {LAST_KEY.label} play {keyName(FIRST_KEY.midi)} to{' '}
-              {keyName(LAST_KEY.midi)}), or plug in a MIDI keyboard and connect it under the piano.
-              The <Link to="/keyboard">keyboard page</Link> is a good place to try.
-            </li>
-            <li>
-              <strong>Listen, then play.</strong>{' '}
-              <Link to={WELCOME_SONG}>Twinkle, Twinkle, Little Star</Link> plays through first, in
-              its Easy version; Practice then waits for each note.
-            </li>
-            <li>
-              <strong>Learn a chord or two.</strong> The <Link to="/chords">chord library</Link>{' '}
-              shows how each is built; the <Link to="/chords/drill">drill</Link> asks you to play
-              them.
-            </li>
-          </ol>
+          {/* The way in first, so it is in the first screen on a phone; the lay of the land after. */}
           <div className={styles.welcomeActions}>
             <Link to={WELCOME_SONG} className={buttonClass('primary')}>
               Start with Twinkle, Twinkle
@@ -140,6 +123,34 @@ export function HomePage() {
             <Button variant="ghost" onClick={() => set({ welcomeDismissed: true })}>
               Got it
             </Button>
+          </div>
+          <ol className={styles.steps}>
+            <li>
+              <strong>Find the keys.</strong>{' '}
+              {touchOnly ? (
+                'Tap the piano at the foot of every practice page, or plug in a MIDI keyboard and connect it there.'
+              ) : (
+                <>
+                  Click the piano at the foot of every practice page, or use your computer keyboard:{' '}
+                  {FIRST_KEY.label} to {LAST_KEY.label} play {keyName(FIRST_KEY.midi)} to{' '}
+                  {keyName(LAST_KEY.midi)}. A MIDI keyboard connects there too.
+                </>
+              )}{' '}
+              Try them on the <Link to="/keyboard">keyboard page</Link>.
+            </li>
+            <li>
+              <strong>Listen, then play.</strong>{' '}
+              <Link to={WELCOME_SONG}>Twinkle, Twinkle, Little Star</Link> plays through first;
+              Practice then waits for each note.
+            </li>
+            <li>
+              <strong>Learn a chord or two.</strong> The <Link to="/chords">chord library</Link>{' '}
+              shows how each is built; the <Link to="/chords/drill">drill</Link> asks you to play
+              them.
+            </li>
+          </ol>
+          <div className={styles.welcomeArt}>
+            <KeysSpot labels={!touchOnly} />
           </div>
         </section>
       ) : null}
@@ -149,7 +160,7 @@ export function HomePage() {
           <div>
             <h2 id="today-title">Today</h2>
             <p className={page.muted}>
-              {run ? `${run} day${run === 1 ? '' : 's'} in a row. ` : ''}
+              {practisedDays ? `Practised ${practisedDays} of the last 7 days. ` : ''}
               {due ? 'Worth another look:' : 'Something new:'}
             </p>
           </div>

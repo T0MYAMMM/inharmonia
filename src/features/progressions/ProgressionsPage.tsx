@@ -18,7 +18,7 @@ export function ProgressionsPage() {
     <>
       <PageHeader
         title="Progressions"
-        lede="Common chord progressions, written as Roman numerals. Play them in any key, with any voicing and comping pattern, then practice them or play along in time."
+        lede="Common chord progressions, written as Roman numerals: each names a chord by its place in the key, so a progression is the same in every key. Play them in any key, with any voicing and comping pattern (the left hand's accompaniment), then practise them or play along in time."
       />
 
       <ImportControls>

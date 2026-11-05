@@ -18,6 +18,23 @@ test.describe('progression trainer', () => {
     await expect(page.getByTestId('pattern')).toHaveValue('stride');
   });
 
+  test('explains Roman numerals and comping on the list, and calls the toggle Accompaniment', async ({
+    page,
+  }) => {
+    await page.goto('progressions');
+    await expect(
+      page.getByText(
+        /each names a chord by its place in the key, so a progression is the same in every key/,
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/comping pattern \(the left hand's accompaniment\)/)).toBeVisible();
+    await page.goto('progressions/ii-v-i');
+    await expect(page.getByRole('button', { name: 'Accompaniment' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
   test('changing the key and pattern keeps the mode', async ({ page }) => {
     await page.goto('progressions/i-v-vi-iv');
     await page.getByRole('radio', { name: 'Practice' }).click();

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { MIX, mixVelocity } from '@config/mix';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { armAudio, audio } from '@/app/services';
 import {
   CHORD_EAR_LEVELS,
@@ -18,10 +19,12 @@ import { keyName as noteName } from '@/ui/keyboard/layout';
 import { voiceChord, type SpelledNote } from '@/core/theory';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
+import { AudioNotice } from '@/ui/AudioNotice';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { Segmented } from '@/ui/Segmented';
 import { PageHeader } from '../PageHeader';
+import progStyles from '../progressions/progressions.module.css';
 import styles from './ear.module.css';
 
 type Exercise = 'notes' | 'chords' | 'progressions';
@@ -89,6 +92,27 @@ export function EarPage() {
     for (const [k, v] of Object.entries(patch)) next.set(k, v);
     setParams(next, { replace: true });
   };
+  const small = useMediaQuery(BREAKPOINTS.compact);
+  const pickers = (
+    <div className={styles.controls}>
+      <Field label="Exercise" group>
+        <Segmented
+          label="Exercise"
+          value={exercise}
+          options={EXERCISES}
+          onChange={(v) => set({ exercise: v, level: '' })}
+        />
+      </Field>
+      <Field label="Level" group>
+        <Segmented
+          label="Level"
+          value={level.id}
+          options={levels.map((l) => ({ value: l.id, label: l.name }))}
+          onChange={(v) => set({ level: v })}
+        />
+      </Field>
+    </div>
+  );
 
   return (
     <>
@@ -96,24 +120,17 @@ export function EarPage() {
         title="Ear training"
         lede="Hear a note and name it with no reference, hear a chord and name its quality, or hear four chords and name them in Roman numerals. Listen as often as you like before you answer."
       />
-      <div className={styles.controls}>
-        <Field label="Exercise" group>
-          <Segmented
-            label="Exercise"
-            value={exercise}
-            options={EXERCISES}
-            onChange={(v) => set({ exercise: v, level: '' })}
-          />
-        </Field>
-        <Field label="Level" group>
-          <Segmented
-            label="Level"
-            value={level.id}
-            options={levels.map((l) => ({ value: l.id, label: l.name }))}
-            onChange={(v) => set({ level: v })}
-          />
-        </Field>
-      </div>
+      {/* On a phone the pickers fold into one line, so Play and the answers are in the first screen. */}
+      {small ? (
+        <details className={`${progStyles.details} ${styles.fold}`} data-testid="ear-pickers">
+          <summary className={progStyles.summary}>
+            {EXERCISES.find((e) => e.value === exercise)!.label} · {level.name}
+          </summary>
+          {pickers}
+        </details>
+      ) : (
+        pickers
+      )}
       {exercise === 'notes' ? (
         <NoteQuiz key={level.id} levelId={level.id} />
       ) : exercise === 'chords' ? (
@@ -121,6 +138,9 @@ export function EarPage() {
       ) : (
         <ProgressionQuiz key={level.id} levelId={level.id} />
       )}
+      <div className={styles.sound}>
+        <AudioNotice midi={false} />
+      </div>
     </>
   );
 }
@@ -380,7 +400,10 @@ function ChordQuiz({ levelId }: { levelId: string }) {
             </div>
           </>
         ) : (
-          <p className={styles.muted}>Press Play, then choose. Number keys answer too.</p>
+          <p className={styles.muted}>
+            Quality is the chord's kind: major, minor and the rest. Press Play, then choose. Number
+            keys answer too.
+          </p>
         )}
       </div>
       <RoundLine round={round} last={last} streak={quiz.score.streak} />

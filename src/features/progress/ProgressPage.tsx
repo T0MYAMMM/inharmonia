@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { BUILT_IN_ENTRIES } from '@/content/builtInIndex';
 import { useCatalogue } from '@/state/catalogue';
 import { useDownloads } from '@/state/downloads';
-import { clearProgress, loadProgress, streak } from '@/state/progress';
+import { clearProgress, loadProgress } from '@/state/progress';
 import { dueForReview, lastSevenDays, relativeDay } from '@/state/review';
 import { useUserProgressions } from '@/state/userProgressions';
 import { MetronomeSpot } from '@/ui/art/spots';
@@ -45,7 +45,6 @@ export function ProgressPage() {
   const review = dueForReview(state, describe, { now });
   const fresh = nextNew((id) => id in state.exercises);
   const days = lastSevenDays(state, now);
-  const run = streak(state, now);
   const thisWeek = days.filter((d) => d.practised).length;
 
   if (!rows.length)
@@ -81,13 +80,10 @@ export function ProgressPage() {
       />
 
       <div className={styles.stats}>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>{run}</span>
-          <span className={styles.statLabel}>day{run === 1 ? '' : 's'} in a row</span>
-        </div>
+        {/* The last seven days, as they were: no run to keep alive. */}
         <div className={styles.stat}>
           <span className={styles.statValue}>{thisWeek} of 7</span>
-          <span className={styles.statLabel}>days this week</span>
+          <span className={styles.statLabel}>days practised, of the last seven</span>
           <ol className={styles.week} aria-label="The last seven days">
             {days.map((d) => (
               <li

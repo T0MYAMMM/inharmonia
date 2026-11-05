@@ -30,7 +30,9 @@ export function WaysIn({ onSing, onNew, onOpen }: WaysInProps) {
       onOpen(parseMidi(await file.arrayBuffer(), file.name));
       setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invalid MIDI file.');
+      // What went wrong, then what to do: a .mid as music software saves it.
+      const why = e instanceof Error ? e.message : 'Invalid MIDI file.';
+      setError(`${why} Choose a .mid file saved by your music software.`);
     }
   };
   // The whole card takes a dropped file, not only its button.

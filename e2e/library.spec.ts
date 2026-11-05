@@ -27,7 +27,7 @@ test.describe('the Songs page', () => {
       /\/songs\/ode-to-joy-easy$/,
     );
     await expect(card.getByRole('link', { name: /^Advanced/ })).toContainText('24 bars');
-    await expect(card).toContainText('Ludwig van Beethoven, first published 1826');
+    await expect(card).toContainText('Ludwig van Beethoven, 1826 edition');
     await expect(card).toContainText('D major, 4/4');
   });
 
@@ -102,9 +102,7 @@ test.describe('the Songs page', () => {
   test('a song page names its version and switches between them', async ({ page }) => {
     await page.goto('songs/ode-to-joy-easy');
     await expect(page.getByRole('heading', { name: 'Ode to Joy', level: 1 })).toBeVisible();
-    await expect(page.getByTestId('song-credit')).toHaveText(
-      'Ludwig van Beethoven, first published 1826',
-    );
+    await expect(page.getByTestId('song-credit')).toHaveText('Ludwig van Beethoven, 1826 edition');
     const levels = page.getByTestId('song-levels');
     await expect(levels.getByRole('link', { name: 'Easy' })).toHaveAttribute(
       'aria-current',

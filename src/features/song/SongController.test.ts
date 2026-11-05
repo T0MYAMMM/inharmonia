@@ -260,6 +260,77 @@ describe('SongController, Practice', () => {
     expect(env.lights.has(60, 'wrong')).toBe(true);
   });
 
+  it('says what was expected on a miss, counting repeats so each one is heard', () => {
+    env.ctrl.setMode('practice');
+    expect(env.ctrl.snapshot.feedback).toBe('');
+    env.press(60);
+    expect(env.ctrl.snapshot).toMatchObject({
+      feedback: 'Not quite: play F#4, the amber key.',
+      announcement: 'Not quite: play F#4, the amber key.',
+    });
+    env.press(60);
+    expect(env.ctrl.snapshot.feedback).toBe('Not quite: play F#4, the amber key. 2 missed.');
+  });
+
+  it('says what was played and what comes next on a hit, with "again" for a repeat', () => {
+    env.ctrl.setMode('practice');
+    env.pressTarget(); // bar 1: F#4, G4, A4
+    expect(env.ctrl.snapshot.feedback).toBe('F#4. Next: G4.');
+    env.pressTarget();
+    expect(env.ctrl.snapshot.feedback).toBe('G4. Next: A4.');
+    // The first place the melody strikes the same note twice: walk there from its bar.
+    const struck = compiled.bars.flatMap((b) =>
+      b.rh.filter((n) => n.note && !n.tiedFrom).map((n) => ({ bar: b.index, name: n.note!.name })),
+    );
+    const i = struck.findIndex(
+      (n, k) =>
+        k > 0 && struck[k - 1]!.name !== n.name && struck[k + 1]?.name === n.name && struck[k + 2],
+    );
+    expect(i).toBeGreaterThan(-1);
+    env.ctrl.selectBar(struck[i]!.bar);
+    for (let k = struck.findIndex((n) => n.bar === struck[i]!.bar); k < i; k++) env.pressTarget();
+    env.pressTarget();
+    expect(env.ctrl.snapshot.feedback).toBe(`${struck[i]!.name}. Next: ${struck[i]!.name}.`);
+    env.pressTarget();
+    expect(env.ctrl.snapshot.feedback).toBe(
+      `${struck[i]!.name} again. Next: ${struck[i + 2]!.name}.`,
+    );
+  });
+
+  it('names notes and chords through the names it is given', () => {
+    env.ctrl.setNames({
+      note: (n) => ({
+        text: n.note!.name.replace(/\d+$/, '').replace('#', '♯'),
+        spoken: 'ef sharp',
+      }),
+      chord: (s) => `${s} major`,
+    });
+    env.ctrl.setMode('practice');
+    env.press(60);
+    expect(env.ctrl.snapshot).toMatchObject({
+      feedback: 'Not quite: play F♯, the amber key.',
+      announcement: 'Not quite: play ef sharp, the amber key.',
+    });
+    env.ctrl.setHands('lh');
+    env.press(51);
+    expect(env.ctrl.snapshot.feedback).toBe('Not quite: play D major, the ringed keys.');
+  });
+
+  it('clears the words when the mode or the hand changes, and on start over says so', () => {
+    env.ctrl.setMode('practice');
+    env.press(60);
+    env.ctrl.setHands('lh');
+    expect(env.ctrl.snapshot).toMatchObject({ feedback: '', announcement: '' });
+    env.press(51);
+    expect(env.ctrl.snapshot.feedback).not.toBe('');
+    env.ctrl.setMode('listen');
+    expect(env.ctrl.snapshot).toMatchObject({ feedback: '', announcement: '' });
+    env.ctrl.setMode('practice');
+    expect(env.ctrl.snapshot.feedback).toBe('');
+    env.ctrl.startOver();
+    expect(env.ctrl.snapshot.feedback).toBe('Back to the first note.');
+  });
+
   it('finishes, reports the counts and resets to the start', () => {
     env.ctrl.setMode('practice');
     env.press(1);
@@ -298,6 +369,26 @@ describe('SongController, Practice', () => {
     expect(lit(env.lights, 'target')).toEqual([]);
     expect(env.transport.state).toBe('paused');
     expect(env.transport.beatAt()).toBe(20);
+  });
+});
+
+describe('SongController, play-along', () => {
+  let env: ReturnType<typeof setup>;
+  beforeEach(() => {
+    env = setup();
+    env.ctrl.setMode('playalong');
+  });
+
+  it('says the count-in as it runs, then lets the chords speak', () => {
+    env.ctrl.playPause(); // one bar of count-in at 100 bpm: 4 beats, 0.6 s each
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: 4, feedback: 'Count-in, 4.' });
+    env.clock.advance(1.5);
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: 2, feedback: 'Count-in, 2.' });
+    env.clock.advance(1.2);
+    env.ctrl.renderFrame();
+    expect(env.ctrl.snapshot).toMatchObject({ countIn: null, feedback: '' });
   });
 });
 
@@ -344,6 +435,34 @@ describe('SongController, left-hand and both-hands practice', () => {
     expect(env.ctrl.snapshot.hits).toBe(2);
     env.press(69); // A4, same chord: melody alone is enough
     expect(env.ctrl.snapshot.hits).toBe(3);
+  });
+
+  it('left hand: says how many notes are still to hold', () => {
+    env.ctrl.setHands('lh');
+    env.notes.noteOn(62, 0.8, 'keys'); // D, held
+    expect(env.ctrl.snapshot.feedback).toBe('2 more notes.');
+    env.notes.noteOn(66, 0.8, 'keys'); // F#, held too
+    expect(env.ctrl.snapshot.feedback).toBe('One more note.');
+    env.notes.noteOn(69, 0.8, 'keys'); // A completes D
+    expect(env.ctrl.snapshot).toMatchObject({ hits: 1, feedback: 'D. Next: D.' });
+    for (const m of [62, 66, 69]) env.notes.noteOff(m, 'keys');
+    env.playChord([62, 66, 69]);
+    expect(env.ctrl.snapshot.feedback).toBe('D again. Next: G.');
+  });
+
+  it('both hands: says to hold the chord, or that the melody note is missing', () => {
+    env.ctrl.setHands('both');
+    env.notes.noteOn(66, 0.8, 'keys'); // the melody note alone
+    expect(env.ctrl.snapshot.feedback).toBe('Hold D with it: 2 more notes.');
+    env.notes.noteOff(66, 'keys');
+    env.notes.noteOn(50, 0.8, 'keys'); // a chord tone without the melody
+    expect(env.ctrl.snapshot.feedback).toBe('Now the melody note, F#4.');
+    env.notes.noteOff(50, 'keys');
+    env.press(60); // a wrong note: the chord is due with this note
+    expect(env.ctrl.snapshot.feedback).toBe('Not quite: play F#4 with D.');
+    env.playChord([50, 57, 66]);
+    // G4 starts the bar's second D, so the chord is due with it too.
+    expect(env.ctrl.snapshot.feedback).toBe('F#4 with D. Next: G4 with D.');
   });
 
   it('switching hands keeps the place and resets the counts', () => {

@@ -25,7 +25,7 @@ import { PageHeader } from '../PageHeader';
 import { LEVEL_NAMES } from './credit';
 import { paginate } from './paginate';
 import { SongCard } from './SongCard';
-import { useOnline } from './useOnline';
+import { useOnline } from '@/app/hooks';
 import styles from './SongsPage.module.css';
 
 type LevelFilter = 'all' | SongLevel;

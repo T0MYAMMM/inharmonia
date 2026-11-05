@@ -3,6 +3,8 @@ import { BASE_MIDI, computerKeyMap, OCTAVE_KEYS } from '@/core/input';
 import { armAudio, audio, lights, notes } from '@/app/services';
 import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
+import { AudioNotice } from '../AudioNotice';
+import { Button } from '../Button';
 import { Keyboard } from './Keyboard';
 import { DOCK_RANGE, keyName } from './layout';
 import { InputStatus } from './InputStatus';
@@ -14,6 +16,16 @@ export interface KeyboardDockProps {
   high?: number;
   /** Extra legend items, e.g. a target swatch. */
   extra?: ReactNode;
+  /** The words of practice: what to play, or what just happened, where the keys are. */
+  feedback?: string;
+  /**
+   * The player's primary action, moved here while its own button is out of
+   * reach (a phone, scrolled to the bar being played). Never shown in Full Screen,
+   * which has its own controls.
+   */
+  action?: { label: string; onClick: () => void };
+  /** What the sound is doing, in the legend. Off where the page says it itself (the Keyboard page). */
+  notice?: boolean;
   showTarget?: boolean;
   /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
@@ -26,6 +38,9 @@ export function KeyboardDock({
   low = DOCK_RANGE[0],
   high = DOCK_RANGE[1],
   extra,
+  feedback,
+  action,
+  notice = true,
   showTarget = false,
   roll,
   fullScreenControls,
@@ -149,6 +164,12 @@ export function KeyboardDock({
             Left hand
           </span>
           {extra}
+          {feedback ? (
+            <span className={styles.feedback} data-testid="dock-feedback">
+              {feedback}
+            </span>
+          ) : null}
+          {notice ? <AudioNotice /> : null}
           <span className={styles.legendEnd}>
             {roll ? (
               <button
@@ -158,8 +179,18 @@ export function KeyboardDock({
                 aria-pressed={fullScreen}
                 onClick={toggleFullScreen}
               >
-                {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
+                {fullScreen ? 'Exit full screen' : 'Full screen'}
               </button>
+            ) : null}
+            {action && !fullScreen ? (
+              <Button
+                variant="primary"
+                size="small"
+                onClick={action.onClick}
+                data-testid="dock-action"
+              >
+                {action.label}
+              </Button>
             ) : null}
             <InputStatus octaveShift={shift} />
             <span className={styles.keysHint} data-testid="keys-range">

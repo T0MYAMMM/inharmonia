@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { compileLesson } from '@/core/content/compile';
 import { DEFAULT_RULES, LESSON_SCHEMA_VERSION, type Lesson } from '@/core/content/types';
 import { PATTERNS } from '@/content/patterns';
@@ -58,7 +58,7 @@ describe('adaptive score layout', () => {
     expect(screen.getByTestId('dense-summary')).toHaveTextContent('16 notes');
   });
 
-  it('defaults dense Advanced songs to Follow Along with unsqueezed note widths', () => {
+  it('defaults dense Advanced songs to Follow along with unsqueezed note widths', () => {
     const { container } = render(<Score {...props('advanced')} />);
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'follow');
     expect(container.querySelectorAll('[data-chip]')).toHaveLength(4);
@@ -86,17 +86,17 @@ describe('adaptive score layout', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Overview' }));
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
     expect(screen.getAllByTestId('dense-summary')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('radio', { name: 'Follow Along' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Follow along' }));
     expect(container.querySelectorAll('[data-chip]')).toHaveLength(8);
   });
 
-  it('moves Falling Notes settings to the floating keyboard while leaving the score unboxed', () => {
+  it('moves Falling notes settings to the floating keyboard while leaving the score unboxed', () => {
     const onFallingChange = vi.fn();
     const p = props('easy');
     const { container, rerender } = render(<Score {...p} onFallingChange={onFallingChange} />);
     expect(onFallingChange).toHaveBeenLastCalledWith(null);
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Falling Notes' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Falling notes' }));
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'falling');
     expect(screen.getByTestId('falling-score-hint')).toBeInTheDocument();
     expect(screen.queryByTestId('falling-notes')).not.toBeInTheDocument();
@@ -126,6 +126,44 @@ describe('adaptive score layout', () => {
     const { container } = render(<Score {...p} compiled={progression} />);
     expect(container.firstElementChild).toHaveAttribute('data-score-view', 'overview');
     expect(screen.queryByTestId('score-tools')).not.toBeInTheDocument();
+  });
+});
+
+describe('the view on a phone', () => {
+  const stubWidth = (compact: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: compact && query === '(max-width: 600px)',
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('opens Follow along for Practice under 600px, and returns to Overview after', () => {
+    stubWidth(true);
+    const { rerender } = render(<Score {...props('easy')} />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    rerender(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Follow along' })).toBeChecked();
+    expect(screen.getByRole('region', { name: 'Follow along score' })).toBeInTheDocument();
+    rerender(<Score {...props('easy')} mode="listen" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  it('keeps a view picked by hand during Practice', () => {
+    stubWidth(true);
+    const { rerender } = render(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Follow along' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'Overview' }));
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+    rerender(<Score {...props('easy')} mode="listen" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
+  });
+
+  it('leaves Overview alone on a wider screen', () => {
+    stubWidth(false);
+    const { rerender } = render(<Score {...props('easy')} />);
+    rerender(<Score {...props('easy')} mode="practice" />);
+    expect(screen.getByRole('radio', { name: 'Overview' })).toBeChecked();
   });
 });
 

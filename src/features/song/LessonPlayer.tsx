@@ -6,10 +6,11 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { BREAKPOINTS, useMediaQuery } from '@/app/hooks';
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { describeChange, type VoicingChange } from '@/core/charts';
 import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
-import { formatChord, prettyAccidentals } from '@/core/notation';
+import { formatChord, formatNote, prettyAccidentals } from '@/core/notation';
 import type { PracticeHands } from '@/core/practice';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
@@ -22,6 +23,7 @@ import { Select } from '@/ui/Select';
 import { Slider } from '@/ui/Slider';
 import { Toggle } from '@/ui/Toggle';
 import { dockRangeFor, KeyboardDock } from '@/ui/keyboard';
+import { useOffscreen } from '@/ui/useOffscreen';
 import { Score, type FallingViewOptions } from './Score';
 import { FallingNotes } from './FallingNotes';
 import { SongController, type SongMode } from './SongController';
@@ -101,6 +103,8 @@ export function LessonPlayer({
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
   const [fallingOptions, setFallingOptions] = useState<FallingViewOptions | null>(null);
+  const notation = useSettings((s) => s.notation);
+  const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const [ctrl] = useState(
     () =>
       new SongController(compiled, {
@@ -125,19 +129,35 @@ export function LessonPlayer({
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
   const visualBeat = useCallback(() => ctrl.visualBeat(), [ctrl]);
   const performanceBeat = useCallback((beat: number) => getTransport().performanceBeat(beat), []);
-  const notation = useSettings((s) => s.notation);
-  const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const metronome = useSettings((s) => s.metronome);
   const countInBars = useSettings((s) => s.countInBars);
   const setSettings = useSettings((s) => s.set);
   const progressRef = useRef<HTMLDivElement>(null);
   const lesson = compiled.lesson;
+  // On a phone the panel is not sticky, and the score follows the bar being
+  // played: when Play has scrolled out of reach (or under the dock, the lower
+  // third), the dock carries the mode's primary action instead.
+  const transportRef = useRef<HTMLSpanElement>(null);
+  const compact = useMediaQuery(BREAKPOINTS.compact);
+  const playOffscreen = useOffscreen(transportRef, '0px 0px -35% 0px');
 
   useEffect(() => {
     ctrl.attach();
     ctrl.setProgressElement(progressRef.current);
     return () => ctrl.detach();
   }, [ctrl]);
+
+  // The words of practice name notes as the score shows them, in the notation chosen now.
+  useEffect(() => {
+    const key = compiled.lesson.key;
+    ctrl.setNames({
+      note: (n) => {
+        const label = formatNote(n.note!, key, { system: notation, accidentalStyle });
+        return { text: label.text, spoken: label.ariaLabel };
+      },
+      chord: (symbol) => formatChord(symbol, key, notation),
+    });
+  }, [ctrl, compiled, notation, accidentalStyle]);
 
   // A new key, pattern or voicing: swap the lesson, keep everything else.
   const loaded = useRef(compiled);
@@ -193,13 +213,22 @@ export function LessonPlayer({
     };
   }, [hintKey]);
   const [low, high] = dockRange(compiled);
+  const dockAction =
+    compact && playOffscreen
+      ? practice
+        ? { label: 'Hear it', onClick: () => ctrl.hearIt() }
+        : {
+            label: playing ? (playAlong ? 'Stop' : 'Pause') : 'Play',
+            onClick: () => ctrl.playPause(),
+          }
+      : undefined;
 
   return (
     <>
       <div className={styles.panel} data-sticky-panel>
         {/* Play first, so it is in the first screen on a phone; what shapes the lesson last. */}
         <div className={styles.row}>
-          <span className={styles.group}>
+          <span className={styles.group} ref={transportRef}>
             <Button
               variant="primary"
               onClick={() => ctrl.playPause()}
@@ -252,7 +281,7 @@ export function LessonPlayer({
                   </Toggle>
                 ) : (
                   <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                    Comping
+                    Accompaniment
                   </Toggle>
                 )}
               </span>
@@ -353,7 +382,7 @@ export function LessonPlayer({
           </p>
         ) : null}
         {settings}
-        <p className="visually-hidden" role="status" aria-live="polite">
+        <p className="visually-hidden" role="status" aria-live="polite" data-testid="practice-said">
           {snap.announcement}
         </p>
       </div>
@@ -388,7 +417,7 @@ export function LessonPlayer({
                   : ''}
               </span>
               <Segmented
-                label="Full Screen mode"
+                label="Full screen mode"
                 value={snap.mode}
                 options={progression ? PROGRESSION_MODES : SONG_MODES}
                 onChange={(m) => ctrl.setMode(m)}
@@ -432,7 +461,7 @@ export function LessonPlayer({
                 <Field label={<>Tempo: {snap.tempo} bpm</>}>
                   <RangeInput
                     size="small"
-                    aria-label="Full Screen tempo"
+                    aria-label="Full screen tempo"
                     data-testid="fullscreen-tempo"
                     min={lesson.tempo.min}
                     max={lesson.tempo.max}
@@ -444,7 +473,7 @@ export function LessonPlayer({
               <Field label="Count-in">
                 <Select
                   size="small"
-                  aria-label="Full Screen count-in"
+                  aria-label="Full screen count-in"
                   data-testid="fullscreen-countin"
                   value={countInBars}
                   onChange={(event) => setSettings({ countInBars: Number(event.target.value) })}
@@ -461,7 +490,7 @@ export function LessonPlayer({
               <h2 className={styles.fullScreenHeading}>Hands &amp; arrangement</h2>
               {practice ? (
                 <Segmented
-                  label="Full Screen practice hand"
+                  label="Full screen practice hand"
                   value={snap.hands}
                   options={PRACTICE_HANDS}
                   onChange={(v) => ctrl.setHands(v)}
@@ -479,7 +508,7 @@ export function LessonPlayer({
                 <Field label="View">
                   <Select
                     size="small"
-                    aria-label="Full Screen displayed hands"
+                    aria-label="Full screen displayed hands"
                     data-testid="fullscreen-falling-hand"
                     value={fallingOptions?.hand ?? 'both'}
                     onChange={(event) =>
@@ -498,7 +527,7 @@ export function LessonPlayer({
                 <Field label="Look ahead">
                   <Select
                     size="small"
-                    aria-label="Full Screen look ahead"
+                    aria-label="Full screen look ahead"
                     data-testid="fullscreen-falling-lookahead"
                     value={fallingOptions?.lookAheadBeats ?? 4}
                     onChange={(event) =>
@@ -523,6 +552,8 @@ export function LessonPlayer({
         low={low}
         high={high}
         showTarget={practice && !progression}
+        feedback={snap.mode === 'listen' ? undefined : snap.feedback || undefined}
+        action={dockAction}
         roll={
           fallingOptions ? (
             <FallingNotes

@@ -24,6 +24,21 @@ export function useHeldNotes(): number[] {
   return held;
 }
 
+/** Whether the browser says it is online, kept up to date. */
+export function useOnline(): boolean {
+  const [online, setOnline] = useState(() => navigator.onLine !== false);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine !== false);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+  return online;
+}
+
 /** Enable the computer keyboard while the calling component is mounted. */
 export function useComputerKeys(): number {
   const [shift, setShift] = useState(keys.octaveShift);

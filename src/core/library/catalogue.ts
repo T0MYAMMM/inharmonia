@@ -96,7 +96,7 @@ export interface CatalogueEntry {
   title: string;
   /** For the composer filter: the composer, or an original's author. */
   composer: string;
-  /** The card's credit line: "Ludwig van Beethoven, first published 1826". */
+  /** The card's credit line: "Ludwig van Beethoven, 1826 edition". */
   credit: string;
   /** The written key: the Advanced version's, or the only version's. */
   key: { tonic: string; mode: Mode };
