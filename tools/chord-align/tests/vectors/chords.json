@@ -1,0 +1,335 @@
+{
+  "_comment": "Chord symbols as pitch classes (0 = C). Checked by tests/test_symbols.py against chord_align.symbols and by src/core/charts/alignVectors.test.ts against the app's chord reading.",
+  "chords": [
+    {
+      "symbol": "C",
+      "pcs": [0, 4, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Cm",
+      "pcs": [0, 3, 7],
+      "bass": null
+    },
+    {
+      "symbol": "C7",
+      "pcs": [0, 4, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Cmaj7",
+      "pcs": [0, 4, 7, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Cm7",
+      "pcs": [0, 3, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C6",
+      "pcs": [0, 4, 7, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Cm6",
+      "pcs": [0, 3, 7, 9],
+      "bass": null
+    },
+    {
+      "symbol": "C9",
+      "pcs": [0, 2, 4, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Cadd9",
+      "pcs": [0, 2, 4, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Cadd11",
+      "pcs": [0, 4, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Cadd4",
+      "pcs": [0, 4, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Csus2",
+      "pcs": [0, 2, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Csus4",
+      "pcs": [0, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "C7sus2",
+      "pcs": [0, 2, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C7sus4",
+      "pcs": [0, 5, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Cdim",
+      "pcs": [0, 3, 6],
+      "bass": null
+    },
+    {
+      "symbol": "Cdim7",
+      "pcs": [0, 3, 6, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Caug",
+      "pcs": [0, 4, 8],
+      "bass": null
+    },
+    {
+      "symbol": "Cm7b5",
+      "pcs": [0, 3, 6, 10],
+      "bass": null
+    },
+    {
+      "symbol": "G/B",
+      "pcs": [2, 7, 11],
+      "bass": 11
+    },
+    {
+      "symbol": "C/E",
+      "pcs": [0, 4, 7],
+      "bass": 4
+    },
+    {
+      "symbol": "Am7/G",
+      "pcs": [0, 4, 7, 9],
+      "bass": 7
+    },
+    {
+      "symbol": "D/F#",
+      "pcs": [2, 6, 9],
+      "bass": 6
+    },
+    {
+      "symbol": "F/G",
+      "pcs": [0, 5, 7, 9],
+      "bass": 7
+    },
+    {
+      "symbol": "Bb/D",
+      "pcs": [2, 5, 10],
+      "bass": 2
+    },
+    {
+      "symbol": "F#m",
+      "pcs": [1, 6, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Bbmaj7",
+      "pcs": [2, 5, 9, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Ebadd11",
+      "pcs": [3, 7, 8, 10],
+      "bass": null
+    },
+    {
+      "symbol": "B7sus2",
+      "pcs": [1, 6, 9, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Db7",
+      "pcs": [1, 5, 8, 11],
+      "bass": null
+    },
+    {
+      "symbol": "G#dim7",
+      "pcs": [2, 5, 8, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Abaug",
+      "pcs": [0, 4, 8],
+      "bass": null
+    },
+    {
+      "symbol": "Ebm7b5",
+      "pcs": [1, 3, 6, 9],
+      "bass": null
+    },
+    {
+      "symbol": "C#m6",
+      "pcs": [1, 4, 8, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Gb6",
+      "pcs": [1, 3, 6, 10],
+      "bass": null
+    },
+    {
+      "symbol": "E9",
+      "pcs": [2, 4, 6, 8, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Aadd4",
+      "pcs": [1, 2, 4, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Fsus2",
+      "pcs": [0, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Bbsus4",
+      "pcs": [3, 5, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Dbadd9",
+      "pcs": [1, 3, 5, 8],
+      "bass": null
+    },
+    {
+      "symbol": "CM7",
+      "pcs": [0, 4, 7, 11],
+      "bass": null
+    },
+    {
+      "symbol": "C-",
+      "pcs": [0, 3, 7],
+      "bass": null
+    },
+    {
+      "symbol": "C-7",
+      "pcs": [0, 3, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Cmin",
+      "pcs": [0, 3, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Cmaj",
+      "pcs": [0, 4, 7],
+      "bass": null
+    },
+    {
+      "symbol": "CM",
+      "pcs": [0, 4, 7],
+      "bass": null
+    },
+    {
+      "symbol": "C+",
+      "pcs": [0, 4, 8],
+      "bass": null
+    },
+    {
+      "symbol": "Csus",
+      "pcs": [0, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "CmM7",
+      "pcs": [0, 3, 7, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Cmaj9",
+      "pcs": [0, 2, 4, 7, 11],
+      "bass": null
+    },
+    {
+      "symbol": "Cm9",
+      "pcs": [0, 2, 3, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C69",
+      "pcs": [0, 2, 4, 7, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Cm69",
+      "pcs": [0, 2, 3, 7, 9],
+      "bass": null
+    },
+    {
+      "symbol": "Cmadd9",
+      "pcs": [0, 2, 3, 7],
+      "bass": null
+    },
+    {
+      "symbol": "Cmadd11",
+      "pcs": [0, 3, 5, 7],
+      "bass": null
+    },
+    {
+      "symbol": "C7b5",
+      "pcs": [0, 4, 6, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C7#5",
+      "pcs": [0, 4, 8, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C7b9",
+      "pcs": [0, 1, 4, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C7#9",
+      "pcs": [0, 3, 4, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C11",
+      "pcs": [0, 2, 5, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "Cm11",
+      "pcs": [0, 2, 3, 5, 7, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C13",
+      "pcs": [0, 2, 4, 7, 9, 10],
+      "bass": null
+    },
+    {
+      "symbol": "C5",
+      "pcs": [0, 7],
+      "bass": null
+    }
+  ],
+  "fallback": [
+    {
+      "symbol": "C7b13",
+      "pcs": [0, 7]
+    },
+    {
+      "symbol": "Cmaj7#11",
+      "pcs": [0, 7]
+    },
+    {
+      "symbol": "C7#11",
+      "pcs": [0, 7]
+    }
+  ],
+  "noChord": ["N.C.", "NC", "n.c.", "(N.C.)"]
+}
