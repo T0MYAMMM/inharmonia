@@ -362,19 +362,32 @@ test.describe('song player', () => {
       await page.mouse.down();
       await page.mouse.up();
     };
+    // The words of practice: on the dock, where the keys are, and in the live region.
+    const feedback = page.getByTestId('dock-feedback');
+    const said = page.getByTestId('practice-said');
+    await expect(feedback).toHaveCount(0);
     await pressKey(60); // wrong
     await expect(counts).toHaveText('0 hits, 1 miss');
+    await expect(feedback).toHaveText('Not quite: play E, the amber key.');
+    await expect(said).toHaveText('Not quite: play E, the amber key.');
     await expect.poll(() => lit(page, 'target')).toEqual([76]);
     await pressKey(76); // E5, right
     await expect(counts).toHaveText('1 hit, 1 miss');
+    await expect(feedback).toHaveText('E. Next: F.');
+    await expect(said).toHaveText('E. Next: F.');
     await expect.poll(() => lit(page, 'target')).toEqual([77]); // F5
     await expect(page.locator('[data-state="done"]')).toHaveCount(1);
     if (!isMobile) {
       await page.keyboard.press("'"); // F5 on the computer keyboard
       await expect(counts).toHaveText('2 hits, 1 miss');
+      await expect(feedback).toHaveText('F. Next: G.');
     }
     await page.getByRole('button', { name: 'Start over' }).click();
     await expect(counts).toHaveText('0 hits, 0 misses');
+    await expect(feedback).toHaveText('Back to the first note.');
+    // Back in Listen there is nothing to say.
+    await page.getByRole('radio', { name: 'Listen' }).click();
+    await expect(feedback).toHaveCount(0);
   });
 
   test('practice: clicking a bar moves the target there', async ({ page }) => {

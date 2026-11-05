@@ -14,6 +14,8 @@ export interface KeyboardDockProps {
   high?: number;
   /** Extra legend items, e.g. a target swatch. */
   extra?: ReactNode;
+  /** The words of practice: what to play, or what just happened, where the keys are. */
+  feedback?: string;
   showTarget?: boolean;
   /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
@@ -26,6 +28,7 @@ export function KeyboardDock({
   low = DOCK_RANGE[0],
   high = DOCK_RANGE[1],
   extra,
+  feedback,
   showTarget = false,
   roll,
   fullScreenControls,
@@ -149,6 +152,11 @@ export function KeyboardDock({
             Left hand
           </span>
           {extra}
+          {feedback ? (
+            <span className={styles.feedback} data-testid="dock-feedback">
+              {feedback}
+            </span>
+          ) : null}
           <span className={styles.legendEnd}>
             {roll ? (
               <button

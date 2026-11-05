@@ -35,8 +35,11 @@ export type PressResult =
       finished: { hits: number; misses: number } | null;
     }
   | { kind: 'miss'; midi: number; expected: PracticeTarget }
-  /** A right note, but the target is not complete yet (more chord tones to come). */
-  | { kind: 'progress'; missing: number }
+  /**
+   * A right note, but the target is not complete yet: `missing` more chord
+   * tones to hold, or (both hands) the melody note itself.
+   */
+  | { kind: 'progress'; missing: number; need: 'chord' | 'melody' }
   | { kind: 'idle' };
 
 /**
@@ -126,7 +129,8 @@ export class WaitSession {
       const target = chordTarget(t.chord.voicing);
       if (!belongsToChord(midi, target, this.strictness)) return this.miss(midi, t);
       const m = matchChord(held, target, this.strictness);
-      if (m.status !== 'match') return { kind: 'progress', missing: m.missing.length };
+      if (m.status !== 'match')
+        return { kind: 'progress', missing: m.missing.length, need: 'chord' };
       return this.hit(t, null, t.chord);
     }
 
@@ -139,13 +143,13 @@ export class WaitSession {
       return this.hit(t, this.startsChord(this._index) ? t.chord : null, null);
     }
     // Both hands: the melody note must be down, and the chord too when it starts here.
-    if (!held.includes(noteMidi)) return { kind: 'progress', missing: 1 };
+    if (!held.includes(noteMidi)) return { kind: 'progress', missing: 1, need: 'melody' };
     if (t.needsChord && chordTones) {
       const heldChromas = new Set(
         held.filter((m) => m !== noteMidi || chordTones.has(chroma(m))).map(chroma),
       );
       const missing = [...chordTones].filter((c) => !heldChromas.has(c)).length;
-      if (missing > 0) return { kind: 'progress', missing };
+      if (missing > 0) return { kind: 'progress', missing, need: 'chord' };
     }
     return this.hit(t, null, null);
   }

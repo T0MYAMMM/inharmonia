@@ -9,7 +9,7 @@ import {
 import { audio, getTransport, lights, notes } from '@/app/services';
 import { describeChange, type VoicingChange } from '@/core/charts';
 import type { CompiledChord, CompiledLesson } from '@/core/content/compile';
-import { formatChord, prettyAccidentals } from '@/core/notation';
+import { formatChord, formatNote, prettyAccidentals } from '@/core/notation';
 import type { PracticeHands } from '@/core/practice';
 import { recordAttempt } from '@/state/progress';
 import { useSettings } from '@/state/settings';
@@ -101,6 +101,8 @@ export function LessonPlayer({
 }: LessonPlayerProps) {
   const progression = variant === 'progression';
   const [fallingOptions, setFallingOptions] = useState<FallingViewOptions | null>(null);
+  const notation = useSettings((s) => s.notation);
+  const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const [ctrl] = useState(
     () =>
       new SongController(compiled, {
@@ -125,8 +127,6 @@ export function LessonPlayer({
   const snap = useSyncExternalStore(ctrl.subscribe, () => ctrl.snapshot);
   const visualBeat = useCallback(() => ctrl.visualBeat(), [ctrl]);
   const performanceBeat = useCallback((beat: number) => getTransport().performanceBeat(beat), []);
-  const notation = useSettings((s) => s.notation);
-  const accidentalStyle = useSettings((s) => s.accidentalStyle);
   const metronome = useSettings((s) => s.metronome);
   const countInBars = useSettings((s) => s.countInBars);
   const setSettings = useSettings((s) => s.set);
@@ -138,6 +138,18 @@ export function LessonPlayer({
     ctrl.setProgressElement(progressRef.current);
     return () => ctrl.detach();
   }, [ctrl]);
+
+  // The words of practice name notes as the score shows them, in the notation chosen now.
+  useEffect(() => {
+    const key = compiled.lesson.key;
+    ctrl.setNames({
+      note: (n) => {
+        const label = formatNote(n.note!, key, { system: notation, accidentalStyle });
+        return { text: label.text, spoken: label.ariaLabel };
+      },
+      chord: (symbol) => formatChord(symbol, key, notation),
+    });
+  }, [ctrl, compiled, notation, accidentalStyle]);
 
   // A new key, pattern or voicing: swap the lesson, keep everything else.
   const loaded = useRef(compiled);
@@ -353,7 +365,7 @@ export function LessonPlayer({
           </p>
         ) : null}
         {settings}
-        <p className="visually-hidden" role="status" aria-live="polite">
+        <p className="visually-hidden" role="status" aria-live="polite" data-testid="practice-said">
           {snap.announcement}
         </p>
       </div>
@@ -523,6 +535,7 @@ export function LessonPlayer({
         low={low}
         high={high}
         showTarget={practice && !progression}
+        feedback={snap.mode === 'listen' ? undefined : snap.feedback || undefined}
         roll={
           fallingOptions ? (
             <FallingNotes
