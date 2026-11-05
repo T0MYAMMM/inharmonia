@@ -18,7 +18,7 @@ import page from '../page.module.css';
 import { PageHeader } from '../PageHeader';
 import { LEVEL_NAMES, LEVEL_NOTES } from './credit';
 import { SongView } from './SongView';
-import { useOnline } from './useOnline';
+import { useOnline } from '@/app/hooks';
 import styles from './SongPage.module.css';
 
 /** Why Download is off, on a song page while the browser is offline. */

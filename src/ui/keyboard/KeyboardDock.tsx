@@ -3,6 +3,7 @@ import { BASE_MIDI, computerKeyMap, OCTAVE_KEYS } from '@/core/input';
 import { armAudio, audio, lights, notes } from '@/app/services';
 import { useComputerKeys } from '@/app/hooks';
 import { useSettings } from '@/state/settings';
+import { AudioNotice } from '../AudioNotice';
 import { Button } from '../Button';
 import { Keyboard } from './Keyboard';
 import { DOCK_RANGE, keyName } from './layout';
@@ -23,6 +24,8 @@ export interface KeyboardDockProps {
    * which has its own controls.
    */
   action?: { label: string; onClick: () => void };
+  /** What the sound is doing, in the legend. Off where the page says it itself (the Keyboard page). */
+  notice?: boolean;
   showTarget?: boolean;
   /** Falling-note layer above the same sticky interactive keyboard. */
   roll?: ReactNode;
@@ -37,6 +40,7 @@ export function KeyboardDock({
   extra,
   feedback,
   action,
+  notice = true,
   showTarget = false,
   roll,
   fullScreenControls,
@@ -165,6 +169,7 @@ export function KeyboardDock({
               {feedback}
             </span>
           ) : null}
+          {notice ? <AudioNotice /> : null}
           <span className={styles.legendEnd}>
             {roll ? (
               <button

@@ -10,12 +10,23 @@ vi.mock('@/app/services', () => ({
   audio: { unlock: vi.fn(async () => undefined) },
   lights: new KeyLights(),
   notes: new NoteStream(),
+  midi: {
+    state: { status: 'idle', devices: [], selected: 'all', sustain: false },
+    subscribe: () => () => undefined,
+  },
 }));
 vi.mock('@/app/hooks', () => ({
   useComputerKeys: () => 0,
   useActiveInput: () => ({ kind: 'keys' }),
   useTouchOnly: () => false,
   useMidiState: () => ({ status: 'idle', devices: [], selected: 'all', sustain: false }),
+  useAudioState: () => ({
+    status: 'synth',
+    samplesLoaded: 0,
+    samplesTotal: 12,
+    instrument: 'synth',
+  }),
+  useOnline: () => true,
 }));
 
 describe('KeyboardDock', () => {
@@ -29,6 +40,19 @@ describe('KeyboardDock', () => {
     );
     // The dock's line is for the eyes; the player's live region says it.
     expect(screen.getByTestId('dock-feedback')).not.toHaveAttribute('role');
+  });
+
+  it('says what the sound is doing, in a mounted polite region', () => {
+    render(<KeyboardDock />);
+    expect(screen.getByTestId('dock-notice')).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByTestId('dock-notice')).toHaveTextContent(
+      'Loading the piano, a simple synth plays for now.',
+    );
+  });
+
+  it('keeps quiet about the sound where the page says it itself', () => {
+    render(<KeyboardDock notice={false} />);
+    expect(screen.queryByTestId('dock-notice')).toBeNull();
   });
 
   it("carries the player's primary action when it is given one", async () => {

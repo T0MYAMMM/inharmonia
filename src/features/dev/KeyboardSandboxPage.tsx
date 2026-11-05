@@ -46,7 +46,8 @@ export function KeyboardSandboxPage() {
         <MidiCard />
         <TimingCard />
       </div>
-      <KeyboardDock />
+      {/* The page's Sound card says what the sound is doing; the dock stays quiet about it. */}
+      <KeyboardDock notice={false} />
     </>
   );
 }

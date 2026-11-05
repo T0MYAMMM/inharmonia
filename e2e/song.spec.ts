@@ -390,6 +390,22 @@ test.describe('song player', () => {
     await expect(feedback).toHaveCount(0);
   });
 
+  test('the dock says what the sound is doing after the first Play, then falls quiet', async ({
+    page,
+  }) => {
+    await open(page);
+    const notice = page.getByTestId('dock-notice');
+    // Nothing to say before the first gesture.
+    await expect(notice).toHaveAttribute('aria-live', 'polite');
+    await expect(notice).toHaveText('');
+    await page.getByTestId('play').click();
+    await expect(notice).toHaveText(/Starting the sound|Loading the piano|Piano ready/, {
+      timeout: 10_000,
+    });
+    // The piano lands, says so for a moment, and the line goes quiet.
+    await expect(notice).toHaveText('', { timeout: 20_000 });
+  });
+
   test('on a phone, Pause follows into the dock when the panel scrolls away', async ({
     page,
     isMobile,
