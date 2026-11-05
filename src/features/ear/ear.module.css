@@ -5,6 +5,17 @@
   margin-bottom: var(--space-4);
 }
 
+/* The folded pickers on a phone, and the sound's state under the card. */
+.fold {
+  margin-bottom: var(--space-4);
+}
+
+.sound {
+  max-width: var(--text-width);
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+}
+
 .card {
   display: grid;
   gap: var(--space-4);

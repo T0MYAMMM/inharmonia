@@ -13,6 +13,17 @@ test.describe('ear training', () => {
     await expect(page.getByTestId('feedback')).toContainText('Press Play');
   });
 
+  test('says what the sound is doing after the first Play', async ({ page }) => {
+    await page.goto('ear?exercise=chords&level=major-minor');
+    const notice = page.getByTestId('dock-notice');
+    await expect(notice).toHaveAttribute('aria-live', 'polite');
+    await expect(notice).toHaveText('');
+    await page.getByTestId('play').click();
+    await expect(notice).toHaveText(/Starting the sound|Loading the piano|Piano ready/, {
+      timeout: 10_000,
+    });
+  });
+
   test('chord quality: says what quality means before the first question', async ({ page }) => {
     await page.goto('ear?exercise=chords&level=major-minor');
     await expect(

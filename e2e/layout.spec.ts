@@ -341,6 +341,19 @@ test.describe('Play on a phone', () => {
     await playInFirstScreen(page);
   });
 
+  test('on Ear training, the pickers fold and Play is in the first screen', async ({ page }) => {
+    await page.goto('ear?exercise=chords&level=major-minor');
+    const fold = page.getByTestId('ear-pickers');
+    await expect(fold.locator('summary')).toHaveText('Chord quality · Major or minor');
+    await expect(fold).not.toHaveAttribute('open');
+    await playInFirstScreen(page);
+    // Open, the pickers are the same two groups as on a wider screen.
+    await fold.locator('summary').click();
+    await expect(page.getByRole('radiogroup', { name: 'Level' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Triads' }).click();
+    await expect(fold.locator('summary')).toHaveText('Chord quality · Triads');
+  });
+
   test('on Home, the way in is in the first screen, written for a phone', async ({ page }) => {
     await page.goto('');
     const start = page.getByRole('link', { name: 'Start with Twinkle, Twinkle' });
