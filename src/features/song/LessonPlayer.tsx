@@ -281,7 +281,7 @@ export function LessonPlayer({
                   </Toggle>
                 ) : (
                   <Toggle pressed={snap.lhOn} onChange={(v) => ctrl.setHand('lh', v)} tone="dusk">
-                    Comping
+                    Accompaniment
                   </Toggle>
                 )}
               </span>
