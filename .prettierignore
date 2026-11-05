@@ -9,3 +9,6 @@ docs/format/examples
 src/core/format/fixtures
 src/content/songs/*.json
 public/library/*.json
+
+# RYUX skill files are vendored as installed
+.claude/skills/ryux
