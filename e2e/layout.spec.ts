@@ -328,6 +328,26 @@ test.describe('Play on a phone', () => {
     });
   }
 
+  test('on Home, the way in is in the first screen, written for a phone', async ({ page }) => {
+    await page.goto('');
+    const start = page.getByRole('link', { name: 'Start with Twinkle, Twinkle' });
+    await expect(start).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    const box = await start.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { bottom: r.bottom, height: window.innerHeight, scrolled: window.scrollY };
+    });
+    expect(box.scrolled).toBe(0);
+    expect(box.bottom, `the way in ends ${Math.round(box.bottom)}px down`).toBeLessThanOrEqual(
+      box.height,
+    );
+    // A touch-only phone is told to tap the piano, not which computer keys to press.
+    await expect(page.getByText('Find the keys.').locator('..')).toContainText(
+      'Tap the piano at the foot of every practice page',
+    );
+    await expect(page.getByText(/use your computer keyboard/)).toHaveCount(0);
+  });
+
   test('on a downloaded song, Play is in the first screen', async ({ page }) => {
     await downloadSong(page, 'minuet-in-g-easy');
     await page.reload();

@@ -46,7 +46,7 @@ const BLACK_H = 42;
 const BLACK_W = 0.62;
 
 /** The computer keys over the piano keys they play, from the same map the keyboard uses. */
-export function KeysSpot({ width }: { width?: number }) {
+export function KeysSpot({ width, labels = true }: { width?: number; labels?: boolean }) {
   const map = computerKeyMap();
   const lo = map[0]!.midi;
   const hi = map.at(-1)!.midi + (isBlack(map.at(-1)!.midi) ? 1 : 0);
@@ -67,7 +67,7 @@ export function KeysSpot({ width }: { width?: number }) {
               height={KEY_H}
               rx={2}
             />
-            {label.has(k.midi) ? (
+            {labels && label.has(k.midi) ? (
               <text className={s.label} x={k.x * KEY_W + 1 + KEY_W / 2} y={KEY_H - 6}>
                 {label.get(k.midi)}
               </text>
@@ -86,7 +86,7 @@ export function KeysSpot({ width }: { width?: number }) {
               height={BLACK_H}
               rx={1.5}
             />
-            {label.has(k.midi) ? (
+            {labels && label.has(k.midi) ? (
               <text
                 className={s.labelOnBlack}
                 x={k.x * KEY_W + 1 + (KEY_W * BLACK_W) / 2}

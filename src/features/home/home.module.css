@@ -36,6 +36,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* After the steps, in its own row; the whole card is in one column. */
   .welcomeArt {
     grid-column: 1;
     grid-row: auto;
