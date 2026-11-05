@@ -694,6 +694,19 @@ entered once and played as often as it comes back.
   cut at the chords right above it, each cut moved back to the start of its word, the words go
   on the bar where they start, and a line with no chords right above it is left out. In the editor, a bar's **Lyrics** field holds its
   words, one line, up to 120 characters; Enter goes on to the next bar.
+- **Lyrics from a sheet** (`src/core/charts/attachLyrics.ts`). **Add lyrics**, beside **Paste a
+  chord sheet** in the editor, puts the words of a pasted sheet (chords over lyrics) onto a chart
+  that already has its chords and lengths, such as one aligned to a recording. The chords are
+  never changed: the sheet's chords are matched to the chart's, in order, by a global alignment
+  that allows chords missing on either side (a sheet without the instrumental, a repeat it skips),
+  scores a 7th or add9 on the sheet as close to the chart's triad, and tries all 12 keys, so a
+  sheet written for a capo still fits. Each chord's words go on the bar where the matched chart
+  chord starts. A section played twice with other words the second time (verse 1 and verse 2)
+  becomes two sections with the same bars; a chorus written once is used each time it plays. A
+  preview shows every section's bars with the words they would get, bars it could not match, and
+  "Lyrics for 14 of 16 bars · sheet is 2 semitones up". **Apply** puts them in the chart (asking
+  first if it has lyrics), and **Save** keeps them. The same rules as **Keep lyrics** apply, and
+  the pasted text is not kept.
   - Lyrics are kept only in this browser's storage on this device. They are never uploaded, never
     in a share link, and never sent to Studio, Chords or Progressions by **Send to**.
   - Like everything stored here, they can be lost with the browser's site data: clearing it, or

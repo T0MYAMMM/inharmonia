@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyChart, parseBars, withLyric, type ChordChart } from '@/core/charts';
@@ -195,5 +195,55 @@ describe('tap timing in the chart editor', () => {
     c.sections[0]!.bars = parseBars('| C | C |', 4).bars;
     renderEditor(c);
     expect(screen.getByTestId('tap-open-0')).toBeDisabled();
+  });
+});
+
+describe('lyrics from a sheet in the chart editor', () => {
+  // Invented words over the chart's own chords, one chord a bar.
+  const SHEET = '[Verse]\nC            G\ngulls over the pier\nAm           F\ntide rolling in';
+
+  it('puts them on the bars, says so, and Save keeps them with the chords as they were', async () => {
+    const user = userEvent.setup();
+    const c = chart();
+    c.sections[0]!.bars = parseBars('| C | G | Am | F |', 4).bars;
+    const { saved, lyrics } = renderEditor(c);
+    await user.click(screen.getByTestId('lyrics-open'));
+    expect(screen.queryByTestId('lyrics-open')).toBeNull();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Chord sheet with lyrics' }), {
+      target: { value: SHEET },
+    });
+    await user.click(screen.getByTestId('lyrics-read'));
+    await user.click(screen.getByTestId('lyrics-apply'));
+    expect(screen.queryByTestId('add-lyrics')).toBeNull();
+    expect(screen.getByTestId('lyrics-added')).toHaveTextContent(
+      'Lyrics in place. Save to keep them.',
+    );
+    expect(screen.getByTestId('bar-0-0')).toHaveTextContent('1Cgulls over');
+    const after = await saved(user);
+    expect(lyrics(after)).toEqual(['gulls over', 'the pier', 'tide rolling', 'in']);
+    expect(after.sections[0]!.bars.map((b) => b.chords)).toEqual(
+      c.sections[0]!.bars.map((b) => b.chords),
+    );
+  });
+
+  it('asks first when the chart has lyrics, and Cancel leaves them', async () => {
+    const user = userEvent.setup();
+    const { saved, lyrics } = renderEditor();
+    await user.click(screen.getByTestId('lyrics-open'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Chord sheet with lyrics' }), {
+      target: { value: SHEET },
+    });
+    await user.click(screen.getByTestId('lyrics-read'));
+    await user.click(screen.getByTestId('lyrics-apply'));
+    expect(screen.getByTestId('lyrics-replace')).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Keep them' }));
+    await user.click(screen.getByTestId('lyrics-cancel'));
+    expect(screen.getByTestId('lyrics-added')).toBeEmptyDOMElement();
+    expect(lyrics(await saved(user))).toEqual(['lanterns on the water', 'slow boats', null, null]);
+  });
+
+  it('is offered only once the chart has sections', () => {
+    renderEditor(emptyChart('New'));
+    expect(screen.queryByTestId('lyrics-open')).toBeNull();
   });
 });

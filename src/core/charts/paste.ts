@@ -1,4 +1,4 @@
-import { tidyLyric, withLyric } from './lyrics';
+import { fitLyric, withLyric } from './lyrics';
 import { rebar } from './rebar';
 import { parseHeader, sectionTypeOf, type SectionType } from './sections';
 import { NO_CHORD, normalizeChord } from './symbols';
@@ -171,24 +171,12 @@ function cutPoints(line: string, cols: readonly number[]): number[] {
   return out;
 }
 
-/** Words to keep in a bar: one line, cut at a word to `LIMITS.lyric` characters. */
-function fit(text: string): { words: string | undefined; cut: boolean } {
-  const words = tidyLyric(text);
-  if (!words || words.length <= LIMITS.lyric) return { words, cut: false };
-  const head = words.slice(0, LIMITS.lyric + 1);
-  const space = head.lastIndexOf(' ');
-  return {
-    words: (space > 0 ? head.slice(0, space) : words.slice(0, LIMITS.lyric)).trim(),
-    cut: true,
-  };
-}
-
 /** A lyric line cut at the chords' columns: the words under each. */
 function cutLyric(line: string, cols: readonly number[]) {
   const points = cutPoints(line, cols);
   let cut = false;
   const words = points.map((p, i) => {
-    const w = fit(line.slice(p, points[i + 1]));
+    const w = fitLyric(line.slice(p, points[i + 1]));
     cut ||= w.cut;
     return w.words;
   });
@@ -212,7 +200,7 @@ const REPEAT_MARK = /^(?:x\s?\d+|\d+\s?x)$/i;
 
 /** Words of several chords in one bar, joined and cut to fit. */
 const joinWords = (words: readonly (string | undefined)[]) =>
-  fit(words.filter(Boolean).join(' ')).words;
+  fitLyric(words.filter(Boolean).join(' ')).words;
 
 /** The way a line becomes bars unless asked otherwise: estimated when it can be. */
 export const defaultLineBars = (line: PastedLine): LineBars =>
