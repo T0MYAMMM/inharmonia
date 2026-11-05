@@ -22,6 +22,27 @@ test.describe('chord library', () => {
     await expect(page.getByTestId('chord-symbol')).toHaveText('Gm7');
   });
 
+  test('explains voicing and inversion under their controls, and clean on the drill', async ({
+    page,
+  }) => {
+    await page.goto('chords');
+    for (const [group, words] of [
+      [
+        'Voicing style',
+        'A voicing is the same chord with its notes spread differently over the keys.',
+      ],
+      ['Inversion', 'An inversion is which chord tone sits at the bottom.'],
+    ] as const) {
+      const control = page.getByRole('radiogroup', { name: group });
+      const note = page.locator(`#${await control.getAttribute('aria-describedby')}`);
+      await expect(note).toHaveText(words);
+    }
+    await page.goto('chords/drill');
+    await expect(
+      page.getByText(/A chord is clean when you play it with no wrong note and no Show me/),
+    ).toBeVisible();
+  });
+
   test('the chord and how it is built keep one size, whatever the chord', async ({ page }) => {
     await page.goto('chords');
     // Each room's code loads after the page itself: measure once it is there.

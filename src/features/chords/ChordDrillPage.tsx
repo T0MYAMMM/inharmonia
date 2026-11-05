@@ -66,7 +66,7 @@ export function ChordDrillPage() {
       <PageHeader
         crumb={{ to: '/chords', label: 'Chords' }}
         title="Chord drill"
-        lede="Ten chords a round. Play each one and hold it; take as long as you need."
+        lede="Ten chords a round. Play each one and hold it; take as long as you need. A chord is clean when you play it with no wrong note and no Show me."
       />
 
       {!snap.running ? (

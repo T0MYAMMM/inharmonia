@@ -226,6 +226,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A term's one-line explanation, under the control that first uses it. */
+.termNote {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .feedback {
   min-height: 1.5em;
   font-weight: 600;

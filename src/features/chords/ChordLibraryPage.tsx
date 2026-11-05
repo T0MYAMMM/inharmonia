@@ -243,21 +243,33 @@ export function ChordLibraryPage() {
 
         <Card title="Voicing" className={styles.areaVoicing}>
           <div className={styles.voicingBody}>
-            <Segmented
-              label="Voicing style"
-              value={style}
-              options={VOICING_STYLES.map((v) => ({ value: v.id, label: v.name }))}
-              onChange={(v) => update({ voicing: v, inversion: 0 })}
-            />
-            <Segmented
-              label="Inversion"
-              value={String(inversion)}
-              options={Array.from({ length: count }, (_, i) => ({
-                value: String(i),
-                label: INVERSION_SHORT[i] ?? String(i),
-              }))}
-              onChange={(v) => update({ inversion: v })}
-            />
+            <div className={styles.group}>
+              <Segmented
+                label="Voicing style"
+                value={style}
+                options={VOICING_STYLES.map((v) => ({ value: v.id, label: v.name }))}
+                onChange={(v) => update({ voicing: v, inversion: 0 })}
+                describedBy="voicing-note"
+              />
+              <span id="voicing-note" className={styles.termNote}>
+                A voicing is the same chord with its notes spread differently over the keys.
+              </span>
+            </div>
+            <div className={styles.group}>
+              <Segmented
+                label="Inversion"
+                value={String(inversion)}
+                options={Array.from({ length: count }, (_, i) => ({
+                  value: String(i),
+                  label: INVERSION_SHORT[i] ?? String(i),
+                }))}
+                onChange={(v) => update({ inversion: v })}
+                describedBy="inversion-note"
+              />
+              <span id="inversion-note" className={styles.termNote}>
+                An inversion is which chord tone sits at the bottom.
+              </span>
+            </div>
             <p className={styles.voicingNotes} data-testid="voicing-notes">
               {inversionName(inversion)[0]!.toUpperCase() + inversionName(inversion).slice(1)}:{' '}
               {voicing.map((n) => prettyChord(n.name)).join(' ')}
