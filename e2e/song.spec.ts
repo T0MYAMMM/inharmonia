@@ -31,7 +31,7 @@ test.describe('song player', () => {
     await expect(score).toHaveAttribute('data-score-view', 'overview');
     await expect(score.locator('[data-bar]')).toHaveCount(24);
 
-    await page.getByRole('radio', { name: 'Follow Along' }).click();
+    await page.getByRole('radio', { name: 'Follow along' }).click();
     await expect(score).toHaveAttribute('data-score-view', 'follow');
     await expect(score.locator('[data-bar]')).toHaveCount(1);
     const slot = score.locator('[data-note-slot]').first();
@@ -51,11 +51,11 @@ test.describe('song player', () => {
     await expect(score.locator('[data-bar]')).toHaveCount(24);
   });
 
-  test('Falling Notes plays in sync with the transport and survives mode changes', async ({
+  test('Falling notes plays in sync with the transport and survives mode changes', async ({
     page,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
     const roll = page.getByTestId('falling-notes');
     await expect(roll).toBeVisible();
     await expect(roll.getByRole('img', { name: /Falling piano notes/ })).toBeVisible();
@@ -112,12 +112,12 @@ test.describe('song player', () => {
     expect(await dock.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
   });
 
-  test('Falling Notes Full Screen expands the same piano and restores the floating dock', async ({
+  test('Falling notes full screen expands the same piano and restores the floating dock', async ({
     page,
     isMobile,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
     const dock = page.locator('[data-dock]');
     const keyboard = page.getByTestId('keyboard');
     const roll = page.getByTestId('keyboard-roll');
@@ -133,7 +133,7 @@ test.describe('song player', () => {
     });
     await page.getByTestId('falling-fullscreen').click();
     await expect(dock).toHaveAttribute('data-immersive', 'true');
-    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit Full Screen');
+    await expect(page.getByTestId('falling-fullscreen')).toHaveText('Exit full screen');
     await expect(page.getByTestId('falling-fullscreen-controls')).toBeVisible();
     const leftPanel = page.getByTestId('falling-panel-left');
     const rightPanel = page.getByTestId('falling-panel-right');
@@ -206,11 +206,11 @@ test.describe('song player', () => {
     await expect(keyboard).toHaveCount(1);
   });
 
-  test('Full Screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
+  test('Full screen can change arrangement, loop, metronome, tempo and hands without exiting', async ({
     page,
   }) => {
     await open(page);
-    await page.getByRole('radio', { name: 'Falling Notes' }).click();
+    await page.getByRole('radio', { name: 'Falling notes' }).click();
 
     // CSS fallback exercises browsers where Fullscreen API is unavailable.
     await page.evaluate(() => {
@@ -277,10 +277,10 @@ test.describe('song player', () => {
 
     await controls.getByRole('radio', { name: 'Practice' }).click();
     await expect(
-      controls.getByRole('radiogroup', { name: 'Full Screen practice hand' }),
+      controls.getByRole('radiogroup', { name: 'Full screen practice hand' }),
     ).toBeVisible();
     await controls
-      .getByRole('radiogroup', { name: 'Full Screen practice hand' })
+      .getByRole('radiogroup', { name: 'Full screen practice hand' })
       .getByRole('radio', { name: 'Both hands' })
       .click();
     await expect(
@@ -440,7 +440,7 @@ test.describe('song player', () => {
     await open(page);
     await expect(page.getByRole('radio', { name: 'Overview' })).toBeChecked();
     await page.getByRole('radio', { name: 'Practice' }).click();
-    await expect(page.getByRole('radio', { name: 'Follow Along' })).toBeChecked();
+    await expect(page.getByRole('radio', { name: 'Follow along' })).toBeChecked();
     // Every note of the bar is in view, with the target among them.
     await expect(page.locator('[data-score-view="follow"] [data-state="target"]')).toHaveCount(1);
     await page.getByRole('radio', { name: 'Listen' }).click();

@@ -139,7 +139,7 @@
 .hit[data-state='target'] {
   border-color: var(--amber);
   box-shadow: inset 0 0 0 2px var(--amber);
-  animation: target-pulse 1.2s ease-in-out infinite;
+  animation: target-pulse var(--pulse-ms) ease-in-out infinite;
 }
 
 @keyframes target-pulse {

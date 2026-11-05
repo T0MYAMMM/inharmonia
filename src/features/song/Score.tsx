@@ -58,8 +58,8 @@ type ScoreView = 'overview' | 'follow' | 'falling';
 
 const VIEW_OPTIONS = [
   { value: 'overview', label: 'Overview' },
-  { value: 'follow', label: 'Follow Along' },
-  { value: 'falling', label: 'Falling Notes' },
+  { value: 'follow', label: 'Follow along' },
+  { value: 'falling', label: 'Falling notes' },
 ] as const;
 
 /** The transport remains the source of truth for the bar and note in both layouts. */
@@ -243,12 +243,12 @@ export function Score(props: ScoreProps) {
       ) : null}
       {shownView === 'falling' ? (
         <p className={styles.followHint} data-testid="falling-score-hint">
-          Falling Notes appear above the floating playable keyboard. Notes descend onto the same
-          keys used in Overview and Follow Along; scroll the piano sideways on small screens to
+          Falling notes appear above the floating playable keyboard. Notes descend onto the same
+          keys used in Overview and Follow along; scroll the piano sideways on small screens to
           follow the melody.
         </p>
       ) : shownView === 'follow' ? (
-        <section className={styles.followSection} aria-label="Follow Along score">
+        <section className={styles.followSection} aria-label="Follow along score">
           {sectionAt?.title ? <h2 className={styles.sectionTitle}>{sectionAt.title}</h2> : null}
           {card(current, true)}
           <p className={styles.followHint}>
@@ -404,7 +404,7 @@ const BarCard = memo(
         {!follow && density === 'dense' ? (
           <div className={styles.denseSummary} data-testid="dense-summary" aria-hidden="true">
             <strong>{noteCount} notes</strong>
-            <span>Open Follow Along to read every note</span>
+            <span>Open Follow along to read every note</span>
             <span className={styles.rhythm}>
               {bar.rh.map((note) => (
                 <i key={note.id} style={{ flexGrow: note.beats }} />
@@ -414,7 +414,7 @@ const BarCard = memo(
         ) : null}
         {!follow && density === 'wide' ? (
           <div className={styles.mobileSummary} aria-hidden="true">
-            {noteCount} notes · Use Follow Along to see each note
+            {noteCount} notes · Use Follow along to see each note
           </div>
         ) : null}
         {follow ? (

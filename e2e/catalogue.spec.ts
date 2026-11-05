@@ -26,9 +26,7 @@ test.describe('catalogue songs', () => {
   test('a link to one offers the download, then plays it in place', async ({ page }) => {
     await page.goto(MINUET);
     await expect(page.getByRole('heading', { name: 'Minuet in G', level: 1 })).toBeVisible();
-    await expect(page.getByTestId('song-credit')).toHaveText(
-      'Christian Petzold, first published 1894',
-    );
+    await expect(page.getByTestId('song-credit')).toHaveText('Christian Petzold, 1894 edition');
     await expect(page.getByText('G major, 3/4, 16 bars')).toBeVisible();
     await expect(page.getByTestId('download-offer')).toContainText(
       /not on this device yet\. Download it once \(\d+ KB, every version\)/,

@@ -417,7 +417,7 @@ export function LessonPlayer({
                   : ''}
               </span>
               <Segmented
-                label="Full Screen mode"
+                label="Full screen mode"
                 value={snap.mode}
                 options={progression ? PROGRESSION_MODES : SONG_MODES}
                 onChange={(m) => ctrl.setMode(m)}
@@ -461,7 +461,7 @@ export function LessonPlayer({
                 <Field label={<>Tempo: {snap.tempo} bpm</>}>
                   <RangeInput
                     size="small"
-                    aria-label="Full Screen tempo"
+                    aria-label="Full screen tempo"
                     data-testid="fullscreen-tempo"
                     min={lesson.tempo.min}
                     max={lesson.tempo.max}
@@ -473,7 +473,7 @@ export function LessonPlayer({
               <Field label="Count-in">
                 <Select
                   size="small"
-                  aria-label="Full Screen count-in"
+                  aria-label="Full screen count-in"
                   data-testid="fullscreen-countin"
                   value={countInBars}
                   onChange={(event) => setSettings({ countInBars: Number(event.target.value) })}
@@ -490,7 +490,7 @@ export function LessonPlayer({
               <h2 className={styles.fullScreenHeading}>Hands &amp; arrangement</h2>
               {practice ? (
                 <Segmented
-                  label="Full Screen practice hand"
+                  label="Full screen practice hand"
                   value={snap.hands}
                   options={PRACTICE_HANDS}
                   onChange={(v) => ctrl.setHands(v)}
@@ -508,7 +508,7 @@ export function LessonPlayer({
                 <Field label="View">
                   <Select
                     size="small"
-                    aria-label="Full Screen displayed hands"
+                    aria-label="Full screen displayed hands"
                     data-testid="fullscreen-falling-hand"
                     value={fallingOptions?.hand ?? 'both'}
                     onChange={(event) =>
@@ -527,7 +527,7 @@ export function LessonPlayer({
                 <Field label="Look ahead">
                   <Select
                     size="small"
-                    aria-label="Full Screen look ahead"
+                    aria-label="Full screen look ahead"
                     data-testid="fullscreen-falling-lookahead"
                     value={fallingOptions?.lookAheadBeats ?? 4}
                     onChange={(event) =>

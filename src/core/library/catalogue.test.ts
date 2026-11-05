@@ -118,7 +118,7 @@ describe('the index', () => {
       file: 'ode-to-joy.json',
       title: 'Ode to Joy',
       composer: 'Ludwig van Beethoven',
-      credit: 'Ludwig van Beethoven, first published 1826',
+      credit: 'Ludwig van Beethoven, 1826 edition',
       key: { tonic: 'D', mode: 'major' },
       meter: { beats: 4, unit: 4 },
     });

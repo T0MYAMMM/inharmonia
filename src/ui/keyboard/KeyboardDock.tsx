@@ -179,7 +179,7 @@ export function KeyboardDock({
                 aria-pressed={fullScreen}
                 onClick={toggleFullScreen}
               >
-                {fullScreen ? 'Exit Full Screen' : 'Full Screen'}
+                {fullScreen ? 'Exit full screen' : 'Full screen'}
               </button>
             ) : null}
             {action && !fullScreen ? (
