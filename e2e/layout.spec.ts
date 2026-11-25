@@ -50,6 +50,25 @@ test.describe('page shell', () => {
     });
   }
 
+  // UAT 2026-11-25: the picked file's name widened the page on a phone.
+  for (const route of ['songs', 'progressions']) {
+    test(`/${route} keeps no sideways scroll after picking a file with a long name`, async ({
+      page,
+    }) => {
+      await page.goto(route);
+      await page
+        .getByTestId('import-file')
+        .first()
+        .setInputFiles({
+          name: 'inharmonia-progression-a-rather-long-name-someone-gave-it-2026.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from('{"format":"nope"'),
+        });
+      await page.keyboard.press('Escape');
+      await shell(page);
+    });
+  }
+
   test('the Studio MIDI editor has its own h1', async ({ page }) => {
     await page.goto('studio');
     await page.getByTestId('studio-new-midi').click();

@@ -23,6 +23,31 @@ test.describe('song player', () => {
     await expect(page.getByRole('heading', { name: 'Ending' })).toBeVisible();
   });
 
+  // UAT 2026-11-25: a bar with one melody note was read out as "1 melody notes".
+  test('a bar with one melody note says "1 melody note"', async ({ page }) => {
+    await page.goto('songs/twinkle-twinkle-easy');
+    await expect(
+      page.getByRole('button', { name: 'Bar 8 of 24, C. 1 melody note. Play from here' }),
+    ).toBeVisible();
+  });
+
+  // UAT 2026-11-25: the build kept only -webkit-backdrop-filter, which Chrome and Firefox
+  // ignore, so the score showed through the sticky transport and the keyboard dock.
+  test('the sticky transport and the keyboard dock blur what scrolls under them', async ({
+    page,
+  }) => {
+    await open(page);
+    const blur = (selector: string) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((e) => getComputedStyle(e).backdropFilter);
+    const transport = page.getByRole('button', { name: 'Play', exact: true }).locator('xpath=..');
+    const panel = transport.locator('xpath=ancestor-or-self::*[contains(@class,"panel")][1]');
+    expect(await panel.evaluate((e) => getComputedStyle(e).backdropFilter)).toContain('blur');
+    expect(await blur('aside')).toContain('blur');
+  });
+
   test('score view follows a single measure with zoom, navigation and overview', async ({
     page,
   }) => {
