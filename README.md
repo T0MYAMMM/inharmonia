@@ -3,6 +3,44 @@
 A calm practice room for piano harmony: chords, inversions, voicings, progressions, comping
 patterns and fills, learned hands-on at the keys. React 18 + TypeScript + Vite, no backend.
 
+**Try it:** [t0myammm.github.io/inharmonia](https://t0myammm.github.io/inharmonia/). It runs in
+the browser, works offline once opened, and keeps everything you make on your device.
+
+![The home page: a quiet room to practise harmony](docs/screenshots/readme/home.png)
+
+| Chords                                                                              | Songs, with falling notes                                                                                                |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| ![D minor 7th, Drop 2 voicing](docs/screenshots/readme/chords.png)                  | ![Für Elise in Falling notes view](docs/screenshots/readme/song-falling-notes.png)                                       |
+| **Progressions**                                                                    | **Studio**                                                                                                               |
+| ![ii–V–I in F with a broken-chord pattern](docs/screenshots/readme/progression.png) | ![A tune drawn on the MIDI piano roll](docs/screenshots/readme/studio.png)                                               |
+| **Your chord charts**                                                               | **On a phone, in dark mode**                                                                                             |
+| ![A chord chart read from a pasted sheet](docs/screenshots/readme/chart.png)        | ![Ear training](docs/screenshots/readme/phone-ear-dark.png) ![Progress](docs/screenshots/readme/phone-progress-dark.png) |
+
+## What you can do with it
+
+A few people and what each might do in a sitting:
+
+- **Maya, new to the piano.** She opens the site on a laptop and starts with Twinkle, Twinkle.
+  It plays through first. Then Practice waits on each note while she finds it on the computer
+  keys (A to ' play C4 to F5). After that she opens Chords and builds C major, so she can see and
+  hear why it's a root, a major third and a fifth.
+- **Daniel, who plays by ear and wants the theory.** In Chords he types
+  `Dm7 G7 | Cmaj7 | Am7 | D7 G7 |`, loops it and tries Drop 2 and Rootless voicings. He sends it
+  to Progressions, reads it as Roman numerals in C, then plays it back in F with the Bossa
+  pattern and the Walk back home fill.
+- **Sari, who leads songs at church.** She pastes a chord sheet with lyrics under the chords.
+  Inharmonia reads the sections and works out how long each chord lasts from the words. Then she
+  finds an easier key and practises with the accompaniment. The sheet and its lyrics never leave
+  her phone.
+- **Ken, on a commute.** On his phone he names ten chords as major or minor, then a few
+  four-chord phrases in Roman numerals. That night, Progress shows the days he practised this
+  week and what's due for review.
+- **Ayu, writing her first tune.** In Studio she hums a melody, or draws it on the piano roll, and
+  Studio suggests chords. She saves it to Your songs to practise, then exports it as a file to
+  back it up or move it to another device.
+- **A teacher with a MIDI keyboard.** They plug in a keyboard, open the Chord drill and hand it
+  to a student. Every chord the student plays is checked in any octave and any inversion.
+
 ## Setup
 
 Requires Node 20.19+ (see `.nvmrc`).
