@@ -4,8 +4,8 @@
   z-index: 20;
   margin-top: var(--space-6);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border-top: 1px solid var(--line);
   box-shadow: var(--shadow-dock);
   padding: 10px max(var(--gutter), env(safe-area-inset-right))
@@ -306,8 +306,8 @@
   border: 0;
   box-shadow: none;
   background: var(--surface);
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .dock[data-immersive] .inner,

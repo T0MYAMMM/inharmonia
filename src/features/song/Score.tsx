@@ -362,7 +362,7 @@ const BarCard = memo(
         {/* The name comes from this text, so voice control can say the bar number shown. */}
         <span className="visually-hidden">
           Bar {bar.index + 1} of {barCount}, {chordText}.
-          {noteCount > 0 ? ` ${noteCount} melody notes.` : ''}
+          {noteCount > 0 ? ` ${noteCount} melody ${noteCount === 1 ? 'note' : 'notes'}.` : ''}
           {lyric ? ` Lyrics: ${lyric}.` : ''}
           {ACTION[mode]}
         </span>

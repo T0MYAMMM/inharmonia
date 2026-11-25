@@ -30,7 +30,8 @@ jobs:
 
   e2e:
     name: Playwright smoke tests
-    runs-on: ubuntu-latest
+    # Playwright 1.56 cannot install Chromium on ubuntu-latest (26.04); pin until it is upgraded.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
