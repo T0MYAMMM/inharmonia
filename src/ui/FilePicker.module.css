@@ -40,14 +40,23 @@
   opacity: 0;
 }
 
+/*
+ * One line, cut with an ellipsis. A one-line clamp, not nowrap: the name may break between any
+ * letters, so its narrowest size is one letter rather than the whole name, and a long name
+ * shortens to its box instead of widening every box around it to the side of the page. Where
+ * there is room it still takes its full width.
+ */
 .name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
   min-width: 0;
+  overflow: hidden;
+  word-break: break-all;
   color: var(--muted);
   font-size: 0.875rem;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .name:empty {
